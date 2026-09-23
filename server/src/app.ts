@@ -49,13 +49,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const app = Fastify({ logger: false, bodyLimit: 1_000_000 });
 
   // Only this PC's browser tab may talk to us: foreign Host = DNS rebinding; a custom header on
-  // writes cannot be sent cross-site without a CORS preflight, which we never allow.
+  // writes cannot be sent cross-site without a CORS preflight, which we never allow. Decided by
+  // method alone (not by matching the request path against '/api/') because the path can be
+  // percent-encoded or given in absolute-form and still route to an API handler after decoding.
   app.addHook('onRequest', async (req, reply) => {
     const host = (req.headers.host ?? '').toLowerCase();
     if (!deps.allowedHosts().includes(host)) {
       return reply.code(403).send(errorBody('BAD_REQUEST', `host not allowed: ${host}`));
     }
-    if (req.url.startsWith('/api/') && req.method !== 'GET' && req.headers['x-bp-client'] !== '1') {
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers['x-bp-client'] !== '1') {
       return reply.code(403).send(errorBody('BAD_REQUEST', 'missing X-BP-Client header'));
     }
   });
@@ -65,8 +67,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       deps.logger.warn('app_error', { code: err.code, details: err.detailsForLog, url: req.url });
       return reply.code(httpStatusFor(err.code)).send(errorBody(err.code, err.detailsForLog));
     }
-    const e = err as Error & { validation?: unknown };
-    if (e.validation) return reply.code(400).send(errorBody('BAD_REQUEST', e.message));
+    const e = err as Error & { validation?: unknown; statusCode?: number };
+    if (e.validation) {
+      deps.logger.warn('validation_error', { message: e.message, url: req.url });
+      return reply.code(400).send(errorBody('BAD_REQUEST', e.message));
+    }
+    // Fastify's own client-error paths (malformed JSON, missing/wrong content-type, payload too
+    // large, ...) throw plain errors with a statusCode but no `validation` property.
+    if (typeof e.statusCode === 'number' && e.statusCode >= 400 && e.statusCode < 500) {
+      deps.logger.warn('client_error', { statusCode: e.statusCode, message: e.message, url: req.url });
+      return reply.code(e.statusCode).send(errorBody('BAD_REQUEST', e.message));
+    }
     deps.logger.error('unhandled_error', { message: e.message, stack: e.stack, url: req.url });
     return reply.code(500).send(errorBody('UNKNOWN', e.message));
   });
@@ -99,8 +110,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   app.post('/api/shutdown', async (_req, reply) => {
+    reply.raw.once('finish', deps.onShutdown);
     reply.send({ ok: true });
-    setTimeout(deps.onShutdown, 10);
     return reply;
   });
 

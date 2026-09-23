@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { buildApp } from '../src/app.js';
@@ -31,12 +32,25 @@ describe('guards', () => {
     const { app } = await makeApp();
     const res = await app.inject({ method: 'GET', url: '/api/health', headers: { host: 'evil.example:80' } });
     expect(res.statusCode).toBe(403);
+    expect(res.json()).toMatchObject({ error: { code: 'BAD_REQUEST' } });
   });
   it('rejects state-changing calls without the client header', async () => {
     const { app } = await makeApp();
     const res = await app.inject({ method: 'POST', url: '/api/shutdown', payload: {} });
     expect(res.statusCode).toBe(403);
     expect(res.json().error.code).toBe('BAD_REQUEST');
+  });
+  it('rejects an encoded/obfuscated path that still routes to an API handler, without the client header', async () => {
+    const { app, shutdownCalls } = await makeApp();
+    const res = await app.inject({ method: 'POST', url: '/%61pi/shutdown', payload: {} });
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('BAD_REQUEST');
+    expect(shutdownCalls()).toBe(0);
+  });
+  it('allows HEAD requests without the client header', async () => {
+    const { app } = await makeApp();
+    const res = await app.inject({ method: 'HEAD', url: '/api/health' });
+    expect(res.statusCode).not.toBe(403);
   });
 });
 
@@ -99,6 +113,51 @@ describe('api', () => {
     const res = await app.inject({ method: 'GET', url: '/api/nope' });
     expect(res.statusCode).toBe(404);
     expect(res.json().error.code).toBe('NOT_FOUND');
+  });
+  it('maps malformed JSON bodies to BAD_REQUEST instead of UNKNOWN', async () => {
+    const { app } = await makeApp();
+    const res = await app.inject({
+      method: 'PATCH', url: '/api/settings', headers: { ...H, 'content-type': 'application/json' }, payload: '{bad',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('BAD_REQUEST');
+  });
+});
+
+describe('cancellation', () => {
+  it('aborts the in-flight LLM task when the client disconnects mid-request', async () => {
+    let aborted = false;
+    const provider = new FakeProvider({ ok: true }, (_task, signal) => new Promise(() => {
+      signal.addEventListener('abort', () => { aborted = true; });
+    }));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-app-'));
+    const settings = new SettingsStore(path.join(dir, 'settings.json'));
+    settings.load();
+    let port = 0;
+    const app = await buildApp({
+      settings, provider, queue: new LlmQueue(provider), logger: nullLogger, version: '0.1.0',
+      webDist: null,
+      allowedHosts: () => [`127.0.0.1:${port}`],
+      onShutdown: () => {},
+    });
+    await app.listen({ host: '127.0.0.1', port: 0 });
+    const addr = app.server.address();
+    if (!addr || typeof addr === 'string') throw new Error('expected a network address');
+    port = addr.port;
+
+    await new Promise<void>((resolve) => {
+      const req = http.request({
+        host: '127.0.0.1', port, path: '/api/llm/test', method: 'POST',
+        headers: { 'x-bp-client': '1', 'content-type': 'application/json' },
+      });
+      req.on('error', () => { /* expected: we destroy the socket ourselves below */ });
+      req.end(JSON.stringify({ language: 'en' }));
+      setTimeout(() => { req.destroy(); resolve(); }, 100);
+    });
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(aborted).toBe(true);
+    await app.close();
   });
 });
 
