@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, type ChildProcess, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,6 +18,10 @@ export interface ClaudeCodeProviderOptions {
   command?: ClaudeCommand | null;
   env?: NodeJS.ProcessEnv;
   logger?: Logger;
+  /** How long to wait for 'close' after killing the process before giving up anyway. Default 5000. Overridable for tests. */
+  killGraceMs?: number;
+  /** Overrides killTree — test hook for simulating a kill that does not actually stop the process. */
+  kill?: (child: ChildProcess, logger: Logger) => void;
 }
 
 interface RunOutput { stdout: string; stderr: string; exitCode: number | null }
@@ -26,6 +30,9 @@ const DISALLOWED_TOOLS = ['Bash', 'Edit', 'Write', 'NotebookEdit', 'WebFetch', '
 const AUTH_ERROR_RE = /not logged in|\/login|invalid api key|unauthori[sz]ed/i;
 const AVAILABILITY_TTL_MS = 10 * 60 * 1000;
 const PROBE_TIMEOUT_MS = 60_000;
+// If taskkill/SIGKILL doesn't make the process emit 'close' within this long, give up waiting anyway —
+// otherwise a stuck grandchild holding the stdio pipes open would freeze the single-process FIFO queue forever.
+const DEFAULT_KILL_GRACE_MS = 5000;
 const PROBE_TASK: LlmTask = {
   prompt: 'Answer with ok = true.',
   schema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] },
@@ -51,7 +58,9 @@ export function resolveClaudeCommand(env: NodeJS.ProcessEnv = process.env): Clau
   }
   candidates.push(path.join(home, '.local', 'bin', exeName));
   const found = candidates.find(isFile);
-  return found ? { file: found, argsPrefix: [] } : null;
+  // Resolve so a relative PATH entry is anchored to the current process cwd, not to whatever
+  // per-run working folder the returned command is later spawned from.
+  return found ? { file: path.resolve(found), argsPrefix: [] } : null;
 }
 
 export function buildClaudeArgs(task: LlmTask, extra: string[] = []): string[] {
@@ -94,10 +103,14 @@ export function parseClaudeOutput(stdout: string, stderr: string, exitCode: numb
 }
 
 // On Windows child.kill() would leave grandchildren running; taskkill /T kills the whole tree.
-export function killTree(child: ChildProcess): void {
+export function killTree(child: ChildProcess, logger: Logger = nullLogger): void {
   if (!child.pid) return;
   if (process.platform === 'win32') {
-    spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true }).on('error', () => {});
+    const tk = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
+    tk.on('error', (err) => logger.warn('taskkill_failed', { message: err.message }));
+    tk.on('close', (code) => {
+      if (code !== 0) logger.warn('taskkill_nonzero', { code });
+    });
   } else {
     child.kill('SIGKILL');
   }
@@ -174,39 +187,74 @@ export class ClaudeCodeProvider implements LlmProvider {
 
   private runOnce(cmd: ClaudeCommand, task: LlmTask, signal: AbortSignal, extraArgs: string[], timeoutMs: number): Promise<RunOutput> {
     if (signal.aborted) return Promise.reject(new AppError('LLM_CANCELLED', 'aborted before start'));
-    fs.mkdirSync(this.opts.tmpRoot, { recursive: true });
-    const cwd = fs.mkdtempSync(path.join(this.opts.tmpRoot, 'run-'));
+
+    let cwd: string;
+    try {
+      fs.mkdirSync(this.opts.tmpRoot, { recursive: true });
+      cwd = fs.mkdtempSync(path.join(this.opts.tmpRoot, 'run-'));
+    } catch (err) {
+      return Promise.reject(new AppError('DATA_WRITE_FAILED', err instanceof Error ? err.message : String(err)));
+    }
 
     return new Promise<RunOutput>((resolve, reject) => {
       let stdout = '';
       let stderr = '';
       let stopReason: 'timeout' | 'cancelled' | null = null;
       let settled = false;
+      let graceTimer: NodeJS.Timeout | null = null;
 
-      const child = spawn(cmd.file, [...cmd.argsPrefix, ...buildClaudeArgs(task, extraArgs)], {
-        cwd,
-        env: this.opts.env ?? process.env,
-        windowsHide: true,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
+      let child: ChildProcessWithoutNullStreams;
+      try {
+        child = spawn(cmd.file, [...cmd.argsPrefix, ...buildClaudeArgs(task, extraArgs)], {
+          cwd,
+          env: this.opts.env ?? process.env,
+          windowsHide: true,
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch (err) {
+        try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
+        reject(new AppError('LLM_FAILED', err instanceof Error ? err.message : String(err)));
+        return;
+      }
 
-      const stop = (reason: 'timeout' | 'cancelled') => {
-        if (stopReason) return;
-        stopReason = reason;
-        killTree(child);
+      // Best-effort folder removal, callable more than once: right after a kill the OS may still
+      // have the folder locked by the still-dying (or, if the kill genuinely failed, still-live)
+      // process, so a first attempt can silently no-op — retried unconditionally on 'close' below.
+      const cleanup = () => {
+        try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
       };
-      const onAbort = () => stop('cancelled');
-      const timer = setTimeout(() => stop('timeout'), timeoutMs);
-      signal.addEventListener('abort', onAbort, { once: true });
 
       const finish = (fn: () => void) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
+        if (graceTimer) clearTimeout(graceTimer);
         signal.removeEventListener('abort', onAbort);
-        try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
+        cleanup();
         fn();
       };
+
+      const stop = (reason: 'timeout' | 'cancelled') => {
+        if (stopReason) return;
+        stopReason = reason;
+        (this.opts.kill ?? killTree)(child, this.logger);
+        // Belt-and-braces: if the kill itself fails silently (taskkill error, or a grandchild
+        // keeping the stdio pipes open) 'close' may never fire — don't let that freeze the
+        // single-process FIFO queue forever.
+        graceTimer = setTimeout(() => {
+          finish(() =>
+            reject(
+              new AppError(
+                reason === 'timeout' ? 'LLM_TIMEOUT' : 'LLM_CANCELLED',
+                reason === 'timeout' ? `no answer within ${timeoutMs} ms (and did not exit after being killed)` : 'cancelled by the user (and did not exit after being killed)',
+              ),
+            ),
+          );
+        }, this.opts.killGraceMs ?? DEFAULT_KILL_GRACE_MS);
+      };
+      const onAbort = () => stop('cancelled');
+      const timer = setTimeout(() => stop('timeout'), timeoutMs);
+      signal.addEventListener('abort', onAbort, { once: true });
 
       child.stdout.setEncoding('utf8').on('data', (chunk: string) => { stdout += chunk; });
       child.stderr.setEncoding('utf8').on('data', (chunk: string) => { if (stderr.length < 65_536) stderr += chunk; });
@@ -216,13 +264,17 @@ export class ClaudeCodeProvider implements LlmProvider {
       child.on('error', (err: NodeJS.ErrnoException) =>
         finish(() => reject(new AppError(err.code === 'ENOENT' ? 'CLAUDE_NOT_INSTALLED' : 'LLM_FAILED', err.message))),
       );
-      child.on('close', (exitCode) =>
+      child.on('close', (exitCode) => {
+        // Retry cleanup unconditionally: if the promise already settled via the grace timer, the
+        // process has (by definition) only just now actually exited, so this is the first chance
+        // the folder can actually be removed.
+        cleanup();
         finish(() => {
           if (stopReason === 'timeout') reject(new AppError('LLM_TIMEOUT', `no answer within ${timeoutMs} ms`));
           else if (stopReason === 'cancelled') reject(new AppError('LLM_CANCELLED', 'cancelled by the user'));
           else resolve({ stdout, stderr, exitCode });
-        }),
-      );
+        });
+      });
     });
   }
 }

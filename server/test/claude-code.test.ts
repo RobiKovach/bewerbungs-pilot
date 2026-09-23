@@ -3,8 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { ChildProcess } from 'node:child_process';
 import { ClaudeCodeProvider, buildClaudeArgs, resolveClaudeCommand, parseClaudeOutput } from '../src/llm/claude-code.js';
 import { helloTask } from '../src/prompts/hello.js';
+import { AppError } from '../src/errors.js';
 
 const FAKE = fileURLToPath(new URL('./fixtures/fake-claude.mjs', import.meta.url));
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-cc-'));
@@ -95,6 +97,38 @@ describe('ClaudeCodeProvider.run', () => {
     const p = new ClaudeCodeProvider({ tmpRoot: tmp(), timeoutMs: () => 1000, command: null });
     await expect(p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'CLAUDE_NOT_INSTALLED' });
   });
+  it('rejects instead of hanging forever when killing the process does not make it exit, and cleans up once it eventually does', async () => {
+    const tmpRoot = path.join(tmp(), 'tmp');
+    let orphan: ChildProcess | undefined;
+    const p = new ClaudeCodeProvider({
+      tmpRoot,
+      timeoutMs: () => 100,
+      killGraceMs: 300,
+      command: { file: process.execPath, argsPrefix: [FAKE] },
+      env: { ...process.env, FAKE_CLAUDE_MODE: 'hang' },
+      // Simulates taskkill failing / a grandchild keeping stdio open: 'close' never fires in time.
+      kill: (child) => { orphan = child; },
+    });
+    const started = Date.now();
+    await expect(p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_TIMEOUT' });
+    expect(Date.now() - started).toBeLessThan(100 + 300 + 2000); // settled via the grace timer, not by waiting on 'close'
+    // The process our fake "kill" pretended to stop is still genuinely alive, so its run folder is
+    // still on disk (Windows keeps a live process's cwd locked) — the accepted trade-off for not
+    // hanging the queue. Once it actually dies, cleanup still runs and the folder disappears.
+    expect(orphan).toBeDefined();
+    const closed = new Promise<void>((res) => orphan?.once('close', () => res()));
+    orphan?.kill();
+    await closed;
+    await new Promise((res) => setTimeout(res, 100)); // let the retried fs.rmSync in the close handler run
+    expect(fs.readdirSync(tmpRoot)).toEqual([]);
+  });
+  it('reports a spawn-time setup failure (e.g. an invalid file path) as an AppError without leaking the run folder', async () => {
+    const { p, tmpRoot } = provider('ok');
+    await expect(
+      p.run({ ...helloTask('en'), files: ['C:\\bad\u0000path\\x.pdf'] }, signal()),
+    ).rejects.toBeInstanceOf(AppError);
+    expect(fs.readdirSync(tmpRoot)).toEqual([]);
+  });
 });
 
 describe('ClaudeCodeProvider.checkAvailable', () => {
@@ -138,5 +172,13 @@ describe.runIf(process.platform === 'win32')('resolveClaudeCommand (Windows)', (
   });
   it('returns null when nothing is installed', () => {
     expect(resolveClaudeCommand({ PATH: tmp(), USERPROFILE: tmp() })).toBeNull();
+  });
+  it('resolves a relative PATH entry to an absolute path anchored at the current working directory', () => {
+    const dir = tmp();
+    fs.writeFileSync(path.join(dir, 'claude.exe'), '');
+    const rel = path.relative(process.cwd(), dir);
+    const result = resolveClaudeCommand({ PATH: rel, USERPROFILE: tmp() });
+    expect(result?.file).toBe(path.resolve(dir, 'claude.exe'));
+    expect(path.isAbsolute(result!.file)).toBe(true);
   });
 });
