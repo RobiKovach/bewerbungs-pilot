@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
 import { Layout } from './components/Layout';
+import { OnboardingWizard } from './onboarding/OnboardingWizard';
 import { HomePage } from './pages/HomePage';
 import { QuitScreen } from './pages/QuitScreen';
+import { useSettings } from './settings';
 import type { Route } from './types';
 
 function routeFromHash(hash: string): Route {
@@ -11,6 +13,7 @@ function routeFromHash(hash: string): Route {
 }
 
 export function App() {
+  const { settings } = useSettings();
   const [route, setRoute] = useState<Route>(() => routeFromHash(window.location.hash));
   const [quit, setQuit] = useState(false);
 
@@ -25,9 +28,10 @@ export function App() {
     await api.shutdown().catch(() => undefined);
     setQuit(true);
   };
+  const onboarding = !settings.onboarding.completed;
   return (
-    <Layout route={route} onQuit={() => void onQuit()} showNav>
-      <HomePage />
+    <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
+      {onboarding ? <OnboardingWizard /> : <HomePage />}
     </Layout>
   );
 }
