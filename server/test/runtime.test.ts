@@ -1,0 +1,66 @@
+import { describe, it, expect, afterEach } from 'vitest';
+import fs from 'node:fs';
+import net from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
+import type { FastifyInstance } from 'fastify';
+import { findFreePort } from '../src/runtime/port.js';
+import { findRunningInstance } from '../src/runtime/instance.js';
+import { buildApp } from '../src/app.js';
+import { SettingsStore } from '../src/data/settings.js';
+import { FakeProvider } from '../src/llm/fake.js';
+import { LlmQueue } from '../src/llm/queue.js';
+import { nullLogger } from '../src/log.js';
+
+const cleanups: Array<() => Promise<void> | void> = [];
+afterEach(async () => { while (cleanups.length) await cleanups.pop()!(); });
+
+function occupy(port: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer().once('error', reject).listen(port, '127.0.0.1', () => {
+      cleanups.push(() => new Promise<void>((r) => srv.close(() => r())));
+      resolve();
+    });
+  });
+}
+
+describe('findFreePort', () => {
+  it('skips ports that are already in use', async () => {
+    await occupy(45280);
+    await occupy(45281);
+    expect(await findFreePort('127.0.0.1', 45280, 45285)).toBe(45282);
+  });
+  it('fails when every port is taken', async () => {
+    await occupy(45290);
+    await expect(findFreePort('127.0.0.1', 45290, 45290)).rejects.toThrow('NO_FREE_PORT');
+  });
+});
+
+describe('findRunningInstance', () => {
+  const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-inst-'));
+
+  it('returns null without server.json', async () => {
+    expect(await findRunningInstance(path.join(tmp(), 'server.json'))).toBeNull();
+  });
+  it('returns null for a stale file (process gone)', async () => {
+    const file = path.join(tmp(), 'server.json');
+    fs.writeFileSync(file, JSON.stringify({ port: 45299, pid: 2147483646, startedAt: '' }));
+    expect(await findRunningInstance(file)).toBeNull();
+  });
+  it('finds a live instance', async () => {
+    const dir = tmp();
+    const settings = new SettingsStore(path.join(dir, 'settings.json'));
+    settings.load();
+    const provider = new FakeProvider();
+    const port = await findFreePort('127.0.0.1', 45300, 45320);
+    const app: FastifyInstance = await buildApp({
+      settings, provider, queue: new LlmQueue(provider), logger: nullLogger, version: 't', webDist: null,
+      allowedHosts: () => [`127.0.0.1:${port}`], onShutdown: () => {},
+    });
+    await app.listen({ host: '127.0.0.1', port });
+    cleanups.push(() => app.close());
+    const file = path.join(dir, 'server.json');
+    fs.writeFileSync(file, JSON.stringify({ port, pid: process.pid, startedAt: '' }));
+    expect(await findRunningInstance(file)).toBe(port);
+  });
+});
