@@ -61,7 +61,8 @@
     "claudeTest": "Wysyła do Claude krótkie pytanie testowe, aby sprawdzić, czy wszystko działa.",
     "restartIntro": "Pokazuje ponownie kroki powitalne. Twoje dane pozostają bez zmian.",
     "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie.",
-    "profileConfirm": "Kliknij, gdy sprawdzisz każde pole tej sekcji. Do aplikacji używane są tylko sprawdzone sekcje."
+    "profileConfirm": "Kliknij, gdy sprawdzisz każde pole tej sekcji. Do aplikacji używane są tylko sprawdzone sekcje.",
+    "profileCv": "Twoje CV pozostaje na tym komputerze. Claude tylko je czyta, aby wypełnić Twój profil. Nic nie jest zmyślane."
   },
   "settings": {
     "title": "Ustawienia",
@@ -77,6 +78,20 @@
   },
   "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie." },
   "profile": {
+    "cv": {
+      "upload": "Prześlij CV (PDF lub Word)",
+      "replace": "Zastąp CV",
+      "reading": "Claude czyta Twoje CV… To może potrwać do 3 minut."
+    },
+    "start": {
+      "intro": "Twój profil jest podstawą każdej aplikacji. Pozostaje na tym komputerze.",
+      "withCvTitle": "Mam CV",
+      "withCvBody": "Claude je przeczyta i wypełni Twój profil. Potem wszystko sprawdzisz.",
+      "withoutCvTitle": "Nie mam CV",
+      "withoutCvBody": "Wypełnij te same sekcje samodzielnie, krok po kroku.",
+      "withoutCv": "Wypełnij bez CV"
+    },
+    "review": { "intro": "Sprawdź każdą sekcję. Pola oznaczone „AI – proszę sprawdzić” zostały wypełnione przez Claude. Gdy sekcja jest poprawna, kliknij „Wszystko poprawne”." },
     "aiCheck": "AI – proszę sprawdzić",
     "aiHint": "Claude uzupełnił to pole na podstawie Twojego CV. Proszę je sprawdzić.",
     "save": "Zapisz",

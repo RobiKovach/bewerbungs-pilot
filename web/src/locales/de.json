@@ -61,7 +61,8 @@
     "claudeTest": "Sendet eine kurze Testfrage an Claude, um zu prüfen, dass alles funktioniert.",
     "restartIntro": "Zeigt die Willkommensschritte erneut. Ihre Daten bleiben unverändert.",
     "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop.",
-    "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet."
+    "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet.",
+    "profileCv": "Ihr Lebenslauf bleibt auf diesem Computer. Claude liest ihn nur, um Ihr Profil auszufüllen. Nichts wird erfunden."
   },
   "settings": {
     "title": "Einstellungen",
@@ -77,6 +78,20 @@
   },
   "quit": { "title": "BewerbungsPilot wurde beendet", "body": "Sie können diesen Tab jetzt schließen. Um erneut zu starten, verwenden Sie die BewerbungsPilot-Verknüpfung auf Ihrem Desktop." },
   "profile": {
+    "cv": {
+      "upload": "Lebenslauf hochladen (PDF oder Word)",
+      "replace": "Lebenslauf ersetzen",
+      "reading": "Claude liest Ihren Lebenslauf … Das kann bis zu 3 Minuten dauern."
+    },
+    "start": {
+      "intro": "Ihr Profil ist die Grundlage jeder Bewerbung. Es bleibt auf diesem Computer.",
+      "withCvTitle": "Ich habe einen Lebenslauf",
+      "withCvBody": "Claude liest ihn und füllt Ihr Profil aus. Danach prüfen Sie alles.",
+      "withoutCvTitle": "Ich habe keinen Lebenslauf",
+      "withoutCvBody": "Füllen Sie dieselben Abschnitte selbst aus, Schritt für Schritt.",
+      "withoutCv": "Ohne Lebenslauf ausfüllen"
+    },
+    "review": { "intro": "Prüfen Sie jeden Abschnitt. Mit „KI – bitte prüfen“ markierte Felder wurden von Claude ausgefüllt. Wenn ein Abschnitt stimmt, klicken Sie auf „Alles korrekt“." },
     "aiCheck": "KI – bitte prüfen",
     "aiHint": "Claude hat dieses Feld anhand Ihres Lebenslaufs ausgefüllt. Bitte prüfen Sie es.",
     "save": "Speichern",

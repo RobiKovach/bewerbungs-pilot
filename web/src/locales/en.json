@@ -61,7 +61,8 @@
     "claudeTest": "Sends a short test question to Claude to check that everything works.",
     "restartIntro": "Shows the welcome steps again. Your data stays as it is.",
     "quit": "Stops BewerbungsPilot on this computer. Start it again with the desktop shortcut.",
-    "profileConfirm": "Click when you have checked every field of this section. Only checked sections are used for applications."
+    "profileConfirm": "Click when you have checked every field of this section. Only checked sections are used for applications.",
+    "profileCv": "Your CV stays on this computer. Claude only reads it to fill in your profile. Nothing is made up."
   },
   "settings": {
     "title": "Settings",
@@ -77,6 +78,20 @@
   },
   "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop." },
   "profile": {
+    "cv": {
+      "upload": "Upload your CV (PDF or Word)",
+      "replace": "Replace CV",
+      "reading": "Claude is reading your CV… This can take up to 3 minutes."
+    },
+    "start": {
+      "intro": "Your profile is the basis of every application. It stays on this computer.",
+      "withCvTitle": "I have a CV",
+      "withCvBody": "Claude reads it and fills in your profile. Afterwards you check everything.",
+      "withoutCvTitle": "I have no CV",
+      "withoutCvBody": "Fill in the same sections yourself, step by step.",
+      "withoutCv": "Fill in without a CV"
+    },
+    "review": { "intro": "Check each section. Fields marked \"AI – please check\" were filled in by Claude. When a section is right, click \"All correct\"." },
     "aiCheck": "AI – please check",
     "aiHint": "Claude filled in this field from your CV. Please check it.",
     "save": "Save",

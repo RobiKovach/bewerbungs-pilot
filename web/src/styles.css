@@ -76,6 +76,9 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 .badge.ok-badge { color: var(--ok); }
 .badge.warn-badge { color: #7a5200; }
 .btn.small { padding: 0.3rem 0.7rem; font-size: 0.9rem; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1rem; }
+label.btn { cursor: pointer; }
 @media (prefers-color-scheme: dark) {
   .badge.ai { background: #3a2e10; color: #f3d88c; border-color: #6b5520; }
   .badge.warn-badge { color: #f3d88c; }

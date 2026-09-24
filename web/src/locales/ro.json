@@ -61,7 +61,8 @@
     "claudeTest": "Trimite o scurtă întrebare de test către Claude pentru a verifica dacă totul funcționează.",
     "restartIntro": "Afișează din nou pașii de bun venit. Datele dumneavoastră rămân neschimbate.",
     "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop.",
-    "profileConfirm": "Faceți clic după ce ați verificat fiecare câmp din această secțiune. Doar secțiunile verificate sunt folosite pentru candidaturi."
+    "profileConfirm": "Faceți clic după ce ați verificat fiecare câmp din această secțiune. Doar secțiunile verificate sunt folosite pentru candidaturi.",
+    "profileCv": "CV-ul dvs. rămâne pe acest computer. Claude îl citește doar pentru a vă completa profilul. Nimic nu este inventat."
   },
   "settings": {
     "title": "Setări",
@@ -77,6 +78,20 @@
   },
   "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop." },
   "profile": {
+    "cv": {
+      "upload": "Încărcați CV-ul (PDF sau Word)",
+      "replace": "Înlocuiți CV-ul",
+      "reading": "Claude vă citește CV-ul… Poate dura până la 3 minute."
+    },
+    "start": {
+      "intro": "Profilul dvs. este baza fiecărei candidaturi. Rămâne pe acest computer.",
+      "withCvTitle": "Am un CV",
+      "withCvBody": "Claude îl citește și vă completează profilul. După aceea verificați totul.",
+      "withoutCvTitle": "Nu am un CV",
+      "withoutCvBody": "Completați aceleași secțiuni singur, pas cu pas.",
+      "withoutCv": "Completați fără CV"
+    },
+    "review": { "intro": "Verificați fiecare secțiune. Câmpurile marcate „AI – vă rugăm verificați” au fost completate de Claude. Când o secțiune este corectă, faceți clic pe „Totul corect”." },
     "aiCheck": "AI – vă rugăm verificați",
     "aiHint": "Claude a completat acest câmp pe baza CV-ului dumneavoastră. Vă rugăm să îl verificați.",
     "save": "Salvați",
