@@ -5,6 +5,7 @@ import type { Language, Story, StoryInput } from '@bp/shared';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
+import { registerClaudeRoutes } from './claude-routes.js';
 import { registerFileRoutes } from './file-routes.js';
 import { FILE_RULES, type ProfileFiles } from './files.js';
 import { isSectionId, LIMITS, STORY_KINDS, validateSectionData } from './schema.js';
@@ -113,4 +114,5 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
   });
 
   await registerFileRoutes(app, d);
+  await registerClaudeRoutes(app, d);
 }

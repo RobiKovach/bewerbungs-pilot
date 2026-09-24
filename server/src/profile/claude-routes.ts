@@ -1,0 +1,98 @@
+import crypto from 'node:crypto';
+import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { CvResult, SectionId, StoryAnswer } from '@bp/shared';
+import { AppError } from '../errors.js';
+import { docxToText } from './docx.js';
+import type { ProfileRouteDeps } from './routes.js';
+import { CV_SECTION_IDS, LIMITS } from './schema.js';
+import { applyExtraction } from './sections.js';
+import { extractCvTask, MIN_CV_TEXT_CHARS, toSectionData, type CvSource, type ExtractedCv } from './tasks/extract-cv.js';
+import { followUpTask, toQuestions, type FollowUpOutput } from './tasks/follow-up.js';
+import { structureStoriesTask, toStories, type StoriesOutput } from './tasks/structure-stories.js';
+import { receiveUpload } from './upload.js';
+import { toView, withSection } from './view.js';
+
+const newId = () => crypto.randomUUID();
+
+/** Tab closed / "Cancel" clicked before we answered → stop Claude (same as /api/llm/test). */
+function abortOnClose(reply: FastifyReply): AbortSignal {
+  const ctrl = new AbortController();
+  reply.raw.on('close', () => { if (!reply.raw.writableFinished) ctrl.abort(); });
+  return ctrl.signal;
+}
+
+const answersBody = {
+  type: 'object', additionalProperties: false, required: ['answers'],
+  properties: {
+    answers: {
+      type: 'array', maxItems: LIMITS.questions,
+      items: {
+        type: 'object', additionalProperties: false, required: ['questionId', 'answer'],
+        properties: { questionId: { type: 'string', maxLength: 64 }, answer: { type: 'string', maxLength: LIMITS.text } },
+      },
+    },
+  },
+};
+
+export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRouteDeps): Promise<void> {
+  app.post('/api/profile/cv', async (req, reply): Promise<CvResult> => {
+    const signal = abortOnClose(reply);
+    const stored = await receiveUpload(req, d.files, 'cv');
+    try {
+      const file = d.files.pathOf(stored);
+      let source: CvSource = { kind: 'file', path: file };
+      if (stored.ext === '.docx') {
+        const text = (await docxToText(file)).trim();
+        if (text.length < MIN_CV_TEXT_CHARS) throw new AppError('CV_UNREADABLE', `docx has only ${text.length} characters of text`);
+        source = { kind: 'text', text };
+      }
+      const out = await d.queue.run<ExtractedCv>(extractCvTask(source, d.language()), signal);
+      if (!out.readable) throw new AppError('CV_UNREADABLE', 'Claude found no CV content');
+      const data = toSectionData(out, newId);
+      const oldCv = d.store.get().cv;
+      const changed: SectionId[] = [];
+      // Applied to the profile as it is NOW, so edits made while Claude was reading are kept.
+      const profile = d.store.update((p) => {
+        changed.length = 0;
+        for (const id of CV_SECTION_IDS) {
+          withSection(p, id, (s) => {
+            const r = applyExtraction(s, data[id]);
+            if (r.changed) changed.push(id);
+            return r.section;
+          });
+        }
+        p.cv = stored;
+        if (p.wizard.step === 1) p.wizard.step = 2;
+      });
+      if (oldCv) d.files.remove(oldCv);
+      return { ...toView(profile), changedSections: changed };
+    } catch (err) {
+      d.files.remove(stored);
+      throw err;
+    }
+  });
+
+  app.post('/api/profile/followups', async (_req, reply) => {
+    const signal = abortOnClose(reply);
+    const out = await d.queue.run<FollowUpOutput>(followUpTask(d.store.get(), d.language()), signal);
+    return toView(d.store.update((p) => { p.pendingQuestions = toQuestions(out, newId); }));
+  });
+
+  app.post('/api/profile/stories/structure', { schema: { body: answersBody } }, async (req, reply) => {
+    const signal = abortOnClose(reply);
+    const { answers } = req.body as { answers: StoryAnswer[] };
+    const before = d.store.get();
+    const answered = answers.filter((a) => a.answer.trim()).map((a) => {
+      const q = before.pendingQuestions.find((x) => x.id === a.questionId);
+      if (!q) throw new AppError('BAD_REQUEST', `unknown question ${a.questionId}`);
+      return { question: q.question, answer: a.answer.trim() };
+    });
+    if (answered.length === 0) throw new AppError('BAD_REQUEST', 'no answers to turn into stories');
+    const out = await d.queue.run<StoriesOutput>(structureStoriesTask(answered, before.neverMention, d.language()), signal);
+    return toView(d.store.update((p) => {
+      const room = Math.max(0, LIMITS.stories - p.stories.length);
+      p.stories.push(...toStories(out, newId).slice(0, room));
+      p.pendingQuestions = [];
+    }));
+  });
+}

@@ -1,0 +1,180 @@
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
+import { AppError } from '../src/errors.js';
+import { H, makeApp } from './helpers/app.js';
+import { makeDocx, multipartBody, PDF_BYTES } from './helpers/files.js';
+import { SAMPLE_CV, scriptedClaude } from './helpers/profile.js';
+
+type App = Awaited<ReturnType<typeof makeApp>>['app'];
+const uploadCv = (app: App, name: string, bytes: Buffer) => app.inject({ method: 'POST', url: '/api/profile/cv', ...multipartBody(name, bytes) });
+const tick = (ms = 10) => new Promise((r) => setTimeout(r, ms));
+const CV_SECTIONS = ['personal', 'education', 'experience', 'skills', 'languages'];
+
+describe('POST /api/profile/cv', () => {
+  it('reads a PDF CV: sections filled and marked, wizard moves on, Claude gets only a copy by generated name', async () => {
+    const { app, provider, filesDir } = await makeApp({ provider: scriptedClaude({ cv: SAMPLE_CV }) });
+    const res = await uploadCv(app, 'Lebenslauf Max.pdf', PDF_BYTES);
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.changedSections).toEqual(CV_SECTIONS);
+    expect(body.profile.sections.personal.data).toMatchObject({ fullName: 'Max Mustermann', birthDate: '1990-03-15' });
+    expect(body.profile.sections.personal.aiFields).toContain('fullName');
+    expect(body.profile.sections.personal.confirmedAt).toBeNull();
+    expect(body.profile.sections.wishes.aiFields).toEqual([]);
+    expect(body.profile.wizard.step).toBe(2);
+    expect(body.profile.cv).toMatchObject({ ext: '.pdf', originalName: 'Lebenslauf Max.pdf' });
+    const task = provider.calls[0];
+    expect(task.files).toEqual([path.join(filesDir, `${body.profile.cv.id}.pdf`)]);
+    expect(task.prompt).not.toContain('Lebenslauf Max');
+    expect(task.replyLanguage).toBe('en');
+  });
+
+  it('sends DOCX text fenced, not the file', async () => {
+    const { app, provider } = await makeApp({ provider: scriptedClaude({ cv: SAMPLE_CV }) });
+    const res = await uploadCv(app, 'cv.docx', makeDocx(['Max Mustermann', 'Webentwickler bei Beispiel GmbH seit 2018']));
+    expect(res.statusCode).toBe(200);
+    expect(provider.calls[0].files).toBeUndefined();
+    expect(provider.calls[0].prompt).toMatch(/<<<UNTRUSTED_CV_[0-9a-f]{16}>>>[\s\S]*Webentwickler bei Beispiel GmbH/);
+  });
+
+  it('refuses a DOCX without text before asking Claude, and keeps nothing', async () => {
+    const { app, provider, filesDir, profileStore } = await makeApp({ provider: scriptedClaude({ cv: SAMPLE_CV }) });
+    const res = await uploadCv(app, 'scan.docx', makeDocx(['']));
+    expect(res.statusCode).toBe(422);
+    expect(res.json().error.code).toBe('CV_UNREADABLE');
+    expect(provider.calls).toHaveLength(0);
+    expect(fs.readdirSync(filesDir)).toEqual([]);
+    expect(profileStore.get().cv).toBeNull();
+  });
+
+  it('reports CV_UNREADABLE when Claude finds no CV, and keeps nothing', async () => {
+    const { app, filesDir, profileStore } = await makeApp({ provider: scriptedClaude({ cv: { ...SAMPLE_CV, readable: false } }) });
+    const res = await uploadCv(app, 'holiday.pdf', PDF_BYTES);
+    expect(res.statusCode).toBe(422);
+    expect(fs.readdirSync(filesDir)).toEqual([]);
+    expect(profileStore.get().sections.personal.data.fullName).toBe('');
+  });
+
+  it('passes Claude errors on and deletes the upload', async () => {
+    const { app, filesDir } = await makeApp({ provider: scriptedClaude({ cv: () => { throw new AppError('LLM_TIMEOUT', 'slow'); } }) });
+    const res = await uploadCv(app, 'cv.pdf', PDF_BYTES);
+    expect(res.statusCode).toBe(504);
+    expect(fs.readdirSync(filesDir)).toEqual([]);
+  });
+
+  it('a replaced CV resets only the sections it changed; stories and the old file are handled', async () => {
+    let cv = SAMPLE_CV;
+    const { app, filesDir } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    const first = (await uploadCv(app, 'cv1.pdf', PDF_BYTES)).json();
+    await app.inject({ method: 'POST', url: '/api/profile/sections/personal/confirm', headers: H, payload: {} });
+    await app.inject({ method: 'POST', url: '/api/profile/stories', headers: H, payload: { title: 'T', text: 'X', kind: 'work', disclosure: 'ok' } });
+    cv = { ...SAMPLE_CV, experience: [...SAMPLE_CV.experience, { jobTitle: 'Teamleiter', employer: 'Neu AG', city: '', country: '', from: '2023', to: '', description: '' }] };
+    const second = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json();
+    expect(second.changedSections).toEqual(['experience']);
+    expect(second.profile.sections.personal.confirmedAt).not.toBeNull();
+    expect(second.profile.sections.experience.confirmedAt).toBeNull();
+    expect(second.profile.stories).toHaveLength(1);
+    expect(fs.readdirSync(filesDir)).toEqual([`${second.profile.cv.id}.pdf`]);
+    expect(second.profile.cv.id).not.toBe(first.profile.cv.id);
+  });
+
+  it('keeps an edit the person made while Claude was reading', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    const { app, provider, profileStore } = await makeApp({ provider: scriptedClaude({ cv: async () => { await gate; return SAMPLE_CV; } }) });
+    const pending = uploadCv(app, 'cv.pdf', PDF_BYTES);
+    while (provider.calls.length === 0) await tick();
+    const wishes = { ...profileStore.get().sections.wishes.data, jobTitles: ['Webentwickler'] };
+    const edit = await app.inject({ method: 'PUT', url: '/api/profile/sections/wishes', headers: H, payload: { data: wishes } });
+    expect(edit.statusCode).toBe(200);
+    release();
+    const res = await pending;
+    expect(res.statusCode).toBe(200);
+    expect(res.json().profile.sections.wishes.data.jobTitles).toEqual(['Webentwickler']);
+    expect(res.json().profile.sections.personal.data.fullName).toBe('Max Mustermann');
+  });
+
+  it('stops Claude and keeps nothing when the person cancels', async () => {
+    let aborted = false;
+    const provider = scriptedClaude({
+      cv: (_t: unknown, signal: AbortSignal) => new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => { aborted = true; reject(new AppError('LLM_CANCELLED', 'test')); });
+      }),
+    });
+    let port = 0;
+    const { app, filesDir, profileStore } = await makeApp({ provider, allowedHosts: () => [`127.0.0.1:${port}`] });
+    await app.listen({ host: '127.0.0.1', port: 0 });
+    const addr = app.server.address();
+    if (!addr || typeof addr === 'string') throw new Error('expected a network address');
+    port = addr.port;
+    const { payload, headers } = multipartBody('cv.pdf', PDF_BYTES);
+    await new Promise<void>((resolve) => {
+      const req = http.request({ host: '127.0.0.1', port, path: '/api/profile/cv', method: 'POST', headers });
+      req.on('error', () => { /* expected: we destroy the socket ourselves */ });
+      req.end(payload);
+      setTimeout(() => { req.destroy(); resolve(); }, 150);
+    });
+    await tick(100);
+    expect(aborted).toBe(true);
+    expect(fs.readdirSync(filesDir)).toEqual([]);
+    expect(profileStore.get().cv).toBeNull();
+    await app.close();
+  });
+});
+
+describe('follow-up questions and stories', () => {
+  const QUESTIONS = { questions: [
+    { question: 'What project are you proud of?', why: 'Stories beat lists.' },
+    { question: 'Who was it for?', why: 'Clients matter.' },
+    { question: 'Anything we must never mention?', why: 'Your limits.' },
+  ] };
+
+  it('stores the questions Claude asked', async () => {
+    const { app, provider } = await makeApp({ provider: scriptedClaude({ questions: QUESTIONS }) });
+    const res = await app.inject({ method: 'POST', url: '/api/profile/followups', headers: H, payload: {} });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().profile.pendingQuestions.map((q: { question: string }) => q.question)).toEqual(QUESTIONS.questions.map((q) => q.question));
+    expect(provider.calls[0].prompt).toMatch(/<<<UNTRUSTED_PROFILE_/);
+  });
+
+  it('turns answers into unconfirmed stories and forgets the questions', async () => {
+    const provider = scriptedClaude({
+      questions: QUESTIONS,
+      stories: { stories: [{ title: 'Bakery website', text: 'I built a website for a small bakery.', kind: 'client', disclosure: 'ok' }] },
+    });
+    const { app } = await makeApp({ provider });
+    await app.inject({ method: 'PUT', url: '/api/profile/never-mention', headers: H, payload: ['Kunde X'] });
+    const asked = (await app.inject({ method: 'POST', url: '/api/profile/followups', headers: H, payload: {} })).json();
+    const [q1, q2] = asked.profile.pendingQuestions;
+    const res = await app.inject({
+      method: 'POST', url: '/api/profile/stories/structure', headers: H,
+      payload: { answers: [{ questionId: q1.id, answer: 'A website for a bakery' }, { questionId: q2.id, answer: '   ' }] },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().profile.stories).toEqual([expect.objectContaining({ title: 'Bakery website', confirmed: false })]);
+    expect(res.json().profile.pendingQuestions).toEqual([]);
+    const prompt = provider.calls[1].prompt;
+    expect(prompt).toContain('A website for a bakery');
+    expect(prompt).not.toContain('Who was it for?');
+    expect(prompt).toMatch(/<<<UNTRUSTED_NEVER_MENTION_[0-9a-f]{16}>>>[\s\S]*Kunde X/);
+  });
+
+  it('refuses unknown questions and empty answers without calling Claude', async () => {
+    const provider = scriptedClaude({ questions: QUESTIONS, stories: { stories: [] } });
+    const { app } = await makeApp({ provider });
+    const q = (await app.inject({ method: 'POST', url: '/api/profile/followups', headers: H, payload: {} })).json().profile.pendingQuestions[0];
+    const unknown = await app.inject({ method: 'POST', url: '/api/profile/stories/structure', headers: H, payload: { answers: [{ questionId: 'nope', answer: 'x' }] } });
+    expect(unknown.statusCode).toBe(400);
+    const empty = await app.inject({ method: 'POST', url: '/api/profile/stories/structure', headers: H, payload: { answers: [{ questionId: q.id, answer: '' }] } });
+    expect(empty.statusCode).toBe(400);
+    expect(provider.calls).toHaveLength(1);
+  });
+
+  it('reading the profile never calls Claude', async () => {
+    const { app, provider } = await makeApp({ provider: scriptedClaude({}) });
+    await app.inject({ method: 'GET', url: '/api/profile' });
+    expect(provider.calls).toHaveLength(0);
+  });
+});
