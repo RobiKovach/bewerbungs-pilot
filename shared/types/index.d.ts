@@ -2,3 +2,4 @@
 // extra package and `npm ci` in the installer is unaffected. Always import with `import type` (eslint enforces it).
 export type * from './settings.js';
 export type * from './errors.js';
+export type * from './profile.js';
