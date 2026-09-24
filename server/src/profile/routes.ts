@@ -1,10 +1,12 @@
 import crypto from 'node:crypto';
+import multipart from '@fastify/multipart';
 import type { FastifyInstance } from 'fastify';
 import type { Language, Story, StoryInput } from '@bp/shared';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
-import type { ProfileFiles } from './files.js';
+import { registerFileRoutes } from './file-routes.js';
+import { FILE_RULES, type ProfileFiles } from './files.js';
 import { isSectionId, LIMITS, STORY_KINDS, validateSectionData } from './schema.js';
 import { applyHumanEdit, confirmSection } from './sections.js';
 import type { ProfileStore } from './store.js';
@@ -46,6 +48,14 @@ function sectionParam(params: unknown) {
 }
 
 export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRouteDeps): Promise<void> {
+  // One file per request; per-kind size limits are set in receiveUpload. defCharset keeps names like
+  // "Резюме.pdf" intact (the installed @fastify/multipart's BusboyConfig has no defParamCharset option;
+  // defCharset already defaults to 'utf8', named here to keep the intent explicit).
+  await app.register(multipart, {
+    defCharset: 'utf8',
+    limits: { fileSize: FILE_RULES.cv.maxBytes, files: 1, fields: 0, parts: 1 },
+  });
+
   app.get('/api/profile', async () => toView(d.store.get()));
 
   app.put('/api/profile/wizard', { schema: { body: wizardBody } }, async (req) => {
@@ -101,4 +111,6 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
     const items = [...new Set((req.body as string[]).map((s) => s.trim()).filter(Boolean))];
     return toView(d.store.update((p) => { p.neverMention = items; }));
   });
+
+  await registerFileRoutes(app, d);
 }

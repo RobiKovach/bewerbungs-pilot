@@ -58,6 +58,20 @@ export function makeZip(entries: Record<string, string>): Buffer {
 
 const xmlEscape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/** A multipart/form-data body with one file in the field "file", like the browser's FormData sends it. */
+export function multipartBody(filename: string, content: Buffer, contentType = 'application/octet-stream') {
+  const boundary = `----bp${Math.random().toString(16).slice(2)}`;
+  const head = Buffer.from(
+    `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${contentType}\r\n\r\n`,
+    'utf8',
+  );
+  const tail = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
+  return {
+    payload: Buffer.concat([head, content, tail]),
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-bp-client': '1' },
+  };
+}
+
 /** The smallest DOCX Word and mammoth accept: one paragraph per string. */
 export function makeDocx(paragraphs: string[]): Buffer {
   const body = paragraphs.map((p) => `<w:p><w:r><w:t xml:space="preserve">${xmlEscape(p)}</w:t></w:r></w:p>`).join('');
