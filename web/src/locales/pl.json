@@ -62,7 +62,8 @@
     "restartIntro": "Pokazuje ponownie kroki powitalne. Twoje dane pozostają bez zmian.",
     "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie.",
     "profileConfirm": "Kliknij, gdy sprawdzisz każde pole tej sekcji. Do aplikacji używane są tylko sprawdzone sekcje.",
-    "profileCv": "Twoje CV pozostaje na tym komputerze. Claude tylko je czyta, aby wypełnić Twój profil. Nic nie jest zmyślane."
+    "profileCv": "Twoje CV pozostaje na tym komputerze. Claude tylko je czyta, aby wypełnić Twój profil. Nic nie jest zmyślane.",
+    "profileAsk": "Claude tylko pyta — nigdy nic nie zmyśla. Twoje odpowiedzi stają się historiami, które sprawdzasz i możesz zmienić."
   },
   "settings": {
     "title": "Ustawienia",
@@ -131,7 +132,34 @@
       "notes": "Cokolwiek innego, co jest dla Ciebie ważne (opcjonalnie)"
     },
     "remote": { "any": "Nieważne", "onsite": "W miejscu pracy", "hybrid": "Częściowo z domu", "remote": "Tylko z domu" },
-    "employment": { "fulltime": "Pełny etat", "parttime": "Niepełny etat", "minijob": "Minijob", "apprenticeship": "Przyuczenie do zawodu (Ausbildung)", "internship": "Staż" }
+    "employment": { "fulltime": "Pełny etat", "parttime": "Niepełny etat", "minijob": "Minijob", "apprenticeship": "Przyuczenie do zawodu (Ausbildung)", "internship": "Staż" },
+    "stories": {
+      "intro": "Dobry list motywacyjny nie powtarza CV — opowiada jedną lub dwie prawdziwe historie o tym, co robiłeś/robiłaś. Claude zada kilka pytań, aby je znaleźć.",
+      "askIntro": "Claude spojrzy na Twój profil i zada od 3 do 7 krótkich, osobistych pytań.",
+      "ask": "Zadaj mi pytania",
+      "asking": "Claude wymyśla pytania…",
+      "answerIntro": "Odpowiadaj w dowolnym języku, własnymi słowami. Aby pominąć pytanie, zostaw je puste.",
+      "structure": "Zamień moje odpowiedzi w historie",
+      "structuring": "Claude pisze Twoje historie…",
+      "listTitle": "Twoje historie",
+      "new": "Nowe — proszę sprawdzić",
+      "confirm": "To się zgadza",
+      "save": "Zapisz",
+      "delete": "Usuń",
+      "reallyDelete": "Na pewno usunąć?",
+      "title": "Tytuł",
+      "text": "Historia",
+      "kind": "Gdzie to się wydarzyło",
+      "disclosure": "Czy pracodawcy mogą się o tym dowiedzieć?",
+      "writeOwn": "Napisz historię samodzielnie",
+      "addOwn": "Dodaj historię",
+      "neverTitle": "Nigdy nie wspominać",
+      "neverHint": "Rzeczy, które nigdy nie mogą pojawić się w aplikacji — jedna na linię (na przykład nazwa klienta).",
+      "neverSave": "Zapisz listę",
+      "saved": "Zapisano"
+    },
+    "storyKind": { "client": "Dla klienta", "work": "W pracy", "training": "Podczas nauki lub studiów", "personal": "Osobisty projekt lub życie" },
+    "disclosure": { "ok": "Tak, można o tym mówić", "never": "Nie, nigdy nie mówić pracodawcom" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },

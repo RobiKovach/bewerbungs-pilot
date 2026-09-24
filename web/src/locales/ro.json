@@ -62,7 +62,8 @@
     "restartIntro": "Afișează din nou pașii de bun venit. Datele dumneavoastră rămân neschimbate.",
     "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop.",
     "profileConfirm": "Faceți clic după ce ați verificat fiecare câmp din această secțiune. Doar secțiunile verificate sunt folosite pentru candidaturi.",
-    "profileCv": "CV-ul dvs. rămâne pe acest computer. Claude îl citește doar pentru a vă completa profilul. Nimic nu este inventat."
+    "profileCv": "CV-ul dvs. rămâne pe acest computer. Claude îl citește doar pentru a vă completa profilul. Nimic nu este inventat.",
+    "profileAsk": "Claude doar întreabă — nu inventează niciodată nimic. Răspunsurile dumneavoastră devin povești pe care le verificați și le puteți schimba."
   },
   "settings": {
     "title": "Setări",
@@ -131,7 +132,34 @@
       "notes": "Orice altceva contează pentru dumneavoastră (opțional)"
     },
     "remote": { "any": "Nu contează", "onsite": "La locul de muncă", "hybrid": "Parțial de acasă", "remote": "Doar de acasă" },
-    "employment": { "fulltime": "Normă întreagă", "parttime": "Normă parțială", "minijob": "Minijob", "apprenticeship": "Ucenicie (Ausbildung)", "internship": "Stagiu" }
+    "employment": { "fulltime": "Normă întreagă", "parttime": "Normă parțială", "minijob": "Minijob", "apprenticeship": "Ucenicie (Ausbildung)", "internship": "Stagiu" },
+    "stories": {
+      "intro": "O scrisoare de intenție bună nu repetă CV-ul — spune una sau două povești adevărate despre ce ați făcut. Claude vă pune câteva întrebări pentru a le găsi.",
+      "askIntro": "Claude se uită la profilul dumneavoastră și vă pune 3 până la 7 întrebări scurte, personale.",
+      "ask": "Puneți-mi întrebări",
+      "asking": "Claude se gândește la întrebări…",
+      "answerIntro": "Răspundeți în orice limbă, cu propriile cuvinte. Pentru a sări peste o întrebare, lăsați-o goală.",
+      "structure": "Transformați răspunsurile mele în povești",
+      "structuring": "Claude vă scrie poveștile…",
+      "listTitle": "Poveștile dumneavoastră",
+      "new": "Nou — vă rugăm verificați",
+      "confirm": "Așa este corect",
+      "save": "Salvați",
+      "delete": "Ștergeți",
+      "reallyDelete": "Sigur ștergeți?",
+      "title": "Titlu",
+      "text": "Poveste",
+      "kind": "Unde s-a întâmplat",
+      "disclosure": "Pot afla angajatorii despre asta?",
+      "writeOwn": "Scrieți singur/singură o poveste",
+      "addOwn": "Adăugați povestea",
+      "neverTitle": "Nu menționați niciodată",
+      "neverHint": "Lucruri care nu trebuie să apară niciodată într-o candidatură — câte unul pe rând (de exemplu numele unui client).",
+      "neverSave": "Salvați lista",
+      "saved": "Salvat"
+    },
+    "storyKind": { "client": "Pentru un client", "work": "La locul de muncă", "training": "În timpul formării sau studiilor", "personal": "Proiect personal sau viață personală" },
+    "disclosure": { "ok": "Da, poate fi spus", "never": "Nu, niciodată angajatorilor" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },

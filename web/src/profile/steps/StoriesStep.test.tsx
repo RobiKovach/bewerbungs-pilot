@@ -1,0 +1,94 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { mockFetch, type RouteHandler } from '../../test/fetchMock';
+import { emptyProfile, profileWith, viewOf } from '../../test/profileFixtures';
+import type { Profile } from '../../types';
+import { ProfileProvider } from '../ProfileContext';
+import { StoriesStep } from './StoriesStep';
+
+const QUESTIONS = [
+  { id: 'q1', question: 'What project are you proud of?', why: 'Stories beat lists.' },
+  { id: 'q2', question: 'Who was it for?', why: 'Clients matter.' },
+];
+const asked = profileWith((p) => { p.pendingQuestions = QUESTIONS; });
+const story = { id: 's1', title: 'Bakery website', text: 'I built a website for a bakery.', kind: 'client' as const, disclosure: 'ok' as const, confirmed: false };
+const withStory = profileWith((p) => { p.stories = [story]; });
+
+function setup(profile: Profile, routes: Record<string, RouteHandler> = {}) {
+  const f = mockFetch({ 'GET /api/profile': () => ({ body: viewOf(profile) }), ...routes });
+  const onNext = vi.fn();
+  render(<ProfileProvider><StoriesStep onNext={onNext} /></ProfileProvider>);
+  return { f, onNext, user: userEvent.setup() };
+}
+const bodyOf = (f: ReturnType<typeof mockFetch>, key: string) => {
+  const call = f.mock.calls.find((c) => `${(c[1] as RequestInit | undefined)?.method ?? 'GET'} ${c[0]}` === key)!;
+  return JSON.parse(String((call[1] as RequestInit).body));
+};
+
+describe('StoriesStep', () => {
+  it('asks Claude for questions and shows them', async () => {
+    const { user } = setup(emptyProfile(), { 'POST /api/profile/followups': () => ({ body: viewOf(asked) }) });
+    await user.click(await screen.findByRole('button', { name: 'Ask me questions' }));
+    expect(await screen.findByLabelText('What project are you proud of?')).toBeInTheDocument();
+    expect(screen.getByText('Stories beat lists.')).toBeInTheDocument();
+  });
+
+  it('sends only answered questions and shows the new stories to check', async () => {
+    const { f, user } = setup(asked, { 'POST /api/profile/stories/structure': () => ({ body: viewOf(withStory) }) });
+    await user.type(await screen.findByLabelText('What project are you proud of?'), 'A website for a bakery');
+    await user.click(screen.getByRole('button', { name: 'Turn my answers into stories' }));
+    expect(await screen.findByText('New — please check')).toBeInTheDocument();
+    expect(bodyOf(f, 'POST /api/profile/stories/structure')).toEqual({ answers: [{ questionId: 'q1', answer: 'A website for a bakery' }] });
+  });
+
+  it('keeps the answers when Claude fails', async () => {
+    const { user } = setup(asked, {
+      'POST /api/profile/stories/structure': () => ({ status: 504, body: { error: { code: 'LLM_TIMEOUT', detailsForLog: 'slow' } } }),
+    });
+    await user.type(await screen.findByLabelText('Who was it for?'), 'A bakery in Dresden');
+    await user.click(screen.getByRole('button', { name: 'Turn my answers into stories' }));
+    expect(await screen.findByText('Claude took too long to answer.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Who was it for?')).toHaveValue('A bakery in Dresden');
+  });
+
+  it('confirms a story', async () => {
+    const { f, user } = setup(withStory, { 'PUT /api/profile/stories/s1': () => ({ body: viewOf(profileWith((p) => { p.stories = [{ ...story, confirmed: true }]; })) }) });
+    await user.click(await screen.findByRole('button', { name: 'This is right' }));
+    expect(bodyOf(f, 'PUT /api/profile/stories/s1')).toEqual({ title: story.title, text: story.text, kind: 'client', disclosure: 'ok', confirmed: true });
+    expect(await screen.findByRole('button', { name: 'Delete' })).toBeInTheDocument();
+    expect(screen.queryByText('New — please check')).toBeNull();
+  });
+
+  it('asks once more before deleting a story', async () => {
+    const { f, user } = setup(withStory, { 'DELETE /api/profile/stories/s1': () => ({ body: viewOf(emptyProfile()) }) });
+    await user.click(await screen.findByRole('button', { name: 'Delete' }));
+    expect(f.mock.calls.some((c) => c[0] === '/api/profile/stories/s1')).toBe(false);
+    expect(screen.getByDisplayValue('Bakery website')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Really delete?' }));
+    await waitFor(() => expect(screen.queryByDisplayValue('Bakery website')).toBeNull());
+  });
+
+  it('lets the person write a story themselves', async () => {
+    const { f, user } = setup(emptyProfile(), { 'POST /api/profile/stories': () => ({ body: viewOf(profileWith((p) => { p.stories = [{ ...story, confirmed: true }]; })) }) });
+    await user.click(await screen.findByRole('button', { name: 'Write a story yourself' }));
+    await user.type(screen.getByLabelText('Title'), 'Bakery website');
+    await user.type(screen.getByLabelText('Story'), 'I built a website for a bakery.');
+    await user.click(screen.getByRole('button', { name: 'Add story' }));
+    expect(bodyOf(f, 'POST /api/profile/stories')).toEqual({ title: 'Bakery website', text: 'I built a website for a bakery.', kind: 'work', disclosure: 'ok' });
+  });
+
+  it('saves the never-mention list', async () => {
+    const { f, user } = setup(emptyProfile(), { 'PUT /api/profile/never-mention': () => ({ body: viewOf(profileWith((p) => { p.neverMention = ['Kunde X', 'Projekt Y']; })) }) });
+    await user.type(await screen.findByLabelText('Never mention'), 'Kunde X\n  \nProjekt Y ');
+    await user.click(screen.getByRole('button', { name: 'Save list' }));
+    expect(bodyOf(f, 'PUT /api/profile/never-mention')).toEqual(['Kunde X', 'Projekt Y']);
+    expect(await screen.findByText(/Saved/)).toBeInTheDocument();
+  });
+
+  it('moves on with Next', async () => {
+    const { onNext, user } = setup(emptyProfile());
+    await user.click(await screen.findByRole('button', { name: 'Next' }));
+    expect(onNext).toHaveBeenCalledOnce();
+  });
+});

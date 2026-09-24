@@ -62,7 +62,8 @@
     "restartIntro": "Zeigt die Willkommensschritte erneut. Ihre Daten bleiben unverändert.",
     "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop.",
     "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet.",
-    "profileCv": "Ihr Lebenslauf bleibt auf diesem Computer. Claude liest ihn nur, um Ihr Profil auszufüllen. Nichts wird erfunden."
+    "profileCv": "Ihr Lebenslauf bleibt auf diesem Computer. Claude liest ihn nur, um Ihr Profil auszufüllen. Nichts wird erfunden.",
+    "profileAsk": "Claude fragt nur — es erfindet nie etwas. Aus Ihren Antworten werden Geschichten, die Sie prüfen und ändern können."
   },
   "settings": {
     "title": "Einstellungen",
@@ -131,7 +132,34 @@
       "notes": "Alles andere, was Ihnen wichtig ist (optional)"
     },
     "remote": { "any": "Egal", "onsite": "Am Arbeitsplatz", "hybrid": "Teilweise von zu Hause", "remote": "Nur von zu Hause" },
-    "employment": { "fulltime": "Vollzeit", "parttime": "Teilzeit", "minijob": "Minijob", "apprenticeship": "Ausbildung", "internship": "Praktikum" }
+    "employment": { "fulltime": "Vollzeit", "parttime": "Teilzeit", "minijob": "Minijob", "apprenticeship": "Ausbildung", "internship": "Praktikum" },
+    "stories": {
+      "intro": "Ein gutes Anschreiben wiederholt nicht Ihren Lebenslauf — es erzählt ein oder zwei wahre Geschichten darüber, was Sie getan haben. Claude stellt ein paar Fragen, um sie zu finden.",
+      "askIntro": "Claude sieht sich Ihr Profil an und stellt 3 bis 7 kurze, persönliche Fragen.",
+      "ask": "Fragen Sie mich",
+      "asking": "Claude überlegt sich Fragen…",
+      "answerIntro": "Antworten Sie in beliebiger Sprache, mit Ihren eigenen Worten. Um eine Frage zu überspringen, lassen Sie sie leer.",
+      "structure": "Meine Antworten in Geschichten verwandeln",
+      "structuring": "Claude schreibt Ihre Geschichten…",
+      "listTitle": "Ihre Geschichten",
+      "new": "Neu — bitte prüfen",
+      "confirm": "Das stimmt so",
+      "save": "Speichern",
+      "delete": "Löschen",
+      "reallyDelete": "Wirklich löschen?",
+      "title": "Titel",
+      "text": "Geschichte",
+      "kind": "Wo es geschah",
+      "disclosure": "Dürfen Arbeitgeber davon erfahren?",
+      "writeOwn": "Selbst eine Geschichte schreiben",
+      "addOwn": "Geschichte hinzufügen",
+      "neverTitle": "Nie erwähnen",
+      "neverHint": "Dinge, die in einer Bewerbung nie vorkommen dürfen — eines pro Zeile (zum Beispiel der Name eines Kunden).",
+      "neverSave": "Liste speichern",
+      "saved": "Gespeichert"
+    },
+    "storyKind": { "client": "Für einen Kunden", "work": "Bei der Arbeit", "training": "In Ausbildung oder Studium", "personal": "Privates Projekt oder Leben" },
+    "disclosure": { "ok": "Ja, darf erzählt werden", "never": "Nein, nie den Arbeitgebern erzählen" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },

@@ -62,7 +62,8 @@
     "restartIntro": "Shows the welcome steps again. Your data stays as it is.",
     "quit": "Stops BewerbungsPilot on this computer. Start it again with the desktop shortcut.",
     "profileConfirm": "Click when you have checked every field of this section. Only checked sections are used for applications.",
-    "profileCv": "Your CV stays on this computer. Claude only reads it to fill in your profile. Nothing is made up."
+    "profileCv": "Your CV stays on this computer. Claude only reads it to fill in your profile. Nothing is made up.",
+    "profileAsk": "Claude only asks — it never makes anything up. Your answers become stories that you check and can change."
   },
   "settings": {
     "title": "Settings",
@@ -131,7 +132,34 @@
       "notes": "Anything else that matters to you (optional)"
     },
     "remote": { "any": "Doesn't matter", "onsite": "At the workplace", "hybrid": "Partly from home", "remote": "Only from home" },
-    "employment": { "fulltime": "Full-time", "parttime": "Part-time", "minijob": "Minijob", "apprenticeship": "Apprenticeship (Ausbildung)", "internship": "Internship" }
+    "employment": { "fulltime": "Full-time", "parttime": "Part-time", "minijob": "Minijob", "apprenticeship": "Apprenticeship (Ausbildung)", "internship": "Internship" },
+    "stories": {
+      "intro": "A good cover letter does not repeat your CV — it tells one or two true stories about what you did. Claude asks a few questions to find them.",
+      "askIntro": "Claude looks at your profile and asks 3 to 7 short, personal questions.",
+      "ask": "Ask me questions",
+      "asking": "Claude is thinking of questions…",
+      "answerIntro": "Answer in any language, in your own words. To skip a question, leave it empty.",
+      "structure": "Turn my answers into stories",
+      "structuring": "Claude is writing your stories…",
+      "listTitle": "Your stories",
+      "new": "New — please check",
+      "confirm": "This is right",
+      "save": "Save",
+      "delete": "Delete",
+      "reallyDelete": "Really delete?",
+      "title": "Title",
+      "text": "Story",
+      "kind": "Where it happened",
+      "disclosure": "May employers hear it?",
+      "writeOwn": "Write a story yourself",
+      "addOwn": "Add story",
+      "neverTitle": "Never mention",
+      "neverHint": "Things that must never appear in an application — one per line (for example a client's name).",
+      "neverSave": "Save list",
+      "saved": "Saved"
+    },
+    "storyKind": { "client": "For a client", "work": "At work", "training": "In training or studies", "personal": "Personal project or life" },
+    "disclosure": { "ok": "Yes, may be told", "never": "No, never tell employers" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code is not installed.", "hint": "Run the BewerbungsPilot installer again — it installs Claude Code for you." },
