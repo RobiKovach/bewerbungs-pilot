@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import type { FastifyInstance } from 'fastify';
 import type { Profile, StoredFile } from '@bp/shared';
 import { AppError } from '../errors.js';
-import { CONTENT_TYPES, FILE_ID_PATTERN, MAX_DOCUMENTS } from './files.js';
+import { CONTENT_TYPES, FILE_ID_PATTERN, MAX_DOCUMENTS, removeQuietly } from './files.js';
 import type { ProfileRouteDeps } from './routes.js';
 import { LIMITS } from './schema.js';
 import { receiveUpload } from './upload.js';
@@ -35,8 +35,9 @@ export async function registerFileRoutes(app: FastifyInstance, d: ProfileRouteDe
     }
     const stored = await receiveUpload(req, d.files, q.kind);
     const oldPhoto = q.kind === 'photo' ? d.store.get().photo : null;
+    let profile: Profile;
     try {
-      const profile = d.store.update((p) => {
+      profile = d.store.update((p) => {
         if (q.kind === 'photo') {
           p.photo = stored;
           return;
@@ -44,12 +45,16 @@ export async function registerFileRoutes(app: FastifyInstance, d: ProfileRouteDe
         if (p.documents.length >= MAX_DOCUMENTS) throw new AppError('TOO_MANY_FILES', 'limit reached during upload');
         p.documents.push({ ...stored, label: q.label?.trim() || labelFrom(stored.originalName), attachAlways: q.attachAlways === '1' });
       });
-      if (oldPhoto) d.files.remove(oldPhoto);
-      return toView(profile);
     } catch (err) {
+      // Only failures BEFORE the profile commits get here: the new upload is not referenced yet, so it is
+      // safe to delete. Once store.update() has succeeded, we fall through to the code below instead.
       d.files.remove(stored);
       throw err;
     }
+    // The new photo is now the one the profile points to. Deleting the old one is a courtesy cleanup, not
+    // part of the contract: it must never fail the request or delete the new (now-referenced) file.
+    if (oldPhoto) removeQuietly(d.files, oldPhoto, d.logger);
+    return toView(profile);
   });
 
   app.put('/api/profile/files/:id', { schema: { body: documentBody } }, async (req) => {

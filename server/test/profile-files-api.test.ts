@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import { H, makeApp } from './helpers/app.js';
 import { JPG_BYTES, multipartBody, PDF_BYTES, PNG_BYTES } from './helpers/files.js';
 
@@ -19,6 +20,21 @@ describe('photo and documents API', () => {
     expect(photo2.ext).toBe('.jpg');
     expect(fs.readdirSync(filesDir)).toEqual([`${photo2.id}.jpg`]);
     expect(photo1.id).not.toBe(photo2.id);
+  });
+
+  it('keeps the new photo even when deleting the old one fails', async () => {
+    const { app, filesDir, profileFiles } = await makeApp();
+    const first = await post(app, '/api/profile/files?kind=photo', 'me.png', PNG_BYTES);
+    const oldId = first.json().profile.photo.id;
+    const spy = vi.spyOn(profileFiles, 'remove').mockImplementation((file) => {
+      if (file.id === oldId) throw new Error('simulated Windows file lock');
+    });
+    const second = await post(app, '/api/profile/files?kind=photo', 'me2.jpg', JPG_BYTES);
+    expect(second.statusCode).toBe(200);
+    const photo2 = second.json().profile.photo;
+    expect(photo2.id).not.toBe(oldId);
+    expect(fs.existsSync(path.join(filesDir, `${photo2.id}.jpg`))).toBe(true);
+    spy.mockRestore();
   });
 
   it('keeps a Cyrillic file name as the label and stores the file under a generated name', async () => {

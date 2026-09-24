@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { FileExt, StoredFile } from '@bp/shared';
 import { AppError } from '../errors.js';
+import type { Logger } from '../log.js';
 
 export type UploadKind = 'cv' | 'photo' | 'document';
 
@@ -87,5 +88,19 @@ export class ProfileFiles {
 
   exists(file: Pick<StoredFile, 'id' | 'ext'>): boolean {
     return fs.existsSync(this.pathOf(file));
+  }
+}
+
+/**
+ * Deletes a file that is no longer referenced by the profile (the old CV/photo right after a
+ * successful replace) without ever throwing. The new file was already committed to the profile by
+ * the time this runs, so a failure here (e.g. a Windows lock) must never bubble up and must never
+ * cause the new, now-referenced file to be deleted by a caller's catch block — it is only logged.
+ */
+export function removeQuietly(files: ProfileFiles, file: Pick<StoredFile, 'id' | 'ext'>, logger: Logger): void {
+  try {
+    files.remove(file);
+  } catch (err) {
+    logger.warn('profile_old_file_not_removed', { id: file.id, message: err instanceof Error ? err.message : String(err) });
   }
 }

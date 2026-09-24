@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import type { CvResult, SectionId, StoryAnswer } from '@bp/shared';
+import type { CvResult, SectionId, StoredFile, StoryAnswer } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { docxToText } from './docx.js';
+import { removeQuietly } from './files.js';
 import type { ProfileRouteDeps } from './routes.js';
 import { CV_SECTION_IDS, LIMITS } from './schema.js';
 import { applyExtraction } from './sections.js';
@@ -38,6 +39,8 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
   app.post('/api/profile/cv', async (req, reply): Promise<CvResult> => {
     const signal = abortOnClose(reply);
     const stored = await receiveUpload(req, d.files, 'cv');
+    let oldCv: StoredFile | null;
+    let result: CvResult;
     try {
       const file = d.files.pathOf(stored);
       let source: CvSource = { kind: 'file', path: file };
@@ -49,11 +52,10 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
       const out = await d.queue.run<ExtractedCv>(extractCvTask(source, d.language()), signal);
       if (!out.readable) throw new AppError('CV_UNREADABLE', 'Claude found no CV content');
       const data = toSectionData(out, newId);
-      const oldCv = d.store.get().cv;
+      oldCv = d.store.get().cv;
       const changed: SectionId[] = [];
       // Applied to the profile as it is NOW, so edits made while Claude was reading are kept.
       const profile = d.store.update((p) => {
-        changed.length = 0;
         for (const id of CV_SECTION_IDS) {
           withSection(p, id, (s) => {
             const r = applyExtraction(s, data[id]);
@@ -64,12 +66,17 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
         p.cv = stored;
         if (p.wizard.step === 1) p.wizard.step = 2;
       });
-      if (oldCv) d.files.remove(oldCv);
-      return { ...toView(profile), changedSections: changed };
+      result = { ...toView(profile), changedSections: changed };
     } catch (err) {
+      // Only failures BEFORE the profile commits get here: the new upload is not referenced yet, so it is
+      // safe to delete. Once store.update() has succeeded, we fall through to the code below instead.
       d.files.remove(stored);
       throw err;
     }
+    // The new CV is now the one the profile points to. Deleting the old one is a courtesy cleanup, not
+    // part of the contract: it must never fail the request or delete the new (now-referenced) file.
+    if (oldCv) removeQuietly(d.files, oldCv, d.logger);
+    return result;
   });
 
   app.post('/api/profile/followups', async (_req, reply) => {

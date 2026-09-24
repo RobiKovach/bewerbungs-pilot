@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -78,6 +78,23 @@ describe('POST /api/profile/cv', () => {
     expect(second.profile.stories).toHaveLength(1);
     expect(fs.readdirSync(filesDir)).toEqual([`${second.profile.cv.id}.pdf`]);
     expect(second.profile.cv.id).not.toBe(first.profile.cv.id);
+  });
+
+  it('keeps the new CV even when deleting the old one fails', async () => {
+    let cv = SAMPLE_CV;
+    const { app, filesDir, profileFiles } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    const first = (await uploadCv(app, 'cv1.pdf', PDF_BYTES)).json();
+    const oldId = first.profile.cv.id;
+    const spy = vi.spyOn(profileFiles, 'remove').mockImplementation((file) => {
+      if (file.id === oldId) throw new Error('simulated Windows file lock');
+    });
+    cv = { ...SAMPLE_CV, experience: [...SAMPLE_CV.experience, { jobTitle: 'Teamleiter', employer: 'Neu AG', city: '', country: '', from: '2023', to: '', description: '' }] };
+    const res = await uploadCv(app, 'cv2.pdf', PDF_BYTES);
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.profile.cv.id).not.toBe(oldId);
+    expect(fs.existsSync(path.join(filesDir, `${body.profile.cv.id}.pdf`))).toBe(true);
+    spy.mockRestore();
   });
 
   it('keeps an edit the person made while Claude was reading', async () => {
