@@ -7,6 +7,9 @@ import type { Logger } from './log.js';
 import type { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { helloTask } from './prompts/hello.js';
+import type { ProfileFiles } from './profile/files.js';
+import { registerProfileRoutes } from './profile/routes.js';
+import type { ProfileStore } from './profile/store.js';
 
 export interface AppDeps {
   settings: SettingsStore;
@@ -18,6 +21,8 @@ export interface AppDeps {
   /** Accepted Host header values, e.g. ["127.0.0.1:4280", "localhost:4280"]. */
   allowedHosts: () => string[];
   onShutdown: () => void;
+  profileStore: ProfileStore;
+  profileFiles: ProfileFiles;
 }
 
 const settingsPatchSchema = {
@@ -124,6 +129,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     reply.raw.once('finish', deps.onShutdown);
     reply.send({ ok: true });
     return reply;
+  });
+
+  await registerProfileRoutes(app, {
+    store: deps.profileStore, files: deps.profileFiles, queue: deps.queue, logger: deps.logger,
+    language: () => deps.settings.get().language ?? 'en',
   });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {

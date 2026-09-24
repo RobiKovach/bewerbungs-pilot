@@ -3,29 +3,9 @@ import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { buildApp } from '../src/app.js';
-import { SettingsStore } from '../src/data/settings.js';
 import { FakeProvider } from '../src/llm/fake.js';
-import { LlmQueue } from '../src/llm/queue.js';
 import { AppError } from '../src/errors.js';
-import { nullLogger } from '../src/log.js';
-
-const H = { 'x-bp-client': '1' };
-
-async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-app-'));
-  const settings = new SettingsStore(path.join(dir, 'settings.json'));
-  settings.load();
-  const provider = opts.provider ?? new FakeProvider();
-  let shutdownCalls = 0;
-  const app = await buildApp({
-    settings, provider, queue: new LlmQueue(provider), logger: nullLogger, version: '0.1.0',
-    webDist: opts.webDist ?? null,
-    allowedHosts: () => ['localhost:80'],
-    onShutdown: () => { shutdownCalls++; },
-  });
-  return { app, provider, settings, shutdownCalls: () => shutdownCalls };
-}
+import { H, makeApp } from './helpers/app.js';
 
 describe('guards', () => {
   it('rejects foreign Host headers', async () => {
@@ -130,16 +110,8 @@ describe('cancellation', () => {
     const provider = new FakeProvider({ ok: true }, (_task, signal) => new Promise(() => {
       signal.addEventListener('abort', () => { aborted = true; });
     }));
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-app-'));
-    const settings = new SettingsStore(path.join(dir, 'settings.json'));
-    settings.load();
     let port = 0;
-    const app = await buildApp({
-      settings, provider, queue: new LlmQueue(provider), logger: nullLogger, version: '0.1.0',
-      webDist: null,
-      allowedHosts: () => [`127.0.0.1:${port}`],
-      onShutdown: () => {},
-    });
+    const { app } = await makeApp({ provider, allowedHosts: () => [`127.0.0.1:${port}`] });
     await app.listen({ host: '127.0.0.1', port: 0 });
     const addr = app.server.address();
     if (!addr || typeof addr === 'string') throw new Error('expected a network address');

@@ -9,6 +9,8 @@ import { FakeProvider } from './llm/fake.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
+import { ProfileFiles } from './profile/files.js';
+import { ProfileStore } from './profile/store.js';
 import { openBrowser } from './runtime/browser.js';
 import { findRunningInstance, waitForRunningInstance, type ServerInfo } from './runtime/instance.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
@@ -44,6 +46,9 @@ async function main(): Promise<void> {
 
   const settings = new SettingsStore(paths.settings, (event, data) => logger.warn(event, data));
   settings.load();
+  const profileStore = new ProfileStore(paths.profileFile, (event, data) => logger.warn(event, data));
+  profileStore.load();
+  const profileFiles = new ProfileFiles(paths.profileFiles);
   const provider: LlmProvider = fakeLlm
     ? new FakeProvider()
     : new ClaudeCodeProvider({ tmpRoot: paths.tmp, timeoutMs: () => settings.get().llm.timeoutSec * 1000, logger });
@@ -57,6 +62,7 @@ async function main(): Promise<void> {
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),
+    profileStore, profileFiles,
   });
 
   const shutdown = createShutdown({

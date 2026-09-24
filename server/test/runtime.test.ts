@@ -3,14 +3,9 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import type { FastifyInstance } from 'fastify';
 import { findFreePort } from '../src/runtime/port.js';
 import { findRunningInstance } from '../src/runtime/instance.js';
-import { buildApp } from '../src/app.js';
-import { SettingsStore } from '../src/data/settings.js';
-import { FakeProvider } from '../src/llm/fake.js';
-import { LlmQueue } from '../src/llm/queue.js';
-import { nullLogger } from '../src/log.js';
+import { makeApp } from './helpers/app.js';
 
 const cleanups: Array<() => Promise<void> | void> = [];
 afterEach(async () => { while (cleanups.length) await cleanups.pop()!(); });
@@ -49,14 +44,8 @@ describe('findRunningInstance', () => {
   });
   it('finds a live instance', async () => {
     const dir = tmp();
-    const settings = new SettingsStore(path.join(dir, 'settings.json'));
-    settings.load();
-    const provider = new FakeProvider();
     const port = await findFreePort('127.0.0.1', 45300, 45320);
-    const app: FastifyInstance = await buildApp({
-      settings, provider, queue: new LlmQueue(provider), logger: nullLogger, version: 't', webDist: null,
-      allowedHosts: () => [`127.0.0.1:${port}`], onShutdown: () => {},
-    });
+    const { app } = await makeApp({ allowedHosts: () => [`127.0.0.1:${port}`] });
     await app.listen({ host: '127.0.0.1', port });
     cleanups.push(() => app.close());
     const file = path.join(dir, 'server.json');
