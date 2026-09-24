@@ -12,11 +12,9 @@ execSync('npm run build', { cwd: root, stdio: 'inherit' });
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 
-// Some entries (e.g. README.md, added in a later task) may not exist yet; skip them rather
-// than fail the whole release, so this script keeps working task-by-task during development.
 const copy = (rel) => {
   const src = path.join(root, rel);
-  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(src)) throw new Error(`Release: missing file ${rel}`);
   fs.cpSync(src, path.join(out, rel), { recursive: true });
 };
 for (const rel of ['package.json', 'package-lock.json', 'LICENSE', 'README.md', 'server/package.json', 'server/dist', 'web/package.json', 'web/dist', 'installer']) {
