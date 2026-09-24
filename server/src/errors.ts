@@ -1,14 +1,6 @@
-export type ErrorCode =
-  | 'CLAUDE_NOT_INSTALLED'
-  | 'CLAUDE_NOT_LOGGED_IN'
-  | 'LLM_TIMEOUT'
-  | 'LLM_BAD_OUTPUT'
-  | 'LLM_FAILED'
-  | 'LLM_CANCELLED'
-  | 'DATA_WRITE_FAILED'
-  | 'BAD_REQUEST'
-  | 'NOT_FOUND'
-  | 'UNKNOWN';
+import type { ErrorCode } from '@bp/shared';
+
+export type { ErrorCode };
 
 export class AppError extends Error {
   constructor(
@@ -28,6 +20,11 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'CLAUDE_NOT_INSTALLED':
     case 'CLAUDE_NOT_LOGGED_IN': return 503;
     case 'LLM_TIMEOUT': return 504;
+    case 'FILE_TOO_LARGE': return 413;
+    case 'FILE_TYPE_NOT_ALLOWED': return 415;
+    case 'TOO_MANY_FILES':
+    case 'PROFILE_NOT_READY': return 409;
+    case 'CV_UNREADABLE': return 422;
     default: return 500;
   }
 }

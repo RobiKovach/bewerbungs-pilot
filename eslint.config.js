@@ -7,4 +7,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   { languageOptions: { globals: { ...globals.node, ...globals.browser } } },
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': ['error', {
+        paths: [{ name: '@bp/shared', allowTypeImports: true, message: '@bp/shared contains types only — use `import type`.' }],
+      }],
+    },
+  },
 );

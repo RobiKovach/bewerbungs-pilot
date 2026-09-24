@@ -16,4 +16,13 @@ describe('AppError', () => {
     expect(httpStatusFor('LLM_CANCELLED')).toBe(499);
     expect(httpStatusFor('UNKNOWN')).toBe(500);
   });
+  it.each([
+    ['FILE_TOO_LARGE', 413],
+    ['FILE_TYPE_NOT_ALLOWED', 415],
+    ['TOO_MANY_FILES', 409],
+    ['CV_UNREADABLE', 422],
+    ['PROFILE_NOT_READY', 409],
+  ] as const)('maps %s to HTTP %i', (code, status) => {
+    expect(httpStatusFor(code)).toBe(status);
+  });
 });

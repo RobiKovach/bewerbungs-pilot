@@ -1,22 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Language, Settings, SettingsPatch } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { CorruptJsonError, readJson, writeJsonAtomic } from './atomic.js';
 
-export const SUPPORTED_LANGUAGES = ['uk', 'en', 'de', 'ru', 'pl', 'ro'] as const;
-export type Language = (typeof SUPPORTED_LANGUAGES)[number];
+export type { Language, Settings, SettingsPatch };
 
-export interface Settings {
-  schemaVersion: 1;
-  language: Language | null;
-  onboarding: { currentStep: string | null; completed: boolean };
-  llm: { timeoutSec: number };
-}
-
-export interface SettingsPatch {
-  language?: Language;
-  onboarding?: Partial<Settings['onboarding']>;
-}
+export const SUPPORTED_LANGUAGES = ['uk', 'en', 'de', 'ru', 'pl', 'ro'] as const satisfies readonly Language[];
 
 export const DEFAULT_SETTINGS: Settings = {
   schemaVersion: 1,

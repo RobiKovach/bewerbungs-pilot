@@ -1,5 +1,8 @@
 {
   "extends": "../tsconfig.base.json",
-  "compilerOptions": { "module": "NodeNext", "moduleResolution": "NodeNext", "outDir": "dist", "types": ["node"] },
+  "compilerOptions": {
+    "module": "NodeNext", "moduleResolution": "NodeNext", "outDir": "dist", "types": ["node"],
+    "paths": { "@bp/shared": ["../shared/types/index.d.ts"] }
+  },
   "include": ["src", "test"]
 }

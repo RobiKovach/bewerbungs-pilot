@@ -1,4 +1,7 @@
+import type { Availability } from '@bp/shared';
 import type { Language } from '../data/settings.js';
+
+export type { Availability };
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -13,12 +16,6 @@ export interface LlmTask {
    * Prompts should refer to "the input files", not to the original names.
    */
   files?: string[];
-}
-
-export interface Availability {
-  ok: boolean;
-  reason?: 'not-installed' | 'not-logged-in' | 'error';
-  detail?: string;
 }
 
 export interface LlmProvider {
