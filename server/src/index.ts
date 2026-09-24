@@ -10,12 +10,15 @@ import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
 import { openBrowser } from './runtime/browser.js';
-import { findRunningInstance, type ServerInfo } from './runtime/instance.js';
+import { findRunningInstance, waitForRunningInstance, type ServerInfo } from './runtime/instance.js';
+import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
 
 const HOST = '127.0.0.1';
 const noOpen = process.argv.includes('--no-open') || process.env.BP_NO_OPEN === '1';
 const fakeLlm = process.argv.includes('--fake-llm') || process.env.BP_FAKE_LLM === '1';
+const WINNER_WAIT_MS = 15_000;
+const CLOSE_TIMEOUT_MS = 3000;
 
 async function main(): Promise<void> {
   const paths = dataPaths(resolveDataRoot());
@@ -29,6 +32,16 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Two quick double-clicks can both get past the check above; the lock lets exactly one of them start a server.
+  const lock = acquireInstanceLock(paths.lock);
+  if (!lock) {
+    const winner = await waitForRunningInstance(paths.server, WINNER_WAIT_MS);
+    logger.info('lost_start_race', { port: winner });
+    if (winner !== null && !noOpen) openBrowser(`http://${HOST}:${winner}/`);
+    return;
+  }
+  process.on('exit', () => lock.release());
+
   const settings = new SettingsStore(paths.settings, (event, data) => logger.warn(event, data));
   settings.load();
   const provider: LlmProvider = fakeLlm
@@ -38,19 +51,23 @@ async function main(): Promise<void> {
   const webDist = fileURLToPath(new URL('../../web/dist/', import.meta.url));
 
   const port = await findFreePort(HOST, 4280, 4299);
+  const queue = new LlmQueue(provider);
   const app = await buildApp({
-    settings, provider, queue: new LlmQueue(provider), logger, version,
+    settings, provider, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),
   });
 
-  async function shutdown(): Promise<void> {
-    logger.info('shutdown', {});
-    await app.close().catch(() => {});
-    fs.rmSync(paths.server, { force: true });
-    process.exit(0);
-  }
+  const shutdown = createShutdown({
+    abortAll: () => queue.abortAll(),
+    close: () => app.close(),
+    releaseLock: () => lock.release(),
+    serverFile: paths.server,
+    closeTimeoutMs: CLOSE_TIMEOUT_MS,
+    logger,
+    exit: (code) => process.exit(code),
+  });
 
   await app.listen({ host: HOST, port });
   const info: ServerInfo = { port, pid: process.pid, startedAt: new Date().toISOString() };

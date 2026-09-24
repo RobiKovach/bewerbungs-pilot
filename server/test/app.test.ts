@@ -170,3 +170,24 @@ describe('static dashboard', () => {
     expect((await app.inject({ method: 'GET', url: '/something' })).body).toContain('<title>BP</title>');
   });
 });
+
+describe('security headers', () => {
+  const expectHeaders = (headers: Record<string, unknown>) => {
+    expect(headers['x-frame-options']).toBe('DENY');
+    expect(headers['content-security-policy']).toBe("default-src 'self'; frame-ancestors 'none'");
+    expect(headers['x-content-type-options']).toBe('nosniff');
+  };
+  it('forbids framing and sniffing on the dashboard page', async () => {
+    const web = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-web-'));
+    fs.writeFileSync(path.join(web, 'index.html'), '<!doctype html><title>BP</title>');
+    const { app } = await makeApp({ webDist: web });
+    expectHeaders((await app.inject({ method: 'GET', url: '/' })).headers);
+    expectHeaders((await app.inject({ method: 'GET', url: '/settings' })).headers);
+  });
+  it('sets them on API answers and on errors too', async () => {
+    const { app } = await makeApp();
+    expectHeaders((await app.inject({ method: 'GET', url: '/api/health' })).headers);
+    expectHeaders((await app.inject({ method: 'GET', url: '/api/nope' })).headers);
+    expectHeaders((await app.inject({ method: 'GET', url: '/api/health', headers: { host: 'evil.example:80' } })).headers);
+  });
+});

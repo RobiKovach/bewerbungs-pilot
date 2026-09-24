@@ -10,7 +10,7 @@ export function LanguageSwitcher() {
   const { update } = useSettings();
   const [error, setError] = useState<unknown>(null);
   return (
-    <span className="lang-switch">
+    <div className="lang-switch">
       <select
         aria-label={t('language.label')}
         value={i18n.language}
@@ -22,6 +22,6 @@ export function LanguageSwitcher() {
         {SUPPORTED_LANGUAGES.map((l) => <option key={l} value={l}>{LANGUAGE_LABELS[l]}</option>)}
       </select>
       {error ? <ErrorBanner error={error} /> : null}
-    </span>
+    </div>
   );
 }

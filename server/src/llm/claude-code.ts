@@ -26,7 +26,19 @@ export interface ClaudeCodeProviderOptions {
 
 interface RunOutput { stdout: string; stderr: string; exitCode: number | null }
 
-const DISALLOWED_TOOLS = ['Bash', 'Edit', 'Write', 'NotebookEdit', 'WebFetch', 'Task'];
+// Isolation from the user's own Claude Code setup (all listed by `claude --help`, CLI 2.1.281):
+// --restricted            ignores user/project/local settings (their allow rules), drops the command-running tools
+//                         and WebFetch, and confines file tools to the working folder (the per-run folder).
+// --strict-mcp-config     with no --mcp-config: no MCP servers at all.
+// --safe-mode             no CLAUDE.md, skills, plugins, hooks, custom agents/commands, output styles. (--bare would
+//                         also do this but never reads the OAuth sign-in, which is how most users are logged in.)
+// --disable-slash-commands  no skills.
+// --no-session-persistence  no transcript left in ~/.claude/projects (outside our data folder).
+const ISOLATION_FLAGS = ['--restricted', '--strict-mcp-config', '--safe-mode', '--disable-slash-commands', '--no-session-persistence'];
+// Second layer, in case a CLI version ignores one of the flags above. 'Task' is the old name of 'Agent'.
+const DISALLOWED_TOOLS = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'WebFetch', 'Task', 'Agent'];
+/** Sub-folder of the per-run folder where input files are copied (see LlmTask.files). */
+export const INPUT_DIR = 'input';
 const AUTH_ERROR_RE = /not logged in|\/login|invalid api key|unauthori[sz]ed/i;
 const AVAILABILITY_TTL_MS = 10 * 60 * 1000;
 const PROBE_TIMEOUT_MS = 60_000;
@@ -65,15 +77,38 @@ export function resolveClaudeCommand(env: NodeJS.ProcessEnv = process.env): Clau
 
 export function buildClaudeArgs(task: LlmTask, extra: string[] = []): string[] {
   const allowed = ['Read', ...(task.allowWebSearch ? ['WebSearch'] : [])];
-  const args = [
+  // No --add-dir: input files are copied into the run folder (stageInputFiles), so Read never needs, and never
+  // gets, access to the folder the user's originals live in.
+  return [
     '-p', '--output-format', 'json', '--json-schema', JSON.stringify(task.schema),
-    '--permission-mode', 'dontAsk', ...extra,
+    '--permission-mode', 'dontAsk', ...ISOLATION_FLAGS, ...extra,
+    '--tools', allowed.join(','),
     '--allowedTools', ...allowed,
     '--disallowedTools', ...DISALLOWED_TOOLS,
   ];
-  const dirs = [...new Set((task.files ?? []).map((f) => path.dirname(path.resolve(f))))];
-  for (const dir of dirs) args.push('--add-dir', dir);
-  return args;
+}
+
+/**
+ * Copies the task's input files into <runDir>/input/ as file-1.<ext>, file-2.<ext>, ... and returns those relative
+ * paths. Neutral names keep user-controlled file names out of the prompt.
+ */
+export function stageInputFiles(runDir: string, files: readonly string[]): string[] {
+  if (files.length === 0) return [];
+  const dir = path.join(runDir, INPUT_DIR);
+  fs.mkdirSync(dir, { recursive: true });
+  return files.map((file, i) => {
+    const ext = path.extname(file).toLowerCase().replace(/[^.a-z0-9]/g, '').slice(0, 10);
+    const name = `file-${i + 1}${ext}`;
+    fs.copyFileSync(path.resolve(file), path.join(dir, name));
+    return `${INPUT_DIR}/${name}`;
+  });
+}
+
+function promptWithInputs(task: LlmTask, inputs: string[]): string {
+  const base = composePrompt(task);
+  if (inputs.length === 0) return base;
+  const list = inputs.map((f) => `- ${f}`).join('\n');
+  return `${base}\n\nInput files (in your working folder; read them with the Read tool):\n${list}`;
 }
 
 type Parsed = { ok: true; value: unknown } | { ok: false; code: ErrorCode; detail: string };
@@ -195,6 +230,13 @@ export class ClaudeCodeProvider implements LlmProvider {
     } catch (err) {
       return Promise.reject(new AppError('DATA_WRITE_FAILED', err instanceof Error ? err.message : String(err)));
     }
+    let inputs: string[];
+    try {
+      inputs = stageInputFiles(cwd, task.files ?? []);
+    } catch (err) {
+      try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
+      return Promise.reject(new AppError('DATA_WRITE_FAILED', `could not copy an input file: ${err instanceof Error ? err.message : String(err)}`));
+    }
 
     return new Promise<RunOutput>((resolve, reject) => {
       let stdout = '';
@@ -259,7 +301,7 @@ export class ClaudeCodeProvider implements LlmProvider {
       child.stdout.setEncoding('utf8').on('data', (chunk: string) => { stdout += chunk; });
       child.stderr.setEncoding('utf8').on('data', (chunk: string) => { if (stderr.length < 65_536) stderr += chunk; });
       child.stdin.on('error', () => { /* the child may exit before reading stdin */ });
-      child.stdin.end(composePrompt(task), 'utf8');
+      child.stdin.end(promptWithInputs(task, inputs), 'utf8');
 
       child.on('error', (err: NodeJS.ErrnoException) =>
         finish(() => reject(new AppError(err.code === 'ENOENT' ? 'CLAUDE_NOT_INSTALLED' : 'LLM_FAILED', err.message))),

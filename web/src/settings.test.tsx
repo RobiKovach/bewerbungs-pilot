@@ -21,6 +21,7 @@ describe('SettingsProvider', () => {
     expect(await screen.findByText('lang:de')).toBeInTheDocument();
     expect(server.current().language).toBe('de');
     expect(i18n.language).toBe('de');
+    expect(document.documentElement.lang).toBe('de'); // screen readers + spell-check follow the page language
   });
 
   it('switches the language instantly and saves it', async () => {
@@ -32,6 +33,7 @@ describe('SettingsProvider', () => {
     expect(await screen.findByText('lang:uk')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Мова' })).toBeInTheDocument();
     expect(server.current().language).toBe('uk');
+    expect(document.documentElement.lang).toBe('uk');
   });
 
   it('shows a readable error with retry when the server is down', async () => {

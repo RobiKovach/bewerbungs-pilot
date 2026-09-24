@@ -2,7 +2,7 @@ import { readJson } from '../data/atomic.js';
 
 export interface ServerInfo { port: number; pid: number; startedAt: string }
 
-function isAlive(pid: number): boolean {
+export function isAlive(pid: number): boolean {
   try { process.kill(pid, 0); return true; } catch { return false; }
 }
 
@@ -17,5 +17,16 @@ export async function findRunningInstance(serverJsonFile: string): Promise<numbe
     return res.ok && body.app === 'bewerbungs-pilot' ? info.port : null;
   } catch {
     return null;
+  }
+}
+
+/** The loser of the start-up race waits here for the winner's server.json, then opens the browser to it. */
+export async function waitForRunningInstance(serverJsonFile: string, timeoutMs: number, intervalMs = 250): Promise<number | null> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const port = await findRunningInstance(serverJsonFile);
+    if (port !== null) return port;
+    if (Date.now() + intervalMs > deadline) return null;
+    await new Promise((r) => setTimeout(r, intervalMs));
   }
 }

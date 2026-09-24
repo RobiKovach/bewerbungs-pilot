@@ -70,8 +70,14 @@ if (Test-Path $ServerJson) {
   try {
     $info = Get-Content -Raw $ServerJson | ConvertFrom-Json
     Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$($info.port)/api/shutdown" -Headers @{ 'X-BP-Client' = '1' } -ContentType 'application/json' -Body '{}' -TimeoutSec 3 | Out-Null
-    Start-Sleep -Seconds 1
   } catch { }
+  # Wait (max. 15 s) until the old server process has really exited, so its files are no longer in use.
+  if ($info -and $info.pid) {
+    $deadline = (Get-Date).AddSeconds(15)
+    while ((Get-Process -Id $info.pid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+      Start-Sleep -Milliseconds 250
+    }
+  }
 }
 Say 'copying'
 if (Test-Path $AppDir) { Remove-Item $AppDir -Recurse -Force }
@@ -98,7 +104,7 @@ foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::Ge
 }
 
 # 5. Claude sign-in (the one terminal window the user ever sees)
-$probe = 'Reply with the word ok.' | & $Claude -p --output-format json --model haiku 2>$null | Out-String
+$probe = 'Reply with the word ok.' | & $Claude -p --output-format json --model haiku --no-session-persistence 2>$null | Out-String
 $loggedIn = $false
 try { $loggedIn = -not ($probe | ConvertFrom-Json).is_error } catch { }
 if (-not $loggedIn) {

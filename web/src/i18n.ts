@@ -23,6 +23,11 @@ export function detectLanguage(candidates: readonly string[]): Language {
   return 'en';
 }
 
+// <html lang> follows the UI language (screen readers, spell-check, hyphenation).
+function syncDocumentLang(lng: string) {
+  document.documentElement.lang = lng;
+}
+
 export function initI18n(lng: Language) {
   if (i18n.isInitialized) {
     void i18n.changeLanguage(lng);
@@ -38,5 +43,7 @@ export function initI18n(lng: Language) {
     interpolation: { escapeValue: false },
     initAsync: false,
   });
+  syncDocumentLang(i18n.language);
+  i18n.on('languageChanged', syncDocumentLang);
   return i18n;
 }

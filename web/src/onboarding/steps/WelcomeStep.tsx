@@ -7,7 +7,7 @@ export function WelcomeStep({ onNext }: StepProps) {
   return (
     <>
       <p>{t('onboarding.welcome.body')}</p>
-      <p><LanguageSwitcher /></p>
+      <div className="welcome-lang"><LanguageSwitcher /></div>
       <div className="btn-row"><button type="button" className="btn" onClick={onNext}>{t('common.next')}</button></div>
     </>
   );

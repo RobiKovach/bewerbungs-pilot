@@ -7,6 +7,11 @@ export interface LlmTask {
   schema: JsonSchema;
   replyLanguage: Language;
   allowWebSearch?: boolean;
+  /**
+   * Absolute paths of files Claude should read. They are COPIED into the per-run folder as input/file-1.<ext>, ...
+   * and the prompt gets that list appended; Claude is never given access to the folders the originals live in.
+   * Prompts should refer to "the input files", not to the original names.
+   */
   files?: string[];
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { fenceUntrusted } from '../src/llm/fence.js';
-import { validateOutput } from '../src/llm/validate.js';
+import { validateOutput, validatorFor } from '../src/llm/validate.js';
 import { LlmQueue } from '../src/llm/queue.js';
 import { FakeProvider } from '../src/llm/fake.js';
 import { helloTask } from '../src/prompts/hello.js';
@@ -35,6 +35,11 @@ describe('validateOutput', () => {
     const r = validateOutput(schema, { wrong: 1 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors).toContain('greeting');
+  });
+  it('compiles an equal schema only once, even when it is a new object each call', () => {
+    const make = () => ({ type: 'object', properties: { n: { type: 'number' } }, required: ['n'] });
+    expect(validatorFor(make())).toBe(validatorFor(make()));
+    expect(validatorFor(make())).not.toBe(validatorFor(schema));
   });
 });
 
@@ -95,5 +100,26 @@ describe('LlmQueue', () => {
     await r1;
     await expect(r2).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
     expect(provider.calls).toHaveLength(1);
+  });
+
+  it('abortAll stops the running task, drops queued ones, and the queue keeps working afterwards', async () => {
+    let runningSignal: AbortSignal | null = null;
+    let calls = 0;
+    const provider = new FakeProvider({ ok: true }, (_task, signal) => {
+      calls++;
+      if (calls > 1) return { greeting: 'after' };
+      runningSignal = signal;
+      return new Promise((_res, rej) => signal.addEventListener('abort', () => rej(new AppError('LLM_CANCELLED', 'killed'))));
+    });
+    const queue = new LlmQueue(provider);
+    const r1 = queue.run(helloTask('en'), new AbortController().signal);
+    const r2 = queue.run(helloTask('en'), new AbortController().signal);
+    await tick();
+    queue.abortAll();
+    await expect(r1).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+    await expect(r2).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+    expect(runningSignal!.aborted).toBe(true);
+    expect(provider.calls).toHaveLength(1);
+    await expect(queue.run(helloTask('en'), new AbortController().signal)).resolves.toEqual({ greeting: 'after' });
   });
 });

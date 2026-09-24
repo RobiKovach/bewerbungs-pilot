@@ -62,6 +62,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     }
   });
 
+  // No other website may show our pages inside a frame (clickjacking), and the browser must not guess
+  // content types. default-src 'self' is enough for the Vite build: one external module script + one stylesheet,
+  // no inline <script>/<style>, no fonts/images from elsewhere (React's style={...} goes through CSSOM, which
+  // CSP does not restrict).
+  app.addHook('onSend', async (_req, reply, payload) => {
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('Content-Security-Policy', "default-src 'self'; frame-ancestors 'none'");
+    reply.header('X-Content-Type-Options', 'nosniff');
+    return payload;
+  });
+
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof AppError) {
       deps.logger.warn('app_error', { code: err.code, details: err.detailsForLog, url: req.url });
