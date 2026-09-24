@@ -1,91 +1,91 @@
 {
-  "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
-  "nav": { "home": "Home", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
+  "app": { "name": "BewerbungsPilot", "tagline": "Ваш помощник в поиске работы в Германии" },
+  "nav": { "home": "Главная", "guide": "Как это работает", "settings": "Настройки", "quit": "Выйти" },
   "common": {
-    "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
-    "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
-    "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}"
+    "next": "Далее", "back": "Назад", "retry": "Проверить снова", "cancel": "Отмена", "details": "Подробнее",
+    "comingSoon": "Скоро", "moreInfo": "Дополнительная информация", "loading": "Загрузка…",
+    "continueAnyway": "Всё равно продолжить", "stepOf": "Шаг {{current}} из {{total}}"
   },
-  "language": { "label": "Language" },
+  "language": { "label": "Язык" },
   "home": {
-    "title": "Welcome to BewerbungsPilot",
-    "intro": "BewerbungsPilot finds job offers in Germany that fit you, writes your application documents and helps you keep track of every application.",
-    "nextTitle": "What comes next",
-    "nextBody": "Your profile, the job search, application packages and sending are being built right now. The guide already shows every step.",
-    "openGuide": "Open the guide"
+    "title": "Добро пожаловать в BewerbungsPilot",
+    "intro": "BewerbungsPilot находит вакансии в Германии, которые вам подходят, готовит документы для отклика и помогает следить за каждой заявкой.",
+    "nextTitle": "Что дальше",
+    "nextBody": "Профиль, поиск вакансий, пакеты документов и отправка сейчас в разработке. Руководство уже показывает каждый шаг.",
+    "openGuide": "Открыть руководство"
   },
   "onboarding": {
-    "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time." },
+    "welcome": { "title": "Добро пожаловать", "body": "Несколько коротких шагов — и BewerbungsPilot готов к работе. Сначала выберите язык приложения. Вы можете изменить его в любой момент." },
     "claude": {
-      "title": "Connect Claude",
-      "intro": "BewerbungsPilot uses Claude Code on your computer to read job offers and write your documents.",
-      "checking": "Checking the connection to Claude…",
-      "ok": "Claude is ready.",
-      "openLogin": "Open sign-in window",
+      "title": "Подключение Claude",
+      "intro": "BewerbungsPilot использует Claude Code на вашем компьютере, чтобы читать вакансии и писать ваши документы.",
+      "checking": "Проверяем связь с Claude…",
+      "ok": "Claude готов.",
+      "openLogin": "Открыть окно входа",
       "notInstalled": {
-        "title": "Claude Code is not installed yet",
-        "step1": "Close BewerbungsPilot.",
-        "step2": "Run the BewerbungsPilot installer again — it installs Claude Code for you.",
-        "step3": "Start BewerbungsPilot with the desktop shortcut and come back to this step."
+        "title": "Claude Code ещё не установлен",
+        "step1": "Закройте BewerbungsPilot.",
+        "step2": "Запустите установщик BewerbungsPilot ещё раз — он сам установит Claude Code.",
+        "step3": "Откройте BewerbungsPilot через ярлык на рабочем столе и вернитесь к этому шагу."
       },
       "notLoggedIn": {
-        "title": "Please sign in to Claude",
-        "step1": "Click \"Open sign-in window\".",
-        "step2": "Sign in with your Claude account in the window that opens (a browser page may open too).",
-        "step3": "When you are signed in, close that window and click \"Check again\"."
+        "title": "Пожалуйста, войдите в Claude",
+        "step1": "Нажмите «Открыть окно входа».",
+        "step2": "Войдите в свою учётную запись Claude в открывшемся окне (может открыться и страница в браузере).",
+        "step3": "Когда вход выполнен, закройте это окно и нажмите «Проверить снова»."
       },
-      "error": { "title": "Claude did not answer", "hint": "Check your internet connection and click \"Check again\"." }
+      "error": { "title": "Claude не ответил", "hint": "Проверьте подключение к интернету и нажмите «Проверить снова»." }
     },
-    "profile": { "title": "Your profile", "body": "Here you will upload your CV, and Claude will ask a few short questions to complete your profile." },
-    "email": { "title": "Your email", "body": "Here you will connect your email so BewerbungsPilot can send the applications you approved." },
-    "done": { "title": "All set", "body": "The basics are ready. Open the guide at any time to see what comes next.", "finish": "Finish" }
+    "profile": { "title": "Ваш профиль", "body": "Здесь вы загрузите своё резюме, и Claude задаст несколько коротких вопросов, чтобы дополнить профиль." },
+    "email": { "title": "Ваша почта", "body": "Здесь вы подключите свою почту, чтобы BewerbungsPilot мог отправлять одобренные вами заявки." },
+    "done": { "title": "Всё готово", "body": "Основа готова. Откройте руководство в любой момент, чтобы увидеть, что будет дальше.", "finish": "Завершить" }
   },
   "guide": {
-    "title": "How it works",
-    "intro": "Seven steps from installation to your next job interview. Steps marked \"Coming soon\" are not available yet.",
-    "whatLabel": "What it is",
-    "todoLabel": "What you do",
-    "go": "Open",
+    "title": "Как это работает",
+    "intro": "Семь шагов от установки до вашего следующего собеседования. Шаги с пометкой «Скоро» пока недоступны.",
+    "whatLabel": "Что это",
+    "todoLabel": "Что делаете вы",
+    "go": "Открыть",
     "stages": {
-      "install": { "title": "Installation", "what": "The installer puts BewerbungsPilot and Claude Code on your computer and creates a desktop shortcut.", "todo": "Nothing more — you have already done this. Start the app with the desktop shortcut." },
-      "profile": { "title": "Profile", "what": "Your CV, skills and wishes — the basis for every application. Nothing is ever made up.", "todo": "Upload your CV and answer a few short questions." },
-      "email": { "title": "Email", "what": "Applications are sent from your own email address.", "todo": "Enter your email address and a special app password — we show you how to create one in 3 steps." },
-      "search": { "title": "Job search", "what": "BewerbungsPilot searches the job board of the Federal Employment Agency and picks offers that fit your profile. You can also paste an offer you found yourself.", "todo": "Click \"Search now\" or switch on the daily search." },
-      "review": { "title": "Review and approve", "what": "For every fitting offer you get a cover letter, a tailored CV, notes about the company and interview tips.", "todo": "Read the documents, change what you like and approve the application." },
-      "send": { "title": "Sending", "what": "Only the applications you approved are sent — never anything else.", "todo": "Click \"Send\" and you are done." },
-      "statuses": { "title": "Track your applications", "what": "See at a glance where you applied, who answered and how your applications are going.", "todo": "Mark replies such as an invitation or a rejection — BewerbungsPilot helps you answer." }
+      "install": { "title": "Установка", "what": "Установщик помещает BewerbungsPilot и Claude Code на ваш компьютер и создаёт ярлык на рабочем столе.", "todo": "Больше ничего — вы уже это сделали. Запускайте приложение через ярлык на рабочем столе." },
+      "profile": { "title": "Профиль", "what": "Ваше резюме, навыки и пожелания — основа каждой заявки. Ничего не выдумывается.", "todo": "Загрузите резюме и ответьте на несколько коротких вопросов." },
+      "email": { "title": "Почта", "what": "Заявки отправляются с вашего собственного адреса электронной почты.", "todo": "Укажите адрес почты и специальный пароль приложения — мы покажем, как создать его за 3 шага." },
+      "search": { "title": "Поиск вакансий", "what": "BewerbungsPilot ищет на бирже труда Федерального агентства по труду Германии и отбирает предложения, подходящие вашему профилю. Можно также вставить вакансию, найденную самостоятельно.", "todo": "Нажмите «Искать сейчас» или включите ежедневный поиск." },
+      "review": { "title": "Просмотр и одобрение", "what": "Для каждой подходящей вакансии вы получаете сопроводительное письмо, адаптированное резюме, заметки о компании и советы к собеседованию.", "todo": "Прочитайте документы, измените что хотите и одобрите заявку." },
+      "send": { "title": "Отправка", "what": "Отправляются только одобренные вами заявки — и больше ничего.", "todo": "Нажмите «Отправить» — и всё готово." },
+      "statuses": { "title": "Отслеживание заявок", "what": "Сразу видно, куда вы подавались, кто ответил и как продвигаются ваши заявки.", "todo": "Отмечайте ответы, например приглашение или отказ, — BewerbungsPilot поможет вам ответить." }
     }
   },
   "info": {
-    "languageSwitcher": "Changes the language of the app. Documents for employers use the language of the job offer.",
-    "claudeTest": "Sends a short test question to Claude to check that everything works.",
-    "restartIntro": "Shows the welcome steps again. Your data stays as it is.",
-    "quit": "Stops BewerbungsPilot on this computer. Start it again with the desktop shortcut."
+    "languageSwitcher": "Меняет язык приложения. Документы для работодателей составляются на языке вакансии.",
+    "claudeTest": "Отправляет Claude короткий тестовый вопрос, чтобы проверить, что всё работает.",
+    "restartIntro": "Снова показывает шаги приветствия. Ваши данные остаются без изменений.",
+    "quit": "Останавливает BewerbungsPilot на этом компьютере. Запустите его снова через ярлык на рабочем столе."
   },
   "settings": {
-    "title": "Settings",
-    "languageTitle": "Language",
-    "claudeTitle": "Connection to Claude",
-    "claudeTest": "Test the connection",
-    "claudeRunning": "Waiting for Claude…",
-    "claudeResult": "Claude says: \"{{greeting}}\"",
-    "introTitle": "Welcome steps",
-    "introRestart": "Show the welcome steps again",
-    "quitTitle": "Quit the app",
-    "quitButton": "Quit BewerbungsPilot"
+    "title": "Настройки",
+    "languageTitle": "Язык",
+    "claudeTitle": "Соединение с Claude",
+    "claudeTest": "Проверить соединение",
+    "claudeRunning": "Ожидание ответа Claude…",
+    "claudeResult": "Claude отвечает: «{{greeting}}»",
+    "introTitle": "Шаги приветствия",
+    "introRestart": "Показать шаги приветствия снова",
+    "quitTitle": "Выйти из приложения",
+    "quitButton": "Выйти из BewerbungsPilot"
   },
-  "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop." },
+  "quit": { "title": "BewerbungsPilot закрыт", "body": "Теперь эту вкладку можно закрыть. Чтобы запустить снова, используйте ярлык BewerbungsPilot на рабочем столе." },
   "errors": {
-    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code is not installed.", "hint": "Run the BewerbungsPilot installer again — it installs Claude Code for you." },
-    "CLAUDE_NOT_LOGGED_IN": { "message": "You are not signed in to Claude.", "hint": "Open Settings and click \"Open sign-in window\"." },
-    "LLM_TIMEOUT": { "message": "Claude took too long to answer.", "hint": "Please try again in a moment." },
-    "LLM_BAD_OUTPUT": { "message": "Claude's answer could not be understood.", "hint": "Please try again. If it keeps happening, restart the app." },
-    "LLM_FAILED": { "message": "Claude could not finish the task.", "hint": "Check your internet connection and try again." },
-    "LLM_CANCELLED": { "message": "The task was cancelled.", "hint": "Start it again whenever you like." },
-    "DATA_WRITE_FAILED": { "message": "Your changes could not be saved.", "hint": "Check that your disk is not full and try again." },
-    "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
-    "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
-    "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
-    "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." }
+    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code не установлен.", "hint": "Запустите установщик BewerbungsPilot ещё раз — он сам установит Claude Code." },
+    "CLAUDE_NOT_LOGGED_IN": { "message": "Вы не вошли в Claude.", "hint": "Откройте «Настройки» и нажмите «Открыть окно входа»." },
+    "LLM_TIMEOUT": { "message": "Claude слишком долго не отвечал.", "hint": "Пожалуйста, попробуйте ещё раз через минуту." },
+    "LLM_BAD_OUTPUT": { "message": "Не удалось разобрать ответ Claude.", "hint": "Попробуйте ещё раз. Если это повторяется, перезапустите приложение." },
+    "LLM_FAILED": { "message": "Claude не смог выполнить задачу.", "hint": "Проверьте подключение к интернету и попробуйте ещё раз." },
+    "LLM_CANCELLED": { "message": "Задача отменена.", "hint": "Запустите её снова, когда захотите." },
+    "DATA_WRITE_FAILED": { "message": "Не удалось сохранить изменения.", "hint": "Проверьте, не заполнен ли диск, и попробуйте ещё раз." },
+    "BAD_REQUEST": { "message": "Что-то в запросе было не так.", "hint": "Перезагрузите страницу и попробуйте ещё раз." },
+    "NOT_FOUND": { "message": "Такой страницы не существует.", "hint": "Вернитесь на главную страницу." },
+    "SERVER_UNREACHABLE": { "message": "BewerbungsPilot не запущен.", "hint": "Запустите его снова через ярлык на рабочем столе." },
+    "UNKNOWN": { "message": "Что-то пошло не так.", "hint": "Попробуйте ещё раз. Если это повторяется, перезапустите приложение." }
   }
 }

@@ -1,91 +1,91 @@
 {
-  "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
-  "nav": { "home": "Home", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
+  "app": { "name": "BewerbungsPilot", "tagline": "Asistentul dumneavoastră pentru cererile de angajare în Germania" },
+  "nav": { "home": "Acasă", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
   "common": {
-    "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
-    "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
-    "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}"
+    "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
+    "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
+    "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}"
   },
-  "language": { "label": "Language" },
+  "language": { "label": "Limbă" },
   "home": {
-    "title": "Welcome to BewerbungsPilot",
-    "intro": "BewerbungsPilot finds job offers in Germany that fit you, writes your application documents and helps you keep track of every application.",
-    "nextTitle": "What comes next",
-    "nextBody": "Your profile, the job search, application packages and sending are being built right now. The guide already shows every step.",
-    "openGuide": "Open the guide"
+    "title": "Bine ați venit la BewerbungsPilot",
+    "intro": "BewerbungsPilot găsește oferte de angajare în Germania potrivite pentru dumneavoastră, redactează documentele de candidatură și vă ajută să urmăriți fiecare cerere.",
+    "nextTitle": "Ce urmează",
+    "nextBody": "Profilul dumneavoastră, căutarea locurilor de muncă, pachetele de candidatură și trimiterea sunt în curs de dezvoltare. Ghidul arată deja fiecare pas.",
+    "openGuide": "Deschideți ghidul"
   },
   "onboarding": {
-    "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time." },
+    "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând." },
     "claude": {
-      "title": "Connect Claude",
-      "intro": "BewerbungsPilot uses Claude Code on your computer to read job offers and write your documents.",
-      "checking": "Checking the connection to Claude…",
-      "ok": "Claude is ready.",
-      "openLogin": "Open sign-in window",
+      "title": "Conectați Claude",
+      "intro": "BewerbungsPilot folosește Claude Code pe computerul dumneavoastră pentru a citi ofertele de angajare și a redacta documentele dumneavoastră.",
+      "checking": "Se verifică conexiunea la Claude…",
+      "ok": "Claude este pregătit.",
+      "openLogin": "Deschideți fereastra de autentificare",
       "notInstalled": {
-        "title": "Claude Code is not installed yet",
-        "step1": "Close BewerbungsPilot.",
-        "step2": "Run the BewerbungsPilot installer again — it installs Claude Code for you.",
-        "step3": "Start BewerbungsPilot with the desktop shortcut and come back to this step."
+        "title": "Claude Code nu este încă instalat",
+        "step1": "Închideți BewerbungsPilot.",
+        "step2": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră.",
+        "step3": "Porniți BewerbungsPilot cu ajutorul comenzii rapide de pe desktop și reveniți la acest pas."
       },
       "notLoggedIn": {
-        "title": "Please sign in to Claude",
-        "step1": "Click \"Open sign-in window\".",
-        "step2": "Sign in with your Claude account in the window that opens (a browser page may open too).",
-        "step3": "When you are signed in, close that window and click \"Check again\"."
+        "title": "Vă rugăm să vă autentificați la Claude",
+        "step1": "Faceți clic pe „Deschideți fereastra de autentificare”.",
+        "step2": "Autentificați-vă cu contul dumneavoastră Claude în fereastra care se deschide (este posibil să se deschidă și o pagină de browser).",
+        "step3": "După ce v-ați autentificat, închideți fereastra și faceți clic pe „Verificați din nou”."
       },
-      "error": { "title": "Claude did not answer", "hint": "Check your internet connection and click \"Check again\"." }
+      "error": { "title": "Claude nu a răspuns", "hint": "Verificați conexiunea la internet și faceți clic pe „Verificați din nou”." }
     },
-    "profile": { "title": "Your profile", "body": "Here you will upload your CV, and Claude will ask a few short questions to complete your profile." },
-    "email": { "title": "Your email", "body": "Here you will connect your email so BewerbungsPilot can send the applications you approved." },
-    "done": { "title": "All set", "body": "The basics are ready. Open the guide at any time to see what comes next.", "finish": "Finish" }
+    "profile": { "title": "Profilul dumneavoastră", "body": "Aici veți încărca CV-ul dumneavoastră, iar Claude vă va adresa câteva întrebări scurte pentru a completa profilul." },
+    "email": { "title": "E-mailul dumneavoastră", "body": "Aici veți conecta e-mailul dumneavoastră, astfel încât BewerbungsPilot să poată trimite cererile aprobate de dumneavoastră." },
+    "done": { "title": "Totul este pregătit", "body": "Elementele de bază sunt gata. Deschideți ghidul oricând pentru a vedea ce urmează.", "finish": "Finalizare" }
   },
   "guide": {
-    "title": "How it works",
-    "intro": "Seven steps from installation to your next job interview. Steps marked \"Coming soon\" are not available yet.",
-    "whatLabel": "What it is",
-    "todoLabel": "What you do",
-    "go": "Open",
+    "title": "Cum funcționează",
+    "intro": "Șapte pași de la instalare până la următorul dumneavoastră interviu de angajare. Pașii marcați „În curând” nu sunt încă disponibili.",
+    "whatLabel": "Ce este",
+    "todoLabel": "Ce faceți dumneavoastră",
+    "go": "Deschideți",
     "stages": {
-      "install": { "title": "Installation", "what": "The installer puts BewerbungsPilot and Claude Code on your computer and creates a desktop shortcut.", "todo": "Nothing more — you have already done this. Start the app with the desktop shortcut." },
-      "profile": { "title": "Profile", "what": "Your CV, skills and wishes — the basis for every application. Nothing is ever made up.", "todo": "Upload your CV and answer a few short questions." },
-      "email": { "title": "Email", "what": "Applications are sent from your own email address.", "todo": "Enter your email address and a special app password — we show you how to create one in 3 steps." },
-      "search": { "title": "Job search", "what": "BewerbungsPilot searches the job board of the Federal Employment Agency and picks offers that fit your profile. You can also paste an offer you found yourself.", "todo": "Click \"Search now\" or switch on the daily search." },
-      "review": { "title": "Review and approve", "what": "For every fitting offer you get a cover letter, a tailored CV, notes about the company and interview tips.", "todo": "Read the documents, change what you like and approve the application." },
-      "send": { "title": "Sending", "what": "Only the applications you approved are sent — never anything else.", "todo": "Click \"Send\" and you are done." },
-      "statuses": { "title": "Track your applications", "what": "See at a glance where you applied, who answered and how your applications are going.", "todo": "Mark replies such as an invitation or a rejection — BewerbungsPilot helps you answer." }
+      "install": { "title": "Instalare", "what": "Instalatorul pune BewerbungsPilot și Claude Code pe computerul dumneavoastră și creează o comandă rapidă pe desktop.", "todo": "Nimic altceva — ați făcut deja acest lucru. Porniți aplicația cu ajutorul comenzii rapide de pe desktop." },
+      "profile": { "title": "Profil", "what": "CV-ul, competențele și preferințele dumneavoastră — baza fiecărei candidaturi. Nu se inventează niciodată nimic.", "todo": "Încărcați CV-ul și răspundeți la câteva întrebări scurte." },
+      "email": { "title": "E-mail", "what": "Cererile sunt trimise de la propria dumneavoastră adresă de e-mail.", "todo": "Introduceți adresa dumneavoastră de e-mail și o parolă specială de aplicație — vă arătăm cum să o creați în 3 pași." },
+      "search": { "title": "Căutarea locurilor de muncă", "what": "BewerbungsPilot caută pe bursa de locuri de muncă a Agenției Federale pentru Ocuparea Forței de Muncă și selectează ofertele potrivite profilului dumneavoastră. Puteți, de asemenea, să inserați o ofertă găsită de dumneavoastră.", "todo": "Faceți clic pe „Căutați acum” sau activați căutarea zilnică." },
+      "review": { "title": "Revizuire și aprobare", "what": "Pentru fiecare ofertă potrivită primiți o scrisoare de intenție, un CV adaptat, notițe despre companie și sfaturi pentru interviu.", "todo": "Citiți documentele, modificați ce doriți și aprobați cererea." },
+      "send": { "title": "Trimitere", "what": "Sunt trimise doar cererile aprobate de dumneavoastră — nimic altceva.", "todo": "Faceți clic pe „Trimiteți” și ați terminat." },
+      "statuses": { "title": "Urmărirea candidaturilor", "what": "Vedeți dintr-o privire unde ați aplicat, cine a răspuns și cum evoluează candidaturile dumneavoastră.", "todo": "Marcați răspunsurile, cum ar fi o invitație sau un refuz — BewerbungsPilot vă ajută să răspundeți." }
     }
   },
   "info": {
-    "languageSwitcher": "Changes the language of the app. Documents for employers use the language of the job offer.",
-    "claudeTest": "Sends a short test question to Claude to check that everything works.",
-    "restartIntro": "Shows the welcome steps again. Your data stays as it is.",
-    "quit": "Stops BewerbungsPilot on this computer. Start it again with the desktop shortcut."
+    "languageSwitcher": "Schimbă limba aplicației. Documentele pentru angajatori folosesc limba ofertei de angajare.",
+    "claudeTest": "Trimite o scurtă întrebare de test către Claude pentru a verifica dacă totul funcționează.",
+    "restartIntro": "Afișează din nou pașii de bun venit. Datele dumneavoastră rămân neschimbate.",
+    "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop."
   },
   "settings": {
-    "title": "Settings",
-    "languageTitle": "Language",
-    "claudeTitle": "Connection to Claude",
-    "claudeTest": "Test the connection",
-    "claudeRunning": "Waiting for Claude…",
-    "claudeResult": "Claude says: \"{{greeting}}\"",
-    "introTitle": "Welcome steps",
-    "introRestart": "Show the welcome steps again",
-    "quitTitle": "Quit the app",
-    "quitButton": "Quit BewerbungsPilot"
+    "title": "Setări",
+    "languageTitle": "Limbă",
+    "claudeTitle": "Conexiune la Claude",
+    "claudeTest": "Testați conexiunea",
+    "claudeRunning": "Se așteaptă răspunsul Claude…",
+    "claudeResult": "Claude spune: „{{greeting}}”",
+    "introTitle": "Pașii de bun venit",
+    "introRestart": "Afișați din nou pașii de bun venit",
+    "quitTitle": "Închideți aplicația",
+    "quitButton": "Închideți BewerbungsPilot"
   },
-  "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop." },
+  "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop." },
   "errors": {
-    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code is not installed.", "hint": "Run the BewerbungsPilot installer again — it installs Claude Code for you." },
-    "CLAUDE_NOT_LOGGED_IN": { "message": "You are not signed in to Claude.", "hint": "Open Settings and click \"Open sign-in window\"." },
-    "LLM_TIMEOUT": { "message": "Claude took too long to answer.", "hint": "Please try again in a moment." },
-    "LLM_BAD_OUTPUT": { "message": "Claude's answer could not be understood.", "hint": "Please try again. If it keeps happening, restart the app." },
-    "LLM_FAILED": { "message": "Claude could not finish the task.", "hint": "Check your internet connection and try again." },
-    "LLM_CANCELLED": { "message": "The task was cancelled.", "hint": "Start it again whenever you like." },
-    "DATA_WRITE_FAILED": { "message": "Your changes could not be saved.", "hint": "Check that your disk is not full and try again." },
-    "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
-    "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
-    "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
-    "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." }
+    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },
+    "CLAUDE_NOT_LOGGED_IN": { "message": "Nu sunteți autentificat la Claude.", "hint": "Deschideți Setările și faceți clic pe „Deschideți fereastra de autentificare”." },
+    "LLM_TIMEOUT": { "message": "Claude a durat prea mult pentru a răspunde.", "hint": "Vă rugăm să încercați din nou peste puțin timp." },
+    "LLM_BAD_OUTPUT": { "message": "Răspunsul Claude nu a putut fi înțeles.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
+    "LLM_FAILED": { "message": "Claude nu a putut finaliza sarcina.", "hint": "Verificați conexiunea la internet și încercați din nou." },
+    "LLM_CANCELLED": { "message": "Sarcina a fost anulată.", "hint": "Porniți-o din nou oricând doriți." },
+    "DATA_WRITE_FAILED": { "message": "Modificările dumneavoastră nu au putut fi salvate.", "hint": "Verificați dacă discul nu este plin și încercați din nou." },
+    "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
+    "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
+    "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nu rulează.", "hint": "Porniți-l din nou cu ajutorul comenzii rapide de pe desktop." },
+    "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." }
   }
 }
