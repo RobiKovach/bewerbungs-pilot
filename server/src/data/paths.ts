@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export interface DataPaths { root: string; settings: string; server: string; lock: string; logs: string; tmp: string }
+export interface DataPaths {
+  root: string; settings: string; server: string; lock: string; logs: string; tmp: string;
+  profile: string; profileFile: string; profileFiles: string;
+}
 
 export function resolveDataRoot(env: NodeJS.ProcessEnv = process.env): string {
   if (env.BP_DATA_DIR) return path.resolve(env.BP_DATA_DIR);
@@ -18,9 +21,12 @@ export function dataPaths(root: string): DataPaths {
     lock: path.join(root, 'server.lock'),
     logs: path.join(root, 'logs'),
     tmp: path.join(root, 'tmp'),
+    profile: path.join(root, 'profile'),
+    profileFile: path.join(root, 'profile', 'profile.json'),
+    profileFiles: path.join(root, 'profile', 'files'),
   };
 }
 
 export function ensureDataDirs(p: DataPaths): void {
-  for (const dir of [p.root, p.logs, p.tmp]) fs.mkdirSync(dir, { recursive: true });
+  for (const dir of [p.root, p.logs, p.tmp, p.profile, p.profileFiles]) fs.mkdirSync(dir, { recursive: true });
 }

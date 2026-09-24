@@ -22,6 +22,8 @@ describe('data paths', () => {
     ensureDataDirs(p);
     expect(fs.statSync(p.logs).isDirectory()).toBe(true);
     expect(fs.statSync(p.tmp).isDirectory()).toBe(true);
+    expect(fs.statSync(p.profileFiles).isDirectory()).toBe(true);
+    expect(p.profileFile).toBe(path.join(p.root, 'profile', 'profile.json'));
   });
 });
 
