@@ -1,4 +1,6 @@
-import type { Language, LlmCheck, Settings, SettingsPatch } from './types';
+import type {
+  CvResult, Language, LlmCheck, ProfileView, SectionDataMap, SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput,
+} from './types';
 
 export class ApiError extends Error {
   constructor(public readonly code: string, public readonly details: string) {
@@ -7,12 +9,12 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, url: string, body?: unknown, signal?: AbortSignal): Promise<T> {
-  const headers: Record<string, string> = { 'X-BP-Client': '1' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+const CLIENT_HEADER = { 'X-BP-Client': '1' };
+
+async function send<T>(url: string, init: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal });
+    res = await fetch(url, init);
   } catch (err) {
     if ((err as Error).name === 'AbortError') throw err;
     throw new ApiError('SERVER_UNREACHABLE', String(err));
@@ -22,6 +24,21 @@ async function request<T>(method: string, url: string, body?: unknown, signal?: 
   return data as T;
 }
 
+function request<T>(method: string, url: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  const headers: Record<string, string> = { ...CLIENT_HEADER };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  return send<T>(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal });
+}
+
+/** One file as multipart/form-data. No Content-Type header: the browser adds it with the boundary. */
+function upload<T>(url: string, file: Blob, filename: string, signal?: AbortSignal): Promise<T> {
+  const form = new FormData();
+  form.append('file', file, filename);
+  return send<T>(url, { method: 'POST', headers: { ...CLIENT_HEADER }, body: form, signal });
+}
+
+const fileName = (file: Blob, fallback: string) => (file instanceof File && file.name ? file.name : fallback);
+
 export const api = {
   getSettings: () => request<Settings>('GET', '/api/settings'),
   patchSettings: (patch: SettingsPatch) => request<Settings>('PATCH', '/api/settings', patch),
@@ -29,4 +46,26 @@ export const api = {
   testLlm: (language: Language, signal?: AbortSignal) => request<{ greeting: string }>('POST', '/api/llm/test', { language }, signal),
   openLogin: () => request<{ ok: true }>('POST', '/api/llm/open-login', {}),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
+
+  getProfile: () => request<ProfileView>('GET', '/api/profile'),
+  setWizard: (step: 1 | 2 | 3 | 4, completed = false) =>
+    request<ProfileView>('PUT', '/api/profile/wizard', completed ? { step, completed } : { step }),
+  saveSection: <K extends SectionId>(id: K, data: SectionDataMap[K]) => request<ProfileView>('PUT', `/api/profile/sections/${id}`, { data }),
+  confirmSection: (id: SectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/confirm`, {}),
+  uploadCv: (file: File, signal?: AbortSignal) => upload<CvResult>('/api/profile/cv', file, fileName(file, 'cv'), signal),
+  askFollowUps: (signal?: AbortSignal) => request<ProfileView>('POST', '/api/profile/followups', {}, signal),
+  structureStories: (answers: StoryAnswer[], signal?: AbortSignal) =>
+    request<ProfileView>('POST', '/api/profile/stories/structure', { answers }, signal),
+  addStory: (story: StoryInput) => request<ProfileView>('POST', '/api/profile/stories', story),
+  saveStory: (id: string, story: StoryInput & { confirmed: boolean }) => request<ProfileView>('PUT', `/api/profile/stories/${id}`, story),
+  deleteStory: (id: string) => request<ProfileView>('DELETE', `/api/profile/stories/${id}`),
+  setNeverMention: (items: string[]) => request<ProfileView>('PUT', '/api/profile/never-mention', items),
+  uploadPhoto: (image: Blob) => upload<ProfileView>('/api/profile/files?kind=photo', image, 'photo.jpg'),
+  uploadDocument: (file: File, label: string, attachAlways: boolean) => upload<ProfileView>(
+    `/api/profile/files?kind=document&label=${encodeURIComponent(label)}&attachAlways=${attachAlways ? 1 : 0}`, file, fileName(file, 'document.pdf'),
+  ),
+  saveDocument: (id: string, label: string, attachAlways: boolean) =>
+    request<ProfileView>('PUT', `/api/profile/files/${id}`, { label, attachAlways }),
+  deleteFile: (id: string) => request<ProfileView>('DELETE', `/api/profile/files/${id}`),
+  fileUrl: (id: string) => `/api/profile/files/${id}`,
 };

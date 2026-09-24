@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { api, ApiError } from './api';
 import { mockFetch } from './test/fetchMock';
 import { baseSettings } from './test/fixtures';
+import { emptyProfile, viewOf } from './test/profileFixtures';
 
 describe('api', () => {
   it('sends JSON with the client header', async () => {
@@ -29,5 +30,28 @@ describe('api', () => {
     await api.checkLlm();
     await api.checkLlm(true);
     expect(f.mock.calls.map((c) => c[0])).toEqual(['/api/llm/check', '/api/llm/check?refresh=1']);
+  });
+  it('uploads a file as multipart: client header, no JSON content type, name kept', async () => {
+    const f = mockFetch({ 'POST /api/profile/cv': () => ({ body: { ...viewOf(emptyProfile()), changedSections: [] } }) });
+    await api.uploadCv(new File(['%PDF-1.4'], 'Резюме Ольга.pdf', { type: 'application/pdf' }));
+    const init = f.mock.calls[0][1] as RequestInit;
+    expect(init.headers).toEqual({ 'X-BP-Client': '1' });
+    expect(((init.body as FormData).get('file') as File).name).toBe('Резюме Ольга.pdf');
+  });
+  it('puts the document label and attach flag into the upload URL', async () => {
+    const url = `/api/profile/files?kind=document&label=${encodeURIComponent('Zeugnis & Co')}&attachAlways=1`;
+    const f = mockFetch({ [`POST ${url}`]: () => ({ body: viewOf(emptyProfile()) }) });
+    await api.uploadDocument(new File(['%PDF'], 'z.pdf'), 'Zeugnis & Co', true);
+    expect(f).toHaveBeenCalledOnce();
+  });
+  it('sends the never-mention list as a JSON array and deletes without a body', async () => {
+    const f = mockFetch({
+      'PUT /api/profile/never-mention': () => ({ body: viewOf(emptyProfile()) }),
+      'DELETE /api/profile/stories/s1': () => ({ body: viewOf(emptyProfile()) }),
+    });
+    await api.setNeverMention(['Kunde X']);
+    await api.deleteStory('s1');
+    expect((f.mock.calls[0][1] as RequestInit).body).toBe('["Kunde X"]');
+    expect((f.mock.calls[1][1] as RequestInit).body).toBeUndefined();
   });
 });
