@@ -16,4 +16,11 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'BewerbungsPilot has been closed' })).toBeInTheDocument();
     expect(f.mock.calls.some((c) => c[0] === '/api/shutdown')).toBe(true);
   });
+
+  it('navigates to the guide via the menu', async () => {
+    mockFetch(settingsRoutes(baseSettings()).routes);
+    render(<SettingsProvider><App /></SettingsProvider>);
+    await userEvent.setup().click(await screen.findByRole('link', { name: 'How it works' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'How it works' })).toBeInTheDocument();
+  });
 });

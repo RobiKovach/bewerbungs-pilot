@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 import { Layout } from './components/Layout';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
+import { GuidePage } from './pages/GuidePage';
 import { HomePage } from './pages/HomePage';
 import { QuitScreen } from './pages/QuitScreen';
+import { SettingsPage } from './pages/SettingsPage';
 import { useSettings } from './settings';
 import type { Route } from './types';
 
@@ -29,9 +31,13 @@ export function App() {
     setQuit(true);
   };
   const onboarding = !settings.onboarding.completed;
+  let page = <HomePage />;
+  if (onboarding) page = <OnboardingWizard />;
+  else if (route === 'guide') page = <GuidePage />;
+  else if (route === 'settings') page = <SettingsPage onQuit={() => void onQuit()} />;
   return (
     <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
-      {onboarding ? <OnboardingWizard /> : <HomePage />}
+      {page}
     </Layout>
   );
 }

@@ -1,0 +1,18 @@
+import { describe, it, expect } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import { GuidePage } from './GuidePage';
+
+describe('GuidePage', () => {
+  it('shows all seven stages in order with what/todo texts', () => {
+    render(<GuidePage />);
+    const items = screen.getAllByRole('listitem');
+    expect(items).toHaveLength(7);
+    expect(within(items[0]).getByRole('heading')).toHaveTextContent('Installation');
+    expect(within(items[6]).getByRole('heading')).toHaveTextContent('Track your applications');
+    expect(within(items[1]).getByText(/Upload your CV/)).toBeInTheDocument();
+  });
+  it('marks not-yet-available stages as coming soon', () => {
+    render(<GuidePage />);
+    expect(screen.getAllByText('Coming soon')).toHaveLength(6);
+  });
+});
