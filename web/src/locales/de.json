@@ -60,7 +60,8 @@
     "languageSwitcher": "Ändert die Sprache der App. Dokumente für Arbeitgeber verwenden die Sprache des Stellenangebots.",
     "claudeTest": "Sendet eine kurze Testfrage an Claude, um zu prüfen, dass alles funktioniert.",
     "restartIntro": "Zeigt die Willkommensschritte erneut. Ihre Daten bleiben unverändert.",
-    "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop."
+    "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop.",
+    "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet."
   },
   "settings": {
     "title": "Einstellungen",
@@ -75,6 +76,48 @@
     "quitButton": "BewerbungsPilot beenden"
   },
   "quit": { "title": "BewerbungsPilot wurde beendet", "body": "Sie können diesen Tab jetzt schließen. Um erneut zu starten, verwenden Sie die BewerbungsPilot-Verknüpfung auf Ihrem Desktop." },
+  "profile": {
+    "aiCheck": "KI – bitte prüfen",
+    "aiHint": "Claude hat dieses Feld anhand Ihres Lebenslaufs ausgefüllt. Bitte prüfen Sie es.",
+    "save": "Speichern",
+    "allCorrect": "Alles korrekt",
+    "remove": "Entfernen",
+    "dateHint": "Zum Beispiel 2021-05 oder 2021. Lassen Sie „Bis“ leer, wenn Sie noch dort sind.",
+    "dateInvalid": "Bitte schreiben Sie das Datum als 2021-05 oder 2021.",
+    "fixDates": "Bitte korrigieren Sie zuerst die rot markierten Daten.",
+    "officialHint": "Schreiben Sie es genau wie auf Ihrem Zeugnis oder Vertrag — es wird nie übersetzt.",
+    "status": { "confirmed": "Geprüft", "needsCheck": "Bitte prüfen", "notConfirmed": "Noch nicht geprüft" },
+    "sections": {
+      "personal": { "title": "Persönliche Daten", "hint": "Wie Arbeitgeber Sie erreichen können." },
+      "education": { "title": "Ausbildung", "hint": "Schule, Berufsausbildung, Studium, Kurse und Zertifikate.", "add": "Ausbildung hinzufügen" },
+      "experience": { "title": "Berufserfahrung", "hint": "Jobs, Praktika und Nebenjobs.", "add": "Job hinzufügen" },
+      "skills": { "title": "Fähigkeiten", "hint": "Werkzeuge, Programme und Fähigkeiten, die Sie wirklich haben.", "add": "Fähigkeit hinzufügen" },
+      "languages": { "title": "Sprachen", "hint": "Jede Sprache, die Sie sprechen, und wie gut.", "add": "Sprache hinzufügen" },
+      "wishes": { "title": "Jobwünsche", "hint": "Welche Art von Job Sie suchen. BewerbungsPilot sucht damit." }
+    },
+    "personal": {
+      "fullName": "Vollständiger Name", "email": "E-Mail", "phone": "Telefon", "street": "Straße und Hausnummer", "postalCode": "Postleitzahl",
+      "city": "Stadt", "country": "Land", "birthDate": "Geburtsdatum (optional)", "nationality": "Staatsangehörigkeit (optional)",
+      "workPermit": "Arbeitserlaubnis oder Aufenthaltsstatus (optional)", "drivingLicense": "Führerschein (optional)"
+    },
+    "entry": {
+      "kind": "Art", "degree": "Abschluss oder Zertifikat", "institution": "Schule, Hochschule oder Anbieter", "jobTitle": "Berufsbezeichnung",
+      "employer": "Arbeitgeber", "city": "Stadt", "country": "Land", "from": "Von", "to": "Bis",
+      "description": "Was Sie gemacht haben (in eigenen Worten)", "skill": "Fähigkeit", "level": "Niveau", "language": "Sprache",
+      "certificate": "Zertifikat (optional)"
+    },
+    "educationKind": { "school": "Schule", "vocational": "Berufsausbildung", "university": "Hochschule", "course": "Kurs", "certificate": "Zertifikat" },
+    "skillLevel": { "none": "Nicht angegeben", "basic": "Grundkenntnisse", "good": "Gut", "expert": "Experte" },
+    "languageLevel": { "none": "Nicht angegeben", "A1": "A1 – Anfänger", "A2": "A2", "B1": "B1", "B2": "B2", "C1": "C1", "C2": "C2 – fast wie ein Muttersprachler", "native": "Muttersprache" },
+    "wishes": {
+      "jobTitles": "Jobs, die Sie suchen (einer pro Zeile)", "locations": "Orte (einer pro Zeile)",
+      "radiusKm": "Entfernung von diesen Orten (km)", "remote": "Arbeiten von zu Hause", "employmentTypes": "Art der Beschäftigung",
+      "salaryMinEur": "Mindestbruttogehalt pro Jahr in € (optional)", "availableFrom": "Verfügbar ab",
+      "notes": "Alles andere, was Ihnen wichtig ist (optional)"
+    },
+    "remote": { "any": "Egal", "onsite": "Am Arbeitsplatz", "hybrid": "Teilweise von zu Hause", "remote": "Nur von zu Hause" },
+    "employment": { "fulltime": "Vollzeit", "parttime": "Teilzeit", "minijob": "Minijob", "apprenticeship": "Ausbildung", "internship": "Praktikum" }
+  },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },
     "CLAUDE_NOT_LOGGED_IN": { "message": "Sie sind nicht bei Claude angemeldet.", "hint": "Öffnen Sie die Einstellungen und klicken Sie auf „Anmeldefenster öffnen“." },

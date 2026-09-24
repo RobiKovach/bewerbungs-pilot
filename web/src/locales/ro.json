@@ -60,7 +60,8 @@
     "languageSwitcher": "Schimbă limba aplicației. Documentele pentru angajatori folosesc limba ofertei de angajare.",
     "claudeTest": "Trimite o scurtă întrebare de test către Claude pentru a verifica dacă totul funcționează.",
     "restartIntro": "Afișează din nou pașii de bun venit. Datele dumneavoastră rămân neschimbate.",
-    "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop."
+    "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop.",
+    "profileConfirm": "Faceți clic după ce ați verificat fiecare câmp din această secțiune. Doar secțiunile verificate sunt folosite pentru candidaturi."
   },
   "settings": {
     "title": "Setări",
@@ -75,6 +76,48 @@
     "quitButton": "Închideți BewerbungsPilot"
   },
   "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop." },
+  "profile": {
+    "aiCheck": "AI – vă rugăm verificați",
+    "aiHint": "Claude a completat acest câmp pe baza CV-ului dumneavoastră. Vă rugăm să îl verificați.",
+    "save": "Salvați",
+    "allCorrect": "Totul corect",
+    "remove": "Eliminați",
+    "dateHint": "De exemplu 2021-05 sau 2021. Lăsați „Până” gol dacă sunteți încă acolo.",
+    "dateInvalid": "Vă rugăm să scrieți data ca 2021-05 sau 2021.",
+    "fixDates": "Vă rugăm să corectați mai întâi datele marcate cu roșu.",
+    "officialHint": "Scrieți exact ca pe diploma sau contractul dumneavoastră — nu se traduce niciodată.",
+    "status": { "confirmed": "Verificat", "needsCheck": "Necesită verificare", "notConfirmed": "Neverificat încă" },
+    "sections": {
+      "personal": { "title": "Date personale", "hint": "Cum vă pot contacta angajatorii." },
+      "education": { "title": "Educație", "hint": "Școală, formare profesională, studii, cursuri și certificate.", "add": "Adăugați educație" },
+      "experience": { "title": "Experiență profesională", "hint": "Locuri de muncă, stagii și job-uri secundare.", "add": "Adăugați un loc de muncă" },
+      "skills": { "title": "Competențe", "hint": "Instrumente, programe și abilități pe care le aveți cu adevărat.", "add": "Adăugați o competență" },
+      "languages": { "title": "Limbi străine", "hint": "Fiecare limbă pe care o vorbiți și cât de bine.", "add": "Adăugați o limbă" },
+      "wishes": { "title": "Preferințe privind locul de muncă", "hint": "Ce fel de loc de muncă căutați. BewerbungsPilot caută pe baza acestora." }
+    },
+    "personal": {
+      "fullName": "Nume complet", "email": "E-mail", "phone": "Telefon", "street": "Strada și numărul", "postalCode": "Cod poștal",
+      "city": "Oraș", "country": "Țară", "birthDate": "Data nașterii (opțional)", "nationality": "Naționalitate (opțional)",
+      "workPermit": "Permis de muncă sau statut de ședere (opțional)", "drivingLicense": "Permis de conducere (opțional)"
+    },
+    "entry": {
+      "kind": "Tip", "degree": "Diplomă sau certificat", "institution": "Școală, universitate sau furnizor", "jobTitle": "Titlul postului",
+      "employer": "Angajator", "city": "Oraș", "country": "Țară", "from": "De la", "to": "Până la",
+      "description": "Ce ați făcut (cu propriile cuvinte)", "skill": "Competență", "level": "Nivel", "language": "Limbă",
+      "certificate": "Certificat (opțional)"
+    },
+    "educationKind": { "school": "Școală", "vocational": "Formare profesională", "university": "Universitate", "course": "Curs", "certificate": "Certificat" },
+    "skillLevel": { "none": "Nespecificat", "basic": "De bază", "good": "Bun", "expert": "Expert" },
+    "languageLevel": { "none": "Nespecificat", "A1": "A1 – începător", "A2": "A2", "B1": "B1", "B2": "B2", "C1": "C1", "C2": "C2 – aproape ca un vorbitor nativ", "native": "Limbă maternă" },
+    "wishes": {
+      "jobTitles": "Locuri de muncă pe care le căutați (câte unul pe rând)", "locations": "Locații (câte una pe rând)",
+      "radiusKm": "Distanța față de aceste locații (km)", "remote": "Lucru de acasă", "employmentTypes": "Tipul angajării",
+      "salaryMinEur": "Salariul minim brut anual în € (opțional)", "availableFrom": "Disponibil din",
+      "notes": "Orice altceva contează pentru dumneavoastră (opțional)"
+    },
+    "remote": { "any": "Nu contează", "onsite": "La locul de muncă", "hybrid": "Parțial de acasă", "remote": "Doar de acasă" },
+    "employment": { "fulltime": "Normă întreagă", "parttime": "Normă parțială", "minijob": "Minijob", "apprenticeship": "Ucenicie (Ausbildung)", "internship": "Stagiu" }
+  },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },
     "CLAUDE_NOT_LOGGED_IN": { "message": "Nu sunteți autentificat la Claude.", "hint": "Deschideți Setările și faceți clic pe „Deschideți fereastra de autentificare”." },

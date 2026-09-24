@@ -60,7 +60,8 @@
     "languageSwitcher": "Zmienia język aplikacji. Dokumenty dla pracodawców są w języku oferty pracy.",
     "claudeTest": "Wysyła do Claude krótkie pytanie testowe, aby sprawdzić, czy wszystko działa.",
     "restartIntro": "Pokazuje ponownie kroki powitalne. Twoje dane pozostają bez zmian.",
-    "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie."
+    "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie.",
+    "profileConfirm": "Kliknij, gdy sprawdzisz każde pole tej sekcji. Do aplikacji używane są tylko sprawdzone sekcje."
   },
   "settings": {
     "title": "Ustawienia",
@@ -75,6 +76,48 @@
     "quitButton": "Zamknij BewerbungsPilot"
   },
   "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie." },
+  "profile": {
+    "aiCheck": "AI – proszę sprawdzić",
+    "aiHint": "Claude uzupełnił to pole na podstawie Twojego CV. Proszę je sprawdzić.",
+    "save": "Zapisz",
+    "allCorrect": "Wszystko poprawne",
+    "remove": "Usuń",
+    "dateHint": "Na przykład 2021-05 lub 2021. Zostaw „Do” puste, jeśli nadal tam jesteś.",
+    "dateInvalid": "Proszę podać datę jako 2021-05 lub 2021.",
+    "fixDates": "Najpierw popraw daty zaznaczone na czerwono.",
+    "officialHint": "Wpisz dokładnie tak, jak na świadectwie lub umowie — to nigdy nie jest tłumaczone.",
+    "status": { "confirmed": "Sprawdzone", "needsCheck": "Do sprawdzenia", "notConfirmed": "Jeszcze niesprawdzone" },
+    "sections": {
+      "personal": { "title": "Dane osobowe", "hint": "Jak pracodawcy mogą się z Tobą skontaktować." },
+      "education": { "title": "Wykształcenie", "hint": "Szkoła, kształcenie zawodowe, studia, kursy i certyfikaty.", "add": "Dodaj wykształcenie" },
+      "experience": { "title": "Doświadczenie zawodowe", "hint": "Praca, staże i dorywcze zajęcia.", "add": "Dodaj pracę" },
+      "skills": { "title": "Umiejętności", "hint": "Narzędzia, programy i umiejętności, które naprawdę posiadasz.", "add": "Dodaj umiejętność" },
+      "languages": { "title": "Języki", "hint": "Każdy język, którym się posługujesz, i na jakim poziomie.", "add": "Dodaj język" },
+      "wishes": { "title": "Oczekiwania wobec pracy", "hint": "Jakiej pracy szukasz. BewerbungsPilot wyszukuje na tej podstawie." }
+    },
+    "personal": {
+      "fullName": "Imię i nazwisko", "email": "E-mail", "phone": "Telefon", "street": "Ulica i numer domu", "postalCode": "Kod pocztowy",
+      "city": "Miasto", "country": "Kraj", "birthDate": "Data urodzenia (opcjonalnie)", "nationality": "Narodowość (opcjonalnie)",
+      "workPermit": "Pozwolenie na pracę lub status pobytu (opcjonalnie)", "drivingLicense": "Prawo jazdy (opcjonalnie)"
+    },
+    "entry": {
+      "kind": "Rodzaj", "degree": "Stopień lub certyfikat", "institution": "Szkoła, uczelnia lub organizator", "jobTitle": "Stanowisko",
+      "employer": "Pracodawca", "city": "Miasto", "country": "Kraj", "from": "Od", "to": "Do",
+      "description": "Co robiłeś/robiłaś (własnymi słowami)", "skill": "Umiejętność", "level": "Poziom", "language": "Język",
+      "certificate": "Certyfikat (opcjonalnie)"
+    },
+    "educationKind": { "school": "Szkoła", "vocational": "Kształcenie zawodowe", "university": "Uczelnia", "course": "Kurs", "certificate": "Certyfikat" },
+    "skillLevel": { "none": "Nie podano", "basic": "Podstawowy", "good": "Dobry", "expert": "Ekspercki" },
+    "languageLevel": { "none": "Nie podano", "A1": "A1 – początkujący", "A2": "A2", "B1": "B1", "B2": "B2", "C1": "C1", "C2": "C2 – niemal jak native speaker", "native": "Język ojczysty" },
+    "wishes": {
+      "jobTitles": "Stanowiska, których szukasz (jedno na linię)", "locations": "Miejsca (jedno na linię)",
+      "radiusKm": "Odległość od tych miejsc (km)", "remote": "Praca z domu", "employmentTypes": "Rodzaj zatrudnienia",
+      "salaryMinEur": "Minimalne wynagrodzenie brutto rocznie w € (opcjonalnie)", "availableFrom": "Dostępny/a od",
+      "notes": "Cokolwiek innego, co jest dla Ciebie ważne (opcjonalnie)"
+    },
+    "remote": { "any": "Nieważne", "onsite": "W miejscu pracy", "hybrid": "Częściowo z domu", "remote": "Tylko z domu" },
+    "employment": { "fulltime": "Pełny etat", "parttime": "Niepełny etat", "minijob": "Minijob", "apprenticeship": "Przyuczenie do zawodu (Ausbildung)", "internship": "Staż" }
+  },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },
     "CLAUDE_NOT_LOGGED_IN": { "message": "Nie zalogowano do Claude.", "hint": "Otwórz Ustawienia i kliknij „Otwórz okno logowania”." },
