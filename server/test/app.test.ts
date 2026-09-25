@@ -146,7 +146,7 @@ describe('static dashboard', () => {
 describe('security headers', () => {
   const expectHeaders = (headers: Record<string, unknown>) => {
     expect(headers['x-frame-options']).toBe('DENY');
-    expect(headers['content-security-policy']).toBe("default-src 'self'; frame-ancestors 'none'");
+    expect(headers['content-security-policy']).toBe("default-src 'self'; img-src 'self' blob:; frame-ancestors 'none'");
     expect(headers['x-content-type-options']).toBe('nosniff');
   };
   it('forbids framing and sniffing on the dashboard page', async () => {

@@ -63,7 +63,8 @@
     "quit": "Stops BewerbungsPilot on this computer. Start it again with the desktop shortcut.",
     "profileConfirm": "Click when you have checked every field of this section. Only checked sections are used for applications.",
     "profileCv": "Your CV stays on this computer. Claude only reads it to fill in your profile. Nothing is made up.",
-    "profileAsk": "Claude only asks — it never makes anything up. Your answers become stories that you check and can change."
+    "profileAsk": "Claude only asks — it never makes anything up. Your answers become stories that you check and can change.",
+    "profileDocs": "PDF files up to 10 MB each, at most 20. Ticked documents are attached to every application automatically."
   },
   "settings": {
     "title": "Settings",
@@ -159,7 +160,28 @@
       "saved": "Saved"
     },
     "storyKind": { "client": "For a client", "work": "At work", "training": "In training or studies", "personal": "Personal project or life" },
-    "disclosure": { "ok": "Yes, may be told", "never": "No, never tell employers" }
+    "disclosure": { "ok": "Yes, may be told", "never": "No, never tell employers" },
+    "files": {
+      "intro": "Optional: a photo for your CV and documents to attach, such as certificates or references.",
+      "photoTitle": "Photo",
+      "photoChoose": "Choose a photo (JPG or PNG)",
+      "photoSave": "Use this part",
+      "photoZoom": "Zoom",
+      "photoDelete": "Remove photo",
+      "photoAlt": "Your CV photo",
+      "photoNone": "No photo yet. In Germany a photo is common, but not required.",
+      "docsTitle": "Documents for attachments",
+      "docLabel": "Name of the new document (for example \"Zeugnis Ausbildung\")",
+      "docName": "Name",
+      "docAlways": "Attach to every application",
+      "docChoose": "Add a PDF document",
+      "docOpen": "Open",
+      "docSave": "Save",
+      "docDelete": "Delete",
+      "docReallyDelete": "Really delete?",
+      "docCount": "{{count}} of {{max}} documents"
+    },
+    "wizard": { "finish": "Finish" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code is not installed.", "hint": "Run the BewerbungsPilot installer again — it installs Claude Code for you." },

@@ -63,7 +63,8 @@
     "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop.",
     "profileConfirm": "Faceți clic după ce ați verificat fiecare câmp din această secțiune. Doar secțiunile verificate sunt folosite pentru candidaturi.",
     "profileCv": "CV-ul dvs. rămâne pe acest computer. Claude îl citește doar pentru a vă completa profilul. Nimic nu este inventat.",
-    "profileAsk": "Claude doar întreabă — nu inventează niciodată nimic. Răspunsurile dumneavoastră devin povești pe care le verificați și le puteți schimba."
+    "profileAsk": "Claude doar întreabă — nu inventează niciodată nimic. Răspunsurile dumneavoastră devin povești pe care le verificați și le puteți schimba.",
+    "profileDocs": "Fișiere PDF de până la 10 MB fiecare, cel mult 20. Documentele bifate sunt atașate automat la fiecare aplicație."
   },
   "settings": {
     "title": "Setări",
@@ -159,7 +160,28 @@
       "saved": "Salvat"
     },
     "storyKind": { "client": "Pentru un client", "work": "La locul de muncă", "training": "În timpul formării sau studiilor", "personal": "Proiect personal sau viață personală" },
-    "disclosure": { "ok": "Da, poate fi spus", "never": "Nu, niciodată angajatorilor" }
+    "disclosure": { "ok": "Da, poate fi spus", "never": "Nu, niciodată angajatorilor" },
+    "files": {
+      "intro": "Opțional: o fotografie pentru CV și documente de atașat, de exemplu diplome sau recomandări.",
+      "photoTitle": "Fotografie",
+      "photoChoose": "Alegeți o fotografie (JPG sau PNG)",
+      "photoSave": "Folosește această parte",
+      "photoZoom": "Zoom",
+      "photoDelete": "Elimină fotografia",
+      "photoAlt": "Fotografia dumneavoastră pentru CV",
+      "photoNone": "Nu aveți încă o fotografie. În Germania o fotografie este obișnuită, dar nu obligatorie.",
+      "docsTitle": "Documente pentru atașamente",
+      "docLabel": "Numele noului document (de exemplu „Zeugnis Ausbildung”)",
+      "docName": "Nume",
+      "docAlways": "Atașează la fiecare aplicație",
+      "docChoose": "Adaugă un document PDF",
+      "docOpen": "Deschide",
+      "docSave": "Salvează",
+      "docDelete": "Șterge",
+      "docReallyDelete": "Sigur ștergeți?",
+      "docCount": "{{count}} din {{max}} documente"
+    },
+    "wizard": { "finish": "Finalizează" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },

@@ -63,7 +63,8 @@
     "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop.",
     "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet.",
     "profileCv": "Ihr Lebenslauf bleibt auf diesem Computer. Claude liest ihn nur, um Ihr Profil auszufüllen. Nichts wird erfunden.",
-    "profileAsk": "Claude fragt nur — es erfindet nie etwas. Aus Ihren Antworten werden Geschichten, die Sie prüfen und ändern können."
+    "profileAsk": "Claude fragt nur — es erfindet nie etwas. Aus Ihren Antworten werden Geschichten, die Sie prüfen und ändern können.",
+    "profileDocs": "PDF-Dateien bis 10 MB pro Datei, höchstens 20. Angehakte Dokumente werden automatisch jeder Bewerbung beigefügt."
   },
   "settings": {
     "title": "Einstellungen",
@@ -159,7 +160,28 @@
       "saved": "Gespeichert"
     },
     "storyKind": { "client": "Für einen Kunden", "work": "Bei der Arbeit", "training": "In Ausbildung oder Studium", "personal": "Privates Projekt oder Leben" },
-    "disclosure": { "ok": "Ja, darf erzählt werden", "never": "Nein, nie den Arbeitgebern erzählen" }
+    "disclosure": { "ok": "Ja, darf erzählt werden", "never": "Nein, nie den Arbeitgebern erzählen" },
+    "files": {
+      "intro": "Optional: ein Foto für Ihren Lebenslauf und Dokumente zum Anhängen, zum Beispiel Zeugnisse oder Referenzen.",
+      "photoTitle": "Foto",
+      "photoChoose": "Foto auswählen (JPG oder PNG)",
+      "photoSave": "Diesen Ausschnitt verwenden",
+      "photoZoom": "Zoom",
+      "photoDelete": "Foto entfernen",
+      "photoAlt": "Ihr Foto für den Lebenslauf",
+      "photoNone": "Noch kein Foto. In Deutschland ist ein Foto üblich, aber nicht Pflicht.",
+      "docsTitle": "Dokumente für Anhänge",
+      "docLabel": "Name des neuen Dokuments (zum Beispiel \"Zeugnis Ausbildung\")",
+      "docName": "Name",
+      "docAlways": "Jeder Bewerbung beifügen",
+      "docChoose": "PDF-Dokument hinzufügen",
+      "docOpen": "Öffnen",
+      "docSave": "Speichern",
+      "docDelete": "Löschen",
+      "docReallyDelete": "Wirklich löschen?",
+      "docCount": "{{count}} von {{max}} Dokumenten"
+    },
+    "wizard": { "finish": "Fertig" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },

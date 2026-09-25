@@ -63,7 +63,8 @@
     "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie.",
     "profileConfirm": "Kliknij, gdy sprawdzisz każde pole tej sekcji. Do aplikacji używane są tylko sprawdzone sekcje.",
     "profileCv": "Twoje CV pozostaje na tym komputerze. Claude tylko je czyta, aby wypełnić Twój profil. Nic nie jest zmyślane.",
-    "profileAsk": "Claude tylko pyta — nigdy nic nie zmyśla. Twoje odpowiedzi stają się historiami, które sprawdzasz i możesz zmienić."
+    "profileAsk": "Claude tylko pyta — nigdy nic nie zmyśla. Twoje odpowiedzi stają się historiami, które sprawdzasz i możesz zmienić.",
+    "profileDocs": "Pliki PDF do 10 MB każdy, maksymalnie 20. Zaznaczone dokumenty są automatycznie dołączane do każdej aplikacji."
   },
   "settings": {
     "title": "Ustawienia",
@@ -159,7 +160,28 @@
       "saved": "Zapisano"
     },
     "storyKind": { "client": "Dla klienta", "work": "W pracy", "training": "Podczas nauki lub studiów", "personal": "Osobisty projekt lub życie" },
-    "disclosure": { "ok": "Tak, można o tym mówić", "never": "Nie, nigdy nie mówić pracodawcom" }
+    "disclosure": { "ok": "Tak, można o tym mówić", "never": "Nie, nigdy nie mówić pracodawcom" },
+    "files": {
+      "intro": "Opcjonalnie: zdjęcie do CV i dokumenty do załączenia, na przykład świadectwa lub referencje.",
+      "photoTitle": "Zdjęcie",
+      "photoChoose": "Wybierz zdjęcie (JPG lub PNG)",
+      "photoSave": "Użyj tego fragmentu",
+      "photoZoom": "Powiększenie",
+      "photoDelete": "Usuń zdjęcie",
+      "photoAlt": "Twoje zdjęcie do CV",
+      "photoNone": "Nie masz jeszcze zdjęcia. W Niemczech zdjęcie jest powszechne, ale nieobowiązkowe.",
+      "docsTitle": "Dokumenty do załączników",
+      "docLabel": "Nazwa nowego dokumentu (na przykład „Zeugnis Ausbildung”)",
+      "docName": "Nazwa",
+      "docAlways": "Dołączaj do każdej aplikacji",
+      "docChoose": "Dodaj dokument PDF",
+      "docOpen": "Otwórz",
+      "docSave": "Zapisz",
+      "docDelete": "Usuń",
+      "docReallyDelete": "Na pewno usunąć?",
+      "docCount": "{{count}} z {{max}} dokumentów"
+    },
+    "wizard": { "finish": "Zakończ" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },

@@ -73,7 +73,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // CSP does not restrict).
   app.addHook('onSend', async (_req, reply, payload) => {
     reply.header('X-Frame-Options', 'DENY');
-    reply.header('Content-Security-Policy', "default-src 'self'; frame-ancestors 'none'");
+    // img-src blob: = the photo the person just picked, shown in the cropper before it is uploaded.
+    reply.header('Content-Security-Policy', "default-src 'self'; img-src 'self' blob:; frame-ancestors 'none'");
     reply.header('X-Content-Type-Options', 'nosniff');
     return payload;
   });
