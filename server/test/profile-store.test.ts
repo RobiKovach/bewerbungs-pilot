@@ -73,6 +73,22 @@ describe('ProfileStore', () => {
     expect(fs.readdirSync(dir).some((f) => f.startsWith('profile.invalid-'))).toBe(true);
     expect(events).toEqual(['profile_invalid']);
   });
+  it('loads a profile saved by version 0.2.0 (schema 1): data kept, no CV proposals, next save writes schema 2', () => {
+    const dir = tempDir();
+    const file = path.join(dir, 'profile.json');
+    const old: Record<string, unknown> = { ...emptyProfile(), schemaVersion: 1, neverMention: ['Kunde X'] };
+    delete old.cvProposals;
+    fs.writeFileSync(file, JSON.stringify(old));
+    const events: string[] = [];
+    const store = new ProfileStore(file, (e) => events.push(e));
+    const loaded = store.load();
+    expect(loaded.schemaVersion).toBe(2);
+    expect(loaded.cvProposals).toEqual({});
+    expect(loaded.neverMention).toEqual(['Kunde X']);
+    expect(events).toEqual([]);
+    store.update(() => {});
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: 2, cvProposals: {} });
+  });
 });
 
 describe('readiness', () => {

@@ -83,6 +83,14 @@ export interface SectionDataMap {
 export interface Section<T> { data: T; aiFields: string[]; confirmedAt: string | null }
 export type Sections = { [K in SectionId]: Section<SectionDataMap[K]> };
 
+/** Sections Claude fills from a CV (`wishes` is always the person's own input). */
+export type CvSectionId = Exclude<SectionId, 'wishes'>;
+/**
+ * What a newly uploaded CV says for a section the person already checked or edited. It is kept aside, never applied on
+ * its own: the person takes it ("Take the new version") or drops it ("Keep mine").
+ */
+export type CvProposals = { [K in CvSectionId]?: SectionDataMap[K] };
+
 export type StoryKind = 'client' | 'work' | 'training' | 'personal';
 export interface Story {
   id: string;
@@ -102,7 +110,7 @@ export interface StoredFile { id: string; ext: FileExt; originalName: string; si
 export interface ProfileDocument extends StoredFile { label: string; attachAlways: boolean }
 
 export interface Profile {
-  schemaVersion: 1;
+  schemaVersion: 2;
   wizard: { step: 1 | 2 | 3 | 4; completedAt: string | null };
   cv: StoredFile | null;
   sections: Sections;
@@ -112,10 +120,15 @@ export interface Profile {
   pendingQuestions: FollowUpQuestion[];
   photo: StoredFile | null;
   documents: ProfileDocument[];
+  cvProposals: CvProposals;
 }
 
 export type ReadinessWarning = 'noStories';
 export interface Readiness { ready: boolean; missing: SectionId[]; warnings: ReadinessWarning[] }
 export interface ProfileView { profile: Profile; readiness: Readiness }
-/** Answer of POST /api/profile/cv: which sections the new CV changed (their confirmation was reset). */
-export interface CvResult extends ProfileView { changedSections: SectionId[] }
+/**
+ * Answer of POST /api/profile/cv. changedSections: replaced by the new CV (the person had not worked on them yet; their
+ * confirmation was reset). proposedSections: the person had worked on them, so they stay as they are and the new CV's
+ * version waits in profile.cvProposals for the person's choice.
+ */
+export interface CvResult extends ProfileView { changedSections: CvSectionId[]; proposedSections: CvSectionId[] }

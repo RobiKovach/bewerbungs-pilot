@@ -8,10 +8,10 @@ import type { Logger } from '../log.js';
 import { registerClaudeRoutes } from './claude-routes.js';
 import { registerFileRoutes } from './file-routes.js';
 import { FILE_RULES, type ProfileFiles } from './files.js';
-import { isSectionId, LIMITS, STORY_KINDS, validateSectionData } from './schema.js';
-import { applyHumanEdit, confirmSection } from './sections.js';
+import { isCvSectionId, isSectionId, LIMITS, STORY_KINDS, validateSectionData } from './schema.js';
+import { applyHumanEdit, confirmSection, takeExtraction } from './sections.js';
 import type { ProfileStore } from './store.js';
-import { toView, withSection } from './view.js';
+import { setProposal, toView, withSection } from './view.js';
 
 export interface ProfileRouteDeps {
   store: ProfileStore;
@@ -48,6 +48,12 @@ function sectionParam(params: unknown) {
   return id;
 }
 
+function cvSectionParam(params: unknown) {
+  const { id } = params as { id: string };
+  if (!isCvSectionId(id)) throw new AppError('NOT_FOUND', `no CV proposal for section ${id}`);
+  return id;
+}
+
 export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRouteDeps): Promise<void> {
   // One file per request; per-kind size limits are set in receiveUpload. defCharset keeps names like
   // "Резюме.pdf" intact (the installed @fastify/multipart's BusboyConfig has no defParamCharset option;
@@ -79,6 +85,27 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
     const id = sectionParam(req.params);
     const at = new Date().toISOString();
     return toView(d.store.update((p) => withSection(p, id, (s) => confirmSection(s, at))));
+  });
+
+  // The person's choice about what a new CV says for a section they had worked on (see applyExtraction).
+  // "Take the new version": the section becomes exactly what Claude read, marked and unconfirmed, like an untouched one.
+  app.post('/api/profile/sections/:id/proposal/accept', async (req) => {
+    const id = cvSectionParam(req.params);
+    return toView(d.store.update((p) => {
+      const proposal = p.cvProposals[id];
+      if (proposal === undefined) throw new AppError('NOT_FOUND', `no CV proposal for ${id}`);
+      withSection(p, id, () => takeExtraction(proposal));
+      setProposal(p, id, null);
+    }));
+  });
+
+  // "Keep mine": the proposal is dropped; the section, its marks and its confirmation stay as they are.
+  app.post('/api/profile/sections/:id/proposal/reject', async (req) => {
+    const id = cvSectionParam(req.params);
+    return toView(d.store.update((p) => {
+      if (p.cvProposals[id] === undefined) throw new AppError('NOT_FOUND', `no CV proposal for ${id}`);
+      setProposal(p, id, null);
+    }));
   });
 
   app.post('/api/profile/stories', { schema: { body: newStoryBody } }, async (req) => {

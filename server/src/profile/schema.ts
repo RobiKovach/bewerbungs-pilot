@@ -1,19 +1,22 @@
 import type {
-  EducationKind, EmploymentType, LanguageLevel, PersonalData, Profile, RemotePreference, Section, SectionDataMap, SectionId,
+  CvSectionId, EducationKind, EmploymentType, LanguageLevel, PersonalData, Profile, RemotePreference, Section, SectionDataMap, SectionId,
   SkillLevel, StoryKind,
 } from '@bp/shared';
 import type { Migration } from '../data/migrate.js';
 import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
 
-export const PROFILE_SCHEMA_VERSION = 1;
-/** migrations[n] turns version n into n + 1. Empty while only version 1 exists; the first change of Profile adds [1]. */
-export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {};
+export const PROFILE_SCHEMA_VERSION = 2;
+/** migrations[n] turns version n into n + 1. */
+export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 2: open CV proposals (what a new CV says for sections the person already worked on). Old files have none.
+  1: (doc) => ({ ...doc, cvProposals: {} }),
+};
 
 export const SECTION_IDS = ['personal', 'education', 'experience', 'skills', 'languages', 'wishes'] as const satisfies readonly SectionId[];
 /** Sections Claude fills from a CV. `wishes` is always the person's own input. */
-export const CV_SECTION_IDS = ['personal', 'education', 'experience', 'skills', 'languages'] as const satisfies readonly SectionId[];
-export type CvSectionId = (typeof CV_SECTION_IDS)[number];
+export const CV_SECTION_IDS = ['personal', 'education', 'experience', 'skills', 'languages'] as const satisfies readonly CvSectionId[];
+export type { CvSectionId };
 
 export const EDUCATION_KINDS = ['school', 'vocational', 'university', 'course', 'certificate'] as const satisfies readonly EducationKind[];
 export const SKILL_LEVELS = ['', 'basic', 'good', 'expert'] as const satisfies readonly SkillLevel[];
@@ -103,10 +106,16 @@ export const PROFILE_SCHEMA: JsonSchema = obj({
   pendingQuestions: array(QUESTION, LIMITS.questions),
   photo: nullable(STORED_FILE),
   documents: array(DOCUMENT, LIMITS.documents),
+  // At most one per CV section; each is checked like the section itself in validateProfile.
+  cvProposals: { type: 'object', additionalProperties: false, properties: Object.fromEntries(CV_SECTION_IDS.map((id) => [id, {}])) },
 });
 
 export function isSectionId(value: string): value is SectionId {
   return (SECTION_IDS as readonly string[]).includes(value);
+}
+
+export function isCvSectionId(value: string): value is CvSectionId {
+  return (CV_SECTION_IDS as readonly string[]).includes(value);
 }
 
 /** null = valid; otherwise a readable reason (for the log). */
@@ -125,6 +134,11 @@ export function validateProfile(profile: unknown): string | null {
   for (const id of SECTION_IDS) {
     const problem = validateSectionData(id, p.sections[id].data);
     if (problem) return `${id}: ${problem}`;
+  }
+  for (const id of CV_SECTION_IDS) {
+    const proposal = p.cvProposals[id];
+    const problem = proposal === undefined ? null : validateSectionData(id, proposal);
+    if (problem) return `cvProposals.${id}: ${problem}`;
   }
   if (new Set(p.stories.map((s) => s.id)).size !== p.stories.length) return 'duplicate story ids';
   return null;
@@ -161,5 +175,6 @@ export function emptyProfile(): Profile {
     pendingQuestions: [],
     photo: null,
     documents: [],
+    cvProposals: {},
   };
 }

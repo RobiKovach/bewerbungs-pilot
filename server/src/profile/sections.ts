@@ -58,10 +58,32 @@ export function confirmSection<T>(section: Section<T>, at: string): Section<T> {
 }
 
 /**
- * Claude read a (new) CV. Same content → the section stays exactly as it is (keeps "checked"). Different content →
- * the new data replaces it, every filled field is marked "AI – please check" and the confirmation is reset.
+ * Untouched = the person has neither confirmed the section nor changed any field in it: everything filled in is still
+ * exactly what Claude wrote. Only such a section may be replaced by a new CV without asking.
  */
-export function applyExtraction<T>(section: Section<T>, data: T): { section: Section<T>; changed: boolean } {
-  if (withoutIds(section.data) === withoutIds(data)) return { section, changed: false };
-  return { section: { data, aiFields: filledPaths(data), confirmedAt: null }, changed: true };
+export function isUntouched(section: Section<unknown>): boolean {
+  if (section.confirmedAt !== null) return false;
+  const marked = new Set(section.aiFields);
+  return filledPaths(section.data).every((p) => marked.has(p));
+}
+
+/** The section as Claude read it: every filled field marked "AI – please check", not confirmed. */
+export function takeExtraction<T>(data: T): Section<T> {
+  return { data, aiFields: filledPaths(data), confirmedAt: null };
+}
+
+export type ExtractionOutcome = 'same' | 'replaced' | 'proposed';
+
+/**
+ * Claude read a (new) CV.
+ * - Same content → the section stays exactly as it is (keeps "checked"); an older open proposal is dropped.
+ * - Different content, untouched section → replaced (takeExtraction).
+ * - Different content, the person worked on the section → the section stays exactly as it is and the new data becomes
+ *   the section's proposal (replacing an older one); the person decides later ("Take the new version" / "Keep mine").
+ * `proposal` is what the section's proposal must be afterwards (null = none).
+ */
+export function applyExtraction<T>(section: Section<T>, data: T): { section: Section<T>; outcome: ExtractionOutcome; proposal: T | null } {
+  if (withoutIds(section.data) === withoutIds(data)) return { section, outcome: 'same', proposal: null };
+  if (isUntouched(section)) return { section: takeExtraction(data), outcome: 'replaced', proposal: null };
+  return { section, outcome: 'proposed', proposal: data };
 }

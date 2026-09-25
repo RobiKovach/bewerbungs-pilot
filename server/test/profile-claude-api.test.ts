@@ -84,6 +84,90 @@ describe('POST /api/profile/cv', () => {
     expect(second.profile.cv.id).not.toBe(first.profile.cv.id);
   });
 
+  it('a new CV never overwrites a section the person worked on: it becomes a proposal they decide on', async () => {
+    let cv = SAMPLE_CV;
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    const first = (await uploadCv(app, 'cv1.pdf', PDF_BYTES)).json();
+    expect(first.proposedSections).toEqual([]);
+    // personal: confirmed. skills: one field edited by hand. experience/education/languages: untouched.
+    await app.inject({ method: 'POST', url: '/api/profile/sections/personal/confirm', headers: H, payload: {} });
+    const skills = first.profile.sections.skills.data;
+    skills.items[0].level = 'expert';
+    await app.inject({ method: 'PUT', url: '/api/profile/sections/skills', headers: H, payload: { data: skills } });
+    const before = (await app.inject({ method: 'GET', url: '/api/profile' })).json().profile;
+
+    cv = {
+      ...SAMPLE_CV,
+      personal: { ...SAMPLE_CV.personal, city: 'Dresden' },
+      skills: [...SAMPLE_CV.skills, { name: 'TypeScript', level: 'good' }],
+      experience: [...SAMPLE_CV.experience, { jobTitle: 'Teamleiter', employer: 'Neu AG', city: '', country: '', from: '2023', to: '', description: '' }],
+    };
+    const second = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json();
+    expect(second.changedSections).toEqual(['experience']);
+    expect(second.proposedSections).toEqual(['personal', 'skills']);
+    expect(second.profile.sections.personal).toEqual(before.sections.personal);
+    expect(second.profile.sections.skills).toEqual(before.sections.skills);
+    expect(second.profile.cvProposals.personal.city).toBe('Dresden');
+    expect(second.profile.cvProposals.skills.items.map((s: { name: string }) => s.name)).toEqual(['JavaScript', 'WordPress', 'TypeScript']);
+    expect(second.profile.cvProposals.experience).toBeUndefined();
+    expect(second.profile.sections.experience.data.items).toHaveLength(2);
+
+    // Editing and confirming does not decide for the person: the proposal stays.
+    await app.inject({ method: 'POST', url: '/api/profile/sections/skills/confirm', headers: H, payload: {} });
+    expect((await app.inject({ method: 'GET', url: '/api/profile' })).json().profile.cvProposals.skills).toBeDefined();
+
+    const taken = await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', headers: H, payload: {} });
+    expect(taken.statusCode).toBe(200);
+    const personal = taken.json().profile.sections.personal;
+    expect(personal.data).toEqual(second.profile.cvProposals.personal);
+    expect(personal.confirmedAt).toBeNull();
+    expect(personal.aiFields).toEqual(expect.arrayContaining(['fullName', 'city']));
+    expect(taken.json().profile.cvProposals.personal).toBeUndefined();
+
+    const kept = await app.inject({ method: 'POST', url: '/api/profile/sections/skills/proposal/reject', headers: H, payload: {} });
+    expect(kept.statusCode).toBe(200);
+    expect(kept.json().profile.sections.skills.data).toEqual(before.sections.skills.data);
+    expect(kept.json().profile.sections.skills.confirmedAt).not.toBeNull();
+    expect(kept.json().profile.cvProposals).toEqual({});
+  });
+
+  it('a later CV replaces or removes an open proposal; proposals do not block readiness', async () => {
+    let cv = SAMPLE_CV;
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    await uploadCv(app, 'cv1.pdf', PDF_BYTES);
+    for (const id of ['personal', 'education', 'experience', 'skills', 'languages', 'wishes']) {
+      await app.inject({ method: 'POST', url: `/api/profile/sections/${id}/confirm`, headers: H, payload: {} });
+    }
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Dresden' } };
+    const second = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json();
+    expect(second.proposedSections).toEqual(['personal']);
+    expect(second.readiness.ready).toBe(true);
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Leipzig' } };
+    const third = (await uploadCv(app, 'cv3.pdf', PDF_BYTES)).json();
+    expect(third.proposedSections).toEqual(['personal']);
+    expect(third.profile.cvProposals.personal.city).toBe('Leipzig');
+    cv = SAMPLE_CV;
+    const fourth = (await uploadCv(app, 'cv4.pdf', PDF_BYTES)).json();
+    expect(fourth.proposedSections).toEqual([]);
+    expect(fourth.changedSections).toEqual([]);
+    expect(fourth.profile.cvProposals).toEqual({});
+    expect(fourth.profile.sections.personal.confirmedAt).not.toBeNull();
+  });
+
+  it('answers NOT_FOUND when there is nothing to decide, and needs the client header', async () => {
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: SAMPLE_CV }) });
+    for (const url of [
+      '/api/profile/sections/personal/proposal/accept', '/api/profile/sections/personal/proposal/reject',
+      '/api/profile/sections/wishes/proposal/accept', '/api/profile/sections/nope/proposal/reject',
+    ]) {
+      const res = await app.inject({ method: 'POST', url, headers: H, payload: {} });
+      expect(res.statusCode).toBe(404);
+      expect(res.json().error.code).toBe('NOT_FOUND');
+    }
+    const noHeader = await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', payload: {} });
+    expect(noHeader.statusCode).toBe(403);
+  });
+
   it('keeps the new CV even when deleting the old one fails', async () => {
     let cv = SAMPLE_CV;
     const { app, filesDir, profileFiles } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });

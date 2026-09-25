@@ -1,17 +1,17 @@
 import crypto from 'node:crypto';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import type { CvResult, SectionId, StoredFile, StoryAnswer } from '@bp/shared';
+import type { CvResult, CvSectionId, StoredFile, StoryAnswer } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { docxToText } from './docx.js';
 import { removeQuietly } from './files.js';
 import type { ProfileRouteDeps } from './routes.js';
 import { CV_SECTION_IDS, LIMITS } from './schema.js';
-import { applyExtraction } from './sections.js';
+import { applyExtraction, type ExtractionOutcome } from './sections.js';
 import { extractCvTask, MIN_CV_TEXT_CHARS, toSectionData, type CvSource, type ExtractedCv } from './tasks/extract-cv.js';
 import { followUpTask, toQuestions, type FollowUpOutput } from './tasks/follow-up.js';
 import { structureStoriesTask, toStories, type StoriesOutput } from './tasks/structure-stories.js';
 import { receiveUpload } from './upload.js';
-import { toView, withSection } from './view.js';
+import { setProposal, toView, withSection } from './view.js';
 
 const newId = () => crypto.randomUUID();
 
@@ -55,20 +55,26 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
       if (!out.readable) throw new AppError('CV_UNREADABLE', 'Claude found no CV content', 'cvNoContent');
       const data = toSectionData(out, newId);
       oldCv = d.store.get().cv;
-      const changed: SectionId[] = [];
-      // Applied to the profile as it is NOW, so edits made while Claude was reading are kept.
+      const outcomes: Partial<Record<CvSectionId, ExtractionOutcome>> = {};
+      // Applied to the profile as it is NOW, so edits made while Claude was reading are kept (and count as
+      // "worked on": such a section gets a proposal instead of being replaced).
       const profile = d.store.update((p) => {
         for (const id of CV_SECTION_IDS) {
           withSection(p, id, (s) => {
             const r = applyExtraction(s, data[id]);
-            if (r.changed) changed.push(id);
+            outcomes[id] = r.outcome;
+            setProposal(p, id, r.proposal);
             return r.section;
           });
         }
         p.cv = stored;
         if (p.wizard.step === 1) p.wizard.step = 2;
       });
-      result = { ...toView(profile), changedSections: changed };
+      result = {
+        ...toView(profile),
+        changedSections: CV_SECTION_IDS.filter((id) => outcomes[id] === 'replaced'),
+        proposedSections: CV_SECTION_IDS.filter((id) => outcomes[id] === 'proposed'),
+      };
     } catch (err) {
       // Only failures BEFORE the profile commits get here: the new upload is not referenced yet, so it is
       // safe to delete. Once store.update() has succeeded, we fall through to the code below instead.
