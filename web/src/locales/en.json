@@ -5,7 +5,8 @@
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
     "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}",
-    "technicalDetails": "Technical text for support"
+    "technicalDetails": "Technical text for support",
+    "dismiss": "Hide this message"
   },
   "language": { "label": "Language" },
   "home": {
@@ -231,6 +232,7 @@
     "TOO_MANY_FILES": { "message": "You already have 20 documents.", "hint": "Delete a document you no longer need, then add the new one." },
     "CV_UNREADABLE": { "message": "We could not read any text in this CV.", "hint": "It may be a scan or a photo. Try another file (for example the Word version) or click \"Fill in without a CV\"." },
     "PROFILE_NOT_READY": { "message": "Your profile is not complete yet.", "hint": "Open \"Profile\" and check every section with \"All correct\"." },
+    "CONFLICT": { "message": "This was changed in the meantime.", "hint": "Please look at it once more and then choose again." },
     "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
     "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
@@ -244,7 +246,8 @@
       "tooManyDocuments": "You already have {{max}} documents — delete one to add a new one.",
       "profileMissing": "Still missing: {{sections}}.",
       "llmTimeout": "Claude did not answer within {{seconds}} seconds.",
-      "cancelledByUser": "You cancelled it."
+      "cancelledByUser": "You cancelled it.",
+      "proposalChanged": "The new CV changed again — please look at it once more."
     }
   }
 }

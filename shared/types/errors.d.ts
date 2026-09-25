@@ -12,6 +12,22 @@ export type ErrorCode =
   | 'TOO_MANY_FILES'
   | 'CV_UNREADABLE'
   | 'PROFILE_NOT_READY'
+  | 'CONFLICT'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
   | 'UNKNOWN';
+
+/**
+ * Ids of the translated, person-facing sentences an error may carry (`errors.reasons.<reason>` in the web locales).
+ * One list for server and web, so a typo in either is a compile error.
+ */
+export type ErrorReason =
+  | 'cvTooLittleText'
+  | 'cvNoContent'
+  | 'cvDocxBroken'
+  | 'fileTypeDetected'
+  | 'tooManyDocuments'
+  | 'profileMissing'
+  | 'llmTimeout'
+  | 'cancelledByUser'
+  | 'proposalChanged';

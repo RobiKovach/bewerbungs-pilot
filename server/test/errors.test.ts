@@ -8,6 +8,11 @@ describe('AppError', () => {
     expect(err.detailsForLog).toBe('no answer');
     expect(err).toBeInstanceOf(Error);
   });
+  it('accepts only known reason ids (a typo does not compile)', () => {
+    expect(new AppError('TOO_MANY_FILES', 'x', 'tooManyDocuments').reason).toBe('tooManyDocuments');
+    // @ts-expect-error — not one of the ErrorReason ids
+    expect(new AppError('TOO_MANY_FILES', 'x', 'tooManyDocument').reason).toBe('tooManyDocument');
+  });
   it('maps codes to HTTP statuses', () => {
     expect(httpStatusFor('BAD_REQUEST')).toBe(400);
     expect(httpStatusFor('NOT_FOUND')).toBe(404);
@@ -22,6 +27,7 @@ describe('AppError', () => {
     ['TOO_MANY_FILES', 409],
     ['CV_UNREADABLE', 422],
     ['PROFILE_NOT_READY', 409],
+    ['CONFLICT', 409],
   ] as const)('maps %s to HTTP %i', (code, status) => {
     expect(httpStatusFor(code)).toBe(status);
   });

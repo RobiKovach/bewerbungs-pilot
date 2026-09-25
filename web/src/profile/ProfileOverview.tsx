@@ -39,7 +39,7 @@ export function ProfileOverview() {
           : <p className="muted">{t('profile.cv.none')}</p>}
         <p className="muted">{t('profile.cv.replaceHint')}</p>
         <CvUpload replace={profile.cv !== null} onDone={setCvResult} />
-        {cvResult ? <CvResultNotice {...cvResult} /> : null}
+        {cvResult ? <CvResultNotice {...cvResult} onDismiss={() => setCvResult(null)} /> : null}
       </div>
 
       {SECTION_IDS.map((id) => (
@@ -76,11 +76,14 @@ export function ProfileOverview() {
 }
 
 /** What the last CV upload did: sections replaced (check again) and sections where the person has to choose. */
-function CvResultNotice({ changedSections, proposedSections }: Pick<CvResult, 'changedSections' | 'proposedSections'>) {
+function CvResultNotice({ changedSections, proposedSections, onDismiss }: Pick<CvResult, 'changedSections' | 'proposedSections'> & {
+  onDismiss: () => void;
+}) {
   const { t } = useTranslation();
   const names = (ids: SectionId[]) => ids.map((id) => t(`profile.sections.${id}.title`)).join(', ');
   return (
-    <div className="notice">
+    <div className="notice dismissible">
+      <button type="button" className="notice-close" aria-label={t('common.dismiss')} title={t('common.dismiss')} onClick={onDismiss}>×</button>
       {changedSections.length > 0 ? <p>{t('profile.cv.changed', { sections: names(changedSections) })}</p> : null}
       {proposedSections.length > 0 ? <p>{t('profile.cv.proposed', { sections: names(proposedSections) })}</p> : null}
       {changedSections.length === 0 && proposedSections.length === 0 ? <p>{t('profile.cv.unchanged')}</p> : null}

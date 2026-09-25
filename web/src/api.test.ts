@@ -16,6 +16,11 @@ describe('api', () => {
     mockFetch({ 'POST /api/llm/test': () => ({ status: 504, body: { error: { code: 'LLM_TIMEOUT', detailsForLog: 'slow' } } }) });
     await expect(api.testLlm('en')).rejects.toMatchObject({ code: 'LLM_TIMEOUT', details: 'slow' });
   });
+  it('ApiError accepts only known reason ids (a typo does not compile)', () => {
+    expect(new ApiError('LLM_TIMEOUT', 'slow', 'llmTimeout').reason).toBe('llmTimeout');
+    // @ts-expect-error — not one of the ErrorReason ids
+    expect(new ApiError('LLM_TIMEOUT', 'slow', 'llmTimout').reason).toBe('llmTimout');
+  });
   it('reports an unreachable server', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     const err = await api.getSettings().catch((e: unknown) => e);

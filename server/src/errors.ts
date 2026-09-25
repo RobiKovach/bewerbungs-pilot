@@ -1,13 +1,13 @@
-import type { ErrorCode } from '@bp/shared';
+import type { ErrorCode, ErrorReason } from '@bp/shared';
 
-export type { ErrorCode };
+export type { ErrorCode, ErrorReason };
 
 export class AppError extends Error {
   constructor(
     public readonly code: ErrorCode,
     public readonly detailsForLog = '',
     /** Machine-readable id for a translated, person-facing sentence (`errors.reasons.<reason>` in the locales). */
-    public readonly reason?: string,
+    public readonly reason?: ErrorReason,
     /** Small record of strings/numbers to interpolate into that sentence. */
     public readonly params?: Record<string, string | number>,
   ) {
@@ -27,6 +27,7 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'FILE_TOO_LARGE': return 413;
     case 'FILE_TYPE_NOT_ALLOWED': return 415;
     case 'TOO_MANY_FILES':
+    case 'CONFLICT':
     case 'PROFILE_NOT_READY': return 409;
     case 'CV_UNREADABLE': return 422;
     default: return 500;

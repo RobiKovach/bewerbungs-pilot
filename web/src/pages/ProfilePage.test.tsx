@@ -63,6 +63,9 @@ describe('ProfilePage', () => {
     expect(within(personal).getByText(/Checked/)).toBeInTheDocument();
     const experience = screen.getByRole('heading', { name: 'Work experience' }).closest('.card') as HTMLElement;
     expect(within(experience).getByText('Please check')).toBeInTheDocument();
+    // The notice can be closed once read.
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Hide this message' }));
+    expect(screen.queryByText('Please check these sections again: Work experience')).toBeNull();
   });
 
   it('after replacing the CV names the sections where the person has to choose', async () => {

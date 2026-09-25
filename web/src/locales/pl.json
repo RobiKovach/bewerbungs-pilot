@@ -5,7 +5,8 @@
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
     "continueAnyway": "Mimo to kontynuuj", "stepOf": "Krok {{current}} z {{total}}",
-    "technicalDetails": "Tekst techniczny dla wsparcia"
+    "technicalDetails": "Tekst techniczny dla wsparcia",
+    "dismiss": "Ukryj tę wiadomość"
   },
   "language": { "label": "Język" },
   "home": {
@@ -231,6 +232,7 @@
     "TOO_MANY_FILES": { "message": "Masz już 20 dokumentów.", "hint": "Usuń dokument, którego już nie potrzebujesz, a potem dodaj nowy." },
     "CV_UNREADABLE": { "message": "Nie udało się odczytać tekstu w tym CV.", "hint": "To może być skan lub zdjęcie. Spróbuj innego pliku (na przykład wersji Word) albo kliknij „Wypełnij bez CV”." },
     "PROFILE_NOT_READY": { "message": "Twój profil nie jest jeszcze kompletny.", "hint": "Otwórz „Profil” i sprawdź każdą sekcję przyciskiem „Wszystko poprawne”." },
+    "CONFLICT": { "message": "W międzyczasie coś się tu zmieniło.", "hint": "Przejrzyj to jeszcze raz i wybierz ponownie." },
     "BAD_REQUEST": { "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nie jest uruchomiony.", "hint": "Uruchom go ponownie za pomocą skrótu na pulpicie." },
@@ -244,7 +246,8 @@
       "tooManyDocuments": "Masz już {{max}} dokumentów — usuń jeden, aby dodać nowy.",
       "profileMissing": "Wciąż brakuje: {{sections}}.",
       "llmTimeout": "Claude nie odpowiedział w ciągu {{seconds}} sekund.",
-      "cancelledByUser": "Anulowałeś to."
+      "cancelledByUser": "Anulowałeś to.",
+      "proposalChanged": "Nowe CV znowu się zmieniło — przejrzyj je jeszcze raz."
     }
   }
 }

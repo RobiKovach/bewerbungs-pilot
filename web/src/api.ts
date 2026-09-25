@@ -1,13 +1,13 @@
 import type {
-  CvResult, CvSectionId, Language, LlmCheck, ProfileView, SectionDataMap, SectionId, Settings, SettingsPatch, StoryAnswer,
-  StoryInput,
+  CvResult, CvSectionId, ErrorReason, Language, LlmCheck, ProfileView, SectionDataMap, SectionId, Settings, SettingsPatch,
+  StoryAnswer, StoryInput,
 } from './types';
 
 export class ApiError extends Error {
   constructor(
     public readonly code: string,
     public readonly details: string,
-    public readonly reason?: string,
+    public readonly reason?: ErrorReason,
     public readonly params?: Record<string, string | number>,
   ) {
     super(code);
@@ -26,7 +26,7 @@ async function send<T>(url: string, init: RequestInit): Promise<T> {
     throw new ApiError('SERVER_UNREACHABLE', String(err));
   }
   const data = (await res.json().catch(() => null)) as {
-    error?: { code?: string; detailsForLog?: string; reason?: string; params?: Record<string, string | number> };
+    error?: { code?: string; detailsForLog?: string; reason?: ErrorReason; params?: Record<string, string | number> };
   } | null;
   if (!res.ok) {
     throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params);

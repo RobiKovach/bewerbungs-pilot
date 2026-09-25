@@ -1,5 +1,5 @@
 export type {
-  Availability, CvProposals, CvResult, CvSectionId, EducationEntry, EducationKind, EmploymentType, ErrorCode,
+  Availability, CvProposals, CvResult, CvSectionId, EducationEntry, EducationKind, EmploymentType, ErrorCode, ErrorReason,
   ExperienceEntry, FollowUpQuestion, Language, LanguageItem, LanguageLevel, LlmCheck, PersonalData, Profile, ProfileDocument,
   ProfileView, Readiness, RemotePreference, Section, SectionDataMap, SectionId, Settings, SettingsPatch, SkillItem, SkillLevel, Story, StoryAnswer,
   StoryInput, StoryKind, StoredFile, WishesData,

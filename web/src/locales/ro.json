@@ -5,7 +5,8 @@
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
     "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}",
-    "technicalDetails": "Text tehnic pentru asistență"
+    "technicalDetails": "Text tehnic pentru asistență",
+    "dismiss": "Ascundeți acest mesaj"
   },
   "language": { "label": "Limbă" },
   "home": {
@@ -231,6 +232,7 @@
     "TOO_MANY_FILES": { "message": "Aveți deja 20 de documente.", "hint": "Ștergeți un document de care nu mai aveți nevoie, apoi adăugați-l pe cel nou." },
     "CV_UNREADABLE": { "message": "Nu am putut citi niciun text în acest CV.", "hint": "Ar putea fi o scanare sau o fotografie. Încercați alt fișier (de exemplu versiunea Word) sau faceți clic pe „Completați fără CV”." },
     "PROFILE_NOT_READY": { "message": "Profilul dumneavoastră nu este încă complet.", "hint": "Deschideți „Profil” și verificați fiecare secțiune cu „Totul corect”." },
+    "CONFLICT": { "message": "Între timp, aici s-a schimbat ceva.", "hint": "Vă rugăm să vă uitați încă o dată și apoi să alegeți din nou." },
     "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
     "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nu rulează.", "hint": "Porniți-l din nou cu ajutorul comenzii rapide de pe desktop." },
@@ -244,7 +246,8 @@
       "tooManyDocuments": "Aveți deja {{max}} documente — ștergeți unul pentru a adăuga altul nou.",
       "profileMissing": "Încă lipsește: {{sections}}.",
       "llmTimeout": "Claude nu a răspuns în {{seconds}} secunde.",
-      "cancelledByUser": "Ați anulat."
+      "cancelledByUser": "Ați anulat.",
+      "proposalChanged": "CV-ul nou s-a schimbat din nou — vă rugăm să vă uitați încă o dată la el."
     }
   }
 }

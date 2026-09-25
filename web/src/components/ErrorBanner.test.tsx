@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ErrorBanner } from './ErrorBanner';
 import { ApiError } from '../api';
+import type { ErrorReason } from '../types';
 
 describe('ErrorBanner', () => {
   it('shows the translated message and hint for a known code', () => {
@@ -32,8 +33,9 @@ describe('ErrorBanner', () => {
     expect(screen.getByText(/CV_UNREADABLE: docx has only 5 characters of text/)).toBeInTheDocument();
   });
 
+  // A newer server may send a reason this client has no text for.
   it('with an unknown reason, does not crash and still shows the labelled technical line', () => {
-    render(<ErrorBanner error={new ApiError('CV_UNREADABLE', 'docx has only 5 characters of text', 'somethingNobodyTranslated')} />);
+    render(<ErrorBanner error={new ApiError('CV_UNREADABLE', 'docx has only 5 characters of text', 'somethingNobodyTranslated' as ErrorReason)} />);
     expect(screen.getByText('Technical text for support')).toBeInTheDocument();
     expect(screen.getByText(/CV_UNREADABLE: docx has only 5 characters of text/)).toBeInTheDocument();
   });

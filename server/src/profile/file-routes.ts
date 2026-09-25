@@ -24,6 +24,8 @@ const documentBody = {
 function allFiles(p: Profile): StoredFile[] {
   return [...(p.cv ? [p.cv] : []), ...(p.photo ? [p.photo] : []), ...p.documents];
 }
+const tooManyDocuments = (detailsForLog: string) =>
+  new AppError('TOO_MANY_FILES', detailsForLog, 'tooManyDocuments', { max: MAX_DOCUMENTS });
 const labelFrom = (name: string) => name.replace(/\.[^.]+$/, '').trim() || name;
 
 export async function registerFileRoutes(app: FastifyInstance, d: ProfileRouteDeps): Promise<void> {
@@ -31,7 +33,7 @@ export async function registerFileRoutes(app: FastifyInstance, d: ProfileRouteDe
     const q = req.query as { kind: 'photo' | 'document'; label?: string; attachAlways?: '0' | '1' };
     // Checked before and after the upload: before, so nobody waits for a file that cannot be kept.
     if (q.kind === 'document' && d.store.get().documents.length >= MAX_DOCUMENTS) {
-      throw new AppError('TOO_MANY_FILES', `already ${MAX_DOCUMENTS} documents`, 'tooManyDocuments', { max: MAX_DOCUMENTS });
+      throw tooManyDocuments(`already ${MAX_DOCUMENTS} documents`);
     }
     const stored = await receiveUpload(req, d.files, q.kind);
     const oldPhoto = q.kind === 'photo' ? d.store.get().photo : null;
@@ -43,7 +45,7 @@ export async function registerFileRoutes(app: FastifyInstance, d: ProfileRouteDe
           return;
         }
         if (p.documents.length >= MAX_DOCUMENTS) {
-          throw new AppError('TOO_MANY_FILES', 'limit reached during upload', 'tooManyDocuments', { max: MAX_DOCUMENTS });
+          throw tooManyDocuments('limit reached during upload');
         }
         p.documents.push({ ...stored, label: q.label?.trim() || labelFrom(stored.originalName), attachAlways: q.attachAlways === '1' });
       });
