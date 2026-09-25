@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -91,6 +91,77 @@ describe('ProfileStore', () => {
     expect(events).toEqual([]);
     store.update(() => {});
     expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: 2, cvProposals: {} });
+  });
+
+  describe('keeps a copy of a schema-1 file before it is first written as schema 2', () => {
+    const writeV1 = (file: string) => {
+      const old: Record<string, unknown> = { ...emptyProfile(), schemaVersion: 1, neverMention: ['Kunde X'] };
+      delete old.cvProposals;
+      old.sections = Object.fromEntries(Object.entries(emptyProfile().sections).map(([id, s]) => [id, { data: s.data, aiFields: s.aiFields, confirmedAt: s.confirmedAt }]));
+      const text = JSON.stringify(old);
+      fs.writeFileSync(file, text);
+      return text;
+    };
+    const backups = (dir: string) => fs.readdirSync(dir).filter((f) => f.startsWith('profile.v1-')).sort();
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    it('copies the file once, before the first write, and never again', () => {
+      const dir = tempDir();
+      const file = path.join(dir, 'profile.json');
+      const original = writeV1(file);
+      const store = new ProfileStore(file);
+      store.load();
+      // Loading alone writes nothing.
+      expect(backups(dir)).toEqual([]);
+      store.update((p) => { p.neverMention = ['Kunde Y']; });
+      const [backup] = backups(dir);
+      expect(backups(dir)).toEqual([expect.stringMatching(/^profile\.v1-\d+\.json$/)]);
+      expect(fs.readFileSync(path.join(dir, backup), 'utf8')).toBe(original);
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).schemaVersion).toBe(2);
+      store.update((p) => { p.neverMention = ['Kunde Z']; });
+      // The file is schema 2 now: a restart does not copy it again.
+      const restarted = new ProfileStore(file);
+      expect(restarted.load().neverMention).toEqual(['Kunde Z']);
+      restarted.update(() => {});
+      expect(backups(dir)).toEqual([backup]);
+    });
+
+    it('never overwrites an existing backup', () => {
+      const dir = tempDir();
+      const file = path.join(dir, 'profile.json');
+      const original = writeV1(file);
+      vi.spyOn(Date, 'now').mockReturnValue(1234);
+      fs.writeFileSync(path.join(dir, 'profile.v1-1234.json'), 'an older copy');
+      const store = new ProfileStore(file);
+      store.load();
+      store.update(() => {});
+      expect(fs.readFileSync(path.join(dir, 'profile.v1-1234.json'), 'utf8')).toBe('an older copy');
+      const others = backups(dir).filter((f) => f !== 'profile.v1-1234.json');
+      expect(others).toHaveLength(1);
+      expect(fs.readFileSync(path.join(dir, others[0]), 'utf8')).toBe(original);
+    });
+
+    it('does not write schema 2 when the copy cannot be made', () => {
+      const dir = tempDir();
+      const file = path.join(dir, 'profile.json');
+      const original = writeV1(file);
+      const store = new ProfileStore(file);
+      store.load();
+      vi.spyOn(fs, 'copyFileSync').mockImplementation(() => { throw Object.assign(new Error('disk full'), { code: 'ENOSPC' }); });
+      expect(() => store.update((p) => { p.neverMention = ['Kunde Y']; })).toThrow(/DATA_WRITE_FAILED/);
+      expect(fs.readFileSync(file, 'utf8')).toBe(original);
+      expect(store.get().neverMention).toEqual(['Kunde X']);
+    });
+
+    it('a profile that starts as schema 2 gets no copy', () => {
+      const dir = tempDir();
+      const file = path.join(dir, 'profile.json');
+      const store = new ProfileStore(file);
+      store.load();
+      store.update(() => {});
+      new ProfileStore(file).load();
+      expect(backups(dir)).toEqual([]);
+    });
   });
 });
 
