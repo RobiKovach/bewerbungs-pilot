@@ -83,8 +83,10 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
     return toView(d.store.update((p) => {
       withSection(p, id, (s) => applyHumanEdit(s, data, new Date().toISOString()));
       // The person typed in exactly what the new CV says: nothing is left to choose.
-      const proposal: unknown = isCvSectionId(id) ? p.cvProposals[id] : undefined;
-      if (isCvSectionId(id) && proposal !== undefined && withoutIds(proposal) === withoutIds(data)) setProposal(p, id, null);
+      if (isCvSectionId(id)) {
+        const proposal: unknown = p.cvProposals[id];
+        if (proposal !== undefined && withoutIds(proposal) === withoutIds(data)) setProposal(p, id, null);
+      }
     }));
   });
 
