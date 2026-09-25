@@ -1,5 +1,6 @@
 import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LIMITS } from './constants';
 import { YEAR_MONTH } from './validate';
 
 export function AiMark({ show }: { show: boolean }) {
@@ -21,15 +22,18 @@ function Shell({ id, label, ai, hint, error, children }: { id: string; label: st
 interface TextFieldProps {
   label: string; value: string; onChange: (v: string) => void;
   ai?: boolean; hint?: string; error?: string; multiline?: boolean; type?: string; placeholder?: string;
+  /** Default for multiline fields: every multiline profile text (descriptions, notes, stories) is a server "text" field. */
+  maxLength?: number;
 }
 
-export function TextField({ label, value, onChange, ai, hint, error, multiline = false, type = 'text', placeholder }: TextFieldProps) {
+export function TextField({ label, value, onChange, ai, hint, error, multiline = false, type = 'text', placeholder, maxLength }: TextFieldProps) {
   const id = useId();
+  const max = maxLength ?? (multiline ? LIMITS.text : undefined);
   return (
     <Shell id={id} label={label} ai={ai} hint={hint} error={error}>
       {multiline
-        ? <textarea id={id} rows={4} value={value} onChange={(e) => onChange(e.target.value)} />
-        : <input id={id} type={type} value={value} placeholder={placeholder} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value)} />}
+        ? <textarea id={id} rows={4} value={value} maxLength={max} onChange={(e) => onChange(e.target.value)} />
+        : <input id={id} type={type} value={value} placeholder={placeholder} maxLength={max} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value)} />}
     </Shell>
   );
 }
@@ -57,12 +61,19 @@ export function SelectField<V extends string>({ label, value, options, optionLab
   );
 }
 
-/** A list of short texts, one per line. Keeps its own text so empty lines can be typed. */
-export function LinesField({ label, value, onChange, ai, hint }: { label: string; value: string[]; onChange: (v: string[]) => void; ai?: boolean; hint?: string }) {
+/**
+ * A list of short texts, one per line. Keeps its own text so empty lines can be typed. Shows a message when
+ * there are more than `maxLines` lines; the form around it blocks saving (see `sectionProblem`).
+ */
+export function LinesField({ label, value, onChange, ai, hint, maxLines }: {
+  label: string; value: string[]; onChange: (v: string[]) => void; ai?: boolean; hint?: string; maxLines: number;
+}) {
+  const { t } = useTranslation();
   const id = useId();
   const [text, setText] = useState(value.join('\n'));
+  const error = value.length > maxLines ? t('profile.tooManyLines', { max: maxLines }) : undefined;
   return (
-    <Shell id={id} label={label} ai={ai} hint={hint}>
+    <Shell id={id} label={label} ai={ai} hint={hint} error={error}>
       <textarea id={id} rows={3} value={text} onChange={(e) => {
         setText(e.target.value);
         onChange(e.target.value.split('\n').map((s) => s.trim()).filter(Boolean));

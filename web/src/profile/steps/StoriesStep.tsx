@@ -4,6 +4,7 @@ import { NeverMentionEditor } from '../NeverMentionEditor';
 import { NewStoryForm } from '../NewStoryForm';
 import { useProfile } from '../ProfileContext';
 import { StoryCard } from '../StoryCard';
+import { NextButton } from '../unsaved';
 import type { WizardStepProps } from './types';
 
 export function StoriesStep({ onNext, nextLabelKey = 'common.next' }: WizardStepProps) {
@@ -19,7 +20,7 @@ export function StoriesStep({ onNext, nextLabelKey = 'common.next' }: WizardStep
       {stories.map((s) => <StoryCard key={JSON.stringify(s)} story={s} />)}
       <NewStoryForm />
       <NeverMentionEditor />
-      <div className="btn-row"><button type="button" className="btn" onClick={onNext}>{t(nextLabelKey)}</button></div>
+      <NextButton onNext={onNext} labelKey={nextLabelKey} />
     </>
   );
 }

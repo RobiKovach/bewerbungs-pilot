@@ -86,6 +86,23 @@ describe('StoriesStep', () => {
     expect(await screen.findByText(/Saved/)).toBeInTheDocument();
   });
 
+  it('skips the questions without making stories', async () => {
+    const { f, user } = setup(asked, { 'DELETE /api/profile/followups': () => ({ body: viewOf(emptyProfile()) }) });
+    await user.type(await screen.findByLabelText('Who was it for?'), 'never mind');
+    await user.click(screen.getByRole('button', { name: 'Skip these questions' }));
+    expect(await screen.findByRole('button', { name: 'Ask me questions' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Who was it for?')).toBeNull();
+    expect(f.mock.calls.some((c) => c[0] === '/api/profile/stories/structure')).toBe(false);
+  });
+
+  it('blocks saving a never-mention list that is too long', async () => {
+    const { user } = setup(emptyProfile());
+    await user.click(await screen.findByLabelText('Never mention'));
+    await user.paste(Array.from({ length: 51 }, (_, i) => `Kunde ${i}`).join('\n'));
+    expect(screen.getByText('Please write at most 50 lines.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save list' })).toBeDisabled();
+  });
+
   it('moves on with Next', async () => {
     const { onNext, user } = setup(emptyProfile());
     await user.click(await screen.findByRole('button', { name: 'Next' }));

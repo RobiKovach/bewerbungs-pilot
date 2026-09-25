@@ -98,7 +98,7 @@
       "replace": "Replace CV",
       "current": "Current CV: {{name}}",
       "none": "No CV uploaded yet.",
-      "replaceHint": "When you upload a new CV, the sections that change must be checked again.",
+      "replaceHint": "When you upload a new CV, every section that is different in it is replaced by the new CV's content — including your own corrections. Please check those sections again afterwards.",
       "changed": "Please check these sections again: {{sections}}",
       "unchanged": "The new CV did not change anything in your profile.",
       "reading": "Claude is reading your CV… This can take up to 3 minutes."
@@ -120,6 +120,10 @@
     "dateHint": "For example 2021-05 or 2021. Leave \"To\" empty if you are still there.",
     "dateInvalid": "Please write the date as 2021-05 or 2021.",
     "fixDates": "Please correct the dates marked in red first.",
+    "fixLines": "Please shorten the lists marked in red first.",
+    "tooManyLines": "Please write at most {{max}} lines.",
+    "discard": "Discard changes",
+    "unsavedHint": "Some changes are not saved yet. Please save them or undo them before you go on.",
     "officialHint": "Write it exactly as on your certificate or contract — it is never translated.",
     "status": { "confirmed": "Checked", "needsCheck": "Please check", "notConfirmed": "Not checked yet" },
     "sections": {
@@ -175,6 +179,7 @@
       "neverTitle": "Never mention",
       "neverHint": "Things that must never appear in an application — one per line (for example a client's name).",
       "neverSave": "Save list",
+      "skip": "Skip these questions",
       "saved": "Saved"
     },
     "storyKind": { "client": "For a client", "work": "At work", "training": "In training or studies", "personal": "Personal project or life" },

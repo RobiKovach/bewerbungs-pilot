@@ -94,4 +94,20 @@ describe('SectionCard', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(sent!.data.items).toEqual([]);
   });
+
+  it('limits a description to the length the server accepts', async () => {
+    setup(profileWith((p) => { p.sections.experience.data.items = [job]; }), 'experience');
+    expect(await screen.findByLabelText('What you did (in your own words)')).toHaveAttribute('maxLength', '5000');
+  });
+
+  it('blocks saving when a list has more lines than allowed', async () => {
+    const { user } = setup(profileWith(() => {}), 'wishes');
+    const titles = await screen.findByLabelText('Jobs you are looking for (one per line)');
+    await user.click(titles);
+    await user.paste(Array.from({ length: 21 }, (_, i) => `Job ${i}`).join('\n'));
+    expect(screen.getByText('Please write at most 20 lines.')).toBeInTheDocument();
+    expect(screen.getByText('Please shorten the lists marked in red first.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'All correct' })).toBeDisabled();
+  });
 });

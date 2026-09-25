@@ -8,6 +8,7 @@ import { ReviewStep } from './steps/ReviewStep';
 import { StartStep } from './steps/StartStep';
 import { StoriesStep } from './steps/StoriesStep';
 import type { WizardStepProps } from './steps/types';
+import { UnsavedProvider, useHasUnsaved } from './unsaved';
 
 type Step = 1 | 2 | 3 | 4;
 const STEPS: { titleKey: string; Component: ComponentType<WizardStepProps> }[] = [
@@ -42,11 +43,19 @@ export function ProfileWizard({ onDone, embedded = false }: { onDone?: () => voi
       <p className="step-counter">{t('common.stepOf', { current: step, total: STEPS.length })}</p>
       <div className="progress" aria-hidden="true"><div className="progress-bar" style={{ width: `${(step / STEPS.length) * 100}%` }} /></div>
       <Heading>{t(titleKey)}</Heading>
-      <Component key={step} onNext={onNext} />
-      {error ? <ErrorBanner error={error} /> : null}
-      {step > 1 ? (
-        <div className="btn-row"><button type="button" className="btn ghost" onClick={() => void go((step - 1) as Step)}>{t('common.back')}</button></div>
-      ) : null}
+      {/* Keyed by step: each step starts with fresh forms and a fresh "unsaved changes" record. */}
+      <UnsavedProvider key={step}>
+        <Component onNext={onNext} />
+        {error ? <ErrorBanner error={error} /> : null}
+        {step > 1 ? <BackButton onBack={() => void go((step - 1) as Step)} /> : null}
+      </UnsavedProvider>
     </section>
   );
+}
+
+/** Held back like the step's Next button while a form in the step has unsaved changes (the step shows the hint). */
+function BackButton({ onBack }: { onBack: () => void }) {
+  const { t } = useTranslation();
+  const blocked = useHasUnsaved();
+  return <div className="btn-row"><button type="button" className="btn ghost" disabled={blocked} onClick={onBack}>{t('common.back')}</button></div>;
 }

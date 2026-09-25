@@ -54,6 +54,7 @@ export const api = {
   confirmSection: (id: SectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/confirm`, {}),
   uploadCv: (file: File, signal?: AbortSignal) => upload<CvResult>('/api/profile/cv', file, fileName(file, 'cv'), signal),
   askFollowUps: (signal?: AbortSignal) => request<ProfileView>('POST', '/api/profile/followups', {}, signal),
+  skipFollowUps: () => request<ProfileView>('DELETE', '/api/profile/followups'),
   structureStories: (answers: StoryAnswer[], signal?: AbortSignal) =>
     request<ProfileView>('POST', '/api/profile/stories/structure', { answers }, signal),
   addStory: (story: StoryInput) => request<ProfileView>('POST', '/api/profile/stories', story),

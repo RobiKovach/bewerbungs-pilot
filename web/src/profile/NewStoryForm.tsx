@@ -5,6 +5,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import type { StoryInput } from '../types';
 import { useProfile } from './ProfileContext';
 import { StoryForm } from './StoryCard';
+import { useReportUnsaved } from './unsaved';
 
 const EMPTY: StoryInput = { title: '', text: '', kind: 'work', disclosure: 'ok' };
 
@@ -15,6 +16,8 @@ export function NewStoryForm() {
   const [draft, setDraft] = useState(EMPTY);
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
+  useReportUnsaved(open && JSON.stringify(draft) !== JSON.stringify(EMPTY));
+  const cancel = () => { setDraft(EMPTY); setOpen(false); };
 
   if (!open) return <div className="btn-row"><button type="button" className="btn ghost" onClick={() => setOpen(true)}>{t('profile.stories.writeOwn')}</button></div>;
 
@@ -37,7 +40,7 @@ export function NewStoryForm() {
       <StoryForm draft={draft} onChange={setDraft} />
       <div className="btn-row">
         <button type="button" className="btn" disabled={busy || !draft.title.trim() || !draft.text.trim()} onClick={() => void add()}>{t('profile.stories.addOwn')}</button>
-        <button type="button" className="btn ghost" onClick={() => setOpen(false)}>{t('common.cancel')}</button>
+        <button type="button" className="btn ghost" onClick={cancel}>{t('common.cancel')}</button>
       </div>
       {error ? <ErrorBanner error={error} /> : null}
     </div>

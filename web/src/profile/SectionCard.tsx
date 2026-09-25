@@ -6,7 +6,8 @@ import { InfoTip } from '../components/InfoTip';
 import type { Section, SectionDataMap, SectionId } from '../types';
 import { SECTION_FORMS, type FormProps } from './forms';
 import { useProfile } from './ProfileContext';
-import { sectionIsValid } from './validate';
+import { useReportUnsaved } from './unsaved';
+import { sectionProblem } from './validate';
 
 export function SectionStatus({ section }: { section: Section<unknown> }) {
   const { t } = useTranslation();
@@ -39,9 +40,14 @@ function SectionEditor({ id, onError }: { id: SectionId; onError: (err: unknown)
   const section = view.profile.sections[id] as Section<SectionDataMap[SectionId]>;
   const [draft, setDraft] = useState(section.data);
   const [busy, setBusy] = useState(false);
+  // Bumped by "Discard changes": remounts the form, so fields that keep their own text (LinesField) start fresh.
+  const [formKey, setFormKey] = useState(0);
   const dirty = JSON.stringify(draft) !== JSON.stringify(section.data);
-  const valid = sectionIsValid(id, draft);
+  const problem = sectionProblem(id, draft);
+  const valid = problem === null;
   const Form = SECTION_FORMS[id] as ComponentType<FormProps<SectionId>>;
+  useReportUnsaved(dirty);
+  const discard = () => { setDraft(section.data); setFormKey((k) => k + 1); };
 
   const act = async (confirm: boolean) => {
     setBusy(true);
@@ -58,11 +64,12 @@ function SectionEditor({ id, onError }: { id: SectionId; onError: (err: unknown)
 
   return (
     <>
-      <Form data={draft} onChange={setDraft} isAi={(path) => section.aiFields.includes(path)} />
-      {!valid ? <p className="field-error">{t('profile.fixDates')}</p> : null}
+      <Form key={formKey} data={draft} onChange={setDraft} isAi={(path) => section.aiFields.includes(path)} />
+      {problem ? <p className="field-error">{t(problem)}</p> : null}
       <div className="btn-row">
         <button type="button" className="btn ghost" disabled={!dirty || !valid || busy} onClick={() => void act(false)}>{t('profile.save')}</button>
         <button type="button" className="btn" disabled={!valid || busy} onClick={() => void act(true)}>{t('profile.allCorrect')}</button>
+        {dirty ? <button type="button" className="btn ghost" disabled={busy} onClick={discard}>{t('profile.discard')}</button> : null}
         <InfoTip textKey="info.profileConfirm" />
       </div>
     </>

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { EMPLOYMENT_TYPES, REMOTE_PREFERENCES } from '../constants';
+import { EMPLOYMENT_TYPES, LIMITS, REMOTE_PREFERENCES } from '../constants';
 import { CheckboxGroup, LinesField, NumberField, SelectField, TextField } from '../fields';
 import type { FormProps } from './types';
 
@@ -7,8 +7,8 @@ export function WishesForm({ data, onChange, isAi }: FormProps<'wishes'>) {
   const { t } = useTranslation();
   return (
     <div className="form-grid">
-      <LinesField label={t('profile.wishes.jobTitles')} value={data.jobTitles} ai={isAi('jobTitles')} onChange={(jobTitles) => onChange({ ...data, jobTitles })} />
-      <LinesField label={t('profile.wishes.locations')} value={data.locations} ai={isAi('locations')} onChange={(locations) => onChange({ ...data, locations })} />
+      <LinesField label={t('profile.wishes.jobTitles')} value={data.jobTitles} ai={isAi('jobTitles')} maxLines={LIMITS.lines} onChange={(jobTitles) => onChange({ ...data, jobTitles })} />
+      <LinesField label={t('profile.wishes.locations')} value={data.locations} ai={isAi('locations')} maxLines={LIMITS.lines} onChange={(locations) => onChange({ ...data, locations })} />
       <NumberField label={t('profile.wishes.radiusKm')} value={data.radiusKm} max={1000} ai={isAi('radiusKm')} onChange={(radiusKm) => onChange({ ...data, radiusKm })} />
       <SelectField label={t('profile.wishes.remote')} value={data.remote} options={REMOTE_PREFERENCES} optionLabel={(r) => t(`profile.remote.${r}`)} ai={isAi('remote')} onChange={(remote) => onChange({ ...data, remote })} />
       <CheckboxGroup legend={t('profile.wishes.employmentTypes')} values={EMPLOYMENT_TYPES} selected={data.employmentTypes}

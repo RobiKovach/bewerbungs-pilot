@@ -98,7 +98,7 @@
       "replace": "Lebenslauf ersetzen",
       "current": "Aktueller Lebenslauf: {{name}}",
       "none": "Noch kein Lebenslauf hochgeladen.",
-      "replaceHint": "Wenn Sie einen neuen Lebenslauf hochladen, müssen die geänderten Abschnitte erneut geprüft werden.",
+      "replaceHint": "Wenn Sie einen neuen Lebenslauf hochladen, wird jeder Abschnitt, der darin anders ist, durch den Inhalt des neuen Lebenslaufs ersetzt – auch mit Ihren eigenen Korrekturen darin. Bitte prüfen Sie diese Abschnitte danach erneut.",
       "changed": "Bitte prüfen Sie diese Abschnitte erneut: {{sections}}",
       "unchanged": "Der neue Lebenslauf hat nichts an Ihrem Profil geändert.",
       "reading": "Claude liest Ihren Lebenslauf … Das kann bis zu 3 Minuten dauern."
@@ -120,6 +120,10 @@
     "dateHint": "Zum Beispiel 2021-05 oder 2021. Lassen Sie „Bis“ leer, wenn Sie noch dort sind.",
     "dateInvalid": "Bitte schreiben Sie das Datum als 2021-05 oder 2021.",
     "fixDates": "Bitte korrigieren Sie zuerst die rot markierten Daten.",
+    "fixLines": "Bitte kürzen Sie zuerst die rot markierten Listen.",
+    "tooManyLines": "Bitte schreiben Sie höchstens {{max}} Zeilen.",
+    "discard": "Änderungen verwerfen",
+    "unsavedHint": "Einige Änderungen sind noch nicht gespeichert. Bitte speichern oder verwerfen Sie sie, bevor Sie weitermachen.",
     "officialHint": "Schreiben Sie es genau wie auf Ihrem Zeugnis oder Vertrag — es wird nie übersetzt.",
     "status": { "confirmed": "Geprüft", "needsCheck": "Bitte prüfen", "notConfirmed": "Noch nicht geprüft" },
     "sections": {
@@ -175,6 +179,7 @@
       "neverTitle": "Nie erwähnen",
       "neverHint": "Dinge, die in einer Bewerbung nie vorkommen dürfen — eines pro Zeile (zum Beispiel der Name eines Kunden).",
       "neverSave": "Liste speichern",
+      "skip": "Diese Fragen überspringen",
       "saved": "Gespeichert"
     },
     "storyKind": { "client": "Für einen Kunden", "work": "Bei der Arbeit", "training": "In Ausbildung oder Studium", "personal": "Privates Projekt oder Leben" },

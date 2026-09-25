@@ -4,9 +4,10 @@ import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { InfoTip } from '../components/InfoTip';
 import type { ProfileDocument, ProfileView } from '../types';
-import { MAX_BYTES, MAX_DOCUMENTS } from './constants';
+import { LIMITS, MAX_BYTES, MAX_DOCUMENTS } from './constants';
 import { TextField } from './fields';
 import { useProfile } from './ProfileContext';
+import { useReportUnsaved } from './unsaved';
 
 function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return <label className="check"><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} /> {label}</label>;
@@ -20,13 +21,14 @@ function DocumentRow({ doc }: { doc: ProfileDocument }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const dirty = label.trim() !== doc.label || always !== doc.attachAlways;
+  useReportUnsaved(dirty);
   const run = async (fn: () => Promise<ProfileView>) => {
     setError(null);
     try { apply(await fn()); } catch (err) { setError(err); }
   };
   return (
     <div className="entry document-row">
-      <TextField label={t('profile.files.docName')} value={label} onChange={setLabel} />
+      <TextField label={t('profile.files.docName')} value={label} maxLength={LIMITS.name} onChange={setLabel} />
       <Checkbox label={t('profile.files.docAlways')} checked={always} onChange={setAlways} />
       <div className="btn-row">
         <a className="btn ghost small" href={api.fileUrl(doc.id)} target="_blank" rel="noopener noreferrer">{t('profile.files.docOpen')}</a>
@@ -73,7 +75,7 @@ export function DocumentsEditor() {
       <p className="muted">{t('profile.files.docCount', { count: docs.length, max: MAX_DOCUMENTS })}</p>
       {docs.map((d) => <DocumentRow key={JSON.stringify(d)} doc={d} />)}
       <div className="entry">
-        <TextField label={t('profile.files.docLabel')} value={label} onChange={setLabel} />
+        <TextField label={t('profile.files.docLabel')} value={label} maxLength={LIMITS.name} onChange={setLabel} />
         <Checkbox label={t('profile.files.docAlways')} checked={always} onChange={setAlways} />
         <div className="btn-row"><label className="btn ghost" htmlFor={inputId}>{t('profile.files.docChoose')}</label></div>
         <input id={inputId} type="file" accept=".pdf,application/pdf" className="visually-hidden" disabled={busy}

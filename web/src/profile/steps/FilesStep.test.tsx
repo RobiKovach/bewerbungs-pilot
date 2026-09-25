@@ -97,6 +97,12 @@ describe('FilesStep', () => {
     expect(await screen.findByText('0 of 20 documents')).toBeInTheDocument();
   });
 
+  it('limits document names to the length the server accepts', async () => {
+    setup(profileWith((p) => { p.documents = [doc(1)]; }));
+    expect(await screen.findByLabelText(/Name of the new document/)).toHaveAttribute('maxLength', '300');
+    expect(screen.getByLabelText('Name')).toHaveAttribute('maxLength', '300');
+  });
+
   it('finishes with Finish', async () => {
     const { onNext, user } = setup(emptyProfile());
     await user.click(await screen.findByRole('button', { name: 'Finish' }));

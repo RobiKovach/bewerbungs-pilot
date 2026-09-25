@@ -4,9 +4,9 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.1 — foundation.** The app installs, runs, speaks six languages, walks you through
-the first steps and talks to Claude. Profile, job search, application packages and sending are
-being built next.
+**Status: v0.2 — foundation and profile.** The app installs, runs, speaks six languages, walks you
+through the first steps, talks to Claude and builds your profile from your CV and your own stories.
+Job search, application packages and sending are being built next.
 
 ## Requirements
 

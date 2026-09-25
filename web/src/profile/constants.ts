@@ -13,3 +13,5 @@ export const STORY_KINDS = ['client', 'work', 'training', 'personal'] as const s
 const MB = 1024 * 1024;
 export const MAX_BYTES = { cv: 10 * MB, photo: 5 * MB, document: 10 * MB } as const;
 export const MAX_DOCUMENTS = 20;
+/** Subset of the server's LIMITS (schema.ts) that a person can hit while typing. */
+export const LIMITS = { name: 300, text: 5000, lines: 20, neverMention: 50 } as const;

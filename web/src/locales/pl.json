@@ -98,7 +98,7 @@
       "replace": "Zastąp CV",
       "current": "Bieżące CV: {{name}}",
       "none": "Nie przesłano jeszcze CV.",
-      "replaceHint": "Gdy prześlesz nowe CV, zmienione sekcje trzeba będzie sprawdzić ponownie.",
+      "replaceHint": "Gdy prześlesz nowe CV, każda sekcja, która się w nim różni, zostanie zastąpiona jego treścią — razem z Twoimi własnymi poprawkami. Potem sprawdź te sekcje ponownie.",
       "changed": "Proszę sprawdzić ponownie te sekcje: {{sections}}",
       "unchanged": "Nowe CV niczego nie zmieniło w Twoim profilu.",
       "reading": "Claude czyta Twoje CV… To może potrwać do 3 minut."
@@ -120,6 +120,10 @@
     "dateHint": "Na przykład 2021-05 lub 2021. Zostaw „Do” puste, jeśli nadal tam jesteś.",
     "dateInvalid": "Proszę podać datę jako 2021-05 lub 2021.",
     "fixDates": "Najpierw popraw daty zaznaczone na czerwono.",
+    "fixLines": "Najpierw skróć listy zaznaczone na czerwono.",
+    "tooManyLines": "Wpisz najwyżej {{max}} wierszy.",
+    "discard": "Odrzuć zmiany",
+    "unsavedHint": "Niektóre zmiany nie są jeszcze zapisane. Zapisz je lub cofnij, zanim przejdziesz dalej.",
     "officialHint": "Wpisz dokładnie tak, jak na świadectwie lub umowie — to nigdy nie jest tłumaczone.",
     "status": { "confirmed": "Sprawdzone", "needsCheck": "Do sprawdzenia", "notConfirmed": "Jeszcze niesprawdzone" },
     "sections": {
@@ -175,6 +179,7 @@
       "neverTitle": "Nigdy nie wspominać",
       "neverHint": "Rzeczy, które nigdy nie mogą pojawić się w aplikacji — jedna na linię (na przykład nazwa klienta).",
       "neverSave": "Zapisz listę",
+      "skip": "Pomiń te pytania",
       "saved": "Zapisano"
     },
     "storyKind": { "client": "Dla klienta", "work": "W pracy", "training": "Podczas nauki lub studiów", "personal": "Osobisty projekt lub życie" },

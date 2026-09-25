@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import type { ProfileView, Story, StoryInput } from '../types';
-import { STORY_KINDS } from './constants';
+import { LIMITS, STORY_KINDS } from './constants';
 import { SelectField, TextField } from './fields';
 import { useProfile } from './ProfileContext';
+import { useReportUnsaved } from './unsaved';
 
 const DISCLOSURES = ['ok', 'never'] as const;
 
@@ -13,7 +14,7 @@ export function StoryForm({ draft, onChange }: { draft: StoryInput; onChange: (d
   const { t } = useTranslation();
   return (
     <div className="form-grid">
-      <TextField label={t('profile.stories.title')} value={draft.title} onChange={(title) => onChange({ ...draft, title })} />
+      <TextField label={t('profile.stories.title')} value={draft.title} maxLength={LIMITS.name} onChange={(title) => onChange({ ...draft, title })} />
       <SelectField label={t('profile.stories.kind')} value={draft.kind} options={STORY_KINDS} optionLabel={(k) => t(`profile.storyKind.${k}`)} onChange={(kind) => onChange({ ...draft, kind })} />
       <TextField multiline label={t('profile.stories.text')} value={draft.text} onChange={(text) => onChange({ ...draft, text })} />
       <SelectField label={t('profile.stories.disclosure')} value={draft.disclosure} options={DISCLOSURES} optionLabel={(d) => t(`profile.disclosure.${d}`)} onChange={(disclosure) => onChange({ ...draft, disclosure })} />
@@ -30,6 +31,8 @@ export function StoryCard({ story }: { story: Story }) {
   const [error, setError] = useState<unknown>(null);
   const dirty = draft.title !== story.title || draft.text !== story.text || draft.kind !== story.kind || draft.disclosure !== story.disclosure;
   const valid = draft.title.trim() !== '' && draft.text.trim() !== '';
+  useReportUnsaved(dirty);
+  const discard = () => setDraft({ title: story.title, text: story.text, kind: story.kind, disclosure: story.disclosure });
 
   const run = async (fn: () => Promise<ProfileView>) => {
     setBusy(true);
@@ -47,6 +50,7 @@ export function StoryCard({ story }: { story: Story }) {
             {story.confirmed ? t('profile.stories.save') : t('profile.stories.confirm')}
           </button>
         ) : null}
+        {dirty ? <button type="button" className="btn ghost" disabled={busy} onClick={discard}>{t('profile.discard')}</button> : null}
         <button type="button" className="btn ghost" disabled={busy}
           onClick={() => (confirmDelete ? void run(() => api.deleteStory(story.id)) : setConfirmDelete(true))}>
           {confirmDelete ? t('profile.stories.reallyDelete') : t('profile.stories.delete')}
