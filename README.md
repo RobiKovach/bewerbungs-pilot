@@ -28,6 +28,19 @@ installer; your data is kept.
 Українська · English · Deutsch · Русский · Polski · Română.
 German, Russian, Polish and Romanian are machine-translated — corrections are welcome.
 
+## Your profile
+
+The profile is the basis of every application. Upload your CV (PDF or Word) or fill in the same sections yourself.
+Claude reads the CV and fills in personal details, education, work experience, skills and languages; every field it
+filled is marked **"AI – please check"** until you save or confirm it. Then Claude asks 3–7 short personal questions
+and turns your answers into a *story bank* — true, concrete stories that cover letters are later built from (a cover
+letter should tell what you did, not repeat your CV). You can add a CV photo (cropped to 3:4) and PDF documents to attach.
+
+- Everything stays on your computer: `%LOCALAPPDATA%\BewerbungsPilot\profile\`.
+- Claude only ever sees a copy of your CV in a throw-away folder, never your own folders.
+- Nothing is made up: Claude may only use what your CV and your answers say.
+- Applications can only be written once every section is checked ("All correct").
+
 ## Development
 
 ```
