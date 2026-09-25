@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Ihr Assistent für Bewerbungen in Deutschland" },
-  "nav": { "home": "Start", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
+  "nav": { "home": "Start", "profile": "Profil", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
   "common": {
     "next": "Weiter", "back": "Zurück", "retry": "Erneut prüfen", "cancel": "Abbrechen", "details": "Details",
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
@@ -11,8 +11,9 @@
     "title": "Willkommen bei BewerbungsPilot",
     "intro": "BewerbungsPilot findet Stellenangebote in Deutschland, die zu Ihnen passen, schreibt Ihre Bewerbungsunterlagen und hilft Ihnen, den Überblick über jede Bewerbung zu behalten.",
     "nextTitle": "Was als Nächstes kommt",
-    "nextBody": "Ihr Profil, die Jobsuche, Bewerbungspakete und der Versand werden gerade entwickelt. Die Anleitung zeigt bereits jeden Schritt.",
-    "openGuide": "Anleitung öffnen"
+    "nextBody": "Beginnen Sie mit Ihrem Profil: Laden Sie Ihren Lebenslauf hoch und beantworten Sie ein paar Fragen. Die Jobsuche, Bewerbungspakete und der Versand werden gerade entwickelt.",
+    "openGuide": "Anleitung öffnen",
+    "openProfile": "Profil öffnen"
   },
   "onboarding": {
     "welcome": { "title": "Willkommen", "body": "Nur wenige kurze Schritte, und BewerbungsPilot ist bereit für Sie. Wählen Sie zuerst die Sprache der App. Sie können sie jederzeit ändern." },
@@ -36,7 +37,7 @@
       },
       "error": { "title": "Claude hat nicht geantwortet", "hint": "Prüfen Sie Ihre Internetverbindung und klicken Sie auf „Erneut prüfen“." }
     },
-    "profile": { "title": "Ihr Profil", "body": "Hier laden Sie Ihren Lebenslauf hoch, und Claude stellt Ihnen einige kurze Fragen, um Ihr Profil zu vervollständigen." },
+    "profile": { "title": "Ihr Profil", "body": "Laden Sie Ihren Lebenslauf hoch oder füllen Sie Ihre Daten selbst aus, und beantworten Sie dann ein paar kurze Fragen. Sie können dies auch später unter „Profil“ erledigen." },
     "email": { "title": "Ihre E-Mail", "body": "Hier verbinden Sie Ihre E-Mail, damit BewerbungsPilot die von Ihnen freigegebenen Bewerbungen versenden kann." },
     "done": { "title": "Fertig", "body": "Die Grundlagen sind bereit. Öffnen Sie die Anleitung jederzeit, um zu sehen, was als Nächstes kommt.", "finish": "Fertigstellen" }
   },
@@ -80,9 +81,26 @@
   },
   "quit": { "title": "BewerbungsPilot wurde beendet", "body": "Sie können diesen Tab jetzt schließen. Um erneut zu starten, verwenden Sie die BewerbungsPilot-Verknüpfung auf Ihrem Desktop." },
   "profile": {
+    "title": "Ihr Profil",
+    "edit": "Bearbeiten",
+    "close": "Schließen",
+    "ready": "Ihr Profil ist bereit für Bewerbungen.",
+    "notReady": "Bevor BewerbungsPilot Bewerbungen schreiben kann, prüfen Sie bitte diese Abschnitte:",
+    "noStoriesWarning": "Sie haben noch keine geprüfte Geschichte — Anschreiben werden dadurch allgemeiner. Fügen Sie eine unter „Geschichten für Anschreiben“ hinzu.",
+    "storiesTitle": "Geschichten für Anschreiben",
+    "storiesCount": "Geprüft: {{count}}",
+    "addStories": "Geschichten hinzufügen",
+    "later": "Später ausfüllen",
+    "doneInOnboarding": "Ihr Profil ist ausgefüllt. Sie können es jederzeit unter „Profil“ ändern.",
     "cv": {
+      "title": "Lebenslauf",
       "upload": "Lebenslauf hochladen (PDF oder Word)",
       "replace": "Lebenslauf ersetzen",
+      "current": "Aktueller Lebenslauf: {{name}}",
+      "none": "Noch kein Lebenslauf hochgeladen.",
+      "replaceHint": "Wenn Sie einen neuen Lebenslauf hochladen, müssen die geänderten Abschnitte erneut geprüft werden.",
+      "changed": "Bitte prüfen Sie diese Abschnitte erneut: {{sections}}",
+      "unchanged": "Der neue Lebenslauf hat nichts an Ihrem Profil geändert.",
       "reading": "Claude liest Ihren Lebenslauf … Das kann bis zu 3 Minuten dauern."
     },
     "start": {
@@ -162,6 +180,7 @@
     "storyKind": { "client": "Für einen Kunden", "work": "Bei der Arbeit", "training": "In Ausbildung oder Studium", "personal": "Privates Projekt oder Leben" },
     "disclosure": { "ok": "Ja, darf erzählt werden", "never": "Nein, nie den Arbeitgebern erzählen" },
     "files": {
+      "title": "Foto und Dokumente",
       "intro": "Optional: ein Foto für Ihren Lebenslauf und Dokumente zum Anhängen, zum Beispiel Zeugnisse oder Referenzen.",
       "photoTitle": "Foto",
       "photoChoose": "Foto auswählen (JPG oder PNG)",
@@ -181,7 +200,7 @@
       "docReallyDelete": "Wirklich löschen?",
       "docCount": "{{count}} von {{max}} Dokumenten"
     },
-    "wizard": { "finish": "Fertig" }
+    "wizard": { "start": "Start", "review": "Ihre Daten prüfen", "stories": "Fragen und Geschichten", "files": "Foto und Dokumente", "finish": "Fertig" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },

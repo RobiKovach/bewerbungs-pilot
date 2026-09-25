@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
-  "nav": { "home": "Home", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
+  "nav": { "home": "Home", "profile": "Profile", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
   "common": {
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
@@ -11,8 +11,9 @@
     "title": "Welcome to BewerbungsPilot",
     "intro": "BewerbungsPilot finds job offers in Germany that fit you, writes your application documents and helps you keep track of every application.",
     "nextTitle": "What comes next",
-    "nextBody": "Your profile, the job search, application packages and sending are being built right now. The guide already shows every step.",
-    "openGuide": "Open the guide"
+    "nextBody": "Start with your profile: upload your CV and answer a few questions. The job search, application packages and sending are being built right now.",
+    "openGuide": "Open the guide",
+    "openProfile": "Open your profile"
   },
   "onboarding": {
     "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time." },
@@ -36,7 +37,7 @@
       },
       "error": { "title": "Claude did not answer", "hint": "Check your internet connection and click \"Check again\"." }
     },
-    "profile": { "title": "Your profile", "body": "Here you will upload your CV, and Claude will ask a few short questions to complete your profile." },
+    "profile": { "title": "Your profile", "body": "Upload your CV or fill in your details, then answer a few short questions. You can also do this later under \"Profile\"." },
     "email": { "title": "Your email", "body": "Here you will connect your email so BewerbungsPilot can send the applications you approved." },
     "done": { "title": "All set", "body": "The basics are ready. Open the guide at any time to see what comes next.", "finish": "Finish" }
   },
@@ -80,9 +81,26 @@
   },
   "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop." },
   "profile": {
+    "title": "Your profile",
+    "edit": "Edit",
+    "close": "Close",
+    "ready": "Your profile is ready for applications.",
+    "notReady": "Before BewerbungsPilot can write applications, please check these sections:",
+    "noStoriesWarning": "You have no checked story yet — cover letters will be more general. Add one under \"Stories for cover letters\".",
+    "storiesTitle": "Stories for cover letters",
+    "storiesCount": "Checked: {{count}}",
+    "addStories": "Add stories",
+    "later": "Fill in later",
+    "doneInOnboarding": "Your profile is filled in. You can change it at any time under \"Profile\".",
     "cv": {
+      "title": "CV",
       "upload": "Upload your CV (PDF or Word)",
       "replace": "Replace CV",
+      "current": "Current CV: {{name}}",
+      "none": "No CV uploaded yet.",
+      "replaceHint": "When you upload a new CV, the sections that change must be checked again.",
+      "changed": "Please check these sections again: {{sections}}",
+      "unchanged": "The new CV did not change anything in your profile.",
       "reading": "Claude is reading your CV… This can take up to 3 minutes."
     },
     "start": {
@@ -162,6 +180,7 @@
     "storyKind": { "client": "For a client", "work": "At work", "training": "In training or studies", "personal": "Personal project or life" },
     "disclosure": { "ok": "Yes, may be told", "never": "No, never tell employers" },
     "files": {
+      "title": "Photo and documents",
       "intro": "Optional: a photo for your CV and documents to attach, such as certificates or references.",
       "photoTitle": "Photo",
       "photoChoose": "Choose a photo (JPG or PNG)",
@@ -181,7 +200,7 @@
       "docReallyDelete": "Really delete?",
       "docCount": "{{count}} of {{max}} documents"
     },
-    "wizard": { "finish": "Finish" }
+    "wizard": { "start": "Start", "review": "Check your details", "stories": "Questions and stories", "files": "Photo and documents", "finish": "Finish" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code is not installed.", "hint": "Run the BewerbungsPilot installer again — it installs Claude Code for you." },

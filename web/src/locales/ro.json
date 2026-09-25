@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Asistentul dumneavoastră pentru cererile de angajare în Germania" },
-  "nav": { "home": "Acasă", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
+  "nav": { "home": "Acasă", "profile": "Profil", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
   "common": {
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
@@ -11,8 +11,9 @@
     "title": "Bine ați venit la BewerbungsPilot",
     "intro": "BewerbungsPilot găsește oferte de angajare în Germania potrivite pentru dumneavoastră, redactează documentele de candidatură și vă ajută să urmăriți fiecare cerere.",
     "nextTitle": "Ce urmează",
-    "nextBody": "Profilul dumneavoastră, căutarea locurilor de muncă, pachetele de candidatură și trimiterea sunt în curs de dezvoltare. Ghidul arată deja fiecare pas.",
-    "openGuide": "Deschideți ghidul"
+    "nextBody": "Începeți cu profilul dumneavoastră: încărcați CV-ul și răspundeți la câteva întrebări. Căutarea locurilor de muncă, pachetele de candidatură și trimiterea sunt în curs de dezvoltare.",
+    "openGuide": "Deschideți ghidul",
+    "openProfile": "Deschideți profilul"
   },
   "onboarding": {
     "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând." },
@@ -36,7 +37,7 @@
       },
       "error": { "title": "Claude nu a răspuns", "hint": "Verificați conexiunea la internet și faceți clic pe „Verificați din nou”." }
     },
-    "profile": { "title": "Profilul dumneavoastră", "body": "Aici veți încărca CV-ul dumneavoastră, iar Claude vă va adresa câteva întrebări scurte pentru a completa profilul." },
+    "profile": { "title": "Profilul dumneavoastră", "body": "Încărcați CV-ul dumneavoastră sau completați datele singur/singură, apoi răspundeți la câteva întrebări scurte. Puteți face acest lucru și mai târziu, la secțiunea „Profil”." },
     "email": { "title": "E-mailul dumneavoastră", "body": "Aici veți conecta e-mailul dumneavoastră, astfel încât BewerbungsPilot să poată trimite cererile aprobate de dumneavoastră." },
     "done": { "title": "Totul este pregătit", "body": "Elementele de bază sunt gata. Deschideți ghidul oricând pentru a vedea ce urmează.", "finish": "Finalizare" }
   },
@@ -80,9 +81,26 @@
   },
   "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop." },
   "profile": {
+    "title": "Profilul dumneavoastră",
+    "edit": "Editați",
+    "close": "Închideți",
+    "ready": "Profilul dumneavoastră este pregătit pentru candidaturi.",
+    "notReady": "Înainte ca BewerbungsPilot să poată scrie candidaturi, vă rugăm verificați aceste secțiuni:",
+    "noStoriesWarning": "Nu aveți încă nicio poveste verificată — scrisorile de intenție vor fi mai generale. Adăugați una la secțiunea „Povești pentru scrisorile de intenție”.",
+    "storiesTitle": "Povești pentru scrisorile de intenție",
+    "storiesCount": "Verificate: {{count}}",
+    "addStories": "Adăugați povești",
+    "later": "Completați mai târziu",
+    "doneInOnboarding": "Profilul dumneavoastră este completat. Îl puteți modifica oricând la secțiunea „Profil”.",
     "cv": {
+      "title": "CV",
       "upload": "Încărcați CV-ul (PDF sau Word)",
       "replace": "Înlocuiți CV-ul",
+      "current": "CV actual: {{name}}",
+      "none": "Niciun CV încărcat încă.",
+      "replaceHint": "Când încărcați un CV nou, secțiunile care se schimbă trebuie verificate din nou.",
+      "changed": "Vă rugăm verificați din nou aceste secțiuni: {{sections}}",
+      "unchanged": "Noul CV nu a schimbat nimic în profilul dumneavoastră.",
       "reading": "Claude vă citește CV-ul… Poate dura până la 3 minute."
     },
     "start": {
@@ -162,6 +180,7 @@
     "storyKind": { "client": "Pentru un client", "work": "La locul de muncă", "training": "În timpul formării sau studiilor", "personal": "Proiect personal sau viață personală" },
     "disclosure": { "ok": "Da, poate fi spus", "never": "Nu, niciodată angajatorilor" },
     "files": {
+      "title": "Fotografie și documente",
       "intro": "Opțional: o fotografie pentru CV și documente de atașat, de exemplu diplome sau recomandări.",
       "photoTitle": "Fotografie",
       "photoChoose": "Alegeți o fotografie (JPG sau PNG)",
@@ -181,7 +200,7 @@
       "docReallyDelete": "Sigur ștergeți?",
       "docCount": "{{count}} din {{max}} documente"
     },
-    "wizard": { "finish": "Finalizează" }
+    "wizard": { "start": "Început", "review": "Verificați-vă datele", "stories": "Întrebări și povești", "files": "Fotografie și documente", "finish": "Finalizează" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },

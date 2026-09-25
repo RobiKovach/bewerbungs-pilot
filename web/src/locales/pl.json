@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Twój asystent w poszukiwaniu pracy w Niemczech" },
-  "nav": { "home": "Start", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
+  "nav": { "home": "Start", "profile": "Profil", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
   "common": {
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
@@ -11,8 +11,9 @@
     "title": "Witamy w BewerbungsPilot",
     "intro": "BewerbungsPilot znajduje oferty pracy w Niemczech, które Ci odpowiadają, przygotowuje dokumenty aplikacyjne i pomaga śledzić każdą aplikację.",
     "nextTitle": "Co dalej",
-    "nextBody": "Profil, wyszukiwanie ofert pracy, pakiety aplikacyjne i wysyłka są właśnie tworzone. Przewodnik pokazuje już każdy krok.",
-    "openGuide": "Otwórz przewodnik"
+    "nextBody": "Zacznij od profilu: prześlij swoje CV i odpowiedz na kilka pytań. Wyszukiwanie ofert pracy, pakiety aplikacyjne i wysyłka są właśnie tworzone.",
+    "openGuide": "Otwórz przewodnik",
+    "openProfile": "Otwórz profil"
   },
   "onboarding": {
     "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język aplikacji. Możesz go zmienić w dowolnym momencie." },
@@ -36,7 +37,7 @@
       },
       "error": { "title": "Claude nie odpowiedział", "hint": "Sprawdź połączenie z internetem i kliknij „Sprawdź ponownie”." }
     },
-    "profile": { "title": "Twój profil", "body": "Tutaj prześlesz swoje CV, a Claude zada kilka krótkich pytań, aby uzupełnić profil." },
+    "profile": { "title": "Twój profil", "body": "Prześlij swoje CV lub wypełnij dane samodzielnie, a następnie odpowiedz na kilka krótkich pytań. Możesz to zrobić też później w sekcji „Profil”." },
     "email": { "title": "Twój e-mail", "body": "Tutaj połączysz swój e-mail, aby BewerbungsPilot mógł wysyłać zatwierdzone przez Ciebie aplikacje." },
     "done": { "title": "Gotowe", "body": "Podstawy są gotowe. Otwórz przewodnik w dowolnym momencie, aby zobaczyć, co dalej.", "finish": "Zakończ" }
   },
@@ -80,9 +81,26 @@
   },
   "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie." },
   "profile": {
+    "title": "Twój profil",
+    "edit": "Edytuj",
+    "close": "Zamknij",
+    "ready": "Twój profil jest gotowy do składania aplikacji.",
+    "notReady": "Zanim BewerbungsPilot będzie mógł pisać aplikacje, sprawdź te sekcje:",
+    "noStoriesWarning": "Nie masz jeszcze żadnej sprawdzonej historii — listy motywacyjne będą bardziej ogólne. Dodaj jedną w sekcji „Historie do listów motywacyjnych”.",
+    "storiesTitle": "Historie do listów motywacyjnych",
+    "storiesCount": "Sprawdzone: {{count}}",
+    "addStories": "Dodaj historie",
+    "later": "Wypełnij później",
+    "doneInOnboarding": "Twój profil jest wypełniony. Możesz go zmienić w dowolnym momencie w sekcji „Profil”.",
     "cv": {
+      "title": "CV",
       "upload": "Prześlij CV (PDF lub Word)",
       "replace": "Zastąp CV",
+      "current": "Bieżące CV: {{name}}",
+      "none": "Nie przesłano jeszcze CV.",
+      "replaceHint": "Gdy prześlesz nowe CV, zmienione sekcje trzeba będzie sprawdzić ponownie.",
+      "changed": "Proszę sprawdzić ponownie te sekcje: {{sections}}",
+      "unchanged": "Nowe CV niczego nie zmieniło w Twoim profilu.",
       "reading": "Claude czyta Twoje CV… To może potrwać do 3 minut."
     },
     "start": {
@@ -162,6 +180,7 @@
     "storyKind": { "client": "Dla klienta", "work": "W pracy", "training": "Podczas nauki lub studiów", "personal": "Osobisty projekt lub życie" },
     "disclosure": { "ok": "Tak, można o tym mówić", "never": "Nie, nigdy nie mówić pracodawcom" },
     "files": {
+      "title": "Zdjęcie i dokumenty",
       "intro": "Opcjonalnie: zdjęcie do CV i dokumenty do załączenia, na przykład świadectwa lub referencje.",
       "photoTitle": "Zdjęcie",
       "photoChoose": "Wybierz zdjęcie (JPG lub PNG)",
@@ -181,7 +200,7 @@
       "docReallyDelete": "Na pewno usunąć?",
       "docCount": "{{count}} z {{max}} dokumentów"
     },
-    "wizard": { "finish": "Zakończ" }
+    "wizard": { "start": "Start", "review": "Sprawdź swoje dane", "stories": "Pytania i historie", "files": "Zdjęcie i dokumenty", "finish": "Zakończ" }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },

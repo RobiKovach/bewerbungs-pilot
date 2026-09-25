@@ -84,6 +84,10 @@ label.btn { cursor: pointer; }
 .cropper { position: relative; width: 100%; max-width: 24rem; aspect-ratio: 3 / 4; background: var(--bg); border-radius: var(--radius); overflow: hidden; }
 .photo-preview { display: block; width: 9rem; aspect-ratio: 3 / 4; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); }
 .check { display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0; }
+.readiness ul { margin: 0.3rem 0 0.6rem; }
+.notice { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.9rem; }
+.card .card { box-shadow: none; }
+.profile-wizard { margin-top: 1rem; }
 @media (prefers-color-scheme: dark) {
   .badge.ai { background: #3a2e10; color: #f3d88c; border-color: #6b5520; }
   .badge.warn-badge { color: #f3d88c; }

@@ -5,12 +5,19 @@ import { SettingsProvider } from '../settings';
 import { OnboardingWizard } from './OnboardingWizard';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
 import { baseSettings, settingsRoutes } from '../test/fixtures';
+import { emptyProfile, viewOf } from '../test/profileFixtures';
 import type { Availability } from '../types';
 
 function setup(currentStep: string | null, availability: Availability = { ok: true }) {
   const server = settingsRoutes(baseSettings({ onboarding: { currentStep, completed: false } }));
   const check: RouteHandler = () => ({ body: { availability, queue: { running: false, queued: 0 } } });
-  const f = mockFetch({ ...server.routes, 'GET /api/llm/check': check, 'GET /api/llm/check?refresh=1': check, 'POST /api/llm/open-login': () => ({ body: { ok: true } }) });
+  const f = mockFetch({
+    ...server.routes,
+    'GET /api/llm/check': check,
+    'GET /api/llm/check?refresh=1': check,
+    'POST /api/llm/open-login': () => ({ body: { ok: true } }),
+    'GET /api/profile': () => ({ body: viewOf(emptyProfile()) }),
+  });
   render(<SettingsProvider><OnboardingWizard /></SettingsProvider>);
   return { server, f, user: userEvent.setup() };
 }
@@ -25,9 +32,18 @@ describe('OnboardingWizard', () => {
   });
 
   it('resumes where the user left off', async () => {
-    setup('profile');
-    expect(await screen.findByText('Step 3 of 5')).toBeInTheDocument();
+    setup('email');
+    expect(await screen.findByText('Step 4 of 5')).toBeInTheDocument();
     expect(screen.getByText('Coming soon')).toBeInTheDocument();
+  });
+
+  it('shows the profile wizard on the profile step and can skip it', async () => {
+    const { server, user } = setup('profile');
+    expect(await screen.findByText('Step 3 of 5')).toBeInTheDocument();
+    expect(await screen.findByText('Step 1 of 4')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Fill in later' }));
+    expect(await screen.findByText('Step 4 of 5')).toBeInTheDocument();
+    expect(server.current().onboarding.currentStep).toBe('email');
   });
 
   it('goes back one step', async () => {

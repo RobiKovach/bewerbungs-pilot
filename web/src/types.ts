@@ -5,4 +5,4 @@ export type {
   StoryInput, StoryKind, StoredFile, WishesData,
 } from '@bp/shared';
 
-export type Route = 'home' | 'guide' | 'settings';
+export type Route = 'home' | 'profile' | 'guide' | 'settings';

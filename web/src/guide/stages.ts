@@ -9,7 +9,7 @@ export interface GuideStage {
 // Later sub-projects switch their stage's action to { href: '#/<page>' } when the page exists.
 export const GUIDE_STAGES: GuideStage[] = [
   { id: 'install', icon: '💻', action: 'none' },
-  { id: 'profile', icon: '👤', action: 'coming-soon' },
+  { id: 'profile', icon: '👤', action: { href: '#/profile' } },
   { id: 'email', icon: '✉️', action: 'coming-soon' },
   { id: 'search', icon: '🔎', action: 'coming-soon' },
   { id: 'review', icon: '📝', action: 'coming-soon' },

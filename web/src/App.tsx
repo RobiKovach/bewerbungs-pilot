@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
 import { GuidePage } from './pages/GuidePage';
 import { HomePage } from './pages/HomePage';
+import { ProfilePage } from './pages/ProfilePage';
 import { QuitScreen } from './pages/QuitScreen';
 import { SettingsPage } from './pages/SettingsPage';
 import { useSettings } from './settings';
@@ -11,7 +12,7 @@ import type { Route } from './types';
 
 function routeFromHash(hash: string): Route {
   const r = hash.replace(/^#\/?/, '');
-  return r === 'guide' || r === 'settings' ? r : 'home';
+  return r === 'guide' || r === 'settings' || r === 'profile' ? r : 'home';
 }
 
 export function App() {
@@ -35,6 +36,7 @@ export function App() {
   if (onboarding) page = <OnboardingWizard />;
   else if (route === 'guide') page = <GuidePage />;
   else if (route === 'settings') page = <SettingsPage onQuit={() => void onQuit()} />;
+  else if (route === 'profile') page = <ProfilePage />;
   return (
     <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
       {page}

@@ -5,6 +5,7 @@ import { SettingsProvider } from './settings';
 import { App } from './App';
 import { mockFetch } from './test/fetchMock';
 import { baseSettings, settingsRoutes } from './test/fixtures';
+import { emptyProfile, viewOf } from './test/profileFixtures';
 
 describe('App', () => {
   it('shows the home page and quits cleanly', async () => {
@@ -22,5 +23,12 @@ describe('App', () => {
     render(<SettingsProvider><App /></SettingsProvider>);
     await userEvent.setup().click(await screen.findByRole('link', { name: 'How it works' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'How it works' })).toBeInTheDocument();
+  });
+
+  it('opens the profile via the menu', async () => {
+    mockFetch({ ...settingsRoutes(baseSettings()).routes, 'GET /api/profile': () => ({ body: viewOf(emptyProfile()) }) });
+    render(<SettingsProvider><App /></SettingsProvider>);
+    await userEvent.setup().click(await screen.findByRole('link', { name: 'Profile' }));
+    expect(await screen.findByText('Step 1 of 4')).toBeInTheDocument();
   });
 });

@@ -9,7 +9,10 @@ export function HomePage() {
       <div className="card">
         <h2>{t('home.nextTitle')}</h2>
         <p>{t('home.nextBody')}</p>
-        <a className="btn" href="#/guide">{t('home.openGuide')}</a>
+        <div className="btn-row">
+          <a className="btn" href="#/guide">{t('home.openGuide')}</a>
+          <a className="btn ghost" href="#/profile">{t('home.openProfile')}</a>
+        </div>
       </div>
     </section>
   );
