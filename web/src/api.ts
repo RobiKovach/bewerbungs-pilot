@@ -1,5 +1,6 @@
 import type {
-  CvResult, Language, LlmCheck, ProfileView, SectionDataMap, SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput,
+  CvResult, CvSectionId, Language, LlmCheck, ProfileView, SectionDataMap, SectionId, Settings, SettingsPatch, StoryAnswer,
+  StoryInput,
 } from './types';
 
 export class ApiError extends Error {
@@ -61,6 +62,9 @@ export const api = {
     request<ProfileView>('PUT', '/api/profile/wizard', completed ? { step, completed } : { step }),
   saveSection: <K extends SectionId>(id: K, data: SectionDataMap[K]) => request<ProfileView>('PUT', `/api/profile/sections/${id}`, { data }),
   confirmSection: (id: SectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/confirm`, {}),
+  /** A new CV's version of a section the person had worked on: take it, or keep their own. */
+  acceptProposal: (id: CvSectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/proposal/accept`, {}),
+  rejectProposal: (id: CvSectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/proposal/reject`, {}),
   uploadCv: (file: File, signal?: AbortSignal) => upload<CvResult>('/api/profile/cv', file, fileName(file, 'cv'), signal),
   askFollowUps: (signal?: AbortSignal) => request<ProfileView>('POST', '/api/profile/followups', {}, signal),
   skipFollowUps: () => request<ProfileView>('DELETE', '/api/profile/followups'),

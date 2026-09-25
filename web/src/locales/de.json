@@ -99,10 +99,20 @@
       "replace": "Lebenslauf ersetzen",
       "current": "Aktueller Lebenslauf: {{name}}",
       "none": "Noch kein Lebenslauf hochgeladen.",
-      "replaceHint": "Wenn Sie einen neuen Lebenslauf hochladen, wird jeder Abschnitt, der darin anders ist, durch den Inhalt des neuen Lebenslaufs ersetzt – auch mit Ihren eigenen Korrekturen darin. Bitte prüfen Sie diese Abschnitte danach erneut.",
+      "replaceHint": "Wenn Sie einen neuen Lebenslauf hochladen, werden Abschnitte, die Sie noch nicht geprüft oder geändert haben, daraus aktualisiert. Abschnitte, die Sie schon geprüft oder bearbeitet haben, werden nie überschrieben: Steht im neuen Lebenslauf dort etwas anderes, entscheiden Sie selbst, welche Fassung bleibt.",
       "changed": "Bitte prüfen Sie diese Abschnitte erneut: {{sections}}",
+      "proposed": "Diese Abschnitte hatten Sie schon geprüft oder bearbeitet, deshalb wurde dort nichts geändert. Der neue Lebenslauf hat eine andere Fassung – bitte wählen Sie, welche bleiben soll: {{sections}}",
       "unchanged": "Der neue Lebenslauf hat nichts an Ihrem Profil geändert.",
       "reading": "Claude liest Ihren Lebenslauf … Das kann bis zu 3 Minuten dauern."
+    },
+    "proposal": {
+      "title": "Der neue Lebenslauf hat eine andere Fassung dieses Abschnitts",
+      "intro": "Ihre Fassung bleibt, bis Sie sich entscheiden. Wenn Sie die neue Fassung übernehmen, ersetzt sie diesen Abschnitt, und Sie prüfen ihn noch einmal.",
+      "now": "Jetzt", "new": "Im neuen Lebenslauf", "take": "Neue Fassung übernehmen", "keep": "Meine behalten",
+      "empty": "Nichts ausgefüllt", "differs": "Anders",
+      "saveFirst": "Bitte speichern oder verwerfen Sie zuerst Ihre Änderungen in diesem Abschnitt.",
+      "badge": "Neuer Lebenslauf: bitte wählen",
+      "bannerTitle": "Im neuen Lebenslauf sind diese Abschnitte anders – bitte wählen Sie, welche Fassung bleiben soll:"
     },
     "start": {
       "intro": "Ihr Profil ist die Grundlage jeder Bewerbung. Es bleibt auf diesem Computer.",

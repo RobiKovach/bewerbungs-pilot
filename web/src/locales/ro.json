@@ -99,10 +99,20 @@
       "replace": "Înlocuiți CV-ul",
       "current": "CV actual: {{name}}",
       "none": "Niciun CV încărcat încă.",
-      "replaceHint": "Când încărcați un CV nou, fiecare secțiune care diferă în el este înlocuită cu conținutul noului CV — inclusiv corecturile dumneavoastră. Vă rugăm să verificați din nou aceste secțiuni după aceea.",
+      "replaceHint": "Când încărcați un CV nou, secțiunile pe care nu le-ați verificat sau modificat încă sunt actualizate din el. Secțiunile pe care le-ați verificat sau editat deja nu sunt niciodată suprascrise: dacă noul CV spune altceva acolo, alegeți dumneavoastră ce versiune păstrați.",
       "changed": "Vă rugăm verificați din nou aceste secțiuni: {{sections}}",
+      "proposed": "Ați verificat sau editat deja aceste secțiuni, așa că nu s-a schimbat nimic în ele. Noul CV are o altă versiune — vă rugăm să alegeți pe care o păstrați: {{sections}}",
       "unchanged": "Noul CV nu a schimbat nimic în profilul dumneavoastră.",
       "reading": "Claude vă citește CV-ul… Poate dura până la 3 minute."
+    },
+    "proposal": {
+      "title": "Noul CV are o altă versiune a acestei secțiuni",
+      "intro": "Versiunea dumneavoastră rămâne până când alegeți. Dacă luați versiunea nouă, aceasta înlocuiește secțiunea și o verificați din nou.",
+      "now": "Acum", "new": "În noul CV", "take": "Luați versiunea nouă", "keep": "Păstrați-o pe a mea",
+      "empty": "Nimic completat", "differs": "Diferit",
+      "saveFirst": "Vă rugăm să salvați sau să renunțați mai întâi la modificările din această secțiune.",
+      "badge": "CV nou: alegeți versiunea",
+      "bannerTitle": "În noul CV aceste secțiuni diferă — vă rugăm să alegeți ce versiune păstrați:"
     },
     "start": {
       "intro": "Profilul dvs. este baza fiecărei candidaturi. Rămâne pe acest computer.",

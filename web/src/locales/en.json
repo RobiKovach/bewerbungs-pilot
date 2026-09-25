@@ -99,10 +99,20 @@
       "replace": "Replace CV",
       "current": "Current CV: {{name}}",
       "none": "No CV uploaded yet.",
-      "replaceHint": "When you upload a new CV, every section that is different in it is replaced by the new CV's content — including your own corrections. Please check those sections again afterwards.",
+      "replaceHint": "When you upload a new CV, sections you have not checked or changed yet are updated from it. Sections you have already checked or edited are never overwritten: if the new CV says something different there, you choose which version to keep.",
       "changed": "Please check these sections again: {{sections}}",
+      "proposed": "You had already checked or edited these sections, so nothing was changed there. The new CV has a different version — please choose which one to keep: {{sections}}",
       "unchanged": "The new CV did not change anything in your profile.",
       "reading": "Claude is reading your CV… This can take up to 3 minutes."
+    },
+    "proposal": {
+      "title": "The new CV has a different version of this section",
+      "intro": "Your version stays until you choose. If you take the new version, it replaces this section and you check it again.",
+      "now": "Now", "new": "In the new CV", "take": "Take the new version", "keep": "Keep mine",
+      "empty": "Nothing filled in", "differs": "Different",
+      "saveFirst": "Please save or undo your changes in this section first.",
+      "badge": "New CV: please choose",
+      "bannerTitle": "The new CV differs in these sections — please choose which version to keep:"
     },
     "start": {
       "intro": "Your profile is the basis of every application. It stays on this computer.",

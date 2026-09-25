@@ -99,10 +99,20 @@
       "replace": "Zastąp CV",
       "current": "Bieżące CV: {{name}}",
       "none": "Nie przesłano jeszcze CV.",
-      "replaceHint": "Gdy prześlesz nowe CV, każda sekcja, która się w nim różni, zostanie zastąpiona jego treścią — razem z Twoimi własnymi poprawkami. Potem sprawdź te sekcje ponownie.",
+      "replaceHint": "Gdy prześlesz nowe CV, sekcje, których jeszcze nie sprawdzono ani nie zmieniono, zostaną z niego zaktualizowane. Sekcje, które już sprawdzono lub edytowano, nigdy nie są nadpisywane: jeśli w nowym CV jest tam coś innego, to Ty wybierasz, którą wersję zachować.",
       "changed": "Proszę sprawdzić ponownie te sekcje: {{sections}}",
+      "proposed": "Te sekcje były już sprawdzone lub edytowane, więc nic w nich nie zmieniono. Nowe CV ma inną wersję — wybierz, którą zachować: {{sections}}",
       "unchanged": "Nowe CV niczego nie zmieniło w Twoim profilu.",
       "reading": "Claude czyta Twoje CV… To może potrwać do 3 minut."
+    },
+    "proposal": {
+      "title": "Nowe CV ma inną wersję tej sekcji",
+      "intro": "Twoja wersja zostaje, dopóki nie wybierzesz. Jeśli weźmiesz nową wersję, zastąpi ona tę sekcję i trzeba będzie ją sprawdzić ponownie.",
+      "now": "Teraz", "new": "W nowym CV", "take": "Weź nową wersję", "keep": "Zostaw moją",
+      "empty": "Nic nie wypełniono", "differs": "Różni się",
+      "saveFirst": "Najpierw zapisz lub cofnij swoje zmiany w tej sekcji.",
+      "badge": "Nowe CV: wybierz wersję",
+      "bannerTitle": "W nowym CV różnią się te sekcje — wybierz, którą wersję zachować:"
     },
     "start": {
       "intro": "Twój profil jest podstawą każdej aplikacji. Pozostaje na tym komputerze.",

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
 import { profileWith, viewOf } from '../test/profileFixtures';
@@ -109,5 +109,85 @@ describe('SectionCard', () => {
     expect(screen.getByText('Please shorten the lists marked in red first.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'All correct' })).toBeDisabled();
+  });
+});
+
+describe('SectionCard with a proposal from a new CV', () => {
+  const checked = (change: (p: Profile) => void = () => {}) => profileWith((p) => {
+    p.sections.personal.data = { ...p.sections.personal.data, fullName: 'Max Mustermann', city: 'Berlin' };
+    p.sections.personal.confirmedAt = '2026-09-24T10:00:00.000Z';
+    change(p);
+  });
+  const withProposal = checked((p) => {
+    p.cvProposals.personal = { ...p.sections.personal.data, city: 'Dresden', phone: '+49 30 1234567' };
+  });
+
+  it('shows both versions side by side with the form labels, leaving out empty fields', async () => {
+    setup(withProposal, 'personal');
+    const box = (await screen.findByText('The new CV has a different version of this section')).closest('.proposal') as HTMLElement;
+    const now = within(box).getByRole('region', { name: 'Now' });
+    const next = within(box).getByRole('region', { name: 'In the new CV' });
+    expect(within(now).getByText('City').nextElementSibling).toHaveTextContent('Berlin');
+    expect(within(next).getByText('City').nextElementSibling).toHaveTextContent('Dresden');
+    expect(within(now).queryByText('Phone')).toBeNull();
+    expect(within(next).getByText('Phone').nextElementSibling).toHaveTextContent('+49 30 1234567');
+    expect(within(next).getByText('Full name').nextElementSibling).toHaveTextContent('Max Mustermann');
+    expect(within(now).queryByText('Email')).toBeNull();
+  });
+
+  it('shows list entries as their fields', async () => {
+    const job2 = { ...job, id: 'j2', jobTitle: 'Teamleiter', employer: 'Neu AG', from: '2023' };
+    setup(profileWith((p) => {
+      p.sections.experience.data.items = [job];
+      p.sections.experience.confirmedAt = '2026-09-24T10:00:00.000Z';
+      p.cvProposals.experience = { items: [{ ...job, id: 'n1' }, job2] };
+      p.sections.skills.data.items = [{ id: 's1', name: 'JavaScript', level: 'expert' }];
+    }), 'experience');
+    const next = await screen.findByRole('region', { name: 'In the new CV' });
+    expect(within(next).getAllByText('Job title').map((dt) => dt.nextElementSibling?.textContent)).toEqual(['Webentwickler', 'Teamleiter']);
+    expect(within(next).getByText('Neu AG')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Now' })).getAllByText('Job title')).toHaveLength(1);
+  });
+
+  it('"Take the new version" asks the server and shows the new data', async () => {
+    const taken = profileWith((p) => {
+      p.sections.personal.data = { ...withProposal.cvProposals.personal! };
+      p.sections.personal.aiFields = ['fullName', 'phone', 'city'];
+    });
+    const { user } = setup(withProposal, 'personal', {
+      'POST /api/profile/sections/personal/proposal/accept': () => ({ body: viewOf(taken) }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Take the new version' }));
+    expect(await screen.findByDisplayValue('Dresden')).toBeInTheDocument();
+    expect(screen.queryByText('The new CV has a different version of this section')).toBeNull();
+  });
+
+  it('"Keep mine" asks the server and keeps the current data', async () => {
+    const { f, user } = setup(withProposal, 'personal', {
+      'POST /api/profile/sections/personal/proposal/reject': () => ({ body: viewOf(checked()) }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Keep mine' }));
+    await waitFor(() => expect(screen.queryByText('The new CV has a different version of this section')).toBeNull());
+    expect(screen.getByLabelText('City')).toHaveValue('Berlin');
+    expect(f.mock.calls.map((c) => `${(c[1] as RequestInit | undefined)?.method ?? 'GET'} ${c[0]}`).slice(1)).toEqual([
+      'POST /api/profile/sections/personal/proposal/reject',
+    ]);
+  });
+
+  it('holds "Take the new version" back while the section has unsaved changes', async () => {
+    const { user } = setup(withProposal, 'personal');
+    const city = await screen.findByLabelText('City');
+    await user.clear(city);
+    await user.type(city, 'Leipzig');
+    expect(screen.getByRole('button', { name: 'Take the new version' })).toBeDisabled();
+    expect(screen.getByText('Please save or undo your changes in this section first.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(screen.getByRole('button', { name: 'Take the new version' })).toBeEnabled();
+  });
+
+  it('shows no box without a proposal', async () => {
+    setup(checked(), 'personal');
+    await screen.findByLabelText('City');
+    expect(screen.queryByText('The new CV has a different version of this section')).toBeNull();
   });
 });

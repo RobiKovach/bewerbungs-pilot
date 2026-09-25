@@ -1,8 +1,10 @@
-import type { EducationKind, EmploymentType, LanguageLevel, RemotePreference, SectionId, SkillLevel, StoryKind } from '../types';
+import type { CvSectionId, EducationKind, EmploymentType, LanguageLevel, RemotePreference, SectionId, SkillLevel, StoryKind } from '../types';
 
 // Same values as server/src/profile/schema.ts and files.ts. The server checks everything again; these only let the
 // page give early, friendly feedback.
 export const SECTION_IDS = ['personal', 'education', 'experience', 'skills', 'languages', 'wishes'] as const satisfies readonly SectionId[];
+/** Sections Claude fills from a CV, in page order. */
+export const CV_SECTION_IDS = ['personal', 'education', 'experience', 'skills', 'languages'] as const satisfies readonly CvSectionId[];
 export const EDUCATION_KINDS = ['school', 'vocational', 'university', 'course', 'certificate'] as const satisfies readonly EducationKind[];
 export const SKILL_LEVELS = ['', 'basic', 'good', 'expert'] as const satisfies readonly SkillLevel[];
 export const LANGUAGE_LEVELS = ['', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'native'] as const satisfies readonly LanguageLevel[];

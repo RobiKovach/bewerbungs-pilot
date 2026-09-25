@@ -1,9 +1,10 @@
-import { useState, type ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { InfoTip } from '../components/InfoTip';
 import type { Section, SectionDataMap, SectionId } from '../types';
+import { CvProposalBox } from './CvProposal';
 import { SECTION_FORMS, type FormProps } from './forms';
 import { useProfile } from './ProfileContext';
 import { useReportUnsaved } from './unsaved';
@@ -20,6 +21,7 @@ export function SectionCard({ id, showHeader = true }: { id: SectionId; showHead
   const { t } = useTranslation();
   const { view } = useProfile();
   const [error, setError] = useState<unknown>(null);
+  const [hasUnsaved, setHasUnsaved] = useState(false);
   const section = view.profile.sections[id] as Section<unknown>;
   return (
     <div className="card section-card">
@@ -27,14 +29,17 @@ export function SectionCard({ id, showHeader = true }: { id: SectionId; showHead
         <div className="section-head"><h2>{t(`profile.sections.${id}.title`)}</h2><SectionStatus section={section} /></div>
       ) : null}
       <p className="muted">{t(`profile.sections.${id}.hint`)}</p>
+      <CvProposalBox id={id} hasUnsaved={hasUnsaved} />
       {/* Remounts when the saved data changes, so the form always starts from what the server has. */}
-      <SectionEditor key={JSON.stringify(section.data)} id={id} onError={setError} />
+      <SectionEditor key={JSON.stringify(section.data)} id={id} onError={setError} onDirtyChange={setHasUnsaved} />
       {error ? <ErrorBanner error={error} /> : null}
     </div>
   );
 }
 
-function SectionEditor({ id, onError }: { id: SectionId; onError: (err: unknown) => void }) {
+interface EditorProps { id: SectionId; onError: (err: unknown) => void; onDirtyChange: (dirty: boolean) => void }
+
+function SectionEditor({ id, onError, onDirtyChange }: EditorProps) {
   const { t } = useTranslation();
   const { view, apply } = useProfile();
   const section = view.profile.sections[id] as Section<SectionDataMap[SectionId]>;
@@ -47,6 +52,10 @@ function SectionEditor({ id, onError }: { id: SectionId; onError: (err: unknown)
   const valid = problem === null;
   const Form = SECTION_FORMS[id] as ComponentType<FormProps<SectionId>>;
   useReportUnsaved(dirty);
+  useEffect(() => {
+    onDirtyChange(dirty);
+    return () => onDirtyChange(false);
+  }, [dirty, onDirtyChange]);
   const discard = () => { setDraft(section.data); setFormKey((k) => k + 1); };
 
   const act = async (confirm: boolean) => {

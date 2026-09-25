@@ -88,9 +88,25 @@ label.btn { cursor: pointer; }
 .check { display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0; }
 .readiness ul { margin: 0.3rem 0 0.6rem; }
 .notice { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.9rem; }
+.notice p { margin: 0.2rem 0; }
+/* A new CV's version of a section next to the current one (CvProposal.tsx). */
+.proposal { border: 2px solid #f0d48a; border-radius: var(--radius); padding: 1rem; margin: 0 0 1.25rem; }
+.proposal h3 { margin-top: 0; }
+.proposal-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .proposal-compare { grid-template-columns: 1fr; } }
+.proposal-side { min-width: 0; }
+.proposal-side h3 { font-size: 1rem; margin: 0 0 0.5rem; }
+.proposal-entry { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.6rem 0.8rem; margin-bottom: 0.6rem; }
+.proposal-entry.differs, .proposal-entry .differs { background: var(--bg); }
+.proposal-entry dl { margin: 0; }
+.proposal-entry dt { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+.proposal-entry dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.proposals-banner ul { margin: 0.3rem 0 0; }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .card .card { box-shadow: none; }
 .profile-wizard { margin-top: 1rem; }
 @media (prefers-color-scheme: dark) {
   .badge.ai { background: #3a2e10; color: #f3d88c; border-color: #6b5520; }
   .badge.warn-badge { color: #f3d88c; }
+  .proposal { border-color: #6b5520; }
 }
