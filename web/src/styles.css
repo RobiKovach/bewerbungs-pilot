@@ -29,7 +29,7 @@ h2 { font-size: 1.15rem; margin: 0 0 0.4rem; }
   box-shadow: var(--shadow); margin: 1rem 0; }
 .btn { display: inline-flex; align-items: center; gap: 0.4rem; border: 0; border-radius: 10px; padding: 0.55rem 1.1rem;
   background: var(--accent); color: var(--accent-contrast); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled, label.btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
 .btn-row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 1rem; }
 select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); }
@@ -105,6 +105,7 @@ label.btn { cursor: pointer; }
 .proposal-entry dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .proposals-banner ul { margin: 0.3rem 0 0; }
 .link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.link-btn:disabled { color: var(--muted); text-decoration: none; cursor: not-allowed; opacity: 0.6; }
 .card .card { box-shadow: none; }
 .profile-wizard { margin-top: 1rem; }
 @media (prefers-color-scheme: dark) {

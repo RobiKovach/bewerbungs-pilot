@@ -25,9 +25,10 @@ export const sectionAnchor = (id: SectionId) => `profile-section-${id}`;
 
 /**
  * Lists the sections where a new CV has a different version the person has to choose about. `onOpen` shows that
- * section (the overview opens its panel first); the page then scrolls to it.
+ * section (the overview opens its panel first); the page then scrolls to it. `disabled`: the overview holds switching
+ * panels back while the open one has unsaved changes.
  */
-export function CvProposalsBanner({ onOpen }: { onOpen?: (id: CvSectionId) => void }) {
+export function CvProposalsBanner({ onOpen, disabled = false }: { onOpen?: (id: CvSectionId) => void; disabled?: boolean }) {
   const { t } = useTranslation();
   const { view } = useProfile();
   const ids = sectionsWithProposal(view.profile);
@@ -41,7 +42,7 @@ export function CvProposalsBanner({ onOpen }: { onOpen?: (id: CvSectionId) => vo
       <p><strong>{t('profile.proposal.bannerTitle')}</strong></p>
       <ul>
         {ids.map((id) => (
-          <li key={id}><button type="button" className="link-btn" onClick={() => open(id)}>{t(`profile.sections.${id}.title`)}</button></li>
+          <li key={id}><button type="button" className="link-btn" disabled={disabled} onClick={() => open(id)}>{t(`profile.sections.${id}.title`)}</button></li>
         ))}
       </ul>
     </div>

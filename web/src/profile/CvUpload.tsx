@@ -9,7 +9,8 @@ import { MAX_BYTES } from './constants';
 import { useProfile } from './ProfileContext';
 import { useCancellable } from './useCancellable';
 
-export function CvUpload({ onDone, replace = false }: { onDone: (result: CvResult) => void; replace?: boolean }) {
+/** `disabled`: held back (with the unsaved-changes hint) while a form on the page has unsaved changes. */
+export function CvUpload({ onDone, replace = false, disabled = false }: { onDone: (result: CvResult) => void; replace?: boolean; disabled?: boolean }) {
   const { t } = useTranslation();
   const { apply } = useProfile();
   const call = useCancellable();
@@ -31,11 +32,12 @@ export function CvUpload({ onDone, replace = false }: { onDone: (result: CvResul
   if (call.state.kind === 'running') return <ClaudeWorking textKey="profile.cv.reading" onCancel={call.cancel} />;
   return (
     <>
+      {disabled ? <p className="notice">{t('profile.unsavedHint')}</p> : null}
       <div className="btn-row">
-        <label className="btn" htmlFor={inputId}>{replace ? t('profile.cv.replace') : t('profile.cv.upload')}</label>
+        <label className="btn" htmlFor={inputId} aria-disabled={disabled || undefined}>{replace ? t('profile.cv.replace') : t('profile.cv.upload')}</label>
         <InfoTip textKey="info.profileCv" />
       </div>
-      <input id={inputId} type="file" className="visually-hidden"
+      <input id={inputId} type="file" className="visually-hidden" disabled={disabled}
         accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ''; }} />
       {call.state.kind === 'failed' ? <ErrorBanner error={call.state.error} /> : null}

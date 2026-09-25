@@ -111,3 +111,51 @@ describe('ProfilePage', () => {
     expect(screen.queryByText(/The new CV differs in these sections/)).toBeNull();
   });
 });
+
+describe('ProfilePage overview: unsaved changes are never dropped silently', () => {
+  const HINT = 'Some changes are not saved yet. Please save them or undo them before you go on.';
+  const cardOf = (title: string) => screen.getByRole('heading', { name: title }).closest('.card') as HTMLElement;
+  const withCv = done((p) => {
+    p.cv = { id: 'c1', ext: '.pdf', originalName: 'cv.pdf', size: 1, uploadedAt: '2026-09-24T10:00:00.000Z' };
+    p.cvProposals.skills = { items: [{ id: 'n1', name: 'TypeScript', level: 'good' }] };
+  });
+
+  it('holds Close, the other panels, the choice banner and "Replace CV" while a section has unsaved changes', async () => {
+    mockFetch({ 'GET /api/profile': () => ({ body: viewOf(withCv) }) });
+    render(<ProfilePage />);
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: 'Personal details' });
+    await user.click(within(cardOf('Personal details')).getByRole('button', { name: 'Edit' }));
+    const city = within(cardOf('Personal details')).getByLabelText('City');
+    await user.type(city, 'Dresden');
+
+    expect(within(cardOf('Personal details')).getByRole('button', { name: 'Close' })).toBeDisabled();
+    expect(within(cardOf('Personal details')).getByText(HINT)).toBeInTheDocument();
+    expect(within(cardOf('Skills')).getByRole('button', { name: 'Edit' })).toBeDisabled();
+    expect(within(cardOf('Stories for cover letters')).getByRole('button', { name: 'Add stories' })).toBeDisabled();
+    const banner = screen.getByText(/The new CV differs in these sections/).closest('.proposals-banner') as HTMLElement;
+    expect(within(banner).getByRole('button', { name: 'Skills' })).toBeDisabled();
+    // A new CV could replace the section under the form: held back too.
+    expect(screen.getByLabelText('Replace CV')).toBeDisabled();
+    expect(within(cardOf('CV')).getByText(HINT)).toBeInTheDocument();
+
+    await user.click(within(cardOf('Personal details')).getByRole('button', { name: 'Discard changes' }));
+    expect(within(cardOf('Personal details')).getByRole('button', { name: 'Close' })).toBeEnabled();
+    expect(within(cardOf('Skills')).getByRole('button', { name: 'Edit' })).toBeEnabled();
+    expect(screen.getByLabelText('Replace CV')).toBeEnabled();
+    expect(screen.queryByText(HINT)).toBeNull();
+    await user.click(within(cardOf('Personal details')).getByRole('button', { name: 'Close' }));
+    expect(within(cardOf('Personal details')).queryByLabelText('City')).toBeNull();
+  });
+
+  it('holds Close of the stories panel while "never mention" has unsaved changes', async () => {
+    mockFetch({ 'GET /api/profile': () => ({ body: viewOf(done()) }) });
+    render(<ProfilePage />);
+    const user = userEvent.setup();
+    await user.click(within(await screen.findByRole('heading', { name: 'Stories for cover letters' }).then((h) => h.closest('.card') as HTMLElement))
+      .getByRole('button', { name: 'Add stories' }));
+    await user.type(screen.getByLabelText('Never mention'), 'Kunde X');
+    for (const close of within(cardOf('Stories for cover letters')).getAllByRole('button', { name: 'Close' })) expect(close).toBeDisabled();
+    expect(within(cardOf('Personal details')).getByRole('button', { name: 'Edit' })).toBeDisabled();
+  });
+});

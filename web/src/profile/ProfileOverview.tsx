@@ -10,18 +10,29 @@ import { ReadinessBanner } from './ReadinessBanner';
 import { SectionCard, SectionStatus } from './SectionCard';
 import { FilesStep } from './steps/FilesStep';
 import { StoriesStep } from './steps/StoriesStep';
+import { UnsavedProvider, useHasUnsaved } from './unsaved';
 
 type Panel = SectionId | 'stories' | 'files';
 
+/**
+ * The profile after the wizard: one card per part, one part open at a time. Like a wizard step, it collects
+ * "unsaved changes" from the open part's forms: while there are some, closing or switching the part and replacing the
+ * CV (which may rewrite a section under the form) are held back, so drafts are never dropped without a choice.
+ */
 export function ProfileOverview() {
+  return <UnsavedProvider><OverviewContent /></UnsavedProvider>;
+}
+
+function OverviewContent() {
   const { t } = useTranslation();
   const { view } = useProfile();
   const { profile, readiness } = view;
+  const blocked = useHasUnsaved();
   const [open, setOpen] = useState<Panel | null>(null);
   const [cvResult, setCvResult] = useState<Pick<CvResult, 'changedSections' | 'proposedSections'> | null>(null);
   const toggle = (panel: Panel) => setOpen(open === panel ? null : panel);
   const toggleButton = (panel: Panel, closedKey: string) => (
-    <button type="button" className="btn ghost small" aria-expanded={open === panel} onClick={() => toggle(panel)}>
+    <button type="button" className="btn ghost small" aria-expanded={open === panel} disabled={blocked} onClick={() => toggle(panel)}>
       {open === panel ? t('profile.close') : t(closedKey)}
     </button>
   );
@@ -30,7 +41,7 @@ export function ProfileOverview() {
     <section>
       <h1>{t('profile.title')}</h1>
       <ReadinessBanner readiness={readiness} />
-      <CvProposalsBanner onOpen={setOpen} />
+      <CvProposalsBanner onOpen={setOpen} disabled={blocked} />
 
       <div className="card">
         <h2>{t('profile.cv.title')}</h2>
@@ -38,7 +49,7 @@ export function ProfileOverview() {
           ? <p><a href={api.fileUrl(profile.cv.id)} target="_blank" rel="noopener noreferrer">{t('profile.cv.current', { name: profile.cv.originalName })}</a></p>
           : <p className="muted">{t('profile.cv.none')}</p>}
         <p className="muted">{t('profile.cv.replaceHint')}</p>
-        <CvUpload replace={profile.cv !== null} onDone={setCvResult} />
+        <CvUpload replace={profile.cv !== null} onDone={setCvResult} disabled={blocked} />
         {cvResult ? <CvResultNotice {...cvResult} onDismiss={() => setCvResult(null)} /> : null}
       </div>
 
@@ -50,6 +61,7 @@ export function ProfileOverview() {
             {proposalOf(profile, id) !== undefined ? <span className="badge warn-badge">{t('profile.proposal.badge')}</span> : null}
             {toggleButton(id, 'profile.edit')}
           </div>
+          {open === id && blocked ? <p className="notice">{t('profile.unsavedHint')}</p> : null}
           {open === id ? <SectionCard id={id} showHeader={false} /> : null}
         </div>
       ))}
