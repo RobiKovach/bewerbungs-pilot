@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch } from '../test/fetchMock';
 import { emptyProfile, profileWith, viewOf } from '../test/profileFixtures';
@@ -157,5 +157,53 @@ describe('ProfilePage overview: unsaved changes are never dropped silently', () 
     await user.type(screen.getByLabelText('Never mention'), 'Kunde X');
     for (const close of within(cardOf('Stories for cover letters')).getAllByRole('button', { name: 'Close' })) expect(close).toBeDisabled();
     expect(within(cardOf('Personal details')).getByRole('button', { name: 'Edit' })).toBeDisabled();
+  });
+});
+
+describe('ProfilePage overview: while Claude reads a new CV', () => {
+  const READING = 'Claude is reading your CV… This can take up to 3 minutes.';
+  const cardOf = (title: string) => screen.getByRole('heading', { name: title }).closest('.card') as HTMLElement;
+  const before = done((p) => { p.cv = { id: 'c1', ext: '.pdf', originalName: 'cv.pdf', size: 1, uploadedAt: '2026-09-24T10:00:00.000Z' }; });
+
+  /** The CV upload answers only when the test says so. */
+  function holdCvUpload(answer: { status?: number; body: unknown }) {
+    const base = mockFetch({ 'GET /api/profile': () => ({ body: viewOf(before) }), 'POST /api/profile/cv': () => answer });
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === '/api/profile/cv') await gate;
+      return base(url, init);
+    }));
+    return release;
+  }
+
+  async function startReading() {
+    render(<ProfilePage />);
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: 'Personal details' });
+    await user.click(within(cardOf('Personal details')).getByRole('button', { name: 'Edit' }));
+    await user.upload(screen.getByLabelText('Replace CV'), new File(['%PDF'], 'cv-neu.pdf', { type: 'application/pdf' }));
+  }
+
+  it('CV sections are read-only until the new CV is read, then editable again', async () => {
+    const release = holdCvUpload({ body: { ...viewOf(before), changedSections: [], proposedSections: [] } });
+    await startReading();
+    const personal = cardOf('Personal details');
+    expect(await within(personal).findByText(READING)).toBeInTheDocument();
+    expect(within(personal).getByLabelText('City')).toBeDisabled();
+    expect(within(personal).getByRole('button', { name: 'All correct' })).toBeDisabled();
+    release();
+    expect(await screen.findByText('The new CV did not change anything in your profile.')).toBeInTheDocument();
+    await waitFor(() => expect(within(cardOf('Personal details')).getByLabelText('City')).toBeEnabled());
+    expect(within(cardOf('Personal details')).queryByText(READING)).toBeNull();
+  });
+
+  it('forms are editable again when reading the CV fails', async () => {
+    const release = holdCvUpload({ status: 422, body: { error: { code: 'CV_UNREADABLE', detailsForLog: 'no text' } } });
+    await startReading();
+    expect(await within(cardOf('Personal details')).findByText(READING)).toBeInTheDocument();
+    release();
+    expect(await screen.findByText('We could not read any text in this CV.')).toBeInTheDocument();
+    await waitFor(() => expect(within(cardOf('Personal details')).getByLabelText('City')).toBeEnabled());
   });
 });

@@ -30,6 +30,8 @@ function OverviewContent() {
   const blocked = useHasUnsaved();
   const [open, setOpen] = useState<Panel | null>(null);
   const [cvResult, setCvResult] = useState<Pick<CvResult, 'changedSections' | 'proposedSections'> | null>(null);
+  // While Claude reads a new CV, CV sections cannot be edited: the result may replace them under the form.
+  const [cvReading, setCvReading] = useState(false);
   const toggle = (panel: Panel) => setOpen(open === panel ? null : panel);
   const toggleButton = (panel: Panel, closedKey: string) => (
     <button type="button" className="btn ghost small" aria-expanded={open === panel} disabled={blocked} onClick={() => toggle(panel)}>
@@ -49,7 +51,7 @@ function OverviewContent() {
           ? <p><a href={api.fileUrl(profile.cv.id)} target="_blank" rel="noopener noreferrer">{t('profile.cv.current', { name: profile.cv.originalName })}</a></p>
           : <p className="muted">{t('profile.cv.none')}</p>}
         <p className="muted">{t('profile.cv.replaceHint')}</p>
-        <CvUpload replace={profile.cv !== null} onDone={setCvResult} disabled={blocked} />
+        <CvUpload replace={profile.cv !== null} onDone={setCvResult} disabled={blocked} onReadingChange={setCvReading} />
         {cvResult ? <CvResultNotice {...cvResult} onDismiss={() => setCvResult(null)} /> : null}
       </div>
 
@@ -62,7 +64,7 @@ function OverviewContent() {
             {toggleButton(id, 'profile.edit')}
           </div>
           {open === id && blocked ? <p className="notice">{t('profile.unsavedHint')}</p> : null}
-          {open === id ? <SectionCard id={id} showHeader={false} /> : null}
+          {open === id ? <SectionCard id={id} showHeader={false} readOnly={cvReading && id !== 'wishes'} /> : null}
         </div>
       ))}
 

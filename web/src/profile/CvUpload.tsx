@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -9,12 +9,26 @@ import { MAX_BYTES } from './constants';
 import { useProfile } from './ProfileContext';
 import { useCancellable } from './useCancellable';
 
-/** `disabled`: held back (with the unsaved-changes hint) while a form on the page has unsaved changes. */
-export function CvUpload({ onDone, replace = false, disabled = false }: { onDone: (result: CvResult) => void; replace?: boolean; disabled?: boolean }) {
+interface CvUploadProps {
+  onDone: (result: CvResult) => void;
+  replace?: boolean;
+  /** Held back (with the unsaved-changes hint) while a form on the page has unsaved changes. */
+  disabled?: boolean;
+  /** Told when Claude starts and stops reading (done, failed or cancelled). */
+  onReadingChange?: (reading: boolean) => void;
+}
+
+export function CvUpload({ onDone, replace = false, disabled = false, onReadingChange }: CvUploadProps) {
   const { t } = useTranslation();
   const { apply } = useProfile();
   const call = useCancellable();
   const inputId = useId();
+  const reading = call.state.kind === 'running';
+  useEffect(() => {
+    if (!onReadingChange) return undefined;
+    onReadingChange(reading);
+    return () => onReadingChange(false);
+  }, [reading, onReadingChange]);
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -29,7 +43,7 @@ export function CvUpload({ onDone, replace = false, disabled = false }: { onDone
     }
   };
 
-  if (call.state.kind === 'running') return <ClaudeWorking textKey="profile.cv.reading" onCancel={call.cancel} />;
+  if (reading) return <ClaudeWorking textKey="profile.cv.reading" onCancel={call.cancel} />;
   return (
     <>
       {disabled ? <p className="notice">{t('profile.unsavedHint')}</p> : null}

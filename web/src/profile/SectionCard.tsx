@@ -17,7 +17,8 @@ export function SectionStatus({ section }: { section: Section<unknown> }) {
   return <span className="badge">{t('profile.status.notConfirmed')}</span>;
 }
 
-export function SectionCard({ id, showHeader = true }: { id: SectionId; showHeader?: boolean }) {
+/** `readOnly`: shown but not editable while Claude reads a new CV that may replace this section (overview). */
+export function SectionCard({ id, showHeader = true, readOnly = false }: { id: SectionId; showHeader?: boolean; readOnly?: boolean }) {
   const { t } = useTranslation();
   const { view } = useProfile();
   const [error, setError] = useState<unknown>(null);
@@ -29,9 +30,13 @@ export function SectionCard({ id, showHeader = true }: { id: SectionId; showHead
         <div className="section-head"><h2>{t(`profile.sections.${id}.title`)}</h2><SectionStatus section={section} /></div>
       ) : null}
       <p className="muted">{t(`profile.sections.${id}.hint`)}</p>
-      <CvProposalBox id={id} hasUnsaved={hasUnsaved} />
-      {/* Remounts when the saved data changes, so the form always starts from what the server has. */}
-      <SectionEditor key={JSON.stringify(section.data)} id={id} onError={setError} onDirtyChange={setHasUnsaved} />
+      {readOnly ? <p className="notice">{t('profile.cv.reading')}</p> : null}
+      {/* A disabled fieldset disables every input and button inside, so no draft can start. */}
+      <fieldset className="plain-fieldset" disabled={readOnly}>
+        <CvProposalBox id={id} hasUnsaved={hasUnsaved} />
+        {/* Remounts when the saved data changes, so the form always starts from what the server has. */}
+        <SectionEditor key={JSON.stringify(section.data)} id={id} onError={setError} onDirtyChange={setHasUnsaved} />
+      </fieldset>
       {error ? <ErrorBanner error={error} /> : null}
     </div>
   );
