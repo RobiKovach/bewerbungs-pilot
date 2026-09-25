@@ -5,6 +5,7 @@ import { mockFetch, type RouteHandler } from '../../test/fetchMock';
 import { emptyProfile, profileWith, viewOf } from '../../test/profileFixtures';
 import type { Profile, ProfileDocument } from '../../types';
 import { ProfileProvider } from '../ProfileContext';
+import { UnsavedProvider } from '../unsaved';
 import { FilesStep } from './FilesStep';
 
 // jsdom has neither a canvas nor pointer-drag support: the cropper reports a fixed area, cropping returns a tiny JPEG.
@@ -32,7 +33,8 @@ const withPhoto = profileWith((p) => { p.photo = { id: 'p1', ext: '.jpg', origin
 function setup(profile: Profile, routes: Record<string, RouteHandler> = {}, opts: { applyAccept?: boolean } = {}) {
   const f = mockFetch({ 'GET /api/profile': () => ({ body: viewOf(profile) }), ...routes });
   const onNext = vi.fn();
-  render(<ProfileProvider><FilesStep onNext={onNext} /></ProfileProvider>);
+  // Inside a provider like in the wizard, so the step's button shows whether something is unsaved.
+  render(<ProfileProvider><UnsavedProvider><FilesStep onNext={onNext} /></UnsavedProvider></ProfileProvider>);
   return { f, onNext, user: userEvent.setup(opts) };
 }
 const png = () => new File(['png'], 'me.png', { type: 'image/png' });
@@ -107,5 +109,20 @@ describe('FilesStep', () => {
     const { onNext, user } = setup(emptyProfile());
     await user.click(await screen.findByRole('button', { name: 'Finish' }));
     expect(onNext).toHaveBeenCalledOnce();
+  });
+
+  it('discards unsaved changes to a document', async () => {
+    const { f, user } = setup(profileWith((p) => { p.documents = [doc(1)]; }));
+    const row = (await screen.findByDisplayValue('Zeugnis 1')).closest('.document-row') as HTMLElement;
+    expect(within(row).queryByRole('button', { name: 'Discard changes' })).toBeNull();
+    await user.type(within(row).getByLabelText('Name'), ' neu');
+    await user.click(within(row).getByLabelText('Attach to every application'));
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeDisabled();
+    await user.click(within(row).getByRole('button', { name: 'Discard changes' }));
+    expect(within(row).getByLabelText('Name')).toHaveValue('Zeugnis 1');
+    expect(within(row).getByLabelText('Attach to every application')).not.toBeChecked();
+    expect(within(row).queryByRole('button', { name: 'Discard changes' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeEnabled();
+    expect(f.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === 'PUT')).toEqual([]);
   });
 });

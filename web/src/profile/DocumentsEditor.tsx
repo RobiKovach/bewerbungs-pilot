@@ -22,6 +22,7 @@ function DocumentRow({ doc }: { doc: ProfileDocument }) {
   const [error, setError] = useState<unknown>(null);
   const dirty = label.trim() !== doc.label || always !== doc.attachAlways;
   useReportUnsaved(dirty);
+  const discard = () => { setLabel(doc.label); setAlways(doc.attachAlways); };
   const run = async (fn: () => Promise<ProfileView>) => {
     setError(null);
     try { apply(await fn()); } catch (err) { setError(err); }
@@ -33,6 +34,7 @@ function DocumentRow({ doc }: { doc: ProfileDocument }) {
       <div className="btn-row">
         <a className="btn ghost small" href={api.fileUrl(doc.id)} target="_blank" rel="noopener noreferrer">{t('profile.files.docOpen')}</a>
         {dirty ? <button type="button" className="btn small" disabled={!label.trim()} onClick={() => void run(() => api.saveDocument(doc.id, label.trim(), always))}>{t('profile.files.docSave')}</button> : null}
+        {dirty ? <button type="button" className="btn ghost small" onClick={discard}>{t('profile.discard')}</button> : null}
         <button type="button" className="btn ghost small" onClick={() => (confirmDelete ? void run(() => api.deleteFile(doc.id)) : setConfirmDelete(true))}>
           {confirmDelete ? t('profile.files.docReallyDelete') : t('profile.files.docDelete')}
         </button>

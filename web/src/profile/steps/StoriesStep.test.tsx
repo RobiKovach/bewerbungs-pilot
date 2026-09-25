@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../../test/fetchMock';
 import { emptyProfile, profileWith, viewOf } from '../../test/profileFixtures';
 import type { Profile } from '../../types';
 import { ProfileProvider } from '../ProfileContext';
+import { UnsavedProvider } from '../unsaved';
 import { StoriesStep } from './StoriesStep';
 
 const QUESTIONS = [
@@ -18,7 +19,8 @@ const withStory = profileWith((p) => { p.stories = [story]; });
 function setup(profile: Profile, routes: Record<string, RouteHandler> = {}) {
   const f = mockFetch({ 'GET /api/profile': () => ({ body: viewOf(profile) }), ...routes });
   const onNext = vi.fn();
-  render(<ProfileProvider><StoriesStep onNext={onNext} /></ProfileProvider>);
+  // Inside a provider like in the wizard, so Next shows whether something is unsaved.
+  render(<ProfileProvider><UnsavedProvider><StoriesStep onNext={onNext} /></UnsavedProvider></ProfileProvider>);
   return { f, onNext, user: userEvent.setup() };
 }
 const bodyOf = (f: ReturnType<typeof mockFetch>, key: string) => {
@@ -101,6 +103,31 @@ describe('StoriesStep', () => {
     await user.paste(Array.from({ length: 51 }, (_, i) => `Kunde ${i}`).join('\n'));
     expect(screen.getByText('Please write at most 50 lines.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save list' })).toBeDisabled();
+  });
+
+  it('discards unsaved changes to the never-mention list', async () => {
+    const { f, user } = setup(profileWith((p) => { p.neverMention = ['Kunde A']; }));
+    const field = await screen.findByLabelText('Never mention');
+    const card = field.closest('.card') as HTMLElement;
+    expect(within(card).queryByRole('button', { name: 'Discard changes' })).toBeNull();
+    await user.type(field, '{Enter}Kunde B');
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await user.click(within(card).getByRole('button', { name: 'Discard changes' }));
+    expect(screen.getByLabelText('Never mention')).toHaveValue('Kunde A');
+    expect(within(card).queryByRole('button', { name: 'Discard changes' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+    expect(f.mock.calls.some((c) => c[0] === '/api/profile/never-mention')).toBe(false);
+  });
+
+  it('discards typed answers to the questions', async () => {
+    const { user } = setup(asked);
+    await user.type(await screen.findByLabelText('Who was it for?'), 'A bakery');
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(screen.getByLabelText('Who was it for?')).toHaveValue('');
+    expect(screen.getByLabelText('What project are you proud of?')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Discard changes' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
   });
 
   it('moves on with Next', async () => {

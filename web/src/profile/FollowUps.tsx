@@ -66,6 +66,7 @@ export function FollowUps() {
           ))}
           <div className="btn-row">
             <button type="button" className="btn" disabled={answered.length === 0 || skipping} onClick={() => void structure()}>{t('profile.stories.structure')}</button>
+            {answered.length > 0 ? <button type="button" className="btn ghost" disabled={skipping} onClick={() => setAnswers({})}>{t('profile.discard')}</button> : null}
             <button type="button" className="btn ghost" disabled={skipping} onClick={() => void skip()}>{t('profile.stories.skip')}</button>
           </div>
         </>
