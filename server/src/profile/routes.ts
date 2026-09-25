@@ -2,14 +2,14 @@ import crypto from 'node:crypto';
 import multipart from '@fastify/multipart';
 import type { FastifyInstance } from 'fastify';
 import type { Language, Story, StoryInput } from '@bp/shared';
-import { AppError } from '../errors.js';
+import { AppError, httpStatusFor, type ErrorReason } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import { registerClaudeRoutes } from './claude-routes.js';
 import { registerFileRoutes } from './file-routes.js';
 import { FILE_RULES, type ProfileFiles } from './files.js';
 import { isCvSectionId, isSectionId, LIMITS, STORY_KINDS, validateSectionData } from './schema.js';
-import { applyHumanEdit, confirmSection, takeExtraction } from './sections.js';
+import { applyHumanEdit, confirmSection, takeExtraction, withoutIds } from './sections.js';
 import type { ProfileStore } from './store.js';
 import { setProposal, toView, withSection } from './view.js';
 
@@ -34,6 +34,8 @@ const storyBody = {
   properties: { ...storyFields, confirmed: { type: 'boolean' } },
 };
 const sectionBody = { type: 'object', additionalProperties: false, required: ['data'], properties: { data: {} } };
+/** `seen` = the proposal the page showed, as `withoutIds()` builds it. */
+const acceptBody = { type: 'object', additionalProperties: false, required: ['seen'], properties: { seen: { type: 'string' } } };
 const wizardBody = {
   type: 'object', additionalProperties: false, required: ['step'],
   properties: { step: { enum: [1, 2, 3, 4] }, completed: { type: 'boolean' } },
@@ -78,7 +80,12 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
     const { data } = req.body as { data: unknown };
     const problem = validateSectionData(id, data);
     if (problem) throw new AppError('BAD_REQUEST', `${id}: ${problem}`);
-    return toView(d.store.update((p) => withSection(p, id, (s) => applyHumanEdit(s, data, new Date().toISOString()))));
+    return toView(d.store.update((p) => {
+      withSection(p, id, (s) => applyHumanEdit(s, data, new Date().toISOString()));
+      // The person typed in exactly what the new CV says: nothing is left to choose.
+      const proposal: unknown = isCvSectionId(id) ? p.cvProposals[id] : undefined;
+      if (isCvSectionId(id) && proposal !== undefined && withoutIds(proposal) === withoutIds(data)) setProposal(p, id, null);
+    }));
   });
 
   app.post('/api/profile/sections/:id/confirm', async (req) => {
@@ -89,12 +96,21 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
 
   // The person's choice about what a new CV says for a section they had worked on (see applyExtraction).
   // "Take the new version": the section becomes exactly what Claude read, marked and unconfirmed, like an untouched one.
-  app.post('/api/profile/sections/:id/proposal/accept', async (req) => {
+  // Only the version the person saw may be taken: if a newer CV changed the proposal meanwhile, the answer is CONFLICT
+  // with the current view, so the page can show the new version first.
+  app.post('/api/profile/sections/:id/proposal/accept', { schema: { body: acceptBody } }, async (req, reply) => {
     const id = cvSectionParam(req.params);
+    const { seen } = req.body as { seen: string };
+    const current: unknown = d.store.get().cvProposals[id];
+    if (current === undefined) throw new AppError('NOT_FOUND', `no CV proposal for ${id}`);
+    if (withoutIds(current) !== seen) {
+      const detailsForLog = `CV proposal for ${id} changed since it was shown`;
+      d.logger.warn('app_error', { code: 'CONFLICT', details: detailsForLog, url: req.url });
+      const reason: ErrorReason = 'proposalChanged';
+      return reply.code(httpStatusFor('CONFLICT')).send({ error: { code: 'CONFLICT', detailsForLog, reason }, view: toView(d.store.get()) });
+    }
     return toView(d.store.update((p) => {
-      const proposal = p.cvProposals[id];
-      if (proposal === undefined) throw new AppError('NOT_FOUND', `no CV proposal for ${id}`);
-      withSection(p, id, () => takeExtraction(proposal));
+      withSection(p, id, () => takeExtraction(current));
       setProposal(p, id, null);
     }));
   });

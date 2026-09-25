@@ -154,12 +154,44 @@ describe('SectionCard with a proposal from a new CV', () => {
       p.sections.personal.data = { ...withProposal.cvProposals.personal! };
       p.sections.personal.aiFields = ['fullName', 'phone', 'city'];
     });
+    let sent: unknown = null;
     const { user } = setup(withProposal, 'personal', {
-      'POST /api/profile/sections/personal/proposal/accept': () => ({ body: viewOf(taken) }),
+      'POST /api/profile/sections/personal/proposal/accept': (init) => { sent = JSON.parse(String(init?.body)); return { body: viewOf(taken) }; },
     });
     await user.click(await screen.findByRole('button', { name: 'Take the new version' }));
     expect(await screen.findByDisplayValue('Dresden')).toBeInTheDocument();
     expect(screen.queryByText('The new CV has a different version of this section')).toBeNull();
+    // The server checks that this is still the version the person saw.
+    expect(sent).toEqual({ seen: JSON.stringify(withProposal.cvProposals.personal) });
+  });
+
+  it('sends the version it showed without the entry ids', async () => {
+    let sent: { seen: string } | null = null;
+    const proposal = { items: [{ id: 'n1', name: 'TypeScript', level: 'good' as const }] };
+    const { user } = setup(profileWith((p) => {
+      p.sections.skills.confirmedAt = '2026-09-24T10:00:00.000Z';
+      p.cvProposals.skills = proposal;
+    }), 'skills', {
+      'POST /api/profile/sections/skills/proposal/accept': (init) => { sent = JSON.parse(String(init?.body)); return { body: viewOf(profileWith(() => {})) }; },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Take the new version' }));
+    await waitFor(() => expect(sent).toEqual({ seen: '{"items":[{"name":"TypeScript","level":"good"}]}' }));
+  });
+
+  it('when the new CV changed again meanwhile, shows the current version and says so instead of taking it', async () => {
+    const changed = checked((p) => { p.cvProposals.personal = { ...p.sections.personal.data, city: 'Leipzig' }; });
+    const { user } = setup(withProposal, 'personal', {
+      'POST /api/profile/sections/personal/proposal/accept': () => ({
+        status: 409,
+        body: { error: { code: 'CONFLICT', detailsForLog: 'changed', reason: 'proposalChanged' }, view: viewOf(changed) },
+      }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Take the new version' }));
+    expect(await screen.findByText('This was changed in the meantime.')).toBeInTheDocument();
+    expect(screen.getByText('The new CV changed again — please look at it once more.')).toBeInTheDocument();
+    const next = screen.getByRole('region', { name: 'In the new CV' });
+    expect(within(next).getByText('City').nextElementSibling).toHaveTextContent('Leipzig');
+    expect(screen.getByLabelText('City')).toHaveValue('Berlin');
   });
 
   it('"Keep mine" asks the server and keeps the current data', async () => {

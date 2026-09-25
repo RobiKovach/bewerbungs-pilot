@@ -42,8 +42,11 @@ export function filledPaths(data: unknown): string[] {
   return [...leafPaths(data)].filter(([, v]) => !EMPTY_VALUES.has(v)).map(([p]) => p);
 }
 
-// Entry ids are generated per extraction, so "same content" ignores them.
-const withoutIds = (data: unknown) => JSON.stringify(data, (key, value: unknown) => (key === 'id' ? undefined : value));
+/**
+ * The content of section data as a string: JSON without entry ids (they are generated per extraction, so "same
+ * content" ignores them). The web client builds the same string for the proposal it showed ("seen" on accept).
+ */
+export const withoutIds = (data: unknown) => JSON.stringify(data, (key, value: unknown) => (key === 'id' ? undefined : value));
 
 /** The person saved the section: AI marks go away from every field they changed; the confirmation stays. */
 export function applyHumanEdit<T>(section: Section<T>, data: T, at: string): Section<T> {

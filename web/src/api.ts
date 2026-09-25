@@ -9,6 +9,8 @@ export class ApiError extends Error {
     public readonly details: string,
     public readonly reason?: ErrorReason,
     public readonly params?: Record<string, string | number>,
+    /** The current state some errors come with (CONFLICT), so the page can show it right away. */
+    public readonly view?: ProfileView,
   ) {
     super(code);
     this.name = 'ApiError';
@@ -27,9 +29,10 @@ async function send<T>(url: string, init: RequestInit): Promise<T> {
   }
   const data = (await res.json().catch(() => null)) as {
     error?: { code?: string; detailsForLog?: string; reason?: ErrorReason; params?: Record<string, string | number> };
+    view?: ProfileView;
   } | null;
   if (!res.ok) {
-    throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params);
+    throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params, data?.view);
   }
   return data as T;
 }
@@ -63,7 +66,8 @@ export const api = {
   saveSection: <K extends SectionId>(id: K, data: SectionDataMap[K]) => request<ProfileView>('PUT', `/api/profile/sections/${id}`, { data }),
   confirmSection: (id: SectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/confirm`, {}),
   /** A new CV's version of a section the person had worked on: take it, or keep their own. */
-  acceptProposal: (id: CvSectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/proposal/accept`, {}),
+  /** `seen` = the proposal the page showed (see `proposalSeen`); the server refuses with CONFLICT if it changed since. */
+  acceptProposal: (id: CvSectionId, seen: string) => request<ProfileView>('POST', `/api/profile/sections/${id}/proposal/accept`, { seen }),
   rejectProposal: (id: CvSectionId) => request<ProfileView>('POST', `/api/profile/sections/${id}/proposal/reject`, {}),
   uploadCv: (file: File, signal?: AbortSignal) => upload<CvResult>('/api/profile/cv', file, fileName(file, 'cv'), signal),
   askFollowUps: (signal?: AbortSignal) => request<ProfileView>('POST', '/api/profile/followups', {}, signal),

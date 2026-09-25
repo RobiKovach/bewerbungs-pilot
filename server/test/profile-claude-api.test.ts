@@ -10,6 +10,11 @@ import { SAMPLE_CV, scriptedClaude } from './helpers/profile.js';
 type App = Awaited<ReturnType<typeof makeApp>>['app'];
 const uploadCv = (app: App, name: string, bytes: Buffer) => app.inject({ method: 'POST', url: '/api/profile/cv', ...multipartBody(name, bytes) });
 const tick = (ms = 10) => new Promise((r) => setTimeout(r, ms));
+// What the web client sends when the person takes a proposal: the version it showed, as JSON without the entry ids
+// (they are generated per extraction, so they say nothing about the content).
+const seenOf = (proposal: unknown) => JSON.stringify(proposal, (key, value: unknown) => (key === 'id' ? undefined : value));
+const accept = (app: App, id: string, proposal: unknown) =>
+  app.inject({ method: 'POST', url: `/api/profile/sections/${id}/proposal/accept`, headers: H, payload: { seen: seenOf(proposal) } });
 const CV_SECTIONS = ['personal', 'education', 'experience', 'skills', 'languages'];
 
 describe('POST /api/profile/cv', () => {
@@ -116,7 +121,7 @@ describe('POST /api/profile/cv', () => {
     await app.inject({ method: 'POST', url: '/api/profile/sections/skills/confirm', headers: H, payload: {} });
     expect((await app.inject({ method: 'GET', url: '/api/profile' })).json().profile.cvProposals.skills).toBeDefined();
 
-    const taken = await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', headers: H, payload: {} });
+    const taken = await accept(app, 'personal', second.profile.cvProposals.personal);
     expect(taken.statusCode).toBe(200);
     const personal = taken.json().profile.sections.personal;
     expect(personal.data).toEqual(second.profile.cvProposals.personal);
@@ -157,7 +162,7 @@ describe('POST /api/profile/cv', () => {
     expect(second.profile.sections.personal.data).toMatchObject({ phone: '', city: 'Berlin' });
     expect(second.profile.cvProposals.personal).toMatchObject({ phone: '+49 30 1234567', city: 'Dresden' });
     // Taking the new version starts over: filled from the CV again, so the next CV may replace it without asking.
-    const taken = (await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', headers: H, payload: {} })).json();
+    const taken = (await accept(app, 'personal', second.profile.cvProposals.personal)).json();
     expect(taken.profile.sections.personal.editedAt).toBeNull();
     cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Leipzig' } };
     const third = (await uploadCv(app, 'cv3.pdf', PDF_BYTES)).json();
@@ -194,12 +199,72 @@ describe('POST /api/profile/cv', () => {
       '/api/profile/sections/personal/proposal/accept', '/api/profile/sections/personal/proposal/reject',
       '/api/profile/sections/wishes/proposal/accept', '/api/profile/sections/nope/proposal/reject',
     ]) {
-      const res = await app.inject({ method: 'POST', url, headers: H, payload: {} });
+      const res = await app.inject({ method: 'POST', url, headers: H, payload: { seen: '{}' } });
       expect(res.statusCode).toBe(404);
       expect(res.json().error.code).toBe('NOT_FOUND');
     }
-    const noHeader = await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', payload: {} });
+    const noHeader = await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', payload: { seen: '{}' } });
     expect(noHeader.statusCode).toBe(403);
+  });
+
+  it('takes the new version only if it is still the one the person saw', async () => {
+    let cv = SAMPLE_CV;
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    await uploadCv(app, 'cv1.pdf', PDF_BYTES);
+    await app.inject({ method: 'POST', url: '/api/profile/sections/personal/confirm', headers: H, payload: {} });
+    await app.inject({ method: 'POST', url: '/api/profile/sections/skills/confirm', headers: H, payload: {} });
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Dresden' } };
+    const shown = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json().profile;
+    // Meanwhile (another tab) a third CV arrives with a different city.
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Leipzig' }, skills: [...SAMPLE_CV.skills, { name: 'TypeScript', level: 'good' }] };
+    await uploadCv(app, 'cv3.pdf', PDF_BYTES);
+
+    const stale = await accept(app, 'personal', shown.cvProposals.personal);
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json().error).toMatchObject({ code: 'CONFLICT', reason: 'proposalChanged' });
+    // The answer carries the current state, so the page can show the person what the CV says now.
+    const view = stale.json().view;
+    expect(view.profile.cvProposals.personal.city).toBe('Leipzig');
+    expect(view.profile.sections.personal.data.city).toBe('Berlin');
+    expect(view.profile.sections.personal.confirmedAt).not.toBeNull();
+    expect(view.readiness).toBeDefined();
+
+    const current = view.profile.cvProposals;
+    const taken = await accept(app, 'personal', current.personal);
+    expect(taken.statusCode).toBe(200);
+    expect(taken.json().profile.sections.personal.data.city).toBe('Leipzig');
+
+    // Entry ids are not content: the same entries with other ids still count as what the person saw.
+    const sameContent = { items: current.skills.items.map((s: object, i: number) => ({ ...s, id: `other-${i}` })) };
+    expect((await accept(app, 'skills', sameContent)).statusCode).toBe(200);
+
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Chemnitz' } };
+    await app.inject({ method: 'POST', url: '/api/profile/sections/personal/confirm', headers: H, payload: {} });
+    await uploadCv(app, 'cv4.pdf', PDF_BYTES);
+    const noSeen = await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', headers: H, payload: {} });
+    expect(noSeen.statusCode).toBe(400);
+  });
+
+  it('saving a section so it matches the new CV version closes that choice', async () => {
+    let cv = SAMPLE_CV;
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    await uploadCv(app, 'cv1.pdf', PDF_BYTES);
+    await app.inject({ method: 'POST', url: '/api/profile/sections/skills/confirm', headers: H, payload: {} });
+    cv = { ...SAMPLE_CV, skills: [...SAMPLE_CV.skills, { name: 'TypeScript', level: 'good' }] };
+    const second = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json().profile;
+    const proposal = second.cvProposals.skills;
+
+    // A save that still differs keeps the choice open.
+    const partial = { items: [...second.sections.skills.data.items, { id: 'mine-ts', name: 'TypeScript', level: 'expert' }] };
+    const differs = (await app.inject({ method: 'PUT', url: '/api/profile/sections/skills', headers: H, payload: { data: partial } })).json();
+    expect(differs.profile.cvProposals.skills).toEqual(proposal);
+
+    // Typing in exactly what the new CV says (own entry ids) = nothing left to decide.
+    const same = { items: proposal.items.map((s: object, i: number) => ({ ...s, id: `mine-${i}` })) };
+    const res = await app.inject({ method: 'PUT', url: '/api/profile/sections/skills', headers: H, payload: { data: same } });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().profile.cvProposals.skills).toBeUndefined();
+    expect(res.json().profile.sections.skills.data).toEqual(same);
   });
 
   it('keeps the new CV even when deleting the old one fails', async () => {

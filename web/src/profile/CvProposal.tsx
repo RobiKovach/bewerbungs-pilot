@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import type { CvSectionId, PersonalData, Profile, SectionDataMap, SectionId } from '../types';
 import { CV_SECTION_IDS } from './constants';
@@ -11,6 +11,12 @@ import { useProfile } from './ProfileContext';
 export function proposalOf(profile: Profile, id: SectionId): unknown {
   return (profile.cvProposals as Partial<Record<SectionId, unknown>>)[id];
 }
+
+/**
+ * The proposal as the page showed it: JSON without the entry ids (they are generated per CV reading, so they are not
+ * content). Built exactly like the server's `withoutIds`, which compares it on "Take the new version".
+ */
+export const proposalSeen = (proposal: unknown) => JSON.stringify(proposal, (key, value: unknown) => (key === 'id' ? undefined : value));
 
 const sectionsWithProposal = (profile: Profile): CvSectionId[] => CV_SECTION_IDS.filter((id) => proposalOf(profile, id) !== undefined);
 
@@ -144,8 +150,10 @@ export function CvProposalBox({ id, hasUnsaved }: { id: SectionId; hasUnsaved: b
     setBusy(true);
     setError(null);
     try {
-      apply(await (take ? api.acceptProposal(id) : api.rejectProposal(id)));
+      apply(await (take ? api.acceptProposal(id, proposalSeen(proposal)) : api.rejectProposal(id)));
     } catch (err) {
+      // The new CV changed again meanwhile: show what it says now; the person chooses again.
+      if (err instanceof ApiError && err.view) apply(err.view);
       setError(err);
     } finally {
       setBusy(false);
