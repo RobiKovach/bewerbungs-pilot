@@ -79,8 +79,8 @@ export interface SectionDataMap {
 /**
  * aiFields: paths of fields Claude filled that the person has not checked yet, e.g. "fullName",
  * "items.<entryId>.jobTitle", "jobTitles". confirmedAt: when the person clicked "All correct" (null = not checked).
- * editedAt: when the person last saved a change to the section since it was (re)filled from a CV (null = no change of
- * theirs in it — also after deleting nothing and changing nothing). A section with confirmedAt or editedAt set is the
+ * editedAt: when the person last saved a change to the section (any change, also a deleted entry or a cleared field)
+ * since it was last (re)filled from a CV; null = none. A section with confirmedAt or editedAt set is the
  * person's work: a new CV never overwrites it, it only proposes (Profile.cvProposals).
  */
 export interface Section<T> { data: T; aiFields: string[]; confirmedAt: string | null; editedAt: string | null }
