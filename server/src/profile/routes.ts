@@ -113,6 +113,9 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
     return toView(d.store.update((p) => { p.neverMention = items; }));
   });
 
+  // "Skip these questions": forgets the pending follow-up questions; no stories, no Claude.
+  app.delete('/api/profile/followups', async () => toView(d.store.update((p) => { p.pendingQuestions = []; })));
+
   await registerFileRoutes(app, d);
   await registerClaudeRoutes(app, d);
 }

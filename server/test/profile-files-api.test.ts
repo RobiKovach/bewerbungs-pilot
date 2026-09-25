@@ -104,6 +104,18 @@ describe('photo and documents API', () => {
     expect(fs.readdirSync(filesDir)).toEqual([]);
   });
 
+  it('deletes a document from the profile even when removing its file fails', async () => {
+    const { app, profileFiles } = await makeApp();
+    const doc = (await post(app, '/api/profile/files?kind=document', 'z.pdf', PDF_BYTES)).json().profile.documents[0];
+    const spy = vi.spyOn(profileFiles, 'remove').mockImplementation(() => { throw new Error('simulated Windows file lock'); });
+    const deleted = await app.inject({ method: 'DELETE', url: `/api/profile/files/${doc.id}`, headers: H });
+    expect(deleted.statusCode).toBe(200);
+    expect(deleted.json().profile.documents).toEqual([]);
+    const reread = await app.inject({ method: 'GET', url: '/api/profile' });
+    expect(reread.json().profile.documents).toEqual([]);
+    spy.mockRestore();
+  });
+
   it('answers 404 for unknown ids and path tricks', async () => {
     const { app } = await makeApp();
     expect((await app.inject({ method: 'GET', url: `/api/profile/files/${crypto.randomUUID()}` })).statusCode).toBe(404);

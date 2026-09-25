@@ -26,6 +26,10 @@ describe('detectExt', () => {
     expect(detectExt(makeZip({ 'a.txt': 'x' }), 'table.xlsx')).toBeNull();
     expect(detectExt(Buffer.alloc(0), 'empty.pdf')).toBeNull();
   });
+  it('recognises a JPEG whose metadata contains "%PDF-" as a JPEG', () => {
+    const jpg = Buffer.concat([JPG_BYTES.subarray(0, 4), Buffer.from('Exif comment: see %PDF-1.7 manual'), JPG_BYTES.subarray(4)]);
+    expect(detectExt(jpg, 'me.jpg')).toBe('.jpg');
+  });
   it('accepts a PDF with a few junk bytes before the header', () => {
     expect(detectExt(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf, 0x0a]), PDF_BYTES]), 'x.pdf')).toBe('.pdf');
   });

@@ -189,6 +189,19 @@ describe('follow-up questions and stories', () => {
     expect(provider.calls).toHaveLength(1);
   });
 
+  it('skips the pending questions without creating stories or calling Claude again', async () => {
+    const provider = scriptedClaude({ questions: QUESTIONS });
+    const { app } = await makeApp({ provider });
+    await app.inject({ method: 'POST', url: '/api/profile/followups', headers: H, payload: {} });
+    const res = await app.inject({ method: 'DELETE', url: '/api/profile/followups', headers: H });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().profile.pendingQuestions).toEqual([]);
+    expect(res.json().profile.stories).toEqual([]);
+    expect(provider.calls).toHaveLength(1);
+    const noHeader = await app.inject({ method: 'DELETE', url: '/api/profile/followups' });
+    expect(noHeader.statusCode).toBe(403);
+  });
+
   it('reading the profile never calls Claude', async () => {
     const { app, provider } = await makeApp({ provider: scriptedClaude({}) });
     await app.inject({ method: 'GET', url: '/api/profile' });

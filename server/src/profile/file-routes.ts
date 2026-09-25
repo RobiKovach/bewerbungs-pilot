@@ -77,7 +77,8 @@ export async function registerFileRoutes(app: FastifyInstance, d: ProfileRouteDe
       if (p.photo?.id === id) p.photo = null;
       p.documents = p.documents.filter((x) => x.id !== id);
     });
-    d.files.remove(file);
+    // The profile no longer lists the file; deleting it from disk is best-effort (e.g. a Windows lock).
+    removeQuietly(d.files, file, d.logger);
     return toView(profile);
   });
 

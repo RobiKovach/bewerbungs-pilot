@@ -80,6 +80,14 @@ describe('followUpTask', () => {
     expect(t.prompt).not.toContain('secret-id-1');
     expect(t.replyLanguage).toBe('pl');
   });
+  it('does not send personal contact details to Claude', () => {
+    const p = emptyProfile();
+    p.sections.personal.data = toSectionData(SAMPLE_CV, newId).personal;
+    const t = followUpTask(p, 'en');
+    for (const secret of ['max@example.com', '+49 30 1234567', 'Musterstraße 1', '10115', '1990-03-15', 'Max Mustermann']) {
+      expect(t.prompt).not.toContain(secret);
+    }
+  });
   it('wants 3 to 7 questions', () => {
     const { schema } = followUpTask(emptyProfile(), 'en');
     const q = { question: 'Q?', why: 'W' };

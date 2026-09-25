@@ -33,9 +33,15 @@ and whether anything must never be mentioned to employers (for example a client'
 
 const noIds = (_key: string, value: unknown) => (_key === 'id' ? undefined : value);
 
+/**
+ * Sections the questions are built from. `personal` (name, address, phone, e-mail, birth date) is left
+ * out on purpose: the questions are about work and stories, and none of them needs contact details.
+ */
+const QUESTION_SECTION_IDS = SECTION_IDS.filter((id) => id !== 'personal');
+
 export function followUpTask(profile: Profile, language: Language): LlmTask {
   const context = JSON.stringify({
-    profile: Object.fromEntries(SECTION_IDS.map((id) => [id, profile.sections[id].data])),
+    profile: Object.fromEntries(QUESTION_SECTION_IDS.map((id) => [id, profile.sections[id].data])),
     existingStories: profile.stories.map((s) => s.title),
     neverMention: profile.neverMention,
   }, noIds, 1);

@@ -28,11 +28,13 @@ const HEAD_BYTES = 1024;
 
 /** The real type from the first bytes. The name only decides between DOCX and other ZIP files (XLSX, …). */
 export function detectExt(head: Buffer, originalName: string): FileExt | null {
-  // Some PDF writers put a few bytes before the header; readers accept it within the first 1 KB.
-  if (head.subarray(0, HEAD_BYTES).includes('%PDF-')) return '.pdf';
+  // Exact leading magic bytes first: a JPEG whose metadata happens to contain "%PDF-" is still a JPEG.
   if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return '.jpg';
   if (head.subarray(0, 8).equals(PNG_MAGIC)) return '.png';
-  if (head.subarray(0, 4).equals(ZIP_MAGIC) && /\.docx$/i.test(originalName)) return '.docx';
+  if (head.subarray(0, 5).toString('latin1') === '%PDF-') return '.pdf';
+  if (head.subarray(0, 4).equals(ZIP_MAGIC)) return /\.docx$/i.test(originalName) ? '.docx' : null;
+  // Fallback: some PDF writers put a few bytes before the header; readers accept it within the first 1 KB.
+  if (head.subarray(0, HEAD_BYTES).includes('%PDF-')) return '.pdf';
   return null;
 }
 
