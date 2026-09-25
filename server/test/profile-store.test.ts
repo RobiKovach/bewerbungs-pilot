@@ -76,14 +76,17 @@ describe('ProfileStore', () => {
   it('loads a profile saved by version 0.2.0 (schema 1): data kept, no CV proposals, next save writes schema 2', () => {
     const dir = tempDir();
     const file = path.join(dir, 'profile.json');
+    // As version 0.2.0 wrote it: no cvProposals, no editedAt.
     const old: Record<string, unknown> = { ...emptyProfile(), schemaVersion: 1, neverMention: ['Kunde X'] };
     delete old.cvProposals;
+    old.sections = Object.fromEntries(Object.entries(emptyProfile().sections).map(([id, s]) => [id, { data: s.data, aiFields: s.aiFields, confirmedAt: s.confirmedAt }]));
     fs.writeFileSync(file, JSON.stringify(old));
     const events: string[] = [];
     const store = new ProfileStore(file, (e) => events.push(e));
     const loaded = store.load();
     expect(loaded.schemaVersion).toBe(2);
     expect(loaded.cvProposals).toEqual({});
+    expect(loaded.sections.personal.editedAt).toBeNull();
     expect(loaded.neverMention).toEqual(['Kunde X']);
     expect(events).toEqual([]);
     store.update(() => {});

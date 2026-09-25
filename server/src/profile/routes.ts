@@ -78,7 +78,7 @@ export async function registerProfileRoutes(app: FastifyInstance, d: ProfileRout
     const { data } = req.body as { data: unknown };
     const problem = validateSectionData(id, data);
     if (problem) throw new AppError('BAD_REQUEST', `${id}: ${problem}`);
-    return toView(d.store.update((p) => withSection(p, id, (s) => applyHumanEdit(s, data))));
+    return toView(d.store.update((p) => withSection(p, id, (s) => applyHumanEdit(s, data, new Date().toISOString()))));
   });
 
   app.post('/api/profile/sections/:id/confirm', async (req) => {

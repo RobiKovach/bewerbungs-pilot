@@ -2,7 +2,7 @@ import { SECTION_IDS } from '../profile/constants';
 import type { Profile, ProfileView } from '../types';
 
 export function emptyProfile(): Profile {
-  const blank = <T>(data: T) => ({ data, aiFields: [] as string[], confirmedAt: null as string | null });
+  const blank = <T>(data: T) => ({ data, aiFields: [] as string[], confirmedAt: null as string | null, editedAt: null as string | null });
   return {
     schemaVersion: 2,
     wizard: { step: 1, completedAt: null },

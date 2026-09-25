@@ -5,13 +5,31 @@ import type {
 import type { Migration } from '../data/migrate.js';
 import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
+import { filledPaths } from './sections.js';
 
 export const PROFILE_SCHEMA_VERSION = 2;
 /** migrations[n] turns version n into n + 1. */
 export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
-  // 2: open CV proposals (what a new CV says for sections the person already worked on). Old files have none.
-  1: (doc) => ({ ...doc, cvProposals: {} }),
+  // 2: open CV proposals (none in old files) and Section.editedAt (see migrateEditedAt).
+  1: (doc) => ({ ...doc, cvProposals: {}, sections: migrateEditedAt(doc.sections, new Date().toISOString()) }),
 };
+
+/**
+ * Version 1 did not record edits. The best we can tell afterwards: in a CV section, a filled field without an AI mark
+ * was typed or changed by the person, so the section counts as edited (as of the update). Job wishes never come from a
+ * CV (their defaults, like remote "any", are not marks) and start with null. A version 1 deletion or cleared field left
+ * no trace and cannot be recovered; a malformed section is left alone for validateProfile to refuse.
+ */
+function migrateEditedAt(sections: unknown, at: string): unknown {
+  if (!sections || typeof sections !== 'object') return sections;
+  return Object.fromEntries(Object.entries(sections as Record<string, unknown>).map(([id, raw]) => {
+    const s = raw as { data?: unknown; aiFields?: unknown };
+    if (!s || typeof s !== 'object' || !Array.isArray(s.aiFields)) return [id, raw];
+    const marked = new Set(s.aiFields);
+    const edited = isCvSectionId(id) && filledPaths(s.data).some((p) => !marked.has(p));
+    return [id, { ...s, editedAt: edited ? at : null }];
+  }));
+}
 
 export const SECTION_IDS = ['personal', 'education', 'experience', 'skills', 'languages', 'wishes'] as const satisfies readonly SectionId[];
 /** Sections Claude fills from a CV. `wishes` is always the person's own input. */
@@ -80,7 +98,9 @@ export const SECTION_DATA_SCHEMAS: Record<SectionId, JsonSchema> = {
   wishes: WISHES,
 };
 
-const section = (data: JsonSchema) => obj({ data, aiFields: array(str(LIMITS.name), 5000), confirmedAt: nullable(TIMESTAMP) });
+const section = (data: JsonSchema) => obj({
+  data, aiFields: array(str(LIMITS.name), 5000), confirmedAt: nullable(TIMESTAMP), editedAt: nullable(TIMESTAMP),
+});
 const STORED_FILE_PROPS = {
   id: { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' },
   ext: oneOf(['.pdf', '.docx', '.jpg', '.png']),
@@ -144,7 +164,7 @@ export function validateProfile(profile: unknown): string | null {
   return null;
 }
 
-const blank = <T>(data: T): Section<T> => ({ data, aiFields: [], confirmedAt: null });
+const blank = <T>(data: T): Section<T> => ({ data, aiFields: [], confirmedAt: null, editedAt: null });
 
 export function emptySectionData(): SectionDataMap {
   return {

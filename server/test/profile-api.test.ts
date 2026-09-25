@@ -25,7 +25,7 @@ describe('profile API', () => {
     const data = { ...profileStore.get().sections.personal.data, city: 'Dresden' };
     const res = await app.inject({ method: 'PUT', url: '/api/profile/sections/personal', headers: H, payload: { data } });
     expect(res.statusCode).toBe(200);
-    expect(res.json().profile.sections.personal).toEqual({ data, aiFields: ['fullName'], confirmedAt: '2026-09-24T10:00:00.000Z' });
+    expect(res.json().profile.sections.personal).toEqual({ data, aiFields: ['fullName'], confirmedAt: '2026-09-24T10:00:00.000Z', editedAt: expect.any(String) });
     expect(profileStore.get().sections.personal.data.city).toBe('Dresden');
   });
 

@@ -46,30 +46,34 @@ export function filledPaths(data: unknown): string[] {
 const withoutIds = (data: unknown) => JSON.stringify(data, (key, value: unknown) => (key === 'id' ? undefined : value));
 
 /** The person saved the section: AI marks go away from every field they changed; the confirmation stays. */
-export function applyHumanEdit<T>(section: Section<T>, data: T): Section<T> {
+export function applyHumanEdit<T>(section: Section<T>, data: T, at: string): Section<T> {
   const changed = changedPaths(section.data, data);
   const now = leafPaths(data);
-  return { data, aiFields: section.aiFields.filter((p) => !changed.has(p) && now.has(p)), confirmedAt: section.confirmedAt };
+  return {
+    data,
+    aiFields: section.aiFields.filter((p) => !changed.has(p) && now.has(p)),
+    confirmedAt: section.confirmedAt,
+    // Any change counts, also deleting an entry or clearing a field: nothing the person did is lost without their choice.
+    editedAt: changed.size > 0 ? at : section.editedAt,
+  };
 }
 
 /** "All correct": the person checked every field. */
 export function confirmSection<T>(section: Section<T>, at: string): Section<T> {
-  return { data: section.data, aiFields: [], confirmedAt: at };
+  return { data: section.data, aiFields: [], confirmedAt: at, editedAt: section.editedAt };
 }
 
 /**
- * Untouched = the person has neither confirmed the section nor changed any field in it: everything filled in is still
- * exactly what Claude wrote. Only such a section may be replaced by a new CV without asking.
+ * Untouched = since the section was last (re)filled from a CV, the person has neither confirmed it nor saved any change
+ * to it. Only such a section may be replaced by a new CV without asking.
  */
 export function isUntouched(section: Section<unknown>): boolean {
-  if (section.confirmedAt !== null) return false;
-  const marked = new Set(section.aiFields);
-  return filledPaths(section.data).every((p) => marked.has(p));
+  return section.confirmedAt === null && section.editedAt === null;
 }
 
-/** The section as Claude read it: every filled field marked "AI – please check", not confirmed. */
+/** The section as Claude read it: every filled field marked "AI – please check", not confirmed, no edits of the person. */
 export function takeExtraction<T>(data: T): Section<T> {
-  return { data, aiFields: filledPaths(data), confirmedAt: null };
+  return { data, aiFields: filledPaths(data), confirmedAt: null, editedAt: null };
 }
 
 export type ExtractionOutcome = 'same' | 'replaced' | 'proposed';

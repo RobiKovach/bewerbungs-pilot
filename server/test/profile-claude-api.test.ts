@@ -131,6 +131,40 @@ describe('POST /api/profile/cv', () => {
     expect(kept.json().profile.cvProposals).toEqual({});
   });
 
+  it('a deleted entry is not brought back by a new CV: the section gets a proposal instead', async () => {
+    let cv = SAMPLE_CV;
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    const first = (await uploadCv(app, 'cv1.pdf', PDF_BYTES)).json();
+    const kept = first.profile.sections.skills.data.items.filter((s: { name: string }) => s.name !== 'WordPress');
+    await app.inject({ method: 'PUT', url: '/api/profile/sections/skills', headers: H, payload: { data: { items: kept } } });
+    cv = { ...SAMPLE_CV, skills: [...SAMPLE_CV.skills, { name: 'TypeScript', level: 'good' }] };
+    const second = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json();
+    expect(second.changedSections).toEqual([]);
+    expect(second.proposedSections).toEqual(['skills']);
+    expect(second.profile.sections.skills.data.items.map((s: { name: string }) => s.name)).toEqual(['JavaScript']);
+    expect(second.profile.cvProposals.skills.items.map((s: { name: string }) => s.name)).toEqual(['JavaScript', 'WordPress', 'TypeScript']);
+  });
+
+  it('a cleared field is not filled again by a new CV: the section gets a proposal instead', async () => {
+    let cv = SAMPLE_CV;
+    const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
+    const first = (await uploadCv(app, 'cv1.pdf', PDF_BYTES)).json();
+    const personal = { ...first.profile.sections.personal.data, phone: '' };
+    await app.inject({ method: 'PUT', url: '/api/profile/sections/personal', headers: H, payload: { data: personal } });
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Dresden' } };
+    const second = (await uploadCv(app, 'cv2.pdf', PDF_BYTES)).json();
+    expect(second.proposedSections).toEqual(['personal']);
+    expect(second.profile.sections.personal.data).toMatchObject({ phone: '', city: 'Berlin' });
+    expect(second.profile.cvProposals.personal).toMatchObject({ phone: '+49 30 1234567', city: 'Dresden' });
+    // Taking the new version starts over: filled from the CV again, so the next CV may replace it without asking.
+    const taken = (await app.inject({ method: 'POST', url: '/api/profile/sections/personal/proposal/accept', headers: H, payload: {} })).json();
+    expect(taken.profile.sections.personal.editedAt).toBeNull();
+    cv = { ...SAMPLE_CV, personal: { ...SAMPLE_CV.personal, city: 'Leipzig' } };
+    const third = (await uploadCv(app, 'cv3.pdf', PDF_BYTES)).json();
+    expect(third.changedSections).toEqual(['personal']);
+    expect(third.profile.sections.personal.data.city).toBe('Leipzig');
+  });
+
   it('a later CV replaces or removes an open proposal; proposals do not block readiness', async () => {
     let cv = SAMPLE_CV;
     const { app } = await makeApp({ provider: scriptedClaude({ cv: () => cv }) });
