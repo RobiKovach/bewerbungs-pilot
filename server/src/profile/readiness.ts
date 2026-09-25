@@ -13,5 +13,5 @@ export function readiness(profile: Profile): Readiness {
 /** For sub-projects 3/4: call before matching vacancies or writing an application. */
 export function assertReady(profile: Profile): void {
   const r = readiness(profile);
-  if (!r.ready) throw new AppError('PROFILE_NOT_READY', `missing: ${r.missing.join(', ')}`);
+  if (!r.ready) throw new AppError('PROFILE_NOT_READY', `missing: ${r.missing.join(', ')}`, 'profileMissing', { sections: r.missing.join(',') });
 }

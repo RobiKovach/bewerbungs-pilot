@@ -43,7 +43,11 @@ describe('POST /api/profile/cv', () => {
     const { app, provider, filesDir, profileStore } = await makeApp({ provider: scriptedClaude({ cv: SAMPLE_CV }) });
     const res = await uploadCv(app, 'scan.docx', makeDocx(['']));
     expect(res.statusCode).toBe(422);
-    expect(res.json().error.code).toBe('CV_UNREADABLE');
+    const error = res.json().error;
+    expect(error.code).toBe('CV_UNREADABLE');
+    // The person-facing "Details" must carry a translatable reason, not just the raw English log line.
+    expect(error.reason).toBe('cvTooLittleText');
+    expect(error.params).toEqual({ chars: 0 });
     expect(provider.calls).toHaveLength(0);
     expect(fs.readdirSync(filesDir)).toEqual([]);
     expect(profileStore.get().cv).toBeNull();

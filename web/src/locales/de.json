@@ -4,7 +4,8 @@
   "common": {
     "next": "Weiter", "back": "Zurück", "retry": "Erneut prüfen", "cancel": "Abbrechen", "details": "Details",
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
-    "continueAnyway": "Trotzdem fortfahren", "stepOf": "Schritt {{current}} von {{total}}"
+    "continueAnyway": "Trotzdem fortfahren", "stepOf": "Schritt {{current}} von {{total}}",
+    "technicalDetails": "Technischer Text für den Support"
   },
   "language": { "label": "Sprache" },
   "home": {
@@ -223,6 +224,17 @@
     "BAD_REQUEST": { "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
     "NOT_FOUND": { "message": "Diese Seite gibt es nicht.", "hint": "Gehen Sie zurück zur Startseite." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot läuft nicht.", "hint": "Starten Sie es erneut über die Verknüpfung auf Ihrem Desktop." },
-    "UNKNOWN": { "message": "Etwas ist schiefgelaufen.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." }
+    "UNKNOWN": { "message": "Etwas ist schiefgelaufen.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
+    "reasons": {
+      "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",
+      "cvNoContent": "Claude hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",
+      "cvDocxBroken": "Die Datei konnte nicht als Word-Dokument geöffnet werden. Sie ist möglicherweise beschädigt oder in einem anderen Format gespeichert.",
+      "fileTypeDetected": "Die Datei ist tatsächlich eine {{detected}}-Datei. Hier erlaubt: {{allowed}}.",
+      "allowedTypes": { "cv": "PDF oder Word (DOCX)", "photo": "JPG oder PNG", "document": "PDF" },
+      "tooManyDocuments": "Sie haben bereits {{max}} Dokumente — löschen Sie eines, um ein neues hinzuzufügen.",
+      "profileMissing": "Es fehlt noch: {{sections}}.",
+      "llmTimeout": "Claude hat innerhalb von {{seconds}} Sekunden nicht geantwortet.",
+      "cancelledByUser": "Sie haben es abgebrochen."
+    }
   }
 }

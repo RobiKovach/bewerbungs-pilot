@@ -3,7 +3,12 @@ import type {
 } from './types';
 
 export class ApiError extends Error {
-  constructor(public readonly code: string, public readonly details: string) {
+  constructor(
+    public readonly code: string,
+    public readonly details: string,
+    public readonly reason?: string,
+    public readonly params?: Record<string, string | number>,
+  ) {
     super(code);
     this.name = 'ApiError';
   }
@@ -19,8 +24,12 @@ async function send<T>(url: string, init: RequestInit): Promise<T> {
     if ((err as Error).name === 'AbortError') throw err;
     throw new ApiError('SERVER_UNREACHABLE', String(err));
   }
-  const data = (await res.json().catch(() => null)) as { error?: { code?: string; detailsForLog?: string } } | null;
-  if (!res.ok) throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`);
+  const data = (await res.json().catch(() => null)) as {
+    error?: { code?: string; detailsForLog?: string; reason?: string; params?: Record<string, string | number> };
+  } | null;
+  if (!res.ok) {
+    throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params);
+  }
   return data as T;
 }
 

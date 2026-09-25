@@ -48,7 +48,9 @@ const languageBodySchema = {
   properties: { language: { type: 'string', enum: [...SUPPORTED_LANGUAGES] } },
 } as const;
 
-const errorBody = (code: string, detailsForLog: string) => ({ error: { code, detailsForLog } });
+const errorBody = (code: string, detailsForLog: string, reason?: string, params?: Record<string, string | number>) => ({
+  error: { code, detailsForLog, ...(reason ? { reason } : {}), ...(params ? { params } : {}) },
+});
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const app = Fastify({ logger: false, bodyLimit: 1_000_000 });
@@ -82,7 +84,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof AppError) {
       deps.logger.warn('app_error', { code: err.code, details: err.detailsForLog, url: req.url });
-      return reply.code(httpStatusFor(err.code)).send(errorBody(err.code, err.detailsForLog));
+      return reply.code(httpStatusFor(err.code)).send(errorBody(err.code, err.detailsForLog, err.reason, err.params));
     }
     const e = err as Error & { validation?: unknown; statusCode?: number };
     if (e.validation) {

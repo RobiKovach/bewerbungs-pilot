@@ -39,6 +39,8 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 .error-banner { background: var(--danger-bg); border: 1px solid var(--danger); color: var(--text); border-radius: var(--radius); padding: 0.9rem 1.1rem; margin: 1rem 0; }
 .error-banner strong { color: var(--danger); }
 .error-banner pre { white-space: pre-wrap; font-size: 0.8rem; color: var(--muted); }
+.error-banner__reason { margin: 0.5rem 0; }
+.error-banner__technical-label { font-size: 0.75rem; margin: 0.6rem 0 0.15rem; }
 /* Same spacing the paragraph wrapper used to give. */
 .welcome-lang { margin: 1em 0; }
 .boot { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }

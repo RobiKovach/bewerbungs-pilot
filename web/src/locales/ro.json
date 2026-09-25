@@ -4,7 +4,8 @@
   "common": {
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
-    "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}"
+    "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}",
+    "technicalDetails": "Text tehnic pentru asistență"
   },
   "language": { "label": "Limbă" },
   "home": {
@@ -223,6 +224,17 @@
     "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
     "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nu rulează.", "hint": "Porniți-l din nou cu ajutorul comenzii rapide de pe desktop." },
-    "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." }
+    "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
+    "reasons": {
+      "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",
+      "cvNoContent": "Claude a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",
+      "cvDocxBroken": "Fișierul nu a putut fi deschis ca document Word. Este posibil să fie deteriorat sau salvat într-un alt format.",
+      "fileTypeDetected": "Fișierul este de fapt un fișier {{detected}}. Aici sunt permise: {{allowed}}.",
+      "allowedTypes": { "cv": "PDF sau Word (DOCX)", "photo": "JPG sau PNG", "document": "PDF" },
+      "tooManyDocuments": "Aveți deja {{max}} documente — ștergeți unul pentru a adăuga altul nou.",
+      "profileMissing": "Încă lipsește: {{sections}}.",
+      "llmTimeout": "Claude nu a răspuns în {{seconds}} secunde.",
+      "cancelledByUser": "Ați anulat."
+    }
   }
 }

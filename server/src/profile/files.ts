@@ -75,7 +75,7 @@ export class ProfileFiles {
     const ext = detectExt(readHead(uploadPath), name);
     if (!ext || !FILE_RULES[kind].exts.includes(ext)) {
       fs.rmSync(uploadPath, { force: true });
-      throw new AppError('FILE_TYPE_NOT_ALLOWED', `${kind}: detected ${ext ?? 'unknown type'}`);
+      throw new AppError('FILE_TYPE_NOT_ALLOWED', `${kind}: detected ${ext ?? 'unknown type'}`, 'fileTypeDetected', { kind, detected: ext ?? 'unknown' });
     }
     const stored: StoredFile = {
       id: crypto.randomUUID(), ext, originalName: name, size: fs.statSync(uploadPath).size, uploadedAt: new Date().toISOString(),

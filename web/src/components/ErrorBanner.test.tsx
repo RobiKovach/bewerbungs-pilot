@@ -18,4 +18,33 @@ describe('ErrorBanner', () => {
     render(<ErrorBanner error={new Error('x')} />);
     expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong.');
   });
+
+  it('with a known reason, shows the translated sentence above a labelled technical line', () => {
+    render(<ErrorBanner error={new ApiError('CV_UNREADABLE', 'docx has only 5 characters of text', 'cvTooLittleText', { chars: 5 })} />);
+    expect(screen.getByText('The file contains almost no text (5 characters). It is probably empty, or the text is inside a picture.')).toBeInTheDocument();
+    expect(screen.getByText('Technical text for support')).toBeInTheDocument();
+    expect(screen.getByText(/CV_UNREADABLE: docx has only 5 characters of text/)).toBeInTheDocument();
+  });
+
+  it('without a reason, shows only the labelled technical line', () => {
+    render(<ErrorBanner error={new ApiError('CV_UNREADABLE', 'docx has only 5 characters of text')} />);
+    expect(screen.getByText('Technical text for support')).toBeInTheDocument();
+    expect(screen.getByText(/CV_UNREADABLE: docx has only 5 characters of text/)).toBeInTheDocument();
+  });
+
+  it('with an unknown reason, does not crash and still shows the labelled technical line', () => {
+    render(<ErrorBanner error={new ApiError('CV_UNREADABLE', 'docx has only 5 characters of text', 'somethingNobodyTranslated')} />);
+    expect(screen.getByText('Technical text for support')).toBeInTheDocument();
+    expect(screen.getByText(/CV_UNREADABLE: docx has only 5 characters of text/)).toBeInTheDocument();
+  });
+
+  it('translates PROFILE_NOT_READY missing sections with the existing section-title keys', () => {
+    render(<ErrorBanner error={new ApiError('PROFILE_NOT_READY', 'missing: personal, skills', 'profileMissing', { sections: 'personal,skills' })} />);
+    expect(screen.getByText('Still missing: Personal details, Skills.')).toBeInTheDocument();
+  });
+
+  it('translates FILE_TYPE_NOT_ALLOWED with the allowed types for the given kind', () => {
+    render(<ErrorBanner error={new ApiError('FILE_TYPE_NOT_ALLOWED', 'photo: detected .pdf', 'fileTypeDetected', { kind: 'photo', detected: '.pdf' })} />);
+    expect(screen.getByText('The file is actually a .pdf file. Allowed here: JPG or PNG.')).toBeInTheDocument();
+  });
 });

@@ -46,11 +46,13 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
       let source: CvSource = { kind: 'file', path: file };
       if (stored.ext === '.docx') {
         const text = (await docxToText(file)).trim();
-        if (text.length < MIN_CV_TEXT_CHARS) throw new AppError('CV_UNREADABLE', `docx has only ${text.length} characters of text`);
+        if (text.length < MIN_CV_TEXT_CHARS) {
+          throw new AppError('CV_UNREADABLE', `docx has only ${text.length} characters of text`, 'cvTooLittleText', { chars: text.length });
+        }
         source = { kind: 'text', text };
       }
       const out = await d.queue.run<ExtractedCv>(extractCvTask(source, d.language()), signal);
-      if (!out.readable) throw new AppError('CV_UNREADABLE', 'Claude found no CV content');
+      if (!out.readable) throw new AppError('CV_UNREADABLE', 'Claude found no CV content', 'cvNoContent');
       const data = toSectionData(out, newId);
       oldCv = d.store.get().cv;
       const changed: SectionId[] = [];

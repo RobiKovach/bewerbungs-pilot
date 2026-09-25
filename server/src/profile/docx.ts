@@ -6,6 +6,6 @@ export async function docxToText(file: string): Promise<string> {
   try {
     return (await mammoth.extractRawText({ path: file })).value;
   } catch (err) {
-    throw new AppError('CV_UNREADABLE', `docx: ${err instanceof Error ? err.message : String(err)}`);
+    throw new AppError('CV_UNREADABLE', `docx: ${err instanceof Error ? err.message : String(err)}`, 'cvDocxBroken');
   }
 }

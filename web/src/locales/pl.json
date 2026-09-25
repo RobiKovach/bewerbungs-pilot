@@ -4,7 +4,8 @@
   "common": {
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
-    "continueAnyway": "Mimo to kontynuuj", "stepOf": "Krok {{current}} z {{total}}"
+    "continueAnyway": "Mimo to kontynuuj", "stepOf": "Krok {{current}} z {{total}}",
+    "technicalDetails": "Tekst techniczny dla wsparcia"
   },
   "language": { "label": "Język" },
   "home": {
@@ -223,6 +224,17 @@
     "BAD_REQUEST": { "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nie jest uruchomiony.", "hint": "Uruchom go ponownie za pomocą skrótu na pulpicie." },
-    "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." }
+    "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." },
+    "reasons": {
+      "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
+      "cvNoContent": "Claude odczytał plik, ale nie znalazł niczego, co wygląda jak CV.",
+      "cvDocxBroken": "Nie udało się otworzyć pliku jako dokumentu Word. Może być uszkodzony lub zapisany w innym formacie.",
+      "fileTypeDetected": "Ten plik jest w rzeczywistości plikiem {{detected}}. Tutaj dozwolone: {{allowed}}.",
+      "allowedTypes": { "cv": "PDF lub Word (DOCX)", "photo": "JPG lub PNG", "document": "PDF" },
+      "tooManyDocuments": "Masz już {{max}} dokumentów — usuń jeden, aby dodać nowy.",
+      "profileMissing": "Wciąż brakuje: {{sections}}.",
+      "llmTimeout": "Claude nie odpowiedział w ciągu {{seconds}} sekund.",
+      "cancelledByUser": "Anulowałeś to."
+    }
   }
 }

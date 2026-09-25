@@ -6,6 +6,10 @@ export class AppError extends Error {
   constructor(
     public readonly code: ErrorCode,
     public readonly detailsForLog = '',
+    /** Machine-readable id for a translated, person-facing sentence (`errors.reasons.<reason>` in the locales). */
+    public readonly reason?: string,
+    /** Small record of strings/numbers to interpolate into that sentence. */
+    public readonly params?: Record<string, string | number>,
   ) {
     super(detailsForLog ? `${code}: ${detailsForLog}` : code);
     this.name = 'AppError';

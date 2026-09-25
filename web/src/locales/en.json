@@ -4,7 +4,8 @@
   "common": {
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
-    "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}"
+    "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}",
+    "technicalDetails": "Technical text for support"
   },
   "language": { "label": "Language" },
   "home": {
@@ -223,6 +224,17 @@
     "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
     "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
-    "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." }
+    "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." },
+    "reasons": {
+      "cvTooLittleText": "The file contains almost no text ({{chars}} characters). It is probably empty, or the text is inside a picture.",
+      "cvNoContent": "Claude read the file but found nothing that looks like a CV.",
+      "cvDocxBroken": "The file could not be opened as a Word document. It may be damaged or saved in another format.",
+      "fileTypeDetected": "The file is actually a {{detected}} file. Allowed here: {{allowed}}.",
+      "allowedTypes": { "cv": "PDF or Word (DOCX)", "photo": "JPG or PNG", "document": "PDF" },
+      "tooManyDocuments": "You already have {{max}} documents — delete one to add a new one.",
+      "profileMissing": "Still missing: {{sections}}.",
+      "llmTimeout": "Claude did not answer within {{seconds}} seconds.",
+      "cancelledByUser": "You cancelled it."
+    }
   }
 }

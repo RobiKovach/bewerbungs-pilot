@@ -29,7 +29,7 @@ export class LlmQueue {
     this.waiting++;
     const job = this.tail.then(async () => {
       this.waiting--;
-      if (ctrl.signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled while waiting in the queue');
+      if (ctrl.signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled while waiting in the queue', 'cancelledByUser');
       this.running = true;
       try {
         return await this.provider.run<T>(task, ctrl.signal);

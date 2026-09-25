@@ -312,8 +312,9 @@ export class ClaudeCodeProvider implements LlmProvider {
         // the folder can actually be removed.
         cleanup();
         finish(() => {
-          if (stopReason === 'timeout') reject(new AppError('LLM_TIMEOUT', `no answer within ${timeoutMs} ms`));
-          else if (stopReason === 'cancelled') reject(new AppError('LLM_CANCELLED', 'cancelled by the user'));
+          if (stopReason === 'timeout') {
+            reject(new AppError('LLM_TIMEOUT', `no answer within ${timeoutMs} ms`, 'llmTimeout', { seconds: Math.round(timeoutMs / 1000) }));
+          } else if (stopReason === 'cancelled') reject(new AppError('LLM_CANCELLED', 'cancelled by the user', 'cancelledByUser'));
           else resolve({ stdout, stderr, exitCode });
         });
       });
