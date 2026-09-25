@@ -149,6 +149,33 @@ describe('SectionCard with a proposal from a new CV', () => {
     expect(within(screen.getByRole('region', { name: 'Now' })).getAllByText('Job title')).toHaveLength(1);
   });
 
+  it('marks as "Different" only the list entries the other version does not have (ids do not count)', async () => {
+    const changed = { ...job, id: 'j2', description: 'Shops gebaut' };
+    const added = { ...job, id: 'j3', jobTitle: 'Teamleiter', employer: 'Neu AG', from: '2023' };
+    const same = { ...job, id: 'j4', jobTitle: 'Praktikant', from: '2016' };
+    setup(profileWith((p) => {
+      p.sections.experience.data.items = [job, same];
+      p.sections.experience.confirmedAt = '2026-09-24T10:00:00.000Z';
+      // job: now without description, in the new CV with one; same: identical apart from the id; added: only in the new CV.
+      p.cvProposals.experience = { items: [changed, { ...same, id: 'n4' }, added] };
+    }), 'experience');
+    const entries = (name: string) => [...screen.getByRole('region', { name }).querySelectorAll('.proposal-entry')] as HTMLElement[];
+    const marked = (name: string) => entries(name).map((e) => [
+      within(e).getByText('Job title').nextElementSibling?.textContent, within(e).queryAllByText('Different').length,
+    ]);
+    await screen.findByRole('region', { name: 'In the new CV' });
+    expect(marked('Now')).toEqual([['Webentwickler', 1], ['Praktikant', 0]]);
+    expect(marked('In the new CV')).toEqual([['Webentwickler', 1], ['Praktikant', 0], ['Teamleiter', 1]]);
+  });
+
+  it('marks as "Different" each personal field that changed', async () => {
+    setup(withProposal, 'personal');
+    const next = await screen.findByRole('region', { name: 'In the new CV' });
+    const differs = (region: HTMLElement) => [...region.querySelectorAll('div.differs dt')].map((dt) => dt.textContent);
+    expect(differs(next)).toEqual(['Phone', 'City']);
+    expect(differs(screen.getByRole('region', { name: 'Now' }))).toEqual(['City']);
+  });
+
   it('"Take the new version" asks the server and shows the new data', async () => {
     const taken = profileWith((p) => {
       p.sections.personal.data = { ...withProposal.cvProposals.personal! };
