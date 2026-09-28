@@ -65,6 +65,8 @@ export interface WishesData {
   /** "YYYY-MM", "YYYY-MM-DD" or "". */
   availableFrom: string;
   notes: string;
+  /** false = the vacancy search leaves out offers of temporary-work agencies (Zeitarbeit). */
+  includeTemporaryAgencies: boolean;
 }
 
 export interface SectionDataMap {
@@ -113,7 +115,7 @@ export interface StoredFile { id: string; ext: FileExt; originalName: string; si
 export interface ProfileDocument extends StoredFile { label: string; attachAlways: boolean }
 
 export interface Profile {
-  schemaVersion: 2;
+  schemaVersion: 3;
   wizard: { step: 1 | 2 | 3 | 4; completedAt: string | null };
   cv: StoredFile | null;
   sections: Sections;

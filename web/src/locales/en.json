@@ -164,7 +164,9 @@
       "jobTitles": "Jobs you are looking for (one per line)", "locations": "Places (one per line)",
       "radiusKm": "Distance from these places (km)", "remote": "Working from home", "employmentTypes": "Type of employment",
       "salaryMinEur": "Minimum gross salary per year in € (optional)", "availableFrom": "Available from",
-      "notes": "Anything else that matters to you (optional)"
+      "notes": "Anything else that matters to you (optional)",
+      "includeTemporaryAgencies": "Show offers from temporary-work agencies (Zeitarbeit)",
+      "includeTemporaryAgenciesHint": "Such agencies employ you and lend you to other companies. For many people this is a real way into a job; switch it off if you do not want it."
     },
     "remote": { "any": "Doesn't matter", "onsite": "At the workplace", "hybrid": "Partly from home", "remote": "Only from home" },
     "employment": { "fulltime": "Full-time", "parttime": "Part-time", "minijob": "Minijob", "apprenticeship": "Apprenticeship (Ausbildung)", "internship": "Internship" },

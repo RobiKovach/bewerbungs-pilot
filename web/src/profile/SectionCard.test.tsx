@@ -100,6 +100,18 @@ describe('SectionCard', () => {
     expect(await screen.findByLabelText('What you did (in your own words)')).toHaveAttribute('maxLength', '5000');
   });
 
+  it('job wishes: the temporary-work switch is on by default and is saved', async () => {
+    const saved: unknown[] = [];
+    const { user } = setup(profileWith(() => {}), 'wishes', {
+      'PUT /api/profile/sections/wishes': (init) => { saved.push(JSON.parse(String(init?.body))); return { body: viewOf(profileWith(() => {})) }; },
+    });
+    const box = await screen.findByRole('checkbox', { name: /temporary-work agencies/ });
+    expect(box).toBeChecked();
+    await user.click(box);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(saved.at(-1)).toMatchObject({ data: { includeTemporaryAgencies: false } });
+  });
+
   it('blocks saving when a list has more lines than allowed', async () => {
     const { user } = setup(profileWith(() => {}), 'wishes');
     const titles = await screen.findByLabelText('Jobs you are looking for (one per line)');

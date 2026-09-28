@@ -13,6 +13,14 @@ export function WishesForm({ data, onChange, isAi }: FormProps<'wishes'>) {
       <SelectField label={t('profile.wishes.remote')} value={data.remote} options={REMOTE_PREFERENCES} optionLabel={(r) => t(`profile.remote.${r}`)} ai={isAi('remote')} onChange={(remote) => onChange({ ...data, remote })} />
       <CheckboxGroup legend={t('profile.wishes.employmentTypes')} values={EMPLOYMENT_TYPES} selected={data.employmentTypes}
         optionLabel={(e) => t(`profile.employment.${e}`)} ai={isAi('employmentTypes')} onChange={(employmentTypes) => onChange({ ...data, employmentTypes })} />
+      <label className="checkbox-field">
+        <input type="checkbox" checked={data.includeTemporaryAgencies}
+          onChange={(e) => onChange({ ...data, includeTemporaryAgencies: e.target.checked })} />
+        <span>
+          {t('profile.wishes.includeTemporaryAgencies')}
+          <small className="muted">{t('profile.wishes.includeTemporaryAgenciesHint')}</small>
+        </span>
+      </label>
       <NumberField label={t('profile.wishes.salaryMinEur')} value={data.salaryMinEur} max={1_000_000} ai={isAi('salaryMinEur')} onChange={(salaryMinEur) => onChange({ ...data, salaryMinEur })} />
       <TextField label={t('profile.wishes.availableFrom')} type="date" value={data.availableFrom} ai={isAi('availableFrom')} onChange={(availableFrom) => onChange({ ...data, availableFrom })} />
       <TextField multiline label={t('profile.wishes.notes')} value={data.notes} ai={isAi('notes')} onChange={(notes) => onChange({ ...data, notes })} />

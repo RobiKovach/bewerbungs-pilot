@@ -68,10 +68,12 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 .field-hint { margin: 0; font-size: 0.85rem; color: var(--muted); }
 .field-error { margin: 0; font-size: 0.85rem; color: var(--danger); }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.9rem 1.2rem; }
-.form-grid .field:has(textarea), .form-grid .checkbox-group { grid-column: 1 / -1; }
+.form-grid .field:has(textarea), .form-grid .checkbox-group, .form-grid .checkbox-field { grid-column: 1 / -1; }
 .entry { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin: 0 0 1rem; }
 .checkbox-group { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; }
 .checkbox-group legend { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+.checkbox-field { display: flex; gap: .5rem; align-items: flex-start; }
+.checkbox-field small { display: block; }
 .section-card { margin-bottom: 1.25rem; }
 .section-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .badge.ai { background: #fff4d6; color: #7a5200; border-color: #f0d48a; }

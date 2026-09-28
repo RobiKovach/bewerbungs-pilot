@@ -164,7 +164,9 @@
       "jobTitles": "Jobs, die Sie suchen (einer pro Zeile)", "locations": "Orte (einer pro Zeile)",
       "radiusKm": "Entfernung von diesen Orten (km)", "remote": "Arbeiten von zu Hause", "employmentTypes": "Art der Beschäftigung",
       "salaryMinEur": "Mindestbruttogehalt pro Jahr in € (optional)", "availableFrom": "Verfügbar ab",
-      "notes": "Alles andere, was Ihnen wichtig ist (optional)"
+      "notes": "Alles andere, was Ihnen wichtig ist (optional)",
+      "includeTemporaryAgencies": "Angebote von Zeitarbeitsfirmen anzeigen",
+      "includeTemporaryAgenciesHint": "Solche Firmen stellen Sie an und verleihen Sie an andere Unternehmen. Für viele Menschen ist das ein echter Weg in einen Job; schalten Sie es aus, wenn Sie das nicht möchten."
     },
     "remote": { "any": "Egal", "onsite": "Am Arbeitsplatz", "hybrid": "Teilweise von zu Hause", "remote": "Nur von zu Hause" },
     "employment": { "fulltime": "Vollzeit", "parttime": "Teilzeit", "minijob": "Minijob", "apprenticeship": "Ausbildung", "internship": "Praktikum" },

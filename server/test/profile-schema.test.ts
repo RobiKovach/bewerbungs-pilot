@@ -76,6 +76,22 @@ describe('migrate', () => {
     expect(() => migrate({ nothing: true }, 1, {})).toThrow(MigrationError);
     expect(() => migrate({ schemaVersion: 1 }, 2, {})).toThrow(/no migration from version 1/);
   });
+  it('schema 2 → 3: job wishes get includeTemporaryAgencies = true, nothing else changes', () => {
+    const v2 = structuredClone(emptyProfile()) as unknown as Record<string, unknown>;
+    v2.schemaVersion = 2;
+    const wishes = (v2.sections as Record<string, { data: Record<string, unknown> }>).wishes.data;
+    delete wishes.includeTemporaryAgencies;
+    wishes.jobTitles = ['Webentwickler'];
+    const out = migrate(v2, PROFILE_SCHEMA_VERSION, PROFILE_MIGRATIONS) as unknown as Profile;
+    expect(out.schemaVersion).toBe(3);
+    expect(out.sections.wishes.data).toMatchObject({ jobTitles: ['Webentwickler'], includeTemporaryAgencies: true });
+    expect(validateProfile(out)).toBeNull();
+  });
+  it('a schema-3 profile without includeTemporaryAgencies is invalid', () => {
+    const p = emptyProfile() as unknown as { sections: { wishes: { data: Record<string, unknown> } } };
+    delete p.sections.wishes.data.includeTemporaryAgencies;
+    expect(validateProfile(p)).toMatch(/includeTemporaryAgencies/);
+  });
 });
 
 describe('section rules', () => {

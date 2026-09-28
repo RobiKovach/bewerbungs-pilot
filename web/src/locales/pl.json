@@ -164,7 +164,9 @@
       "jobTitles": "Stanowiska, których szukasz (jedno na linię)", "locations": "Miejsca (jedno na linię)",
       "radiusKm": "Odległość od tych miejsc (km)", "remote": "Praca z domu", "employmentTypes": "Rodzaj zatrudnienia",
       "salaryMinEur": "Minimalne wynagrodzenie brutto rocznie w € (opcjonalnie)", "availableFrom": "Dostępny/a od",
-      "notes": "Cokolwiek innego, co jest dla Ciebie ważne (opcjonalnie)"
+      "notes": "Cokolwiek innego, co jest dla Ciebie ważne (opcjonalnie)",
+      "includeTemporaryAgencies": "Pokazuj oferty agencji pracy tymczasowej (Zeitarbeit)",
+      "includeTemporaryAgenciesHint": "Takie agencje zatrudniają Cię i wypożyczają innym firmom. Dla wielu osób to realna droga do pracy; wyłącz to, jeśli tego nie chcesz."
     },
     "remote": { "any": "Nieważne", "onsite": "W miejscu pracy", "hybrid": "Częściowo z domu", "remote": "Tylko z domu" },
     "employment": { "fulltime": "Pełny etat", "parttime": "Niepełny etat", "minijob": "Minijob", "apprenticeship": "Przyuczenie do zawodu (Ausbildung)", "internship": "Staż" },

@@ -7,12 +7,21 @@ import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
 import { filledPaths } from './sections.js';
 
-export const PROFILE_SCHEMA_VERSION = 2;
+export const PROFILE_SCHEMA_VERSION = 3;
 /** migrations[n] turns version n into n + 1. */
 export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
   // 2: open CV proposals (none in old files) and Section.editedAt (see migrateEditedAt).
   1: (doc) => ({ ...doc, cvProposals: {}, sections: migrateEditedAt(doc.sections, new Date().toISOString()) }),
+  // 3: job wishes get the Zeitarbeit switch, on (= the search behaves as it would have before).
+  2: (doc) => ({ ...doc, sections: withWishesDefault(doc.sections) }),
 };
+
+/** A malformed document is left alone for validateProfile to refuse. */
+function withWishesDefault(sections: unknown): unknown {
+  const s = sections as { wishes?: { data?: unknown } } | null;
+  if (!s || typeof s !== 'object' || !s.wishes || typeof s.wishes.data !== 'object' || s.wishes.data === null) return sections;
+  return { ...s, wishes: { ...s.wishes, data: { includeTemporaryAgencies: true, ...(s.wishes.data as object) } } };
+}
 
 /**
  * Version 1 did not record edits. The best we can tell afterwards: in a CV section, a filled field without an AI mark
@@ -87,6 +96,7 @@ const WISHES = obj({
   salaryMinEur: nullable({ type: 'integer', minimum: 0, maximum: 1_000_000 }),
   availableFrom: MONTH_OR_DAY,
   notes: str(LIMITS.text),
+  includeTemporaryAgencies: { type: 'boolean' },
 });
 
 export const SECTION_DATA_SCHEMAS: Record<SectionId, JsonSchema> = {
@@ -176,7 +186,10 @@ export function emptySectionData(): SectionDataMap {
     experience: { items: [] },
     skills: { items: [] },
     languages: { items: [] },
-    wishes: { jobTitles: [], locations: [], radiusKm: null, remote: 'any', employmentTypes: [], salaryMinEur: null, availableFrom: '', notes: '' },
+    wishes: {
+      jobTitles: [], locations: [], radiusKm: null, remote: 'any', employmentTypes: [], salaryMinEur: null, availableFrom: '', notes: '',
+      includeTemporaryAgencies: true,
+    },
   };
 }
 

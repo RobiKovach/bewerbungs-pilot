@@ -164,7 +164,9 @@
       "jobTitles": "Locuri de muncă pe care le căutați (câte unul pe rând)", "locations": "Locații (câte una pe rând)",
       "radiusKm": "Distanța față de aceste locații (km)", "remote": "Lucru de acasă", "employmentTypes": "Tipul angajării",
       "salaryMinEur": "Salariul minim brut anual în € (opțional)", "availableFrom": "Disponibil din",
-      "notes": "Orice altceva contează pentru dumneavoastră (opțional)"
+      "notes": "Orice altceva contează pentru dumneavoastră (opțional)",
+      "includeTemporaryAgencies": "Afișați ofertele agențiilor de muncă temporară (Zeitarbeit)",
+      "includeTemporaryAgenciesHint": "Aceste agenții vă angajează și vă împrumută altor companii. Pentru mulți oameni, aceasta este o cale reală spre un loc de muncă; dezactivați-o dacă nu doriți acest lucru."
     },
     "remote": { "any": "Nu contează", "onsite": "La locul de muncă", "hybrid": "Parțial de acasă", "remote": "Doar de acasă" },
     "employment": { "fulltime": "Normă întreagă", "parttime": "Normă parțială", "minijob": "Minijob", "apprenticeship": "Ucenicie (Ausbildung)", "internship": "Stagiu" },
