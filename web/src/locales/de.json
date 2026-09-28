@@ -302,6 +302,40 @@
         "tooManyQueries": "Sie haben viele Jobtitel und Städte; es wurden nur die ersten 30 Kombinationen durchsucht.",
         "staleCheckFailed": "Es konnte nicht für jedes ältere Angebot geprüft werden, ob es noch existiert."
       }
+    },
+    "remote": { "yes": "Remote", "partial": "Teilweise Remote", "no": "Vor Ort" },
+    "weak": "Schwache Übereinstimmung ({{count}})",
+    "tabs": {
+      "new": "Neu", "favorite": "Favoriten", "stale": "Von der Jobbörse entfernt", "hidden": "Ausgeblendet",
+      "empty": {
+        "new": "Keine neuen Angebote. Klicken Sie auf „Jetzt suchen“.",
+        "favorite": "Noch keine Favoriten. Markieren Sie ein Angebot mit „★ Interessant“.",
+        "stale": "Keine entfernten Angebote.",
+        "hidden": "Keine ausgeblendeten Angebote."
+      }
+    },
+    "toast": { "hidden": "Ausgeblendet.", "undo": "Rückgängig" },
+    "card": {
+      "scoreTitle": "Wie gut das Angebot zu Ihrem Profil passt (0–100)",
+      "manual": "manuell hinzugefügt",
+      "published": "veröffentlicht am {{date}}",
+      "pending": "Wird bewertet…",
+      "scoredAt": "Bewertet am {{date}}",
+      "notScored": "Noch nicht bewertet",
+      "failed": "Bewertung fehlgeschlagen",
+      "score": "Bewerten",
+      "scoreAgain": "Erneut bewerten",
+      "scoring": "Claude bewertet dieses Angebot…",
+      "interesting": "★ Interessant",
+      "notInteresting": "Nicht interessant",
+      "unfavorite": "Aus Favoriten entfernen",
+      "remove": "Entfernen",
+      "bringBack": "Wiederherstellen",
+      "original": "Original ↗",
+      "showText": "Text anzeigen",
+      "hideText": "Text ausblenden",
+      "noText": "Der Text fehlt.",
+      "loadAgain": "Erneut laden"
     }
   }
 }

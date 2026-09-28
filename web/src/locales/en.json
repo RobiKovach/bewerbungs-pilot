@@ -302,6 +302,40 @@
         "tooManyQueries": "You have many job titles and cities; only the first 30 combinations were searched.",
         "staleCheckFailed": "It could not be checked for every older offer whether it still exists."
       }
+    },
+    "remote": { "yes": "Remote", "partial": "Partly remote", "no": "On site" },
+    "weak": "Weak match ({{count}})",
+    "tabs": {
+      "new": "New", "favorite": "Favourites", "stale": "Removed by the job board", "hidden": "Hidden",
+      "empty": {
+        "new": "No new offers. Click \"Search now\".",
+        "favorite": "No favourites yet. Mark an offer with \"★ Interesting\".",
+        "stale": "No removed offers.",
+        "hidden": "No hidden offers."
+      }
+    },
+    "toast": { "hidden": "Hidden.", "undo": "Undo" },
+    "card": {
+      "scoreTitle": "How well the offer fits your profile (0–100)",
+      "manual": "added by hand",
+      "published": "published {{date}}",
+      "pending": "Being scored…",
+      "scoredAt": "Scored {{date}}",
+      "notScored": "Not scored yet",
+      "failed": "Scoring failed",
+      "score": "Score",
+      "scoreAgain": "Score again",
+      "scoring": "Claude is scoring this offer…",
+      "interesting": "★ Interesting",
+      "notInteresting": "Not interesting",
+      "unfavorite": "Remove from favourites",
+      "remove": "Remove",
+      "bringBack": "Bring back",
+      "original": "Original ↗",
+      "showText": "Show text",
+      "hideText": "Hide text",
+      "noText": "The text is missing.",
+      "loadAgain": "Load again"
     }
   }
 }

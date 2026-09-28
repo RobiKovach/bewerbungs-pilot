@@ -117,6 +117,26 @@ label.btn { cursor: pointer; }
 .search-progress p { margin: 0.25rem 0; }
 .progress { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin: 0.6rem 0; }
 .progress__bar { height: 100%; background: var(--accent); transition: width 0.3s; }
+.tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 1.25rem 0 0.75rem; }
+.tab { background: transparent; border: 1px solid var(--border); border-radius: 999px; padding: 0.35rem 0.9rem; cursor: pointer; color: var(--text); }
+.tab.active { border-color: var(--text); font-weight: 600; }
+.vacancy { margin: 0.75rem 0; }
+.vacancy--highlight { outline: 3px solid #f0d48a; }
+.vacancy__head { display: flex; gap: 1rem; align-items: flex-start; }
+.vacancy__head h3 { margin: 0 0 0.2rem; }
+.vacancy__head p { margin: 0; }
+.score { flex: none; width: 3rem; height: 3rem; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 1.1rem; }
+.score--good { background: #dff3e4; color: #1d6b34; }
+.score--mid { background: #fff4d6; color: #7a5200; }
+.score--weak, .score--none { background: #eceef1; color: #5b6270; }
+.vacancy__points { list-style: none; padding: 0; margin: 0.75rem 0 0; }
+.vacancy__points .why { color: #1d6b34; }
+.vacancy__points .missing { color: #9a3b2e; }
+.vacancy__points span { color: var(--text); }
+.vacancy__scoreline { margin: 0.5rem 0 0; }
+.vacancy-text { white-space: pre-wrap; font: inherit; background: var(--bg, #f7f8fa); border-radius: 10px; padding: 0.9rem; max-height: 28rem; overflow: auto; }
+.weak-block summary { cursor: pointer; margin: 1rem 0 0.5rem; color: var(--muted); }
+.toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--surface); padding: 0.6rem 1rem; border-radius: 10px; display: flex; gap: 0.6rem; align-items: center; }
 @media (prefers-color-scheme: dark) {
   .badge.ai { background: #3a2e10; color: #f3d88c; border-color: #6b5520; }
   .badge.warn-badge { color: #f3d88c; }

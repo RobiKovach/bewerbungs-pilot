@@ -302,6 +302,40 @@
         "tooManyQueries": "Masz dużo stanowisk i miast; sprawdzono tylko pierwsze 30 kombinacji.",
         "staleCheckFailed": "Nie udało się sprawdzić dla każdej starszej oferty, czy nadal istnieje."
       }
+    },
+    "remote": { "yes": "Zdalnie", "partial": "Częściowo zdalnie", "no": "Stacjonarnie" },
+    "weak": "Słabe dopasowanie ({{count}})",
+    "tabs": {
+      "new": "Nowe", "favorite": "Ulubione", "stale": "Usunięte przez giełdę pracy", "hidden": "Ukryte",
+      "empty": {
+        "new": "Brak nowych ofert. Kliknij „Szukaj teraz”.",
+        "favorite": "Jeszcze brak ulubionych. Oznacz ofertę przyciskiem „★ Interesujące”.",
+        "stale": "Brak usuniętych ofert.",
+        "hidden": "Brak ukrytych ofert."
+      }
+    },
+    "toast": { "hidden": "Ukryto.", "undo": "Cofnij" },
+    "card": {
+      "scoreTitle": "Jak dobrze oferta pasuje do Twojego profilu (0–100)",
+      "manual": "dodane ręcznie",
+      "published": "opublikowano {{date}}",
+      "pending": "Jest oceniana…",
+      "scoredAt": "Oceniono {{date}}",
+      "notScored": "Jeszcze nieoceniona",
+      "failed": "Ocena nie powiodła się",
+      "score": "Oceń",
+      "scoreAgain": "Oceń ponownie",
+      "scoring": "Claude ocenia tę ofertę…",
+      "interesting": "★ Interesujące",
+      "notInteresting": "Nieinteresujące",
+      "unfavorite": "Usuń z ulubionych",
+      "remove": "Usuń",
+      "bringBack": "Przywróć",
+      "original": "Oryginał ↗",
+      "showText": "Pokaż treść",
+      "hideText": "Ukryj treść",
+      "noText": "Treść jest niedostępna.",
+      "loadAgain": "Wczytaj ponownie"
     }
   }
 }

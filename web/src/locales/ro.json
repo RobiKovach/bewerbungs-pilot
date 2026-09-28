@@ -302,6 +302,40 @@
         "tooManyQueries": "Aveți multe titluri de post și orașe; au fost căutate doar primele 30 de combinații.",
         "staleCheckFailed": "Nu s-a putut verifica pentru fiecare ofertă mai veche dacă mai există."
       }
+    },
+    "remote": { "yes": "La distanță", "partial": "Parțial la distanță", "no": "La sediu" },
+    "weak": "Potrivire slabă ({{count}})",
+    "tabs": {
+      "new": "Noi", "favorite": "Favorite", "stale": "Eliminate de bursa locurilor de muncă", "hidden": "Ascunse",
+      "empty": {
+        "new": "Nu există oferte noi. Faceți clic pe „Căutați acum”.",
+        "favorite": "Încă nu există favorite. Marcați o ofertă cu „★ Interesant”.",
+        "stale": "Nu există oferte eliminate.",
+        "hidden": "Nu există oferte ascunse."
+      }
+    },
+    "toast": { "hidden": "Ascuns.", "undo": "Anulați" },
+    "card": {
+      "scoreTitle": "Cât de bine se potrivește oferta cu profilul dumneavoastră (0–100)",
+      "manual": "adăugat manual",
+      "published": "publicat la {{date}}",
+      "pending": "Se evaluează…",
+      "scoredAt": "Evaluat la {{date}}",
+      "notScored": "Neevaluată încă",
+      "failed": "Evaluarea a eșuat",
+      "score": "Evaluați",
+      "scoreAgain": "Evaluați din nou",
+      "scoring": "Claude evaluează această ofertă…",
+      "interesting": "★ Interesant",
+      "notInteresting": "Neinteresant",
+      "unfavorite": "Eliminați din favorite",
+      "remove": "Eliminați",
+      "bringBack": "Aduceți înapoi",
+      "original": "Original ↗",
+      "showText": "Afișați textul",
+      "hideText": "Ascundeți textul",
+      "noText": "Textul lipsește.",
+      "loadAgain": "Încărcați din nou"
     }
   }
 }
