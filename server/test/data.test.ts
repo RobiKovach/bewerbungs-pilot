@@ -25,6 +25,13 @@ describe('data paths', () => {
     expect(fs.statSync(p.profileFiles).isDirectory()).toBe(true);
     expect(p.profileFile).toBe(path.join(p.root, 'profile', 'profile.json'));
   });
+  it('knows the vacancy folders', () => {
+    const p = dataPaths(path.join('C:', 'data'));
+    expect(p.vacancies).toBe(path.join('C:', 'data', 'vacancies'));
+    expect(p.vacanciesFile).toBe(path.join('C:', 'data', 'vacancies', 'vacancies.json'));
+    expect(p.vacancyTexts).toBe(path.join('C:', 'data', 'vacancies', 'texts'));
+    expect(p.searchState).toBe(path.join('C:', 'data', 'vacancies', 'search-state.json'));
+  });
 });
 
 describe('atomic JSON', () => {
