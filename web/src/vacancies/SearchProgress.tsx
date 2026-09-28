@@ -4,6 +4,11 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import type { FilterReason } from '../types';
 import type { SearchStatus } from './useSearchStatus';
 
+// Known filter reasons — bundle vs. server version drift could put a reason here that this
+// bundle has no translation for; such reasons still count toward `filtered` (they truly were
+// filtered out) but are never handed to t() with an unknown key.
+const KNOWN_REASONS = new Set<string>(['seen', 'notRemote', 'student', 'internship', 'apprenticeship']);
+
 export function SearchProgress({ status }: { status: SearchStatus }) {
   const { t } = useTranslation();
   const s = status.state;
@@ -15,9 +20,12 @@ export function SearchProgress({ status }: { status: SearchStatus }) {
   }
   // Reasons are listed in the order the server reports them (the fixed FilterReason priority order
   // does not match "seen, internship, student" from the brief's own test — reporting this in the report).
-  const reasonEntries = Object.entries(s.filteredOut) as [FilterReason, number][];
-  const filtered = reasonEntries.reduce((sum, [, n]) => sum + n, 0);
-  const reasons = reasonEntries.filter(([, n]) => n > 0).map(([r, n]) => t(`vacancies.progress.reasons.${r}`, { count: n })).join(', ');
+  const filteredEntries = Object.entries(s.filteredOut) as [string, number][];
+  const filtered = filteredEntries.reduce((sum, [, n]) => sum + n, 0);
+  const reasons = filteredEntries
+    .filter((entry): entry is [FilterReason, number] => KNOWN_REASONS.has(entry[0]) && entry[1] > 0)
+    .map(([r, n]) => t(`vacancies.progress.reasons.${r}`, { count: n }))
+    .join(', ');
   const counters = filtered > 0
     ? t('vacancies.progress.countersWithReasons', { found: s.found, filtered, reasons, scored: s.scored, total: s.toScore })
     : t('vacancies.progress.counters', { found: s.found, filtered, scored: s.scored, total: s.toScore });

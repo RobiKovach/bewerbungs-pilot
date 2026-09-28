@@ -40,6 +40,12 @@ describe('SearchProgress (panel only)', () => {
     const { container } = panel(searchState());
     expect(container).toBeEmptyDOMElement();
   });
+  it('an unknown filter reason (bundle/server drift) counts toward the total but never renders a raw i18n key', () => {
+    const filteredOut = { seen: 5, weirdNewReason: 3 } as unknown as SearchState['filteredOut'];
+    const { container } = panel(searchState({ state: 'running', phase: 'scoring', found: 20, filteredOut, toScore: 12, scored: 1 }));
+    expect(screen.getByText('Found 20 · filtered out 8 (5 already seen) · scored 1 of 12')).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/vacancies\.progress\.reasons\./);
+  });
 });
 
 describe('VacanciesPage — search flow', () => {
