@@ -30,7 +30,7 @@ describe('scoreTask', () => {
     expect(task.prompt.match(/^<<<UNTRUSTED_VACANCY_[0-9a-f]{16}>>>$/gm)).toHaveLength(2);
     expect(task.prompt).toMatch(/<<<UNTRUSTED_PROFILE_[0-9a-f]{16}>>>/);
     for (const kept of ['Berlin', 'EU-Bürger', 'React', 'telc B2', 'Frontend Developer', '45000']) expect(task.prompt).toContain(kept);
-    for (const gone of ['Max Mustermann', 'max@example.com', '1234567', 'Musterstraße', '10115', '1990-03-15', 'deutsch', 'Geheime Story', 'Geheim AG']) {
+    for (const gone of ['Max Mustermann', 'max@example.com', '1234567', 'Musterstraße', '10115', '1990-03-15', 'deutsch', 'Deutschland', 'Geheime Story', 'Geheim AG']) {
       expect(task.prompt).not.toContain(gone);
     }
   });
