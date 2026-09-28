@@ -15,6 +15,9 @@ import { openBrowser } from './runtime/browser.js';
 import { findRunningInstance, waitForRunningInstance, type ServerInfo } from './runtime/instance.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
+import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
+import { SearchJob } from './vacancies/search-job.js';
+import { VacancyStore } from './vacancies/store.js';
 
 const HOST = '127.0.0.1';
 const noOpen = process.argv.includes('--no-open') || process.env.BP_NO_OPEN === '1';
@@ -57,16 +60,25 @@ async function main(): Promise<void> {
 
   const port = await findFreePort(HOST, 4280, 4299);
   const queue = new LlmQueue(provider);
+  const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));
+  vacancyStore.load();
+  const vacancySource = new ArbeitsagenturSource();
+  const searchJob = new SearchJob({
+    store: vacancyStore, source: vacancySource, queue, logger,
+    profile: () => profileStore.get(), language: () => settings.get().language ?? 'en',
+    publishedWithinDays: () => settings.get().vacancies.publishedWithinDays, stateFile: paths.searchState,
+  });
+  searchJob.init();
   const app = await buildApp({
     settings, provider, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),
-    profileStore, profileFiles,
+    profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
   });
 
   const shutdown = createShutdown({
-    abortAll: () => queue.abortAll(),
+    abortAll: () => { searchJob.stop(); queue.abortAll(); },
     close: () => app.close(),
     releaseLock: () => lock.release(),
     serverFile: paths.server,

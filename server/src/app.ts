@@ -10,6 +10,10 @@ import { helloTask } from './prompts/hello.js';
 import type { ProfileFiles } from './profile/files.js';
 import { registerProfileRoutes } from './profile/routes.js';
 import type { ProfileStore } from './profile/store.js';
+import { registerVacancyRoutes } from './vacancies/routes.js';
+import type { SearchJob } from './vacancies/search-job.js';
+import type { VacancySource } from './vacancies/sources/types.js';
+import type { VacancyStore } from './vacancies/store.js';
 
 export interface AppDeps {
   settings: SettingsStore;
@@ -23,6 +27,9 @@ export interface AppDeps {
   onShutdown: () => void;
   profileStore: ProfileStore;
   profileFiles: ProfileFiles;
+  vacancyStore: VacancyStore;
+  vacancySource: VacancySource;
+  searchJob: SearchJob;
 }
 
 const settingsPatchSchema = {
@@ -143,6 +150,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await registerProfileRoutes(app, {
     store: deps.profileStore, files: deps.profileFiles, queue: deps.queue, logger: deps.logger,
     language: () => deps.settings.get().language ?? 'en',
+  });
+
+  await registerVacancyRoutes(app, {
+    store: deps.vacancyStore, source: deps.vacancySource, queue: deps.queue, job: deps.searchJob, logger: deps.logger,
+    profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
   });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {

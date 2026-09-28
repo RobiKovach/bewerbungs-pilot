@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import type { CvResult, CvSectionId, StoredFile, StoryAnswer } from '@bp/shared';
 import { AppError } from '../errors.js';
+import { abortOnClose } from '../http.js';
 import { docxToText } from './docx.js';
 import { removeQuietly } from './files.js';
 import type { ProfileRouteDeps } from './routes.js';
@@ -14,13 +15,6 @@ import { receiveUpload } from './upload.js';
 import { setProposal, toView, withSection } from './view.js';
 
 const newId = () => crypto.randomUUID();
-
-/** Tab closed / "Cancel" clicked before we answered → stop Claude (same as /api/llm/test). */
-function abortOnClose(reply: FastifyReply): AbortSignal {
-  const ctrl = new AbortController();
-  reply.raw.on('close', () => { if (!reply.raw.writableFinished) ctrl.abort(); });
-  return ctrl.signal;
-}
 
 const answersBody = {
   type: 'object', additionalProperties: false, required: ['answers'],
