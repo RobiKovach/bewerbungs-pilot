@@ -114,6 +114,9 @@ label.btn { cursor: pointer; }
 .search-strip p { margin: 0; }
 .inline-field { display: inline-flex; align-items: center; gap: 0.4rem; }
 .plain-list { list-style: none; padding: 0; }
+.search-progress p { margin: 0.25rem 0; }
+.progress { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin: 0.6rem 0; }
+.progress__bar { height: 100%; background: var(--accent); transition: width 0.3s; }
 @media (prefers-color-scheme: dark) {
   .badge.ai { background: #3a2e10; color: #f3d88c; border-color: #6b5520; }
   .badge.warn-badge { color: #f3d88c; }

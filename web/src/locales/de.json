@@ -275,6 +275,33 @@
       "days": { "1": "1 Tag", "3": "3 Tagen", "7": "7 Tagen", "14": "14 Tagen", "30": "30 Tagen" },
       "search": "Jetzt suchen",
       "add": "+ Hinzufügen"
+    },
+    "progress": {
+      "phase": {
+        "querying": "Suche auf der Jobbörse…",
+        "details": "Angebotstexte werden geladen…",
+        "scoring": "Claude bewertet die Angebote…",
+        "staleCheck": "Es wird geprüft, welche älteren Angebote entfernt wurden…"
+      },
+      "counters": "Gefunden: {{found}} · ausgefiltert: {{filtered}} · bewertet: {{scored}} von {{total}}",
+      "countersWithReasons": "Gefunden: {{found}} · ausgefiltert: {{filtered}} ({{reasons}}) · bewertet: {{scored}} von {{total}}",
+      "reasons": {
+        "seen": "{{count}} bereits gesehen",
+        "notRemote": "{{count}} nicht ortsunabhängig",
+        "student": "{{count}} Werkstudentenstellen",
+        "internship": "{{count}} Praktika",
+        "apprenticeship": "{{count}} Ausbildungsstellen"
+      },
+      "stop": "Stoppen",
+      "done": "Suche abgeschlossen: {{count}} neue Angebote bewertet.",
+      "stopped": "Suche gestoppt. {{scored}} von {{total}} Angeboten wurden bewertet; die übrigen können mit „Bewerten“ bewertet werden.",
+      "interrupted": "Die letzte Suche wurde unterbrochen (BewerbungsPilot wurde geschlossen). Noch nicht bewertete Angebote können mit „Bewerten“ bewertet werden.",
+      "more": "{{count}} weitere neue Angebote wurden gefunden — starten Sie die Suche erneut, um sie zu sehen.",
+      "warnings": {
+        "someQueriesFailed": "Einige Suchanfragen konnten nicht durchgeführt werden. Die Ergebnisse können unvollständig sein.",
+        "tooManyQueries": "Sie haben viele Jobtitel und Städte; es wurden nur die ersten 30 Kombinationen durchsucht.",
+        "staleCheckFailed": "Es konnte nicht für jedes ältere Angebot geprüft werden, ob es noch existiert."
+      }
     }
   }
 }

@@ -275,6 +275,33 @@
       "days": { "1": "1 zi", "3": "3 zile", "7": "7 zile", "14": "14 zile", "30": "30 zile" },
       "search": "Căutați acum",
       "add": "+ Adăugați"
+    },
+    "progress": {
+      "phase": {
+        "querying": "Căutare pe bursa locurilor de muncă…",
+        "details": "Se încarcă textele ofertelor…",
+        "scoring": "Claude evaluează ofertele…",
+        "staleCheck": "Se verifică ce oferte mai vechi au fost eliminate…"
+      },
+      "counters": "Găsite {{found}} · filtrate {{filtered}} · evaluate {{scored}} din {{total}}",
+      "countersWithReasons": "Găsite {{found}} · filtrate {{filtered}} ({{reasons}}) · evaluate {{scored}} din {{total}}",
+      "reasons": {
+        "seen": "{{count}} deja văzute",
+        "notRemote": "{{count}} nu la distanță",
+        "student": "{{count}} pentru studenți",
+        "internship": "{{count}} stagii",
+        "apprenticeship": "{{count}} ucenicii"
+      },
+      "stop": "Opriți",
+      "done": "Căutare finalizată: {{count}} oferte noi evaluate.",
+      "stopped": "Căutare oprită. {{scored}} din {{total}} oferte au fost evaluate; celelalte pot fi evaluate cu „Evaluați”.",
+      "interrupted": "Ultima căutare a fost întreruptă (BewerbungsPilot a fost închis). Ofertele care nu au fost încă evaluate pot fi evaluate cu „Evaluați”.",
+      "more": "Au fost găsite încă {{count}} oferte noi — porniți din nou căutarea pentru a le vedea.",
+      "warnings": {
+        "someQueriesFailed": "Unele căutări nu au putut fi efectuate. Rezultatele pot fi incomplete.",
+        "tooManyQueries": "Aveți multe titluri de post și orașe; au fost căutate doar primele 30 de combinații.",
+        "staleCheckFailed": "Nu s-a putut verifica pentru fiecare ofertă mai veche dacă mai există."
+      }
     }
   }
 }

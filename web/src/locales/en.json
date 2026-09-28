@@ -275,6 +275,33 @@
       "days": { "1": "1 day", "3": "3 days", "7": "7 days", "14": "14 days", "30": "30 days" },
       "search": "Search now",
       "add": "+ Add"
+    },
+    "progress": {
+      "phase": {
+        "querying": "Searching the job board…",
+        "details": "Loading the offer texts…",
+        "scoring": "Claude is scoring the offers…",
+        "staleCheck": "Checking which older offers were removed…"
+      },
+      "counters": "Found {{found}} · filtered out {{filtered}} · scored {{scored}} of {{total}}",
+      "countersWithReasons": "Found {{found}} · filtered out {{filtered}} ({{reasons}}) · scored {{scored}} of {{total}}",
+      "reasons": {
+        "seen": "{{count}} already seen",
+        "notRemote": "{{count}} not remote",
+        "student": "{{count}} student jobs",
+        "internship": "{{count}} internships",
+        "apprenticeship": "{{count}} apprenticeships"
+      },
+      "stop": "Stop",
+      "done": "Search finished: {{count}} new offers scored.",
+      "stopped": "Search stopped. {{scored}} of {{total}} offers were scored; the others can be scored with \"Score\".",
+      "interrupted": "The last search was interrupted (BewerbungsPilot was closed). Offers that were not scored yet can be scored with \"Score\".",
+      "more": "{{count}} more new offers were found — run the search again to see them.",
+      "warnings": {
+        "someQueriesFailed": "Some searches could not be done. The results may be incomplete.",
+        "tooManyQueries": "You have many job titles and cities; only the first 30 combinations were searched.",
+        "staleCheckFailed": "It could not be checked for every older offer whether it still exists."
+      }
     }
   }
 }

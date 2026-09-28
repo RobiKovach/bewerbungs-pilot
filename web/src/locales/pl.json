@@ -275,6 +275,33 @@
       "days": { "1": "1 dnia", "3": "3 dni", "7": "7 dni", "14": "14 dni", "30": "30 dni" },
       "search": "Szukaj teraz",
       "add": "+ Dodaj"
+    },
+    "progress": {
+      "phase": {
+        "querying": "Szukanie w bazie ofert…",
+        "details": "Wczytywanie treści ofert…",
+        "scoring": "Claude ocenia oferty…",
+        "staleCheck": "Sprawdzanie, które starsze oferty zostały usunięte…"
+      },
+      "counters": "Znaleziono {{found}} · odfiltrowano {{filtered}} · oceniono {{scored}} z {{total}}",
+      "countersWithReasons": "Znaleziono {{found}} · odfiltrowano {{filtered}} ({{reasons}}) · oceniono {{scored}} z {{total}}",
+      "reasons": {
+        "seen": "{{count}} już widzianych",
+        "notRemote": "{{count}} niezdalnych",
+        "student": "{{count}} dla studentów",
+        "internship": "{{count}} staży",
+        "apprenticeship": "{{count}} ofert nauki zawodu"
+      },
+      "stop": "Zatrzymaj",
+      "done": "Wyszukiwanie zakończone: oceniono {{count}} nowych ofert.",
+      "stopped": "Wyszukiwanie zatrzymane. Oceniono {{scored}} z {{total}} ofert; pozostałe można ocenić przyciskiem „Oceń”.",
+      "interrupted": "Ostatnie wyszukiwanie zostało przerwane (BewerbungsPilot został zamknięty). Jeszcze nieocenione oferty można ocenić przyciskiem „Oceń”.",
+      "more": "Znaleziono jeszcze {{count}} nowych ofert — uruchom wyszukiwanie ponownie, aby je zobaczyć.",
+      "warnings": {
+        "someQueriesFailed": "Niektórych wyszukiwań nie udało się wykonać. Wyniki mogą być niepełne.",
+        "tooManyQueries": "Masz dużo stanowisk i miast; sprawdzono tylko pierwsze 30 kombinacji.",
+        "staleCheckFailed": "Nie udało się sprawdzić dla każdej starszej oferty, czy nadal istnieje."
+      }
     }
   }
 }
