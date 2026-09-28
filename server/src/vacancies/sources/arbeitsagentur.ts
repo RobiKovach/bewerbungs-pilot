@@ -38,14 +38,22 @@ export function jobdetailRefnr(url: string): string | null {
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 
-/** Offer descriptions come as simple HTML. Plain text keeps paragraphs and list items readable. */
+/**
+ * Offer descriptions may come as Markdown (the live probe on 2026-09-28 found real
+ * descriptions written as Markdown, e.g. "## Entwickeln Sie ...") or as simple HTML.
+ * Only tag-shaped HTML markup (`<p>`, `</li>`, `<br/>`, ...) is stripped; Markdown syntax
+ * that merely looks like it starts with `<` — an autolink `<https://...>`, an angle-bracket
+ * address `<jobs@x.example>`, or a plain `a < b` comparison — is left untouched, because a
+ * real tag always starts with `<` (or `</`) directly followed by a letter and never by `@`,
+ * `:`, a digit-first token, or a bare space. Plain text keeps paragraphs and list items readable.
+ */
 export function htmlToText(html: string): string {
   return html
     .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<li[^>]*>/gi, '\n- ')
     .replace(/<\/(p|div|h[1-6]|ul|ol)>/gi, '\n\n')
-    .replace(/<[^>]+>/g, '')
+    .replace(/<\/?[a-z][a-z0-9]*(?:\s[^<>]*)?\/?>/gi, '')
     .replace(/&(#\d+|#x[0-9a-f]+|[a-z]+);/gi, (all, e: string) => {
       if (e[0] === '#') {
         const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);

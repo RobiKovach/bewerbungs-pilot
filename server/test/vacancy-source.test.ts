@@ -154,4 +154,9 @@ describe('htmlToText', () => {
     expect(htmlToText('<h2>Aufgaben</h2><p>A&nbsp;&lt;B&gt;</p><script>x()</script><style>p{}</style>Ende'))
       .toBe('Aufgaben\n\nA <B>\n\nEnde');
   });
+
+  it('keeps Markdown autolinks, angle-bracket addresses and </>/ comparisons readable', () => {
+    expect(htmlToText('Kontakt: <jobs@muster.example> oder <https://muster.example/karriere>\nGehalt < 50.000 EUR, Team > 5 Personen'))
+      .toBe('Kontakt: <jobs@muster.example> oder <https://muster.example/karriere>\nGehalt < 50.000 EUR, Team > 5 Personen');
+  });
 });
