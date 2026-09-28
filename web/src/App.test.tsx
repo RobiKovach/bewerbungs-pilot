@@ -6,6 +6,7 @@ import { App } from './App';
 import { mockFetch } from './test/fetchMock';
 import { baseSettings, settingsRoutes } from './test/fixtures';
 import { emptyProfile, viewOf } from './test/profileFixtures';
+import { vacancyServer } from './test/vacancyFixtures';
 
 describe('App', () => {
   it('shows the home page and quits cleanly', async () => {
@@ -30,5 +31,12 @@ describe('App', () => {
     render(<SettingsProvider><App /></SettingsProvider>);
     await userEvent.setup().click(await screen.findByRole('link', { name: 'Profile' }));
     expect(await screen.findByText('Step 1 of 4')).toBeInTheDocument();
+  });
+
+  it('opens the vacancies page via the menu', async () => {
+    mockFetch(vacancyServer().routes);
+    render(<SettingsProvider><App /></SettingsProvider>);
+    await userEvent.setup().click(await screen.findByRole('link', { name: 'Job offers' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Job offers' })).toBeInTheDocument();
   });
 });

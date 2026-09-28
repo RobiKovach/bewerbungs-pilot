@@ -7,4 +7,4 @@ export type {
   VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
 } from '@bp/shared';
 
-export type Route = 'home' | 'profile' | 'guide' | 'settings';
+export type Route = 'home' | 'profile' | 'vacancies' | 'guide' | 'settings';

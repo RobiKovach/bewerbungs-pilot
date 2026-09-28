@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Asistentul dumneavoastră pentru cererile de angajare în Germania" },
-  "nav": { "home": "Acasă", "profile": "Profil", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
+  "nav": { "home": "Acasă", "profile": "Profil", "vacancies": "Oferte de muncă", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
   "common": {
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
@@ -260,6 +260,21 @@
       "proposalChanged": "CV-ul nou s-a schimbat din nou — vă rugăm să vă uitați încă o dată la el.",
       "pastedTooShort": "Textul lipit este prea scurt (cel puțin {{min}} caractere). Lipiți întregul anunț, nu doar titlul.",
       "offerGone": "Agenția Federală a Muncii nu mai afișează acest anunț."
+    }
+  },
+  "vacancies": {
+    "title": "Oferte de muncă",
+    "incomplete": "Pentru a căuta, adăugați în preferințele dumneavoastră privind locul de muncă cel puțin un titlu de post și un oraș (sau „doar de la distanță”).",
+    "fillWishes": "Completați preferințele privind locul de muncă",
+    "empty": "Încă nu există oferte de muncă. Faceți clic pe „Căutați acum” — sau lipiți o ofertă găsită de dumneavoastră cu „+ Adăugați”.",
+    "strip": {
+      "searchingFor": "Căutăm:",
+      "change": "Modificați în profil",
+      "remoteOnly": "doar de la distanță, toată Germania",
+      "within": "Publicat în ultimele",
+      "days": { "1": "1 zi", "3": "3 zile", "7": "7 zile", "14": "14 zile", "30": "30 zile" },
+      "search": "Căutați acum",
+      "add": "+ Adăugați"
     }
   }
 }

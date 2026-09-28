@@ -1,6 +1,6 @@
 import type {
-  CvResult, CvSectionId, ErrorReason, Language, LlmCheck, ProfileView, SectionDataMap, SectionId, Settings, SettingsPatch,
-  StoryAnswer, StoryInput,
+  CvResult, CvSectionId, ErrorReason, Language, LlmCheck, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
+  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
 export class ApiError extends Error {
@@ -86,4 +86,16 @@ export const api = {
     request<ProfileView>('PUT', `/api/profile/files/${id}`, { label, attachAlways }),
   deleteFile: (id: string) => request<ProfileView>('DELETE', `/api/profile/files/${id}`),
   fileUrl: (id: string) => `/api/profile/files/${id}`,
+
+  listVacancies: () => request<VacancyListView>('GET', '/api/vacancies'),
+  vacancyText: (id: string) => request<VacancyTextView>('GET', `/api/vacancies/${encodeURIComponent(id)}/text`),
+  refreshVacancyText: (id: string, signal?: AbortSignal) => request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/text/refresh`, {}, signal),
+  setVacancyStatus: (id: string, status: 'new' | 'favorite' | 'hidden', signal?: AbortSignal) =>
+    request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/status`, { status }, signal),
+  scoreVacancy: (id: string, signal?: AbortSignal) => request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/score`, {}, signal),
+  editVacancy: (id: string, edit: ManualEdit) => request<VacancyView>('PATCH', `/api/vacancies/${encodeURIComponent(id)}`, edit),
+  addManualVacancy: (input: ManualInput, signal?: AbortSignal) => request<VacancyView>('POST', '/api/vacancies/manual', input, signal),
+  startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
+  searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
+  stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),
 };

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from '../types';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
-const ROUTES: Route[] = ['home', 'profile', 'guide', 'settings'];
+const ROUTES: Route[] = ['home', 'profile', 'vacancies', 'guide', 'settings'];
 
 export function Layout({ route, onQuit, showNav, children }: { route: Route; onQuit: () => void; showNav: boolean; children: ReactNode }) {
   const { t } = useTranslation();

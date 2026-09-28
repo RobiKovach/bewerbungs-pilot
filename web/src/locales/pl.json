@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Twój asystent w poszukiwaniu pracy w Niemczech" },
-  "nav": { "home": "Start", "profile": "Profil", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
+  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Oferty pracy", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
   "common": {
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
@@ -260,6 +260,21 @@
       "proposalChanged": "Nowe CV znowu się zmieniło — przejrzyj je jeszcze raz.",
       "pastedTooShort": "Wklejony tekst jest za krótki (co najmniej {{min}} znaków). Wklej całą ofertę, a nie tylko tytuł.",
       "offerGone": "Federalna Agencja Pracy nie wyświetla już tej oferty."
+    }
+  },
+  "vacancies": {
+    "title": "Oferty pracy",
+    "incomplete": "Aby szukać, dodaj w swoich oczekiwaniach wobec pracy przynajmniej jedno stanowisko i miasto (albo „tylko zdalnie”).",
+    "fillWishes": "Uzupełnij oczekiwania wobec pracy",
+    "empty": "Jeszcze brak ofert pracy. Kliknij „Szukaj teraz” — albo wklej ofertę, którą znalazłeś sam, przyciskiem „+ Dodaj”.",
+    "strip": {
+      "searchingFor": "Szukamy:",
+      "change": "Zmień w profilu",
+      "remoteOnly": "tylko zdalnie, całe Niemcy",
+      "within": "Opublikowane w ciągu",
+      "days": { "1": "1 dnia", "3": "3 dni", "7": "7 dni", "14": "14 dni", "30": "30 dni" },
+      "search": "Szukaj teraz",
+      "add": "+ Dodaj"
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Ihr Assistent für Bewerbungen in Deutschland" },
-  "nav": { "home": "Start", "profile": "Profil", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
+  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Stellenangebote", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
   "common": {
     "next": "Weiter", "back": "Zurück", "retry": "Erneut prüfen", "cancel": "Abbrechen", "details": "Details",
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
@@ -260,6 +260,21 @@
       "proposalChanged": "Der neue Lebenslauf hat sich noch einmal geändert — bitte sehen Sie ihn sich noch einmal an.",
       "pastedTooShort": "Der eingefügte Text ist zu kurz (mindestens {{min}} Zeichen). Fügen Sie das ganze Stellenangebot ein, nicht nur den Titel.",
       "offerGone": "Die Bundesagentur für Arbeit listet dieses Angebot nicht mehr."
+    }
+  },
+  "vacancies": {
+    "title": "Stellenangebote",
+    "incomplete": "Um zu suchen, fügen Sie in Ihren Jobwünschen mindestens einen Jobtitel und eine Stadt hinzu (oder „nur von zuhause“).",
+    "fillWishes": "Jobwünsche ausfüllen",
+    "empty": "Noch keine Stellenangebote. Klicken Sie auf „Jetzt suchen“ — oder fügen Sie ein selbst gefundenes Angebot mit „+ Hinzufügen“ ein.",
+    "strip": {
+      "searchingFor": "Gesucht wird:",
+      "change": "Im Profil ändern",
+      "remoteOnly": "nur von zuhause, ganz Deutschland",
+      "within": "Veröffentlicht innerhalb von",
+      "days": { "1": "1 Tag", "3": "3 Tagen", "7": "7 Tagen", "14": "14 Tagen", "30": "30 Tagen" },
+      "search": "Jetzt suchen",
+      "add": "+ Hinzufügen"
     }
   }
 }

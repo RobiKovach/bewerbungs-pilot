@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
-  "nav": { "home": "Home", "profile": "Profile", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
+  "nav": { "home": "Home", "profile": "Profile", "vacancies": "Job offers", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
   "common": {
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
@@ -260,6 +260,21 @@
       "proposalChanged": "The new CV changed again — please look at it once more.",
       "pastedTooShort": "The pasted text is too short (at least {{min}} characters). Paste the whole offer, not just the title.",
       "offerGone": "The Federal Employment Agency no longer lists this offer."
+    }
+  },
+  "vacancies": {
+    "title": "Job offers",
+    "incomplete": "To search, add at least one job title and a city (or \"remote only\") to your job wishes.",
+    "fillWishes": "Fill in job wishes",
+    "empty": "No job offers yet. Click \"Search now\" — or paste an offer you found yourself with \"+ Add\".",
+    "strip": {
+      "searchingFor": "Searching for:",
+      "change": "Change in profile",
+      "remoteOnly": "remote only, all of Germany",
+      "within": "Published within",
+      "days": { "1": "1 day", "3": "3 days", "7": "7 days", "14": "14 days", "30": "30 days" },
+      "search": "Search now",
+      "add": "+ Add"
     }
   }
 }

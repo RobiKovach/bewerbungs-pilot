@@ -7,12 +7,13 @@ import { HomePage } from './pages/HomePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { QuitScreen } from './pages/QuitScreen';
 import { SettingsPage } from './pages/SettingsPage';
+import { VacanciesPage } from './pages/VacanciesPage';
 import { useSettings } from './settings';
 import type { Route } from './types';
 
 function routeFromHash(hash: string): Route {
   const r = hash.replace(/^#\/?/, '');
-  return r === 'guide' || r === 'settings' || r === 'profile' ? r : 'home';
+  return r === 'guide' || r === 'settings' || r === 'profile' || r === 'vacancies' ? r : 'home';
 }
 
 export function App() {
@@ -37,6 +38,7 @@ export function App() {
   else if (route === 'guide') page = <GuidePage />;
   else if (route === 'settings') page = <SettingsPage onQuit={() => void onQuit()} />;
   else if (route === 'profile') page = <ProfilePage />;
+  else if (route === 'vacancies') page = <VacanciesPage />;
   return (
     <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
       {page}
