@@ -101,12 +101,22 @@ describe('filterHits', () => {
     const hits = [
       hit({ title: 'Praktikum Webentwicklung' }), hit({ title: 'Praktikant*in Frontend' }), hit({ title: 'Pflichtpraktikum IT' }),
       hit({ title: 'Ausbildung zum Fachinformatiker (m/w/d)' }), hit({ title: 'Duales Studium Informatik' }),
+      hit({ title: 'Fachinformatiker Ausbildung 2027' }), hit({ title: 'Auszubildende/r Kauffrau für Büromanagement' }),
       hit({ title: 'Webentwickler mit praktischer Erfahrung' }),
     ];
     const r = filterHits(hits, base, []);
     expect(r.passed.map((h) => h.title)).toEqual(['Webentwickler mit praktischer Erfahrung']);
-    expect(r.rejected.map((x) => x.reason)).toEqual(['internship', 'internship', 'internship', 'apprenticeship', 'apprenticeship']);
+    expect(r.rejected.map((x) => x.reason)).toEqual(['internship', 'internship', 'internship', 'apprenticeship', 'apprenticeship', 'apprenticeship', 'apprenticeship']);
     const wantsBoth = profileWithWishes({ jobTitles: ['Webentwickler'], employmentTypes: ['internship', 'apprenticeship'] });
-    expect(filterHits(hits, wantsBoth, []).passed).toHaveLength(6);
+    expect(filterHits(hits, wantsBoth, []).passed).toHaveLength(8);
+  });
+
+  it('"Ausbildung" as a qualification, not the offer kind, does not count as apprenticeship', () => {
+    const hits = [
+      hit({ title: 'Fachinformatiker (abgeschlossene Ausbildung)' }),
+      hit({ title: 'Webentwickler mit abgeschlossener Ausbildung' }),
+      hit({ title: 'IT-Systemadministrator (Ausbildung wünschenswert)' }),
+    ];
+    expect(filterHits(hits, base, []).passed).toHaveLength(3);
   });
 });

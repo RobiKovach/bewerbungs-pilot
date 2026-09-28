@@ -9,7 +9,15 @@ export interface FilterResult { passed: SourceHit[]; rejected: Rejected[] }
 const word = (source: string) => new RegExp(`(?<![\\p{L}\\p{N}])(?:${source})(?![\\p{L}\\p{N}])`, 'iu');
 const STUDENT = word('werkstudent(?:in|en|innen)?|werkstudierende[rn]?|studentische[rn]? (?:hilfskraft|aushilfe|mitarbeit(?:er|erin)?)|abschlussarbeit|bachelorarbeit|masterarbeit|thesis');
 const INTERNSHIP = word('praktikum|pflichtpraktikum|praktikant(?:in|en|innen)?|praxissemester|internship|intern');
-const APPRENTICESHIP = word('ausbildung|ausbildungsplatz|auszubildende[rn]?|azubi|duales studium|duale[rs]? student(?:in)?');
+// Bare "Ausbildung" names the offer kind ("Ausbildung zum Fachinformatiker"), but the same word also shows up as a
+// qualification a non-apprenticeship job wants ("abgeschlossene Ausbildung", "Ausbildung wünschenswert") — exclude
+// that reading by checking the word immediately before/after it.
+const APPRENTICESHIP_QUALIFIER_BEFORE = 'abgeschlossen(?:e[rn]?)?|mit|nach|oder|bzw\\.?';
+const APPRENTICESHIP_QUALIFIER_AFTER = 'wünschenswert|erforderlich|vorausgesetzt|von\\s+vorteil';
+const APPRENTICESHIP = word(
+  'ausbildungsplatz|auszubildende[rn]?|azubi|duales studium|duale[rs]? student(?:in)?'
+  + `|(?<!(?:${APPRENTICESHIP_QUALIFIER_BEFORE})\\s)ausbildung(?!\\s+(?:${APPRENTICESHIP_QUALIFIER_AFTER}))`,
+);
 
 /** Currently studying = a university entry without an end date. */
 export function isStudent(profile: Profile): boolean {
