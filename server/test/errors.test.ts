@@ -31,4 +31,16 @@ describe('AppError', () => {
   ] as const)('maps %s to HTTP %i', (code, status) => {
     expect(httpStatusFor(code)).toBe(status);
   });
+  it.each([
+    ['SOURCE_UNAVAILABLE', 503],
+    ['SOURCE_RATE_LIMITED', 429],
+    ['SOURCE_CHANGED', 502],
+    ['SEARCH_ALREADY_RUNNING', 409],
+    ['WISHES_INCOMPLETE', 409],
+    ['NOT_A_VACANCY', 422],
+    ['VACANCY_DUPLICATE', 409],
+    ['VACANCY_NOT_FOUND', 404],
+  ] as const)('maps vacancy code %s to HTTP %i', (code, status) => {
+    expect(httpStatusFor(code)).toBe(status);
+  });
 });

@@ -143,6 +143,17 @@ describe('static dashboard', () => {
   });
 });
 
+describe('PATCH /api/settings vacancies', () => {
+  it('accepts an allowed number of days and refuses others', async () => {
+    const { app } = await makeApp();
+    const ok = await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { vacancies: { publishedWithinDays: 3 } } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.json().vacancies).toEqual({ publishedWithinDays: 3 });
+    const bad = await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { vacancies: { publishedWithinDays: 4 } } });
+    expect(bad.statusCode).toBe(400);
+  });
+});
+
 describe('security headers', () => {
   const expectHeaders = (headers: Record<string, unknown>) => {
     expect(headers['x-frame-options']).toBe('DENY');

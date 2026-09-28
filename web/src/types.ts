@@ -1,8 +1,10 @@
 export type {
   Availability, CvProposals, CvResult, CvSectionId, EducationEntry, EducationKind, EmploymentType, ErrorCode, ErrorReason,
-  ExperienceEntry, FollowUpQuestion, Language, LanguageItem, LanguageLevel, LlmCheck, PersonalData, Profile, ProfileDocument,
-  ProfileView, Readiness, RemotePreference, Section, SectionDataMap, SectionId, Settings, SettingsPatch, SkillItem, SkillLevel, Story, StoryAnswer,
-  StoryInput, StoryKind, StoredFile, WishesData,
+  ExperienceEntry, FilterReason, FollowUpQuestion, Language, LanguageItem, LanguageLevel, LlmCheck, ManualEdit, ManualInput,
+  PersonalData, Profile, ProfileDocument, ProfileView, PublishedWithinDays, Readiness, RemoteKind, RemotePreference, Salutation,
+  ScoreState, Section, SectionDataMap, SectionId, SearchPhase, SearchRunState, SearchState, SearchWarning, Settings, SettingsPatch,
+  SkillItem, SkillLevel, Story, StoryAnswer, StoryInput, StoryKind, StoredFile, Vacancy, VacancyContact, VacancyListView,
+  VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
 } from '@bp/shared';
 
 export type Route = 'home' | 'profile' | 'guide' | 'settings';

@@ -30,6 +30,14 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'CONFLICT':
     case 'PROFILE_NOT_READY': return 409;
     case 'CV_UNREADABLE': return 422;
+    case 'SOURCE_UNAVAILABLE': return 503;
+    case 'SOURCE_RATE_LIMITED': return 429;
+    case 'SOURCE_CHANGED': return 502;
+    case 'SEARCH_ALREADY_RUNNING':
+    case 'WISHES_INCOMPLETE':
+    case 'VACANCY_DUPLICATE': return 409;
+    case 'NOT_A_VACANCY': return 422;
+    case 'VACANCY_NOT_FOUND': return 404;
     default: return 500;
   }
 }

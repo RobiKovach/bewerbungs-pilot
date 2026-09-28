@@ -89,3 +89,23 @@ describe('SettingsStore', () => {
     expect(store.get().language).toBeNull();
   });
 });
+
+describe('settings: vacancies.publishedWithinDays', () => {
+  const fresh = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp-settings-')), 'settings.json');
+  it('defaults to 14 days', () => {
+    expect(new SettingsStore(fresh()).load().vacancies).toEqual({ publishedWithinDays: 14 });
+  });
+  it('keeps a valid stored value and repairs an invalid one', () => {
+    const file = fresh();
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, language: 'de', vacancies: { publishedWithinDays: 7 } }));
+    expect(new SettingsStore(file).load().vacancies.publishedWithinDays).toBe(7);
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, language: 'de', vacancies: { publishedWithinDays: 5 } }));
+    expect(new SettingsStore(file).load().vacancies.publishedWithinDays).toBe(14);
+  });
+  it('patches it without touching the rest', () => {
+    const s = new SettingsStore(fresh());
+    s.load();
+    s.patch({ language: 'uk' });
+    expect(s.patch({ vacancies: { publishedWithinDays: 30 } })).toMatchObject({ language: 'uk', vacancies: { publishedWithinDays: 30 } });
+  });
+});
