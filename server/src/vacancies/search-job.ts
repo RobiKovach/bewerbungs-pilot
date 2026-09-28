@@ -165,7 +165,17 @@ export class SearchJob {
         this.set({ toScore, warnings: [...warnings] });
         continue;
       }
-      const card = this.d.store.add(this.cardFrom(full), full.text);
+      let card;
+      try {
+        card = this.d.store.add(this.cardFrom(full), full.text);
+      } catch (err) {
+        if (isCancel(err, signal)) throw err;
+        toScore--;
+        warnings.add('someQueriesFailed');
+        this.d.logger.warn('search_offer_skipped', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+        this.set({ toScore, warnings: [...warnings] });
+        continue;
+      }
       this.created.push(card.id);
     }
 
@@ -187,7 +197,8 @@ export class SearchJob {
       .filter((v) => v.status === 'new' && v.source === 'arbeitsagentur' && v.sourceId && !hits.has(v.sourceId) && !createdSet.has(v.id))
       .sort((a, b) => a.foundAt.localeCompare(b.foundAt))
       .slice(0, MAX_STALE_CHECKS);
-    for (const v of candidates) {
+    for (const [i, v] of candidates.entries()) {
+      if (i > 0 && this.pauseMs > 0) await pause(this.pauseMs, signal);
       try {
         if (!(await this.d.source.isOnline(v.sourceId as string, signal))) {
           this.d.store.updateMany([v.id], (x) => { if (x.status === 'new') x.status = 'stale'; });
@@ -244,9 +255,11 @@ export class SearchJob {
       return;
     }
     const code = err instanceof AppError ? err.code : 'UNKNOWN';
-    const detailsForLog = err instanceof AppError ? err.detailsForLog : String(err);
+    // Capped and kept only in the persisted/returned state, never in the log: validation errors echo card data
+    // (see toHit's clipping comment), so a log line must carry the code only.
+    const detailsForLog = (err instanceof AppError ? err.detailsForLog : String(err)).slice(0, 300);
     this.set({ state: 'failed', phase: null, error: { code, detailsForLog }, finishedAt: this.stamp() });
-    this.d.logger.error('search_failed', { code, message: detailsForLog.slice(0, 300) });
+    this.d.logger.error('search_failed', { code });
   }
 
   private set(patch: Partial<SearchState>): void {

@@ -60,6 +60,13 @@ describe('VacancyStore', () => {
     expect(store.readText('../evil')).toBeNull();
   });
 
+  it('does not leave an orphaned text file when the card itself fails validation after the text was written', () => {
+    const { store } = setup();
+    expect(() => store.add(vacancy({ id: 'a1', title: 'T'.repeat(400) }), 'some text')).toThrow(AppError);
+    expect(store.readText('a1')).toBeNull();
+    expect(store.list()).toEqual([]);
+  });
+
   it('compactHidden shrinks hidden Arbeitsagentur cards, keeps hidden manual ones and every other card', () => {
     const { store } = setup();
     store.add(vacancy({ id: 'h1', status: 'hidden', hiddenAt: '2026-09-28T10:00:00.000Z', locations: ['Dresden'], salaryText: '50k' }), 'text');

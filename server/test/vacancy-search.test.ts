@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -169,6 +169,14 @@ describe('SearchJob', () => {
     const { job, store } = setup({ source: fakeSource({ search: () => [hit({ sourceId: 'R-1' }), hit({ sourceId: 'R-2' })], details: (id) => (id === 'R-1' ? null : { ...hit({ sourceId: 'R-2' }), text: 'T' }) }) });
     const s = await run(job);
     expect(s.toScore).toBe(1);
+    expect(store.list().map((v) => v.sourceId)).toEqual(['R-2']);
+  });
+
+  it('a store failure for one offer is skipped, not fatal: the rest of the search still finishes "done"', async () => {
+    const { job, store } = setup({ source: fakeSource({ search: () => [hit({ sourceId: 'R-1' }), hit({ sourceId: 'R-2' })] }) });
+    vi.spyOn(store, 'add').mockImplementationOnce(() => { throw new AppError('DATA_WRITE_FAILED', 'disk'); });
+    const s = await run(job);
+    expect(s).toMatchObject({ state: 'done', toScore: 1, warnings: ['someQueriesFailed'] });
     expect(store.list().map((v) => v.sourceId)).toEqual(['R-2']);
   });
 

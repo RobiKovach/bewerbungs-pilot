@@ -62,7 +62,13 @@ export class VacancyStore {
       this.writeTextFile(card.id, text);
       card.hasText = true;
     }
-    this.commit([...this.items, card]);
+    try {
+      this.commit([...this.items, card]);
+    } catch (err) {
+      // The text file was written but the card itself never made it into vacancies.json — do not leave it orphaned.
+      if (text !== null) fs.rmSync(this.textFile(card.id), { force: true });
+      throw err;
+    }
     return structuredClone(card);
   }
 

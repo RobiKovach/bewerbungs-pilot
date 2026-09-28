@@ -1,7 +1,9 @@
 import type { EmploymentType, RemoteKind } from '@bp/shared';
 import { AppError } from '../../errors.js';
+import { VACANCY_LIMITS } from '../schema.js';
 import type { OfferKind, SearchQuery, SourceDetails, SourceHit, VacancySource, WorkTime } from './types.js';
 
+const L = VACANCY_LIMITS;
 export const AA_BASE = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service';
 const HEADERS = { 'X-API-Key': 'jobboerse-jobsuche', Accept: 'application/json' };
 const PAGE_SIZE = 50;
@@ -112,22 +114,29 @@ function locationsOf(raw: Record<string, unknown>): string[] {
   return [...new Set(names)];
 }
 
-/** null = not usable (no Referenznummer). Unknown / missing optional fields get neutral defaults. */
+/**
+ * null = not usable (no Referenznummer, or one so long it cannot be a real one — treated the same as "no number").
+ * Unknown / missing optional fields get neutral defaults. Every string field is clipped to what the vacancy store
+ * accepts (VACANCY_LIMITS) so that one oversized offer from the source can never make a later `store.add` fail —
+ * that would end the whole search as `failed` and, worse, leak card data into the validation error text.
+ */
 function toHit(raw: unknown): SourceHit | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const sourceId = str(r.referenznummer);
-  if (!sourceId) return null;
+  if (!sourceId || sourceId.length > L.sourceId) return null;
+  const url = jobdetailUrl(sourceId);
   return {
     sourceId,
-    title: str(r.stellenangebotsTitel),
-    company: str(r.firma),
-    locations: locationsOf(r),
+    title: str(r.stellenangebotsTitel).slice(0, L.title),
+    company: str(r.firma).slice(0, L.company),
+    locations: locationsOf(r).slice(0, L.locations).map((l) => l.slice(0, L.location)),
     remote: remoteOf(r),
     employment: employmentOf(r),
-    salaryText: salaryOf(r),
+    salaryText: salaryOf(r).slice(0, L.salary),
     publishedAt: /^\d{4}-\d{2}-\d{2}/.test(str(r.datumErsteVeroeffentlichung)) ? str(r.datumErsteVeroeffentlichung).slice(0, 10) : '',
-    url: jobdetailUrl(sourceId),
+    // jobdetailUrl() of a ≤64-char sourceId is always well under L.url, so it is always a safe fallback URL.
+    url,
   };
 }
 
@@ -180,9 +189,11 @@ export class ArbeitsagenturSource implements VacancySource {
     if (body === null) return null;
     if (typeof body !== 'object' || Array.isArray(body)) throw new AppError('SOURCE_CHANGED', 'details answer is not an object');
     const r = body as Record<string, unknown>;
-    const hit = toHit({ ...r, referenznummer: str(r.referenznummer) || sourceId }) as SourceHit;
+    const hit = toHit({ ...r, referenznummer: str(r.referenznummer) || sourceId });
+    if (!hit) return null; // an unusable Referenznummer in the answer — same as "not found"
     const partner = str(r.allianzpartnerUrl);
-    return { ...hit, url: partner && isHttpUrl(partner) ? partner : hit.url, text: htmlToText(str(r.stellenangebotsBeschreibung)) };
+    const partnerOk = partner !== '' && partner.length <= L.url && isHttpUrl(partner);
+    return { ...hit, url: partnerOk ? partner : hit.url, text: htmlToText(str(r.stellenangebotsBeschreibung)) };
   }
 
   async isOnline(sourceId: string, signal: AbortSignal): Promise<boolean> {

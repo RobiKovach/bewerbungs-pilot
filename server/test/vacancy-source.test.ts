@@ -100,6 +100,13 @@ describe('ArbeitsagenturSource.search', () => {
       .rejects.toMatchObject({ code: 'SOURCE_UNAVAILABLE' });
   });
 
+  it('skips a hit whose Referenznummer is over 64 characters, like one without a number', async () => {
+    const body = { maxErgebnisse: 1, ergebnisliste: [{ referenznummer: 'R'.repeat(65), stellenangebotsTitel: 'T', firma: 'F' }] };
+    const f = fakeFetch([json(body)]);
+    const hits = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).search(QUERY, signal());
+    expect(hits).toHaveLength(0);
+  });
+
   it('a stopped search is LLM_CANCELLED, not a source error', async () => {
     const ctrl = new AbortController();
     ctrl.abort();
@@ -127,6 +134,23 @@ describe('ArbeitsagenturSource.details / isOnline', () => {
   it('a partner link that is not http(s) falls back to the Arbeitsagentur page', async () => {
     const f = fakeFetch([json({ ...(fixture('aa-details.json') as object), allianzpartnerUrl: 'javascript:alert(1)' })]);
     const d = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).details('10000-1111111111-S', signal());
+    expect(d?.url).toBe(jobdetailUrl('10000-1111111111-S'));
+  });
+
+  it('clips oversized title/company/locations, and a too-long partner link falls back to the Arbeitsagentur page', async () => {
+    const oversized = {
+      ...(fixture('aa-details.json') as object),
+      stellenangebotsTitel: 'T'.repeat(400),
+      firma: 'F'.repeat(400),
+      stellenlokationen: Array.from({ length: 25 }, (_, i) => ({ adresse: { ort: `Ort${i}${'x'.repeat(100)}` } })),
+      allianzpartnerUrl: `https://karriere.muster.example/${'a'.repeat(3000)}`,
+    };
+    const f = fakeFetch([json(oversized)]);
+    const d = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).details('10000-1111111111-S', signal());
+    expect(d?.title.length).toBe(300);
+    expect(d?.company.length).toBe(300);
+    expect(d?.locations).toHaveLength(20);
+    expect(d?.locations.every((l) => l.length <= 100)).toBe(true);
     expect(d?.url).toBe(jobdetailUrl('10000-1111111111-S'));
   });
 });
