@@ -257,7 +257,9 @@
       "profileMissing": "Wciąż brakuje: {{sections}}.",
       "llmTimeout": "Claude nie odpowiedział w ciągu {{seconds}} sekund.",
       "cancelledByUser": "Anulowałeś to.",
-      "proposalChanged": "Nowe CV znowu się zmieniło — przejrzyj je jeszcze raz."
+      "proposalChanged": "Nowe CV znowu się zmieniło — przejrzyj je jeszcze raz.",
+      "pastedTooShort": "Wklejony tekst jest za krótki (co najmniej {{min}} znaków). Wklej całą ofertę, a nie tylko tytuł.",
+      "offerGone": "Federalna Agencja Pracy nie wyświetla już tej oferty."
     }
   }
 }

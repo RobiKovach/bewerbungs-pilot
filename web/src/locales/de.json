@@ -257,7 +257,9 @@
       "profileMissing": "Es fehlt noch: {{sections}}.",
       "llmTimeout": "Claude hat innerhalb von {{seconds}} Sekunden nicht geantwortet.",
       "cancelledByUser": "Sie haben es abgebrochen.",
-      "proposalChanged": "Der neue Lebenslauf hat sich noch einmal geändert — bitte sehen Sie ihn sich noch einmal an."
+      "proposalChanged": "Der neue Lebenslauf hat sich noch einmal geändert — bitte sehen Sie ihn sich noch einmal an.",
+      "pastedTooShort": "Der eingefügte Text ist zu kurz (mindestens {{min}} Zeichen). Fügen Sie das ganze Stellenangebot ein, nicht nur den Titel.",
+      "offerGone": "Die Bundesagentur für Arbeit listet dieses Angebot nicht mehr."
     }
   }
 }

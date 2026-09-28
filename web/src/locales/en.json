@@ -257,7 +257,9 @@
       "profileMissing": "Still missing: {{sections}}.",
       "llmTimeout": "Claude did not answer within {{seconds}} seconds.",
       "cancelledByUser": "You cancelled it.",
-      "proposalChanged": "The new CV changed again — please look at it once more."
+      "proposalChanged": "The new CV changed again — please look at it once more.",
+      "pastedTooShort": "The pasted text is too short (at least {{min}} characters). Paste the whole offer, not just the title.",
+      "offerGone": "The Federal Employment Agency no longer lists this offer."
     }
   }
 }

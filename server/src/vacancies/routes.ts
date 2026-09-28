@@ -1,14 +1,18 @@
+import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import type { Language, ManualEdit, Profile, Vacancy, VacancyStatus, VacancyView } from '@bp/shared';
+import type { Language, ManualEdit, ManualInput, Profile, Vacancy, VacancyStatus, VacancyView } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
+import { findDuplicate } from './dedup.js';
 import { VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
+import { jobdetailRefnr } from './sources/arbeitsagentur.js';
 import type { SourceDetails, VacancySource } from './sources/types.js';
 import type { VacancyStore } from './store.js';
-import { scoreTask, toScores, type ScoreOutput } from './tasks/score.js';
+import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, type ManualOutput } from './tasks/extract-manual.js';
+import { scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
   store: VacancyStore; source: VacancySource; queue: LlmQueue; job: SearchJob; logger: Logger;
@@ -35,6 +39,12 @@ const editBody = {
   },
 };
 
+const manualBody = {
+  type: 'object', additionalProperties: false,
+  properties: { text: { type: 'string', maxLength: MANUAL_TEXT_MAX }, url: { type: 'string', maxLength: VACANCY_LIMITS.url } },
+};
+const isHttpUrl = (s: string) => { try { return ['http:', 'https:'].includes(new URL(s).protocol); } catch { return false; } };
+
 const ALLOWED: Record<VacancyStatus, readonly VacancyStatus[]> = {
   new: ['favorite', 'hidden'],
   favorite: ['new'],
@@ -56,6 +66,7 @@ export function refill(v: Vacancy, d: SourceDetails): void {
 
 export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRouteDeps): Promise<void> {
   const view = (vacancy: Vacancy): VacancyView => ({ vacancy });
+  const duplicateError = (existing: Vacancy) => new AppError('VACANCY_DUPLICATE', existing.id, undefined, { id: existing.id });
 
   app.get('/api/vacancies', async () => ({ vacancies: d.store.list() }));
 
@@ -129,5 +140,47 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       x.title = body.title.trim(); x.company = body.company.trim(); x.locations = body.locations.map((l) => l.trim());
       x.url = body.url.trim(); x.contact = body.contact;
     }));
+  });
+
+  app.post('/api/vacancies/manual', { schema: { body: manualBody } }, async (req, reply) => {
+    const signal = abortOnClose(reply);
+    const body = req.body as ManualInput;
+    const rawText = body.text ?? '';
+    const text = rawText.trim();
+    const url = (body.url ?? '').trim();
+    if (url && !isHttpUrl(url)) throw new AppError('BAD_REQUEST', 'link must be http(s)');
+    const now = new Date().toISOString();
+    const base = { id: crypto.randomUUID(), addedManually: true, foundAt: now, status: 'new' as const, hiddenAt: null, hasText: false };
+
+    const refnr = url ? jobdetailRefnr(url) : null;
+    if (refnr) {
+      const known = findDuplicate(d.store.list(), { sourceId: refnr, title: '', company: '' });
+      if (known) throw duplicateError(known);
+      const found = await d.source.details(refnr, signal);
+      if (!found) throw new AppError('VACANCY_NOT_FOUND', `offer ${refnr} is gone`, 'offerGone');
+      const twin = findDuplicate(d.store.list(), found);
+      if (twin) throw duplicateError(twin);
+      const card: Vacancy = {
+        ...base, source: 'arbeitsagentur', sourceId: refnr, title: found.title, company: found.company, locations: found.locations,
+        remote: found.remote, employment: found.employment, salaryText: found.salaryText, publishedAt: found.publishedAt,
+        url: found.url, contact: null, scoreState: 'failed', score: null,
+      };
+      const out = await d.queue.run<ScoreOutput>(scoreTask([{ ...card, text: found.text }], d.profile(), d.language()), signal);
+      const score = toScores(out, [card.id], new Date().toISOString()).get(card.id);
+      return view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, found.text));
+    }
+
+    if (text.length < MANUAL_TEXT_MIN) {
+      throw new AppError('BAD_REQUEST', `pasted text has ${text.length} characters`, 'pastedTooShort', { min: MANUAL_TEXT_MIN });
+    }
+    const out = await d.queue.run<ManualOutput>(extractManualTask(text, d.profile(), d.language()), signal);
+    const fields = toManualFields(out, text);
+    if (!out.isVacancy || !fields.title) throw new AppError('NOT_A_VACANCY', 'Claude found no job offer in the pasted text');
+    const twin = findDuplicate(d.store.list(), { sourceId: null, title: fields.title, company: fields.company });
+    if (twin) throw duplicateError(twin);
+    return view(d.store.add({
+      ...base, ...fields, source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
+      score: toScore(out, new Date().toISOString()),
+    }, rawText));
   });
 }

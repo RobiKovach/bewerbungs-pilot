@@ -257,7 +257,9 @@
       "profileMissing": "Încă lipsește: {{sections}}.",
       "llmTimeout": "Claude nu a răspuns în {{seconds}} secunde.",
       "cancelledByUser": "Ați anulat.",
-      "proposalChanged": "CV-ul nou s-a schimbat din nou — vă rugăm să vă uitați încă o dată la el."
+      "proposalChanged": "CV-ul nou s-a schimbat din nou — vă rugăm să vă uitați încă o dată la el.",
+      "pastedTooShort": "Textul lipit este prea scurt (cel puțin {{min}} caractere). Lipiți întregul anunț, nu doar titlul.",
+      "offerGone": "Agenția Federală a Muncii nu mai afișează acest anunț."
     }
   }
 }

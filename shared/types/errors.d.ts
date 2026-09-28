@@ -38,4 +38,6 @@ export type ErrorReason =
   | 'profileMissing'
   | 'llmTimeout'
   | 'cancelledByUser'
-  | 'proposalChanged';
+  | 'proposalChanged'
+  | 'pastedTooShort'
+  | 'offerGone';
