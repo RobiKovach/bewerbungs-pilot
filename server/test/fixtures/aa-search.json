@@ -1,0 +1,28 @@
+{
+  "maxErgebnisse": 3,
+  "ergebnisliste": [
+    {
+      "referenznummer": "10000-1111111111-S",
+      "stellenangebotsTitel": "Frontend Developer (m/w/d)",
+      "firma": "Muster GmbH",
+      "stellenlokationen": [
+        { "adresse": { "ort": "Dresden", "plz": "01067", "region": "SACHSEN", "land": "DEUTSCHLAND" } },
+        { "adresse": { "ort": "Leipzig", "region": "SACHSEN", "land": "DEUTSCHLAND" } }
+      ],
+      "homeofficemoeglich": true,
+      "homeofficetyp": "ANGABE_IN_PROZENT",
+      "homeofficeprozent": 50,
+      "gehaltsspanneVon": 45000,
+      "gehaltsspanneBis": 55000,
+      "arbeitszeitVollzeit": true,
+      "arbeitszeitTeilzeitFlexibel": true,
+      "datumErsteVeroeffentlichung": "2026-09-22"
+    },
+    {
+      "referenznummer": "10000-2222222222-S",
+      "stellenangebotsTitel": "WordPress Entwickler*in",
+      "firma": "Beispiel AG"
+    },
+    { "stellenangebotsTitel": "Broken entry without number" }
+  ]
+}

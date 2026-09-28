@@ -1,0 +1,9 @@
+{
+  "referenznummer": "10000-1111111111-S",
+  "stellenangebotsTitel": "Frontend Developer (m/w/d)",
+  "firma": "Muster GmbH",
+  "stellenlokationen": [{ "adresse": { "ort": "Dresden" } }],
+  "homeofficemoeglich": false,
+  "stellenangebotsBeschreibung": "<p>Wir suchen <b>Sie</b> &amp; Ihr Team!</p><ul><li>React</li><li>TypeScript</li></ul>Kontakt: jobs@muster.example<br>Tel. 0351 000",
+  "allianzpartnerUrl": "https://karriere.muster.example/job/1"
+}
