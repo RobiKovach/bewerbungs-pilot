@@ -9,6 +9,16 @@ import { VACANCIES_SCHEMA_VERSION, VACANCY_ID, VACANCY_LIMITS, validateVacancies
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
 /**
+ * validateVacancies()/validateOutput() end their message with a JSON echo of the whole invalid document — for a
+ * vacancies file that includes every card's title, company and contact. That is fine for a developer reading the
+ * error directly, but never for a log: this drops the echo and keeps only the ajv reason (e.g. a field path and
+ * what rule it broke), which is already a useful, non-personal hint.
+ */
+function forLog(problem: string): string {
+  return problem.replace(/ \(got .*\)$/s, '');
+}
+
+/**
  * All cards in one small JSON file; full offer texts in texts/<id>.txt so that a click on "Interesting" does not rewrite
  * megabytes. Same safety rules as ProfileStore: atomic writes, memory changes only after the file did, a broken or
  * unknown file is put aside (never deleted) and the app starts empty.
@@ -35,7 +45,7 @@ export class VacancyStore {
       this.items = (doc as unknown as { vacancies: Vacancy[] }).vacancies;
     } catch (err) {
       if (!(err instanceof MigrationError)) throw err;
-      this.setAside('invalid', err.message);
+      this.setAside('invalid', forLog(err.message));
       return this.reset();
     }
     return this.list();
@@ -135,7 +145,7 @@ export class VacancyStore {
   private commit(next: Vacancy[]): void {
     const doc = { schemaVersion: VACANCIES_SCHEMA_VERSION, vacancies: next };
     const problem = validateVacancies(doc);
-    if (problem) throw new AppError('BAD_REQUEST', `vacancies would become invalid: ${problem.slice(0, 500)}`);
+    if (problem) throw new AppError('BAD_REQUEST', `vacancies would become invalid: ${forLog(problem).slice(0, 500)}`);
     try {
       fs.mkdirSync(path.dirname(this.paths.file), { recursive: true });
       writeJsonAtomic(this.paths.file, doc);

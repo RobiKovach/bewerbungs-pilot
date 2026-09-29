@@ -98,4 +98,39 @@ describe('VacancyStore', () => {
       expect(fs.readdirSync(dir).some((f) => f.startsWith('vacancies.invalid-'))).toBe(true);
     }
   });
+
+  it('a rejected update does not leak card content into the error, only a non-personal reason', () => {
+    const { store } = setup();
+    store.add(vacancy({ id: 'a1', title: 'Geheimer Titel', company: 'Geheime GmbH' }), null);
+    let caught: AppError | undefined;
+    try {
+      store.update('a1', (v) => { (v as { status: string }).status = 'weird'; });
+    } catch (err) {
+      caught = err as AppError;
+    }
+    expect(caught).toBeInstanceOf(AppError);
+    expect(caught!.detailsForLog).not.toContain('Geheimer Titel');
+    expect(caught!.detailsForLog).not.toContain('Geheime GmbH');
+    expect(caught!.detailsForLog).toContain('status');
+  });
+
+  it('an invalid file is set aside without card content leaking into the warn reason', () => {
+    const { paths } = setup();
+    const card = {
+      ...vacancy({ id: 'x', title: 'Geheimer Titel', company: 'Geheime GmbH', contact: { email: 'geheim@example.com', salutation: 'Frau', name: 'Geheimer Name' } }),
+      status: 'weird',
+    };
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 1, vacancies: [card] }));
+    const warned: { event: string; data: Record<string, unknown> }[] = [];
+    const store = new VacancyStore(paths, (event, data) => warned.push({ event, data }));
+    expect(store.load()).toEqual([]);
+    expect(warned).toHaveLength(1);
+    expect(warned[0].event).toBe('vacancies_invalid');
+    const reason = String(warned[0].data.reason);
+    expect(reason).not.toContain('Geheimer Titel');
+    expect(reason).not.toContain('Geheime GmbH');
+    expect(reason).not.toContain('geheim@example.com');
+    expect(reason).not.toContain('Geheimer Name');
+    expect(reason).toContain('status');
+  });
 });
