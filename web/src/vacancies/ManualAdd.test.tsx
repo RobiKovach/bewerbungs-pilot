@@ -33,6 +33,14 @@ describe('ManualAdd', () => {
     expect(add).toBeEnabled();
   });
 
+  it('accepts a real-shaped Arbeitsagentur number with underscore/dot/colon, not just letters/digits/hyphens', async () => {
+    const { user } = setup([], {});
+    const panel = await open(user);
+    const add = within(panel).getByRole('button', { name: 'Add' });
+    await user.type(within(panel).getByLabelText('Link (optional)'), 'https://www.arbeitsagentur.de/jobsuche/jobdetail/13635-js_bc_85_JB5198077-S');
+    expect(add).toBeEnabled();
+  });
+
   it('adds a pasted offer: card on the list, highlighted, edit form open with the check hint', async () => {
     const created = vac({ id: 'm1', source: 'manual', sourceId: null, addedManually: true, title: 'Frontend Developer (m/w/d)', company: 'Muster GmbH', url: '',
       contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' } });

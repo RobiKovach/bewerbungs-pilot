@@ -7,7 +7,9 @@ import { useCancellable } from '../profile/useCancellable';
 import type { Vacancy, VacancyStatus } from '../types';
 import { useVacancies } from './VacanciesContext';
 
-export const AA_LINK = /^https:\/\/www\.arbeitsagentur\.de\/jobsuche\/jobdetail\/[A-Za-z0-9-]{5,40}\/?([?#].*)?$/;
+// Character class kept identical to the server's jobdetailRefnr (server/src/vacancies/sources/arbeitsagentur.ts) —
+// real Referenznummer values also contain `_`, `.` and `:` (e.g. "13635-js_bc_85_JB5198077-S", "15054-0001250:01-S").
+export const AA_LINK = /^https:\/\/www\.arbeitsagentur\.de\/jobsuche\/jobdetail\/[A-Za-z0-9_.:-]{5,40}\/?([?#].*)?$/;
 const MIN = 200;
 const MAX = 30_000;
 

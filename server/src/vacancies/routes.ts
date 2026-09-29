@@ -41,7 +41,7 @@ const editBody = {
 
 const manualBody = {
   type: 'object', additionalProperties: false,
-  properties: { text: { type: 'string', maxLength: MANUAL_TEXT_MAX }, url: { type: 'string', maxLength: VACANCY_LIMITS.url } },
+  properties: { text: { type: 'string', maxLength: MANUAL_TEXT_MAX }, url: { type: 'string', maxLength: VACANCY_LIMITS.url, pattern: HTTP_URL } },
 };
 const isHttpUrl = (s: string) => { try { return ['http:', 'https:'].includes(new URL(s).protocol); } catch { return false; } };
 
@@ -125,7 +125,9 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     const v = d.store.require(id);
     if (v.scoreState === 'pending') throw new AppError('CONFLICT', 'the running search is about to score this card');
     const text = d.store.readText(id);
-    if (!text) throw new AppError('CONFLICT', 'no text to score');
+    // '' is a real, scoreable text (a partner-stub offer whose batch scoring failed) — only a missing
+    // text file (readText returns null) means there is nothing to send to Claude.
+    if (text === null) throw new AppError('CONFLICT', 'no text to score');
     const task = scoreTask([{ id, title: v.title, company: v.company, locations: v.locations, remote: v.remote, employment: v.employment, salaryText: v.salaryText, text }], d.profile(), d.language());
     const out = await d.queue.run<ScoreOutput>(task, abortOnClose(reply));
     const score = toScores(out, [id], new Date().toISOString()).get(id);
@@ -167,6 +169,11 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       };
       const out = await d.queue.run<ScoreOutput>(scoreTask([{ ...card, text: found.text }], d.profile(), d.language()), signal);
       const score = toScores(out, [card.id], new Date().toISOString()).get(card.id);
+      // Re-check right before adding: the Claude call above waits in the shared queue (behind a running
+      // search's batches, potentially minutes), and that search is quite likely to add this very offer
+      // in the meantime. Without this, both cards would land in the store with the same sourceId.
+      const raceTwin = findDuplicate(d.store.list(), found);
+      if (raceTwin) throw duplicateError(raceTwin);
       return view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, found.text));
     }
 

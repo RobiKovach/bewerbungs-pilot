@@ -119,6 +119,15 @@ describe('card endpoints', () => {
     expect((await post(ctx, '/api/vacancies/a/score')).json().vacancy.scoreState).toBe('failed');
   });
 
+  it('score again works on a card whose stored text is the empty string (a partner-stub offer)', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 55 }) });
+    ctx.vacancyStore.add(vacancy({ id: 'e', hasText: true, scoreState: 'failed', score: null }), '');
+    const res = await post(ctx, '/api/vacancies/e/score');
+    expect(res.statusCode).toBe(200);
+    expect(res.json().vacancy).toMatchObject({ scoreState: 'scored', score: { value: 55 } });
+    expect(ctx.provider.calls).toHaveLength(1);
+  });
+
   it('edit: only manual cards, only http(s) links', async () => {
     const ctx = await makeApp();
     ctx.vacancyStore.add(vacancy({ id: 'm', source: 'manual', sourceId: null, addedManually: true }), 'T');

@@ -69,6 +69,16 @@ describe('POST /api/vacancies/manual — pasted text', () => {
     expect((await paste(ctx, { text: TEXT })).statusCode).toBe(500);
     expect(ctx.vacancyStore.list()).toEqual([]);
   });
+
+  it('an upper-case scheme or a link with an embedded newline is refused by validation, before Claude runs', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }) });
+    for (const url of ['HTTPS://karriere.muster.example/job/7', 'https://karriere.muster.example/job\nX-Injected: 1']) {
+      const res = await paste(ctx, { text: TEXT, url });
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error.code).toBe('BAD_REQUEST');
+    }
+    expect(ctx.provider.calls).toHaveLength(0);
+  });
 });
 
 describe('POST /api/vacancies/manual — Arbeitsagentur link', () => {
@@ -100,5 +110,25 @@ describe('POST /api/vacancies/manual — Arbeitsagentur link', () => {
     const res = await paste(ctx, { url: 'https://www.arbeitsagentur.de.evil.example/jobsuche/jobdetail/10000-1111111111-S' });
     expect(res.json().error.reason).toBe('pastedTooShort');
     expect(ctx.source.detailCalls).toEqual([]);
+  });
+
+  it('a concurrent search adding the same offer while Claude scores the paste does not create a second card', async () => {
+    const box: { ctx?: Ctx } = {};
+    const ctx = await makeApp({
+      provider: scoringClaude({
+        score: () => 64,
+        // Simulate the running search committing the very same offer while this paste is still waiting
+        // in the shared Claude queue — the realistic trigger for the race (T9 / Important 2).
+        before: async () => {
+          box.ctx!.vacancyStore.add(vacancy({ id: 'race', sourceId: '10000-1111111111-S', title: 'Webentwickler (m/w/d)', company: 'Beispiel AG' }), 'API-Text');
+        },
+      }),
+      source: fakeSource({ details: () => details(h, 'API-Text') }),
+    });
+    box.ctx = ctx;
+    const res = await paste(ctx, { url: LINK });
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toMatchObject({ code: 'VACANCY_DUPLICATE', params: { id: 'race' } });
+    expect(ctx.vacancyStore.list()).toHaveLength(1);
   });
 });
