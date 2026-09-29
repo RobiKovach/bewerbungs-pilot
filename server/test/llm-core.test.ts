@@ -102,6 +102,24 @@ describe('LlmQueue', () => {
     expect(provider.calls).toHaveLength(1);
   });
 
+  it('rejects a queued task immediately when its own signal aborts, without waiting for the running task to finish', async () => {
+    const gate = deferred<unknown>();
+    const provider = new FakeProvider({ ok: true }, () => gate.promise);
+    const queue = new LlmQueue(provider);
+    const r1 = queue.run(helloTask('en'), new AbortController().signal);
+    await tick();
+    expect(provider.calls).toHaveLength(1); // r1 is now running, and stays running: the gate is never resolved yet
+    const ctrl = new AbortController();
+    const r2 = queue.run(helloTask('en'), ctrl.signal);
+    ctrl.abort();
+    // r1's gate is still unresolved here — the old code only rejected a waiting task once its turn came
+    // (i.e. once r1 finished), so this await would hang until the test times out without the fix.
+    await expect(r2).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+    expect(provider.calls).toHaveLength(1); // r2 never actually started running
+    gate.resolve({ greeting: 'a' });
+    await expect(r1).resolves.toEqual({ greeting: 'a' });
+  });
+
   it('abortAll stops the running task, drops queued ones, and the queue keeps working afterwards', async () => {
     let runningSignal: AbortSignal | null = null;
     let calls = 0;

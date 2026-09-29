@@ -27,8 +27,10 @@ export class LlmQueue {
     else signal.addEventListener('abort', forward, { once: true });
     this.active.add(ctrl);
     this.waiting++;
-    const job = this.tail.then(async () => {
+    let started = false;
+    const turn = this.tail.then(async () => {
       this.waiting--;
+      started = true;
       if (ctrl.signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled while waiting in the queue', 'cancelledByUser');
       this.running = true;
       try {
@@ -41,8 +43,20 @@ export class LlmQueue {
       this.active.delete(ctrl);
       signal.removeEventListener('abort', forward);
     };
-    job.then(done, done);
-    this.tail = job.catch(() => undefined);
-    return job;
+    turn.then(done, done);
+    this.tail = turn.catch(() => undefined);
+    // A task can wait behind others for a long time (a search's batches, a manual paste, "score again").
+    // If its own signal aborts while it is still waiting, reject at once instead of only once its turn
+    // comes — otherwise Stop (or a request disconnect) can hang for as long as the run ahead of it takes.
+    // Once the task has actually started (`started` true), this stays pending forever and `turn` alone
+    // decides the outcome, so a running task is still cancelled the existing way, through `ctrl.signal`.
+    const waitingAbort = new Promise<never>((_resolve, reject) => {
+      const rejectIfStillWaiting = () => {
+        if (!started) reject(new AppError('LLM_CANCELLED', 'cancelled while waiting in the queue', 'cancelledByUser'));
+      };
+      if (ctrl.signal.aborted) rejectIfStillWaiting();
+      else ctrl.signal.addEventListener('abort', rejectIfStillWaiting, { once: true });
+    });
+    return Promise.race([turn, waitingAbort]);
   }
 }
