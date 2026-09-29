@@ -335,7 +335,34 @@
       "showText": "Pokaż treść",
       "hideText": "Ukryj treść",
       "noText": "Treść jest niedostępna.",
-      "loadAgain": "Wczytaj ponownie"
+      "loadAgain": "Wczytaj ponownie",
+      "contact": "Kontakt: {{who}} · {{email}}"
+    },
+    "manual": {
+      "title": "Dodaj ofertę ręcznie",
+      "intro": "Znaleźliście ofertę gdzie indziej? Wklejcie cały jej tekst. Dla ofert Federalnej Agencji Pracy wystarczy sam link.",
+      "text": "Treść oferty",
+      "counter": "{{count}} / potrzeba co najmniej {{min}} znaków",
+      "link": "Link (opcjonalnie)",
+      "linkHint": "Link jest zapisywany tylko dla Was — BewerbungsPilot nie otwiera innych stron. Bezpośrednio odczytywane są tylko linki do arbeitsagentur.de/jobsuche/jobdetail/…",
+      "add": "Dodaj",
+      "working": "Claude czyta ofertę…",
+      "duplicate": "Ta oferta jest już na Waszej liście.",
+      "showIt": "Pokaż"
+    },
+    "edit": {
+      "open": "Edytuj",
+      "checkHint": "Claude wypełnił te pola — sprawdźcie je, proszę.",
+      "title": "Nazwa stanowiska",
+      "titleRequired": "Podajcie, proszę, nazwę stanowiska.",
+      "company": "Firma",
+      "locations": "Miejsca (jedno na linię)",
+      "link": "Link do oryginału",
+      "badLink": "Podajcie, proszę, link zaczynający się od https://",
+      "email": "Kontaktowy e-mail",
+      "salutation": "Zwrot grzecznościowy",
+      "name": "Osoba kontaktowa",
+      "save": "Zapisz"
     }
   }
 }

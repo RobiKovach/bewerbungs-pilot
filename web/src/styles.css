@@ -110,6 +110,10 @@ label.btn { cursor: pointer; }
 .link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .link-btn:disabled { color: var(--muted); text-decoration: none; cursor: not-allowed; opacity: 0.6; }
 .card .card { box-shadow: none; }
+.manual-add { margin-top: 1rem; }
+.manual-add textarea { width: 100%; }
+.manual-add .notice { background: #fff4d6; border-color: #f0d48a; margin-top: 1rem; }
+.manual-edit { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .profile-wizard { margin-top: 1rem; }
 .search-strip p { margin: 0; }
 .inline-field { display: inline-flex; align-items: center; gap: 0.4rem; }

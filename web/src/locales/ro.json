@@ -335,7 +335,34 @@
       "showText": "Afișați textul",
       "hideText": "Ascundeți textul",
       "noText": "Textul lipsește.",
-      "loadAgain": "Încărcați din nou"
+      "loadAgain": "Încărcați din nou",
+      "contact": "Contact: {{who}} · {{email}}"
+    },
+    "manual": {
+      "title": "Adăugați o ofertă manual",
+      "intro": "Ați găsit o ofertă în altă parte? Lipiți întregul text al acesteia. Pentru ofertele Agenției Federale a Muncii este suficient doar linkul.",
+      "text": "Textul ofertei",
+      "counter": "{{count}} / cel puțin {{min}} caractere",
+      "link": "Link (opțional)",
+      "linkHint": "Linkul este salvat doar pentru dumneavoastră — BewerbungsPilot nu deschide alte site-uri. Sunt citite direct doar linkurile către arbeitsagentur.de/jobsuche/jobdetail/…",
+      "add": "Adăugați",
+      "working": "Claude citește oferta…",
+      "duplicate": "Această ofertă se află deja în lista dumneavoastră.",
+      "showIt": "Afișați"
+    },
+    "edit": {
+      "open": "Editați",
+      "checkHint": "Claude a completat aceste câmpuri — vă rugăm să le verificați.",
+      "title": "Titlul postului",
+      "titleRequired": "Vă rugăm să introduceți titlul postului.",
+      "company": "Companie",
+      "locations": "Locuri (unul pe linie)",
+      "link": "Link către original",
+      "badLink": "Vă rugăm să introduceți un link care începe cu https://",
+      "email": "E-mail de contact",
+      "salutation": "Formulă de adresare",
+      "name": "Persoană de contact",
+      "save": "Salvați"
     }
   }
 }

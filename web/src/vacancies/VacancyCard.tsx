@@ -62,6 +62,11 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }
             {v.company}{v.addedManually ? <> <span className="badge">{t('vacancies.card.manual')}</span></> : null}
           </p>
           {facts ? <p className="muted">{facts}</p> : null}
+          {v.contact ? (
+            <p className="muted">
+              {t('vacancies.card.contact', { who: [v.contact.salutation, v.contact.name].filter(Boolean).join(' ') || '—', email: v.contact.email || '—' })}
+            </p>
+          ) : null}
         </div>
       </header>
 

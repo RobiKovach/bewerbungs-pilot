@@ -335,7 +335,34 @@
       "showText": "Text anzeigen",
       "hideText": "Text ausblenden",
       "noText": "Der Text fehlt.",
-      "loadAgain": "Erneut laden"
+      "loadAgain": "Erneut laden",
+      "contact": "Kontakt: {{who}} · {{email}}"
+    },
+    "manual": {
+      "title": "Angebot manuell hinzufügen",
+      "intro": "Woanders ein Angebot gefunden? Fügen Sie den ganzen Text ein. Bei Angeboten der Bundesagentur für Arbeit genügt der Link allein.",
+      "text": "Text des Angebots",
+      "counter": "{{count}} / mindestens {{min}} Zeichen",
+      "link": "Link (optional)",
+      "linkHint": "Der Link wird nur für Sie gespeichert — BewerbungsPilot öffnet keine anderen Websites. Nur Links zu arbeitsagentur.de/jobsuche/jobdetail/… werden direkt gelesen.",
+      "add": "Hinzufügen",
+      "working": "Claude liest das Angebot…",
+      "duplicate": "Dieses Angebot steht schon in Ihrer Liste.",
+      "showIt": "Anzeigen"
+    },
+    "edit": {
+      "open": "Bearbeiten",
+      "checkHint": "Claude hat diese Felder ausgefüllt — bitte prüfen Sie sie.",
+      "title": "Jobtitel",
+      "titleRequired": "Bitte geben Sie den Jobtitel ein.",
+      "company": "Unternehmen",
+      "locations": "Orte (einer pro Zeile)",
+      "link": "Link zum Original",
+      "badLink": "Bitte geben Sie einen Link ein, der mit https:// beginnt.",
+      "email": "Kontakt-E-Mail",
+      "salutation": "Anrede",
+      "name": "Ansprechperson",
+      "save": "Speichern"
     }
   }
 }
