@@ -13,7 +13,13 @@ describe('GuidePage', () => {
   });
   it('marks not-yet-available stages as coming soon', () => {
     render(<GuidePage />);
-    expect(screen.getAllByText('Coming soon')).toHaveLength(5);
+    expect(screen.getAllByText('Coming soon')).toHaveLength(4);
     expect(within(screen.getAllByRole('listitem')[1]).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '#/profile');
+  });
+  it('the job search stage opens the vacancies page', () => {
+    render(<GuidePage />);
+    const stage = screen.getByRole('heading', { name: /Job search/ }).closest('li') as HTMLElement;
+    expect(within(stage).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '#/vacancies');
+    expect(within(stage).queryByText('Coming soon')).toBeNull();
   });
 });

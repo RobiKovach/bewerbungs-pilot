@@ -11,7 +11,7 @@ export const GUIDE_STAGES: GuideStage[] = [
   { id: 'install', icon: '💻', action: 'none' },
   { id: 'profile', icon: '👤', action: { href: '#/profile' } },
   { id: 'email', icon: '✉️', action: 'coming-soon' },
-  { id: 'search', icon: '🔎', action: 'coming-soon' },
+  { id: 'search', icon: '🔎', action: { href: '#/vacancies' } },
   { id: 'review', icon: '📝', action: 'coming-soon' },
   { id: 'send', icon: '📤', action: 'coming-soon' },
   { id: 'statuses', icon: '📊', action: 'coming-soon' },

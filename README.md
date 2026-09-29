@@ -4,9 +4,10 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.2 — foundation and profile.** The app installs, runs, speaks six languages, walks you
-through the first steps, talks to Claude and builds your profile from your CV and your own stories.
-Job search, application packages and sending are being built next.
+**Status: v0.3 — foundation, profile and job offers.** The app installs, runs, speaks six languages,
+walks you through the first steps, talks to Claude, builds your profile from your CV and your own
+stories, and finds job offers that fit your profile. Application packages and sending are being
+built next.
 
 ## Requirements
 
@@ -40,6 +41,20 @@ letter should tell what you did, not repeat your CV). You can add a CV photo (cr
 - Claude only ever sees a copy of your CV in a throw-away folder, never your own folders.
 - Nothing is made up: Claude may only use what your CV and your answers say.
 - Applications can only be written once every section is checked ("All correct").
+
+## Job offers
+
+BewerbungsPilot searches the job board of the Federal Employment Agency (Bundesagentur für Arbeit) for your job titles,
+cities and search radius from your profile ("Job wishes"). Offers you have already seen, and formats you did not ask for
+(internships, apprenticeships, student jobs), are left out without asking Claude. Claude then scores every new offer
+from 0 to 100 and says in two or three points why it fits and what is missing.
+
+- "★ Interesting" keeps an offer in your favourites; "Not interesting" hides it for good (you can bring it back).
+- Offers the job board has removed move to "Removed by the job board" by themselves.
+- Found an offer somewhere else? Paste its text with "+ Add" — Claude reads it and scores it the same way.
+- Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
+- Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. BewerbungsPilot only talks to
+  `rest.arbeitsagentur.de`; it never opens links you paste.
 
 ## Development
 
