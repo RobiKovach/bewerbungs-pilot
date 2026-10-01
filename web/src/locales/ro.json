@@ -88,7 +88,7 @@
     "close": "Închideți",
     "ready": "Profilul dumneavoastră este pregătit pentru candidaturi.",
     "notReady": "Înainte ca BewerbungsPilot să poată scrie candidaturi, vă rugăm verificați aceste secțiuni:",
-    "noStoriesWarning": "Nu aveți încă nicio poveste verificată — scrisorile de intenție vor fi mai generale. Adăugați una la secțiunea „Povești pentru scrisorile de intenție”.",
+    "noStoriesWarning": "Nu aveți încă nicio poveste verificată care poate fi spusă angajatorilor — fără ea nu se poate crea un pachet de candidatură. Adăugați una la secțiunea „Povești pentru scrisorile de intenție”.",
     "storiesTitle": "Povești pentru scrisorile de intenție",
     "storiesCount": "Verificate: {{count}}",
     "addStories": "Adăugați povești",
@@ -242,6 +242,10 @@
     "NOT_A_VACANCY": { "message": "Acesta nu pare a fi un anunț de angajare.", "hint": "Inserați tot textul anunțului, inclusiv titlul postului și compania." },
     "VACANCY_DUPLICATE": { "message": "Acest anunț este deja în lista dumneavoastră.", "hint": "Deschideți-l acolo, în loc să îl adăugați din nou." },
     "VACANCY_NOT_FOUND": { "message": "Acest anunț nu mai este în lista dumneavoastră.", "hint": "Reîncărcați pagina." },
+    "BROWSER_MISSING": { "message": "Nu s-a găsit un browser potrivit pentru a crea PDF-uri.", "hint": "BewerbungsPilot folosește Microsoft Edge sau Google Chrome pentru a crea PDF-uri. Vă rugăm să instalați Google Chrome și să încercați din nou." },
+    "LETTER_TOO_LONG": { "message": "Scrisoarea de intenție are mai mult de o pagină.", "hint": "Scurtați scrisoarea (sau rugați Claude s-o scurteze) până când dispare marcajul roșu, apoi aprobați-o." },
+    "PACKAGE_RULES_BROKEN": { "message": "Claude nu a putut scrie scrisoarea respectând regulile.", "hint": "Încercați din nou. Dacă se repetă, verificați poveștile și lista „de nu menționat” din profil." },
+    "PACKAGE_EXISTS": { "message": "Există deja un pachet pentru acest anunț.", "hint": "Deschideți pachetul existent. Pentru a începe de la zero, folosiți în el „Creează din nou”." },
     "CONFLICT": { "message": "Între timp, aici s-a schimbat ceva.", "hint": "Vă rugăm să vă uitați încă o dată și apoi să alegeți din nou." },
     "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
     "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
@@ -259,7 +263,10 @@
       "cancelledByUser": "Ați anulat.",
       "proposalChanged": "CV-ul nou s-a schimbat din nou — vă rugăm să vă uitați încă o dată la el.",
       "pastedTooShort": "Textul lipit este prea scurt (cel puțin {{min}} caractere). Lipiți întregul anunț, nu doar titlul.",
-      "offerGone": "Agenția Federală a Muncii nu mai afișează acest anunț."
+      "offerGone": "Agenția Federală a Muncii nu mai afișează acest anunț.",
+      "noStory": "Nu aveți încă nicio poveste verificată care poate fi spusă angajatorilor. Adăugați una în profil, la secțiunea „Povești pentru scrisorile de intenție”.",
+      "attachmentUnreadable": "Atașamentul „{{name}}” nu poate fi citit (deteriorat sau protejat cu parolă). Eliminați-l din acest pachet sau înlocuiți-l în profil.",
+      "packageBusy": "Claude lucrează chiar acum la acest pachet. Vă rugăm să așteptați până termină."
     }
   },
   "vacancies": {

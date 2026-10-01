@@ -88,7 +88,7 @@
     "close": "Schließen",
     "ready": "Ihr Profil ist bereit für Bewerbungen.",
     "notReady": "Bevor BewerbungsPilot Bewerbungen schreiben kann, prüfen Sie bitte diese Abschnitte:",
-    "noStoriesWarning": "Sie haben noch keine geprüfte Geschichte — Anschreiben werden dadurch allgemeiner. Fügen Sie eine unter „Geschichten für Anschreiben“ hinzu.",
+    "noStoriesWarning": "Sie haben noch keine geprüfte Geschichte, die Arbeitgebern erzählt werden darf — ohne sie kann kein Bewerbungspaket erstellt werden. Fügen Sie eine unter „Geschichten für Anschreiben“ hinzu.",
     "storiesTitle": "Geschichten für Anschreiben",
     "storiesCount": "Geprüft: {{count}}",
     "addStories": "Geschichten hinzufügen",
@@ -242,6 +242,10 @@
     "NOT_A_VACANCY": { "message": "Das sieht nicht wie ein Stellenangebot aus.", "hint": "Fügen Sie den gesamten Text des Angebots ein, inklusive Jobtitel und Firma." },
     "VACANCY_DUPLICATE": { "message": "Dieses Angebot ist bereits in Ihrer Liste.", "hint": "Öffnen Sie es dort, statt es erneut hinzuzufügen." },
     "VACANCY_NOT_FOUND": { "message": "Dieses Angebot ist nicht mehr in Ihrer Liste.", "hint": "Laden Sie die Seite neu." },
+    "BROWSER_MISSING": { "message": "Es wurde kein geeigneter Browser zum Erstellen von PDFs gefunden.", "hint": "BewerbungsPilot nutzt Microsoft Edge oder Google Chrome, um PDFs zu erstellen. Bitte installieren Sie Google Chrome und versuchen Sie es erneut." },
+    "LETTER_TOO_LONG": { "message": "Das Anschreiben ist länger als eine Seite.", "hint": "Kürzen Sie das Anschreiben (oder bitten Sie Claude, es zu kürzen), bis die rote Markierung verschwindet, und genehmigen Sie es dann." },
+    "PACKAGE_RULES_BROKEN": { "message": "Claude konnte das Anschreiben nicht regelkonform schreiben.", "hint": "Versuchen Sie es erneut. Wenn es wieder passiert, prüfen Sie Ihre Geschichten und die Liste „Nicht erwähnen“ in Ihrem Profil." },
+    "PACKAGE_EXISTS": { "message": "Für dieses Stellenangebot gibt es bereits ein Paket.", "hint": "Öffnen Sie das vorhandene Paket. Um neu zu beginnen, nutzen Sie darin „Neu erstellen“." },
     "CONFLICT": { "message": "Das wurde inzwischen geändert.", "hint": "Bitte sehen Sie es sich noch einmal an und wählen Sie dann erneut." },
     "BAD_REQUEST": { "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
     "NOT_FOUND": { "message": "Diese Seite gibt es nicht.", "hint": "Gehen Sie zurück zur Startseite." },
@@ -259,7 +263,10 @@
       "cancelledByUser": "Sie haben es abgebrochen.",
       "proposalChanged": "Der neue Lebenslauf hat sich noch einmal geändert — bitte sehen Sie ihn sich noch einmal an.",
       "pastedTooShort": "Der eingefügte Text ist zu kurz (mindestens {{min}} Zeichen). Fügen Sie das ganze Stellenangebot ein, nicht nur den Titel.",
-      "offerGone": "Die Bundesagentur für Arbeit listet dieses Angebot nicht mehr."
+      "offerGone": "Die Bundesagentur für Arbeit listet dieses Angebot nicht mehr.",
+      "noStory": "Sie haben noch keine geprüfte Geschichte, die Arbeitgebern erzählt werden darf. Fügen Sie in Ihrem Profil unter „Geschichten für Anschreiben“ eine hinzu.",
+      "attachmentUnreadable": "Der Anhang „{{name}}“ kann nicht gelesen werden (beschädigt oder passwortgeschützt). Entfernen Sie ihn aus diesem Paket oder ersetzen Sie ihn in Ihrem Profil.",
+      "packageBusy": "Claude arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist."
     }
   },
   "vacancies": {

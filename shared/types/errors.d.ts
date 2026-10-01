@@ -20,6 +20,10 @@ export type ErrorCode =
   | 'NOT_A_VACANCY'
   | 'VACANCY_DUPLICATE'
   | 'VACANCY_NOT_FOUND'
+  | 'BROWSER_MISSING'
+  | 'LETTER_TOO_LONG'
+  | 'PACKAGE_RULES_BROKEN'
+  | 'PACKAGE_EXISTS'
   | 'CONFLICT'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
@@ -40,4 +44,7 @@ export type ErrorReason =
   | 'cancelledByUser'
   | 'proposalChanged'
   | 'pastedTooShort'
-  | 'offerGone';
+  | 'offerGone'
+  | 'noStory'
+  | 'attachmentUnreadable'
+  | 'packageBusy';

@@ -38,6 +38,10 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'VACANCY_DUPLICATE': return 409;
     case 'NOT_A_VACANCY': return 422;
     case 'VACANCY_NOT_FOUND': return 404;
+    case 'BROWSER_MISSING': return 503;
+    case 'LETTER_TOO_LONG':
+    case 'PACKAGE_EXISTS': return 409;
+    case 'PACKAGE_RULES_BROKEN': return 502;
     default: return 500;
   }
 }

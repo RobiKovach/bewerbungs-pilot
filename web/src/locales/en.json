@@ -88,7 +88,7 @@
     "close": "Close",
     "ready": "Your profile is ready for applications.",
     "notReady": "Before BewerbungsPilot can write applications, please check these sections:",
-    "noStoriesWarning": "You have no checked story yet — cover letters will be more general. Add one under \"Stories for cover letters\".",
+    "noStoriesWarning": "You have no checked story yet that may be told to employers — without one, no application package can be created. Add one under \"Stories for cover letters\".",
     "storiesTitle": "Stories for cover letters",
     "storiesCount": "Checked: {{count}}",
     "addStories": "Add stories",
@@ -242,6 +242,10 @@
     "NOT_A_VACANCY": { "message": "This does not look like a job offer.", "hint": "Paste the whole text of the offer, including the job title and the company." },
     "VACANCY_DUPLICATE": { "message": "This offer is already in your list.", "hint": "Open it there instead of adding it again." },
     "VACANCY_NOT_FOUND": { "message": "This offer is no longer in your list.", "hint": "Reload the page." },
+    "BROWSER_MISSING": { "message": "No suitable browser found for making PDFs.", "hint": "BewerbungsPilot uses Microsoft Edge or Google Chrome to make PDFs. Please install Google Chrome and try again." },
+    "LETTER_TOO_LONG": { "message": "The cover letter is longer than one page.", "hint": "Shorten the letter (or ask Claude to shorten it) until the red mark disappears, then approve it." },
+    "PACKAGE_RULES_BROKEN": { "message": "Claude could not write the letter within the rules.", "hint": "Try again. If it happens again, check your stories and the \"never mention\" list in your profile." },
+    "PACKAGE_EXISTS": { "message": "There is already a package for this job offer.", "hint": "Open the existing package. To start over, use \"Create again\" inside it." },
     "CONFLICT": { "message": "This was changed in the meantime.", "hint": "Please look at it once more and then choose again." },
     "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
     "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
@@ -259,7 +263,10 @@
       "cancelledByUser": "You cancelled it.",
       "proposalChanged": "The new CV changed again — please look at it once more.",
       "pastedTooShort": "The pasted text is too short (at least {{min}} characters). Paste the whole offer, not just the title.",
-      "offerGone": "The Federal Employment Agency no longer lists this offer."
+      "offerGone": "The Federal Employment Agency no longer lists this offer.",
+      "noStory": "You have no checked story yet that may be told to employers. Add one under \"Stories for cover letters\" in your profile.",
+      "attachmentUnreadable": "The attachment \"{{name}}\" cannot be read (damaged or password-protected). Remove it from this package or replace it in your profile.",
+      "packageBusy": "Claude is working on this package right now. Please wait until it is finished."
     }
   },
   "vacancies": {

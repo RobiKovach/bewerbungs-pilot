@@ -1,0 +1,127 @@
+import type { CvSectionId, EducationEntry, ExperienceEntry, LanguageItem, PersonalData, SkillItem } from './profile.js';
+import type { ErrorCode } from './errors.js';
+import type { RemoteKind, VacancyContact } from './vacancy.js';
+
+export type DocLanguage = 'de' | 'en';
+export type ApplicationStatus = 'draft' | 'approved';
+
+/** The letter in parts (spec, section 2). recipient/salutation/closing/signature are filled by the server, the rest by Claude; the person can edit all of them. */
+export interface PackageLetter {
+  recipient: string[];
+  subject: string;
+  salutation: string;
+  paragraphs: string[];
+  closing: string;
+  signature: string;
+  /** Stories Claude used (ids from profile.stories at that time). */
+  storyIds: string[];
+  /** Advice which story would make this letter stronger; null = none. Only shown. */
+  hint: string | null;
+  /** Pages of the printed letter at the last count; 0 = not counted yet. */
+  pages: number;
+}
+
+/** What Claude contributes to the CV (spec, decision 3). */
+export interface PackageCv {
+  profil: string;
+  profilEditedByHand: boolean;
+  /** Translated descriptions by entry id (education and experience). */
+  descriptions: Record<string, string>;
+  /** Skill ids, most relevant first. */
+  skillOrder: string[];
+}
+
+/** The profile as it was when the package was created or its CV last updated. */
+export interface PackageSnapshot {
+  personal: PersonalData;
+  education: EducationEntry[];
+  experience: ExperienceEntry[];
+  skills: SkillItem[];
+  languages: LanguageItem[];
+  /** Extension of the photo copied into the package folder; null = no photo. */
+  photo: '.jpg' | '.png' | null;
+}
+
+export interface PackageVacancy {
+  id: string;
+  title: string;
+  company: string;
+  locations: string[];
+  remote: RemoteKind;
+  contact: VacancyContact | null;
+  url: string;
+}
+
+export interface ApplicationPackage {
+  schemaVersion: 1;
+  id: string;
+  vacancyId: string;
+  language: DocLanguage;
+  status: ApplicationStatus;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt: string | null;
+  profileFingerprint: string;
+  snapshot: PackageSnapshot;
+  vacancy: PackageVacancy;
+  letter: PackageLetter;
+  cv: PackageCv;
+  /** Ids of profile documents chosen for this package. */
+  attachments: string[];
+}
+
+export interface ApplicationSummary {
+  id: string;
+  vacancyId: string;
+  company: string;
+  title: string;
+  language: DocLanguage;
+  status: ApplicationStatus;
+  createdAt: string;
+  updatedAt: string;
+  approvedAt: string | null;
+}
+
+export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean })[] }
+
+export interface AttachmentInfo {
+  id: string;
+  label: string;
+  size: number;
+  selected: boolean;
+  /** Chosen for this package but deleted from the profile since. */
+  missing: boolean;
+}
+
+export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[] }
+
+export interface PackageReadiness { ready: boolean; missingSections: CvSectionId[]; noStory: boolean }
+
+/** GET /api/applications/new?vacancyId=… — what the "Create package" dialog needs. */
+export interface NewPackageInfo {
+  suggestedLanguage: DocLanguage;
+  /** The profile's English is below B2 (or not listed). */
+  englishBelowB2: boolean;
+  /** The offer text is very short (a stub) — the letter will be more general. */
+  shortText: boolean;
+  /** A package for this vacancy already exists. */
+  existingId: string | null;
+  readiness: PackageReadiness;
+}
+
+export type LetterPatch = Partial<Pick<PackageLetter, 'recipient' | 'subject' | 'salutation' | 'paragraphs' | 'closing' | 'signature'>>;
+
+export type ApplicationJobKind = 'create' | 'recreate' | 'revise' | 'refreshCv';
+export type ApplicationJobRunState = 'idle' | 'running' | 'done' | 'failed' | 'cancelled' | 'interrupted';
+
+/** GET /api/applications/job. Also stored as applications/job-state.json. */
+export interface ApplicationJobState {
+  state: ApplicationJobRunState;
+  kind: ApplicationJobKind | null;
+  vacancyId: string | null;
+  /** The package the job works on (for create: set once it is saved). */
+  applicationId: string | null;
+  error: { code: ErrorCode; detailsForLog: string } | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+}

@@ -43,4 +43,12 @@ describe('AppError', () => {
   ] as const)('maps vacancy code %s to HTTP %i', (code, status) => {
     expect(httpStatusFor(code)).toBe(status);
   });
+  it.each([
+    ['BROWSER_MISSING', 503],
+    ['LETTER_TOO_LONG', 409],
+    ['PACKAGE_RULES_BROKEN', 502],
+    ['PACKAGE_EXISTS', 409],
+  ] as const)('maps package code %s to HTTP %i', (code, status) => {
+    expect(httpStatusFor(code)).toBe(status);
+  });
 });

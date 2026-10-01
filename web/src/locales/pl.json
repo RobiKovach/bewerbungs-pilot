@@ -88,7 +88,7 @@
     "close": "Zamknij",
     "ready": "Twój profil jest gotowy do składania aplikacji.",
     "notReady": "Zanim BewerbungsPilot będzie mógł pisać aplikacje, sprawdź te sekcje:",
-    "noStoriesWarning": "Nie masz jeszcze żadnej sprawdzonej historii — listy motywacyjne będą bardziej ogólne. Dodaj jedną w sekcji „Historie do listów motywacyjnych”.",
+    "noStoriesWarning": "Nie masz jeszcze żadnej sprawdzonej historii, którą można opowiadać pracodawcom — bez niej nie można utworzyć pakietu aplikacyjnego. Dodaj jedną w sekcji „Historie do listów motywacyjnych”.",
     "storiesTitle": "Historie do listów motywacyjnych",
     "storiesCount": "Sprawdzone: {{count}}",
     "addStories": "Dodaj historie",
@@ -242,6 +242,10 @@
     "NOT_A_VACANCY": { "message": "To nie wygląda na ofertę pracy.", "hint": "Wklej cały tekst oferty, łącznie ze stanowiskiem i firmą." },
     "VACANCY_DUPLICATE": { "message": "Ta oferta jest już na Twojej liście.", "hint": "Otwórz ją tam, zamiast dodawać ponownie." },
     "VACANCY_NOT_FOUND": { "message": "Tej oferty nie ma już na Twojej liście.", "hint": "Odśwież stronę." },
+    "BROWSER_MISSING": { "message": "Nie znaleziono odpowiedniej przeglądarki do tworzenia plików PDF.", "hint": "BewerbungsPilot używa Microsoft Edge lub Google Chrome do tworzenia plików PDF. Zainstaluj Google Chrome i spróbuj ponownie." },
+    "LETTER_TOO_LONG": { "message": "List motywacyjny jest dłuższy niż jedna strona.", "hint": "Skróć list (lub poproś Claude o skrócenie), aż czerwony znacznik zniknie, a następnie zatwierdź go." },
+    "PACKAGE_RULES_BROKEN": { "message": "Claude nie zdołał napisać listu zgodnie z zasadami.", "hint": "Spróbuj ponownie. Jeśli to się powtórzy, sprawdź swoje historie i listę „nie wspominać” w profilu." },
+    "PACKAGE_EXISTS": { "message": "Dla tej oferty pracy istnieje już pakiet.", "hint": "Otwórz istniejący pakiet. Aby zacząć od nowa, użyj w nim przycisku „Utwórz ponownie”." },
     "CONFLICT": { "message": "W międzyczasie coś się tu zmieniło.", "hint": "Przejrzyj to jeszcze raz i wybierz ponownie." },
     "BAD_REQUEST": { "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
@@ -259,7 +263,10 @@
       "cancelledByUser": "Anulowałeś to.",
       "proposalChanged": "Nowe CV znowu się zmieniło — przejrzyj je jeszcze raz.",
       "pastedTooShort": "Wklejony tekst jest za krótki (co najmniej {{min}} znaków). Wklej całą ofertę, a nie tylko tytuł.",
-      "offerGone": "Federalna Agencja Pracy nie wyświetla już tej oferty."
+      "offerGone": "Federalna Agencja Pracy nie wyświetla już tej oferty.",
+      "noStory": "Nie masz jeszcze żadnej sprawdzonej historii, którą można opowiadać pracodawcom. Dodaj jedną w profilu w sekcji „Historie do listów motywacyjnych”.",
+      "attachmentUnreadable": "Załącznika „{{name}}” nie można odczytać (uszkodzony lub chroniony hasłem). Usuń go z tego pakietu lub zastąp w profilu.",
+      "packageBusy": "Claude pracuje teraz nad tym pakietem. Poczekaj, aż skończy."
     }
   },
   "vacancies": {
