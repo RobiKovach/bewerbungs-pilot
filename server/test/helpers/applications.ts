@@ -1,3 +1,7 @@
+import { FakeProvider } from '../../src/llm/fake.js';
+import type { LlmTask } from '../../src/llm/types.js';
+import { AppError } from '../../src/errors.js';
+import type { CreateOutput, CvOutput, LetterOutput } from '../../src/applications/tasks/context.js';
 import type { ApplicationPackage, Profile } from '@bp/shared';
 import { profileFingerprint, takeSnapshot } from '../../src/applications/snapshot.js';
 import { emptyProfile } from '../../src/profile/schema.js';
@@ -45,4 +49,40 @@ export function pkg(over: Partial<ApplicationPackage> = {}, profile: Profile = r
     attachments: [],
     ...over,
   };
+}
+
+export const GOOD_LETTER: LetterOutput = {
+  subject: 'Bewerbung als Webentwickler (m/w/d)',
+  paragraphs: [
+    'Ihre Stelle als Webentwickler bei der Muster GmbH spricht mich an, weil Sie Online-Shops für den Handel bauen.',
+    'Sie suchen jemanden, der Shops für kleine Händler umsetzt. Für einen Bäcker habe ich einen Online-Shop gebaut, danach stiegen seine Bestellungen deutlich.',
+    'Gern zeige ich Ihnen in einem persönlichen Gespräch, wie ich Ihr Team unterstützen kann.',
+  ],
+  storyIds: ['st1'],
+  hint: null,
+};
+export const GOOD_CV: CvOutput = {
+  profil: 'Webentwickler mit mehrjähriger Erfahrung in Kundenwebseiten.',
+  descriptions: [{ id: 'ed1', text: 'Ausbildung mit Schwerpunkt Web.' }, { id: 'ex1', text: 'Kundenwebseiten entwickelt.' }],
+  skillOrder: ['sk2', 'sk1', 'sk3', 'sk4', 'sk5'],
+};
+
+type Answer<T> = T | ((task: LlmTask, signal: AbortSignal) => T | Promise<T>);
+const resolve = async <T>(a: Answer<T>, task: LlmTask, signal: AbortSignal) =>
+  (typeof a === 'function' ? (a as (t: LlmTask, s: AbortSignal) => T | Promise<T>)(task, signal) : a);
+
+/** Answers create / revise / refresh-cv tasks by the shape of their output schema. */
+export function packageClaude(opts: {
+  create?: Answer<CreateOutput>; revise?: Answer<LetterOutput>; refresh?: Answer<CvOutput>;
+  before?: (task: LlmTask, signal: AbortSignal) => unknown;
+} = {}): FakeProvider {
+  return new FakeProvider({ ok: true }, async (task, signal) => {
+    await opts.before?.(task, signal);
+    if (signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled', 'cancelledByUser');
+    const required = (task.schema as { required?: string[] }).required ?? [];
+    if (required.includes('paragraphs') && required.includes('profil')) return resolve(opts.create ?? { ...GOOD_LETTER, ...GOOD_CV }, task, signal);
+    if (required.includes('paragraphs')) return resolve(opts.revise ?? GOOD_LETTER, task, signal);
+    if (required.includes('profil')) return resolve(opts.refresh ?? GOOD_CV, task, signal);
+    throw new Error(`unexpected task: ${required.join(',')}`);
+  });
 }
