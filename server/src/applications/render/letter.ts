@@ -9,8 +9,8 @@ const CSS = `.letter{width:210mm;min-height:297mm;padding:27mm 20mm 20mm 25mm;fo
 .subject{font-weight:bold;margin:0 0 8mm}
 .salutation{margin:0 0 4mm}
 .letter p.par{margin:0 0 3.5mm;text-align:left}
-.closing{margin-top:6mm}
-.signature{margin-top:12mm}`;
+.closing{margin:6mm 0 0}
+.signature{margin:0}`;
 
 export function letterHtml(p: ApplicationPackage, now: Date): string {
   const s = p.snapshot.personal;
