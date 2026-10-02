@@ -27,7 +27,12 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
 
   const load = useCallback(async () => {
     try {
-      setView(await api.getApplication(id));
+      let v = await api.getApplication(id);
+      // A stored page count other than 1 may be stale (counted with an older layout, or 0 = not counted): count again.
+      if (v.application.letter.pages !== 1) {
+        try { v = await api.recountPages(id); } catch { /* no browser or busy: keep the stored number */ }
+      }
+      setView(v);
       setError(null);
     } catch (err) {
       setError(err);

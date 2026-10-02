@@ -47,6 +47,15 @@ describe('ApplicationEditor — letter', () => {
     expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
   });
 
+  it('a stored page count other than 1 is counted again on opening (it may be stale after an update)', async () => {
+    const { f } = setup({
+      'POST /api/applications/app1/recount': () => ({ body: appView({}, { letter: { ...appView().application.letter, pages: 1 } }) }),
+    }, appView({}, { letter: { ...appView().application.letter, pages: 2 } }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Approve' })).toBeEnabled());
+    expect(screen.queryByText(/longer than one page/)).not.toBeInTheDocument();
+    expect(f.mock.calls.some(([url]) => url === '/api/applications/app1/recount')).toBe(true);
+  });
+
   it('a letter not counted yet (pages 0) can be approved; LETTER_TOO_LONG from the server is shown', async () => {
     const { user } = setup({
       'POST /api/applications/app1/approve': () => ({ status: 409, body: { error: { code: 'LETTER_TOO_LONG', detailsForLog: '2 pages' } } }),

@@ -172,6 +172,16 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     return view(id);
   });
 
+  // Re-counts the letter's pages with the current layout (a stored number can be stale after an app update). Only `pages` changes.
+  app.post('/api/applications/:id/recount', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const pages = await pagesOf(id);
+    notBusy(id);
+    d.store.update(id, (p) => { p.letter.pages = pages; });
+    return view(id);
+  });
+
   app.post('/api/applications/:id/unapprove', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
     notBusy(id);

@@ -113,6 +113,7 @@ export const api = {
   refreshCv: (id: string, keepProfil: boolean) => request<ApplicationJobState>('POST', `/api/applications/${encodeURIComponent(id)}/refresh-cv`, { keepProfil }),
   recreatePackage: (id: string, language: DocLanguage) => request<ApplicationJobState>('POST', `/api/applications/${encodeURIComponent(id)}/recreate`, { language }),
   approveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/approve`, {}),
+  recountPages: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/recount`, {}),
   unapproveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/unapprove`, {}),
   deleteApplication: (id: string) => request<{ ok: true }>('DELETE', `/api/applications/${encodeURIComponent(id)}`),
   previewUrl: (id: string, kind: 'letter' | 'cv', version: string) => `/api/applications/${encodeURIComponent(id)}/preview/${kind}?v=${encodeURIComponent(version)}`,

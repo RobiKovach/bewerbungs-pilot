@@ -204,6 +204,18 @@ describe('approved packages', () => {
 });
 
 describe('final review fixes', () => {
+  it('POST recount stores the page count of the current layout and changes nothing else', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    ctx.applicationStore.update(id, (p) => { p.letter.pages = 2; });
+    const before = ctx.applicationStore.require(id);
+    ctx.printer.pagesFor = () => 1;
+    const r = await send(ctx, 'POST', `/api/applications/${id}/recount`, {});
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as ApplicationView).application.letter.pages).toBe(1);
+    const after = ctx.applicationStore.require(id);
+    expect({ ...after, letter: { ...after.letter, pages: 2 } }).toEqual(before);
+  });
   it('PATCH letter saves the hand edit with pages 0 for ANY print error', async () => {
     const ctx = await setup();
     const id = await created(ctx);
