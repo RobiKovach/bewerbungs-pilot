@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
 import { appView, jobState } from '../test/applicationFixtures';
@@ -48,6 +48,30 @@ describe('CV tab', () => {
     expect(screen.getByRole('button', { name: 'Update CV' })).toBeDisabled();
     expect(screen.getByRole('tab', { name: 'Attachments' })).toBeDisabled();
     expect(screen.getByText('Save or discard your changes first.')).toBeInTheDocument();
+  });
+  it('"Let Claude write it again" starts the update without keeping the text', async () => {
+    const view = appView({ profileChanged: true }, { cv: { ...appView().application.cv, profilEditedByHand: true } });
+    const { f, user } = setup({ 'POST /api/applications/app1/refresh-cv': () => ({ status: 202, body: jobState({ state: 'running', kind: 'refreshCv', applicationId: 'app1' }) }) }, view);
+    await user.click(await screen.findByRole('tab', { name: 'CV' }));
+    await user.click(screen.getByRole('button', { name: 'Update CV' }));
+    await user.click(screen.getByRole('button', { name: 'Let Claude write it again' }));
+    const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/refresh-cv');
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: false });
+  });
+  it('typing into Profil closes the open question', async () => {
+    const view = appView({ profileChanged: true }, { cv: { ...appView().application.cv, profilEditedByHand: true } });
+    const { user } = setup({}, view);
+    await user.click(await screen.findByRole('tab', { name: 'CV' }));
+    await user.click(screen.getByRole('button', { name: 'Update CV' }));
+    expect(screen.getByRole('button', { name: 'Keep my text' })).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Profile (top of the CV)'), ' x');
+    expect(screen.queryByRole('button', { name: 'Keep my text' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Update CV' })).toBeDisabled();
+  });
+  it('"Update CV" is off while a job on ANOTHER package runs', async () => {
+    const { user } = setup({ 'GET /api/applications/job': () => ({ body: jobState({ state: 'running', kind: 'create', applicationId: 'other' }) }) }, appView({ profileChanged: true }));
+    await user.click(await screen.findByRole('tab', { name: 'CV' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Update CV' })).toBeDisabled());
   });
 });
 

@@ -6,8 +6,8 @@ import { TextField } from '../profile/fields';
 import type { ApplicationView } from '../types';
 import { PreviewFrame } from './PreviewFrame';
 
-/** `locked`: a job works on this package. `onDirty`: reports an unsaved Profil edit to the editor. */
-export function CvTab({ view, locked, onView, onRefresh, onDirty }: { view: ApplicationView; locked: boolean; onView: (v: ApplicationView) => void; onRefresh: (keepProfil: boolean) => void; onDirty: (dirty: boolean) => void }) {
+/** `locked`: a job works on this package (editing off). `busy`: any package job runs (Claude buttons off). `onDirty`: reports an unsaved Profil edit to the editor. */
+export function CvTab({ view, locked, busy, onView, onRefresh, onDirty }: { view: ApplicationView; locked: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRefresh: (keepProfil: boolean) => void; onDirty: (dirty: boolean) => void }) {
   const { t } = useTranslation();
   const a = view.application;
   const [profil, setProfil] = useState(a.cv.profil);
@@ -19,6 +19,11 @@ export function CvTab({ view, locked, onView, onRefresh, onDirty }: { view: Appl
     onDirty(dirty);
     return () => onDirty(false);
   }, [dirty, onDirty]);
+  // The question belongs to a clean Profil: typing closes it, so the remount after the job can never drop the edit.
+  const asked = asking && view.profileChanged && !dirty;
+  useEffect(() => {
+    if (!asked) setAsking(false);
+  }, [asked]);
   const save = async () => {
     setError(null);
     setSaving(true);
@@ -30,16 +35,16 @@ export function CvTab({ view, locked, onView, onRefresh, onDirty }: { view: Appl
         {view.profileChanged ? (
           <div className="notice card">
             <p>{t('applications.cv.profileChanged')}</p>
-            {asking ? (
+            {asked ? (
               <>
                 <p>{t('applications.cv.keepQuestion')}</p>
                 <div className="btn-row">
-                  <button type="button" className="btn" onClick={() => { setAsking(false); onRefresh(true); }}>{t('applications.cv.keepYes')}</button>
-                  <button type="button" className="btn ghost" onClick={() => { setAsking(false); onRefresh(false); }}>{t('applications.cv.keepNo')}</button>
+                  <button type="button" className="btn" disabled={busy || locked || dirty} onClick={() => { setAsking(false); onRefresh(true); }}>{t('applications.cv.keepYes')}</button>
+                  <button type="button" className="btn ghost" disabled={busy || locked || dirty} onClick={() => { setAsking(false); onRefresh(false); }}>{t('applications.cv.keepNo')}</button>
                 </div>
               </>
             ) : (
-              <button type="button" className="btn" disabled={locked || dirty} onClick={() => (a.cv.profilEditedByHand ? setAsking(true) : onRefresh(false))}>{t('applications.cv.update')}</button>
+              <button type="button" className="btn" disabled={busy || locked || dirty} onClick={() => (a.cv.profilEditedByHand ? setAsking(true) : onRefresh(false))}>{t('applications.cv.update')}</button>
             )}
           </div>
         ) : null}
