@@ -202,3 +202,40 @@ describe('approved packages', () => {
     expect((await send(ctx, 'PATCH', `/api/applications/${id}/attachments`, { ids: [] })).json().application.status).toBe('draft');
   });
 });
+
+describe('final review fixes', () => {
+  it('PATCH letter saves the hand edit with pages 0 for ANY print error', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    ctx.printer.print = async () => { throw new Error('browser crashed'); };
+    const r = await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'Handbetreff' });
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as ApplicationView).application.letter).toMatchObject({ subject: 'Handbetreff', pages: 0 });
+  });
+  it('approve always recounts: a stored "1 page" does not hide a longer letter', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    expect(ctx.applicationStore.require(id).letter.pages).toBe(1);
+    ctx.printer.pagesFor = () => 2;
+    const r = await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect(r.json().error.code).toBe('LETTER_TOO_LONG');
+    expect(ctx.applicationStore.require(id)).toMatchObject({ status: 'draft', letter: { pages: 2 } });
+  });
+  it('approve checks again after the print: a job that started meanwhile → 409 packageBusy, nothing approved', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    let started = false;
+    ctx.printer.pagesFor = () => {
+      if (!started) {
+        started = true;
+        ctx.applicationJob.start({ kind: 'revise', applicationId: id, instruction: 'kürzer' });
+      }
+      return 1;
+    };
+    const r = await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('packageBusy');
+    await ctx.applicationJob.whenIdle();
+    expect(ctx.applicationStore.require(id).status).toBe('draft');
+  });
+});

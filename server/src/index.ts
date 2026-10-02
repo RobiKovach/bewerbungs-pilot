@@ -76,7 +76,7 @@ async function main(): Promise<void> {
   searchJob.init();
   const applicationStore = new ApplicationStore(paths.applications, (event, data) => logger.warn(event, data));
   applicationStore.load();
-  const printer = new BrowserPrinter({ tmpRoot: paths.tmp });
+  const printer = new BrowserPrinter({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data) });
   const applicationJob = new ApplicationJob({
     store: applicationStore, vacancies: vacancyStore, queue, printer, logger,
     profile: () => profileStore.get(), photo: (p) => profilePhoto(p, profileFiles),

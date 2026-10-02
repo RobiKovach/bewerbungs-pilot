@@ -130,4 +130,59 @@ describe('ApplicationEditor — letter', () => {
     await user.type(await screen.findByLabelText('Subject'), 'X');
     expect(screen.getByRole('button', { name: 'Back to draft' })).toBeDisabled();
   });
+
+  it('a job for ANOTHER package shows the plain "busy" text without a Cancel button', async () => {
+    setup({
+      'GET /api/applications/job': () => ({ body: jobState({ state: 'running', kind: 'revise', applicationId: 'other', vacancyId: 'v2' }) }),
+    });
+    expect(await screen.findByText('Claude is working on another package. Please wait a moment.')).toBeInTheDocument();
+    expect(screen.queryByText(/Claude is changing the letter/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+  });
+
+  it('a failed reload after a job shows the error and keeps editing off until a reload succeeds', async () => {
+    let loads = 0;
+    let jobCalls = 0;
+    const { user } = setup({
+      'GET /api/applications/app1': () => {
+        loads += 1;
+        if (loads === 1) return { body: appView() };
+        if (loads === 2) return { status: 500, body: { error: { code: 'INTERNAL', detailsForLog: 'boom' } } };
+        return { body: appView({}, { updatedAt: '2026-09-29T13:00:00.000Z', letter: { ...appView().application.letter, subject: 'Von Claude' } }) };
+      },
+      'POST /api/applications/app1/revise': () => ({ status: 202, body: jobState({ state: 'running', kind: 'revise', applicationId: 'app1', vacancyId: 'v1' }) }),
+      'GET /api/applications/job': () => {
+        jobCalls += 1;
+        return { body: jobCalls <= 1 ? jobState() : jobState({ state: 'done', kind: 'revise', applicationId: 'app1' }) };
+      },
+    });
+    await user.type(await screen.findByLabelText('Ask Claude to change the letter'), 'Bitte kürzer');
+    await user.click(screen.getByRole('button', { name: 'Ask Claude' }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByLabelText('Subject')).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Check again' }));
+    await waitFor(() => expect(screen.getByLabelText('Subject')).toBeEnabled());
+    expect(screen.getByLabelText('Subject')).toHaveValue('Von Claude');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('downloads wait while there are unsaved edits (they use the saved state)', async () => {
+    const { user } = setup({});
+    await user.type(await screen.findByLabelText('Subject'), 'X');
+    expect(screen.getByRole('button', { name: 'Cover letter (PDF)' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'CV (PDF)' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Everything as one PDF' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(screen.getByRole('button', { name: 'Everything as one PDF' })).toBeEnabled();
+  });
+
+  it('LETTER_TOO_LONG from approve reloads the package so the red page mark shows', async () => {
+    let loads = 0;
+    const { user } = setup({
+      'GET /api/applications/app1': () => ({ body: loads++ === 0 ? appView({}, { letter: { ...appView().application.letter, pages: 1 } }) : appView({}, { letter: { ...appView().application.letter, pages: 2 } }) }),
+      'POST /api/applications/app1/approve': () => ({ status: 409, body: { error: { code: 'LETTER_TOO_LONG', detailsForLog: '2 pages' } } }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('The letter is longer than one page (2 pages). Please shorten it.')).toBeInTheDocument();
+  });
 });

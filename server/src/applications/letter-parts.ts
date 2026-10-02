@@ -34,8 +34,14 @@ export function closingFor(lang: DocLanguage): string {
 
 /** One sentence about working from home when the offer is elsewhere and the person wants remote/hybrid work. */
 export function mentionHomeOffice(profile: Profile, v: PackageVacancy): boolean {
-  const city = profile.sections.personal.data.city.trim().toLowerCase();
+  const city = normaliseCity(profile.sections.personal.data.city);
   const remote = profile.sections.wishes.data.remote;
   if (!city || (remote !== 'remote' && remote !== 'hybrid')) return false;
-  return !v.locations.some((l) => l.trim().toLowerCase() === city);
+  const wholeWord = new RegExp(`(^|[^\\p{L}])${city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}])`, 'u');
+  return !v.locations.some((l) => wholeWord.test(normaliseCity(l)));
+}
+
+/** "01067 Dresden, Sachsen" / "Dresden (Neustadt)" → "dresden": lowercase, NFC, no digits, only the text before a comma or bracket. */
+function normaliseCity(raw: string): string {
+  return raw.normalize('NFC').toLowerCase().split(/[,(]/)[0].replace(/\d+/g, ' ').replace(/\s+/g, ' ').trim();
 }

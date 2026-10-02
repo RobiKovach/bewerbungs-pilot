@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import type { ApplicationView, DocLanguage } from '../types';
@@ -43,11 +43,19 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const dirty = letterDirty || cvDirty;
   // One job at a time: any running job switches the Claude buttons off; editing is off only for the package it works on.
   const busy = job.state?.state === 'running';
-  const locked = busy && job.state?.applicationId === id;
+  const jobOnThis = busy && job.state?.applicationId === id;
+  // A failed reload (after a job or a refused approve) leaves a stale view: editing stays off until a reload succeeds.
+  const locked = jobOnThis || error !== null;
   const failed = job.state?.applicationId === id ? jobError(job.state) : null;
   const act = async (fn: () => Promise<ApplicationView>) => {
     setActionError(null);
-    try { setView(await fn()); } catch (err) { setActionError(err); }
+    try {
+      setView(await fn());
+    } catch (err) {
+      setActionError(err);
+      // The server counted the pages itself: show its number (red mark) instead of the stale view.
+      if (err instanceof ApiError && err.code === 'LETTER_TOO_LONG') void load();
+    }
   };
   const save = async (url: string, name: string) => {
     setDownloading(true);
@@ -73,7 +81,10 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         <span className="badge">{a.language.toUpperCase()}</span>
         {view.profileChanged ? <span className="badge warn">{t('applications.profileChanged')}</span> : null}
       </p>
-      {busy && job.state?.kind ? <ClaudeWorking textKey={`applications.working.${job.state.kind}`} onCancel={() => void job.cancel()} /> : null}
+      {jobOnThis && job.state?.kind
+        ? <ClaudeWorking textKey={`applications.working.${job.state.kind}`} onCancel={() => void job.cancel()} />
+        : busy ? <p className="muted" role="status">{t('applications.busy')}</p> : null}
+      {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
       {failed ? <ErrorBanner error={failed} /> : null}
       {job.error ? <ErrorBanner error={job.error} /> : null}
 
@@ -89,12 +100,12 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {tab === 'attachments' ? <AttachmentsTab view={view} locked={locked} onView={setView} /> : null}
 
       <div className="btn-row downloads" role="group" aria-label={t('applications.download.title')}>
-        <button type="button" className="btn ghost" disabled={downloading} onClick={() => void save(api.pdfUrl(id, 'letter'), 'Anschreiben.pdf')}>{t('applications.download.letter')}</button>
-        <button type="button" className="btn ghost" disabled={downloading} onClick={() => void save(api.pdfUrl(id, 'cv'), 'Lebenslauf.pdf')}>{t('applications.download.cv')}</button>
+        <button type="button" className="btn ghost" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'letter'), 'Anschreiben.pdf')}>{t('applications.download.letter')}</button>
+        <button type="button" className="btn ghost" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'cv'), 'Lebenslauf.pdf')}>{t('applications.download.cv')}</button>
         {view.attachments.filter((x) => x.selected && !x.missing).map((x) => (
-          <button key={x.id} type="button" className="btn ghost" disabled={downloading} onClick={() => void save(api.attachmentUrl(id, x.id), `${x.label || 'Anlage'}.pdf`)}>{t('applications.download.attachment', { name: x.label })}</button>
+          <button key={x.id} type="button" className="btn ghost" disabled={downloading || dirty} onClick={() => void save(api.attachmentUrl(id, x.id), `${x.label || 'Anlage'}.pdf`)}>{t('applications.download.attachment', { name: x.label })}</button>
         ))}
-        <button type="button" className="btn" disabled={downloading} onClick={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}>{t('applications.download.bundle')}</button>
+        <button type="button" className="btn" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}>{t('applications.download.bundle')}</button>
       </div>
 
       <div className="btn-row app-actions">

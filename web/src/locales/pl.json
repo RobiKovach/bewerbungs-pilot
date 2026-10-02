@@ -268,7 +268,7 @@
     "approve": "Zatwierdź",
     "unapprove": "Wróć do wersji roboczej",
     "recreate": "Utwórz ponownie",
-    "recreateConfirm": "Claude napisze list i części CV od nowa. Twoje zmiany w liście zostaną utracone.",
+    "recreateConfirm": "Claude napisze list i części CV od nowa. Twoje zmiany w liście oraz w tekście „Profil” w CV zostaną utracone.",
     "recreateYes": "Tak, utwórz ponownie",
     "delete": "Usuń pakiet",
     "deleteConfirm": "Usunąć ten pakiet? Oferta pracy pozostanie na Twojej liście.",

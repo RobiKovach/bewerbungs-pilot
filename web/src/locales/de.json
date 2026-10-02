@@ -268,7 +268,7 @@
     "approve": "Freigeben",
     "unapprove": "Zurück zum Entwurf",
     "recreate": "Neu erstellen",
-    "recreateConfirm": "Claude schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben gehen verloren.",
+    "recreateConfirm": "Claude schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben und am Profil-Text des Lebenslaufs gehen verloren.",
     "recreateYes": "Ja, neu erstellen",
     "delete": "Paket löschen",
     "deleteConfirm": "Dieses Paket löschen? Die Stellenanzeige bleibt in Ihrer Liste.",

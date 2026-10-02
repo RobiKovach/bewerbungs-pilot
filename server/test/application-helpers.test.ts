@@ -106,3 +106,14 @@ describe('letter parts', () => {
     expect(mentionHomeOffice(profile((x) => { x.sections.wishes.data.remote = 'remote'; x.sections.personal.data.city = ''; }), vac())).toBe(false);
   });
 });
+
+describe('mentionHomeOffice city matching', () => {
+  const remote = profile((x) => { x.sections.wishes.data.remote = 'remote'; x.sections.personal.data.city = 'Dresden'; });
+  it.each(['01067 Dresden', 'Dresden, Sachsen', 'Dresden (Neustadt)', ' DRESDEN '])('"%s" is the person\'s city → no Home Office sentence', (loc) => {
+    expect(mentionHomeOffice(remote, vac({ locations: [loc] }))).toBe(false);
+  });
+  it('a different city still gets the sentence', () => {
+    expect(mentionHomeOffice(remote, vac({ locations: ['01067 Berlin'] }))).toBe(true);
+    expect(mentionHomeOffice(remote, vac({ locations: ['Dresdener Straße 5, Berlin'] }))).toBe(true);
+  });
+});

@@ -268,7 +268,7 @@
     "approve": "Approve",
     "unapprove": "Back to draft",
     "recreate": "Create again",
-    "recreateConfirm": "Claude writes the letter and the CV parts again. Your changes to the letter will be lost.",
+    "recreateConfirm": "Claude writes the letter and the CV parts again. Your changes to the letter and to the CV profile text will be lost.",
     "recreateYes": "Yes, create again",
     "delete": "Delete package",
     "deleteConfirm": "Delete this package? The job offer stays in your list.",

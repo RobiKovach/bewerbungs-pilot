@@ -112,8 +112,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     let counted = 0;
     try {
       counted = await countPages(await d.printer.print(letterHtml(draft, now())));
-    } catch (err) {
-      if (!(err instanceof AppError && err.code === 'BROWSER_MISSING')) throw err;
+    } catch {
+      // Any print failure (no browser, browser crash, timeout): keep the edit, count again at approve.
     }
     notBusy(id);
     d.store.update(id, (p) => { p.letter = { ...p.letter, ...patch, pages: counted }; touchDraft(p, now()); });
@@ -161,8 +161,9 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   app.post('/api/applications/:id/approve', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
     notBusy(id);
-    let pages = d.store.require(id).letter.pages;
-    if (pages !== 1) pages = await pagesOf(id);
+    // Always recount: the stored number may be stale or 0 ("not counted").
+    const pages = await pagesOf(id);
+    notBusy(id);
     if (pages !== 1) {
       d.store.update(id, (p) => { p.letter.pages = pages; });
       throw new AppError('LETTER_TOO_LONG', `${pages} pages`);
