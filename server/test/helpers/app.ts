@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { ApplicationJob } from '../../src/applications/job.js';
+import { ApplicationStore } from '../../src/applications/store.js';
+import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
@@ -10,11 +13,12 @@ import { ProfileFiles } from '../../src/profile/files.js';
 import { ProfileStore } from '../../src/profile/store.js';
 import { SearchJob } from '../../src/vacancies/search-job.js';
 import { VacancyStore } from '../../src/vacancies/store.js';
+import { FakePrinter } from './applications.js';
 import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
 
-export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -37,12 +41,22 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
     stateFile: path.join(dir, 'vacancies', 'search-state.json'), pauseMs: 0,
   });
   searchJob.init();
+  const printer = opts.printer ?? new FakePrinter();
+  const applicationStore = new ApplicationStore(path.join(dir, 'applications'));
+  applicationStore.load();
+  const applicationJob = new ApplicationJob({
+    store: applicationStore, vacancies: vacancyStore, queue, printer, logger: nullLogger,
+    profile: () => profileStore.get(), photo: (p) => profilePhoto(p, profileFiles),
+    stateFile: path.join(dir, 'applications', 'job-state.json'),
+  });
+  applicationJob.init();
   const app = await buildApp({
     settings, provider, queue, logger: nullLogger, version: '0.1.0',
     webDist: opts.webDist ?? null,
     allowedHosts: opts.allowedHosts ?? (() => ['localhost:80']),
     onShutdown: () => { shutdownCalls++; },
     profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
+    applicationStore, applicationJob, printer,
   });
-  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir };
+  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer };
 }

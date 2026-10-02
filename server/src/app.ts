@@ -10,6 +10,10 @@ import { helloTask } from './prompts/hello.js';
 import type { ProfileFiles } from './profile/files.js';
 import { registerProfileRoutes } from './profile/routes.js';
 import type { ProfileStore } from './profile/store.js';
+import type { ApplicationJob } from './applications/job.js';
+import type { PdfPrinter } from './applications/pdf.js';
+import { registerApplicationRoutes } from './applications/routes.js';
+import type { ApplicationStore } from './applications/store.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
@@ -30,6 +34,9 @@ export interface AppDeps {
   vacancyStore: VacancyStore;
   vacancySource: VacancySource;
   searchJob: SearchJob;
+  applicationStore: ApplicationStore;
+  applicationJob: ApplicationJob;
+  printer: PdfPrinter;
 }
 
 const settingsPatchSchema = {
@@ -155,6 +162,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await registerVacancyRoutes(app, {
     store: deps.vacancyStore, source: deps.vacancySource, queue: deps.queue, job: deps.searchJob, logger: deps.logger,
     profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
+  });
+
+  await registerApplicationRoutes(app, {
+    store: deps.applicationStore, job: deps.applicationJob, printer: deps.printer, vacancies: deps.vacancyStore,
+    files: deps.profileFiles, profile: () => deps.profileStore.get(), logger: deps.logger,
   });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {

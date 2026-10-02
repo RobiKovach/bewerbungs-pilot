@@ -1,5 +1,10 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ApplicationJob } from './applications/job.js';
+import { BrowserPrinter } from './applications/pdf.js';
+import { ApplicationStore } from './applications/store.js';
+import { profilePhoto } from './applications/views.js';
 import { buildApp } from './app.js';
 import { writeJsonAtomic } from './data/atomic.js';
 import { dataPaths, ensureDataDirs, resolveDataRoot } from './data/paths.js';
@@ -69,16 +74,26 @@ async function main(): Promise<void> {
     publishedWithinDays: () => settings.get().vacancies.publishedWithinDays, stateFile: paths.searchState,
   });
   searchJob.init();
+  const applicationStore = new ApplicationStore(paths.applications, (event, data) => logger.warn(event, data));
+  applicationStore.load();
+  const printer = new BrowserPrinter({ tmpRoot: paths.tmp });
+  const applicationJob = new ApplicationJob({
+    store: applicationStore, vacancies: vacancyStore, queue, printer, logger,
+    profile: () => profileStore.get(), photo: (p) => profilePhoto(p, profileFiles),
+    stateFile: path.join(paths.applications, 'job-state.json'),
+  });
+  applicationJob.init();
   const app = await buildApp({
     settings, provider, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),
     profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
+    applicationStore, applicationJob, printer,
   });
 
   const shutdown = createShutdown({
-    abortAll: () => { searchJob.stop(); queue.abortAll(); },
+    abortAll: () => { searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
     close: () => app.close(),
     releaseLock: () => lock.release(),
     serverFile: paths.server,

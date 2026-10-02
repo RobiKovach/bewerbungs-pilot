@@ -1,0 +1,204 @@
+import fs from 'node:fs';
+import { describe, it, expect } from 'vitest';
+import type { ApplicationJobState, ApplicationView, Profile } from '@bp/shared';
+import { H, makeApp } from './helpers/app.js';
+import { FakePrinter, GOOD_LETTER, packageClaude, readyPackageProfile } from './helpers/applications.js';
+import { vacancy } from './helpers/vacancies.js';
+import { makePdf } from './helpers/applications.js';
+
+const OFFER_DE = 'Wir suchen einen Webentwickler (m/w/d) für unser Team in Hamburg. Sie bauen mit uns Online-Shops für den Handel. '.repeat(8);
+const OFFER_EN = 'We are looking for a web developer to join our team. You will build online shops with us and our clients. '.repeat(8);
+const DOC_ID = '11111111-2222-4333-8444-555555555555';
+
+type Ctx = Awaited<ReturnType<typeof makeApp>>;
+async function setup(opts: { provider?: ReturnType<typeof packageClaude>; printer?: FakePrinter; profile?: (p: Profile) => void } = {}) {
+  const ctx = await makeApp({ provider: opts.provider ?? packageClaude(), printer: opts.printer });
+  ctx.profileStore.update((p) => { Object.assign(p, readyPackageProfile(opts.profile)); });
+  ctx.vacancyStore.add(vacancy({ id: 'fav1', status: 'favorite', company: 'Muster GmbH', locations: ['Hamburg'] }), OFFER_DE);
+  return ctx;
+}
+const get = (ctx: Ctx, url: string) => ctx.app.inject({ method: 'GET', url });
+const send = (ctx: Ctx, method: 'POST' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>
+  ctx.app.inject({ method, url, headers: H, ...(payload === undefined ? {} : { payload: payload as Record<string, unknown> }) });
+async function created(ctx: Ctx): Promise<string> {
+  const r = await send(ctx, 'POST', '/api/applications', { vacancyId: 'fav1', language: 'de' });
+  expect(r.statusCode).toBe(202);
+  await ctx.applicationJob.whenIdle();
+  const state = (await get(ctx, '/api/applications/job')).json() as ApplicationJobState;
+  expect(state.state).toBe('done');
+  return state.applicationId!;
+}
+
+describe('before creating', () => {
+  it('GET /new tells language, English warning, short text, existing package and readiness — without Claude', async () => {
+    const ctx = await setup();
+    ctx.vacancyStore.add(vacancy({ id: 'fav2', status: 'favorite' }), OFFER_EN);
+    ctx.vacancyStore.add(vacancy({ id: 'stub', status: 'favorite' }), 'Details beim Partner.');
+    expect((await get(ctx, '/api/applications/new?vacancyId=fav1')).json()).toEqual({
+      suggestedLanguage: 'de', englishBelowB2: false, shortText: false, existingId: null, readiness: { ready: true, missingSections: [], noStory: false },
+    });
+    expect((await get(ctx, '/api/applications/new?vacancyId=fav2')).json()).toMatchObject({ suggestedLanguage: 'en' });
+    expect((await get(ctx, '/api/applications/new?vacancyId=stub')).json()).toMatchObject({ shortText: true });
+    expect((await get(ctx, '/api/applications/new?vacancyId=nope')).statusCode).toBe(404);
+    expect(ctx.provider.calls).toHaveLength(0);
+  });
+  it('English below B2 and missing readiness are reported', async () => {
+    const ctx = await setup({ profile: (p) => { p.sections.languages.data.items[1].level = 'A2'; p.stories = []; } });
+    expect((await get(ctx, '/api/applications/new?vacancyId=fav1')).json()).toMatchObject({
+      englishBelowB2: true, readiness: { ready: false, missingSections: [], noStory: true },
+    });
+  });
+});
+
+describe('create', () => {
+  it('POST → 202 running, job done, list and view readable without Claude calls', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const calls = ctx.provider.calls.length;
+    const list = (await get(ctx, '/api/applications')).json();
+    expect(list.applications).toEqual([expect.objectContaining({ id, vacancyId: 'fav1', company: 'Muster GmbH', status: 'draft', profileChanged: false })]);
+    const view = (await get(ctx, `/api/applications/${id}`)).json() as ApplicationView;
+    expect(view.application.letter.paragraphs).toEqual(GOOD_LETTER.paragraphs);
+    expect(view.profileChanged).toBe(false);
+    expect(ctx.provider.calls.length).toBe(calls);
+    expect((await get(ctx, '/api/applications/new?vacancyId=fav1')).json().existingId).toBe(id);
+  });
+  it('refusals: existing package → 409 PACKAGE_EXISTS with id; bad language → 400; no X-BP-Client → 403', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const again = await send(ctx, 'POST', '/api/applications', { vacancyId: 'fav1', language: 'de' });
+    expect(again.statusCode).toBe(409);
+    expect(again.json().error).toMatchObject({ code: 'PACKAGE_EXISTS', params: { id } });
+    expect((await send(ctx, 'POST', '/api/applications', { vacancyId: 'fav1', language: 'fr' })).statusCode).toBe(400);
+    expect((await ctx.app.inject({ method: 'POST', url: '/api/applications', payload: { vacancyId: 'fav1', language: 'de' } })).statusCode).toBe(403);
+  });
+  it('profile not ready → 409 PROFILE_NOT_READY / noStory; no browser → 503 BROWSER_MISSING', async () => {
+    const noStory = await setup({ profile: (p) => { p.stories = []; } });
+    const r = await send(noStory, 'POST', '/api/applications', { vacancyId: 'fav1', language: 'de' });
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error).toMatchObject({ code: 'PROFILE_NOT_READY', reason: 'noStory' });
+    const printer = new FakePrinter();
+    printer.isAvailable = false;
+    const noBrowser = await setup({ printer });
+    expect((await send(noBrowser, 'POST', '/api/applications', { vacancyId: 'fav1', language: 'de' })).json().error.code).toBe('BROWSER_MISSING');
+  });
+  it('job/cancel stops a running job', async () => {
+    const ctx = await setup({ provider: packageClaude({ before: (_t, s) => new Promise((r) => s.addEventListener('abort', r)) }) });
+    await send(ctx, 'POST', '/api/applications', { vacancyId: 'fav1', language: 'de' });
+    const r = await send(ctx, 'POST', '/api/applications/job/cancel', {});
+    expect(r.json().state).toBe('cancelled');
+    expect((await get(ctx, '/api/applications')).json().applications).toEqual([]);
+  });
+});
+
+describe('editing a package', () => {
+  it('PATCH letter saves the given fields, recounts pages and makes an approved package a draft', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    ctx.printer.pagesFor = () => 2;
+    const r = await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'Neuer Betreff', recipient: ['Muster GmbH', 'Frau Anna Müller', 'Hamburg'] });
+    const view = r.json() as ApplicationView;
+    expect(view.application.letter).toMatchObject({ subject: 'Neuer Betreff', recipient: ['Muster GmbH', 'Frau Anna Müller', 'Hamburg'], pages: 2, paragraphs: GOOD_LETTER.paragraphs });
+    expect(view.application.status).toBe('draft');
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/letter`, {})).statusCode).toBe(400);
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { paragraphs: [] })).statusCode).toBe(400);
+  });
+  it('approve: one page → approved; two pages → 409 LETTER_TOO_LONG and pages stored; unapprove → draft', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const ok = (await send(ctx, 'POST', `/api/applications/${id}/approve`, {})).json() as ApplicationView;
+    expect(ok.application).toMatchObject({ status: 'approved', approvedAt: expect.any(String) });
+    expect((await send(ctx, 'POST', `/api/applications/${id}/unapprove`, {})).json().application.status).toBe('draft');
+    ctx.applicationStore.update(id, (p) => { p.letter.pages = 0; });
+    ctx.printer.pagesFor = () => 2;
+    const long = await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect(long.statusCode).toBe(409);
+    expect(long.json().error.code).toBe('LETTER_TOO_LONG');
+    expect(ctx.applicationStore.require(id).letter.pages).toBe(2);
+  });
+  it('PATCH cv-profil marks it as edited by hand', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const view = (await send(ctx, 'PATCH', `/api/applications/${id}/cv-profil`, { profil: 'Mein Text.' })).json() as ApplicationView;
+    expect(view.application.cv).toMatchObject({ profil: 'Mein Text.', profilEditedByHand: true });
+  });
+  it('attachments: defaults from "attach always", only known documents may be chosen, deleted ones show as missing', async () => {
+    const ctx = await setup({ profile: (p) => { p.documents = [{ id: DOC_ID, ext: '.pdf', originalName: 'zeugnis.pdf', size: 1234, uploadedAt: '2026-09-01T10:00:00.000Z', label: 'Zeugnis', attachAlways: true }]; } });
+    fs.writeFileSync(ctx.profileFiles.pathOf({ id: DOC_ID, ext: '.pdf' }), await makePdf(1));
+    const id = await created(ctx);
+    let view = (await get(ctx, `/api/applications/${id}`)).json() as ApplicationView;
+    expect(view.attachments).toEqual([{ id: DOC_ID, label: 'Zeugnis', size: 1234, selected: true, missing: false }]);
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/attachments`, { ids: ['99999999-2222-4333-8444-555555555555'] })).statusCode).toBe(400);
+    view = (await send(ctx, 'PATCH', `/api/applications/${id}/attachments`, { ids: [] })).json() as ApplicationView;
+    expect(view.attachments[0].selected).toBe(false);
+    await send(ctx, 'PATCH', `/api/applications/${id}/attachments`, { ids: [DOC_ID] });
+    ctx.profileStore.update((p) => { p.documents = []; });
+    view = (await get(ctx, `/api/applications/${id}`)).json() as ApplicationView;
+    expect(view.attachments).toEqual([{ id: DOC_ID, label: '', size: 0, selected: true, missing: true }]);
+  });
+  it('profileChanged turns true when a description changes, and back to false after refresh-cv', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    ctx.profileStore.update((p) => { p.sections.experience.data.items[0].description = 'Anders.'; });
+    expect((await get(ctx, `/api/applications/${id}`)).json().profileChanged).toBe(true);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/refresh-cv`, { keepProfil: true })).statusCode).toBe(202);
+    await ctx.applicationJob.whenIdle();
+    expect((await get(ctx, `/api/applications/${id}`)).json().profileChanged).toBe(false);
+  });
+  it('revise and recreate start jobs; editing while a job works on the package → 409 packageBusy', async () => {
+    let release!: () => void;
+    let gate: Promise<void> = Promise.resolve();
+    const ctx = await setup({ provider: packageClaude({ before: () => gate }) });
+    const id = await created(ctx);
+    gate = new Promise<void>((r) => { release = r; });
+    expect((await send(ctx, 'POST', `/api/applications/${id}/revise`, { instruction: 'Kürzer bitte' })).statusCode).toBe(202);
+    const busy = await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'x' });
+    expect(busy.statusCode).toBe(409);
+    expect(busy.json().error).toMatchObject({ code: 'CONFLICT', reason: 'packageBusy' });
+    expect((await send(ctx, 'DELETE', `/api/applications/${id}`)).statusCode).toBe(409);
+    release();
+    await ctx.applicationJob.whenIdle();
+    expect((await send(ctx, 'POST', `/api/applications/${id}/recreate`, { language: 'en' })).statusCode).toBe(202);
+    await ctx.applicationJob.whenIdle();
+    expect(ctx.applicationStore.require(id).language).toBe('en');
+    expect((await send(ctx, 'POST', `/api/applications/${id}/revise`, { instruction: '' })).statusCode).toBe(400);
+  });
+  it('DELETE removes the package; unknown or unsafe ids → 404 / 400', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    expect((await send(ctx, 'DELETE', `/api/applications/${id}`)).json()).toEqual({ ok: true });
+    expect((await get(ctx, `/api/applications/${id}`)).statusCode).toBe(404);
+    expect((await get(ctx, '/api/applications/..%2Fevil')).statusCode).toBe(400);
+  });
+});
+
+describe('readiness and offline editing', () => {
+  it('GET /readiness reports the profile state without Claude', async () => {
+    const ctx = await setup({ profile: (p) => { p.stories = []; } });
+    expect((await get(ctx, '/api/applications/readiness')).json()).toEqual({ ready: false, missingSections: [], noStory: true });
+    expect(ctx.provider.calls).toHaveLength(0);
+  });
+  it('PATCH letter without a browser still saves the hand edit with pages 0; approve then needs the browser', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    ctx.printer.isAvailable = false;
+    const r = await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'Handbetreff' });
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as ApplicationView).application.letter).toMatchObject({ subject: 'Handbetreff', pages: 0 });
+    const a = await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect(a.statusCode).toBe(503);
+    expect(a.json().error.code).toBe('BROWSER_MISSING');
+  });
+});
+
+describe('approved packages', () => {
+  it('Profil and attachment edits turn an approved package back into a draft', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/cv-profil`, { profil: 'Neu.' })).json().application.status).toBe('draft');
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/attachments`, { ids: [] })).json().application.status).toBe('draft');
+  });
+});

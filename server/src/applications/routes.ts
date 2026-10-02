@@ -1,0 +1,170 @@
+import type { FastifyInstance } from 'fastify';
+import type { DocLanguage, LetterPatch, Profile } from '@bp/shared';
+import { AppError } from '../errors.js';
+import type { Logger } from '../log.js';
+import type { ProfileFiles } from '../profile/files.js';
+import { VACANCY_ID } from '../vacancies/schema.js';
+import type { VacancyStore } from '../vacancies/store.js';
+import { touchDraft, type ApplicationJob } from './job.js';
+import { detectLanguage, englishBelowB2 } from './language.js';
+import { countPages, type PdfPrinter } from './pdf.js';
+import { packageReadiness } from './readiness.js';
+import { letterHtml } from './render/letter.js';
+import { APPLICATION_ID, PACKAGE_LIMITS as L } from './schema.js';
+import type { ApplicationStore } from './store.js';
+import { toListView, toView } from './views.js';
+
+export interface ApplicationRouteDeps {
+  store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
+  profile: () => Profile; logger: Logger; now?: () => Date;
+}
+
+/** Offer texts shorter than this are stubs (the full text is on a partner site): the dialog warns. */
+export const SHORT_TEXT = 600;
+
+const LANGUAGE = { enum: ['de', 'en'] };
+const idParams = { type: 'object', required: ['id'], properties: { id: { type: 'string', pattern: APPLICATION_ID.source } } };
+const newQuery = { type: 'object', required: ['vacancyId'], properties: { vacancyId: { type: 'string', pattern: VACANCY_ID.source } } };
+const createBody = { type: 'object', additionalProperties: false, required: ['vacancyId', 'language'], properties: { vacancyId: { type: 'string', pattern: VACANCY_ID.source }, language: LANGUAGE } };
+const languageBody = { type: 'object', additionalProperties: false, required: ['language'], properties: { language: LANGUAGE } };
+const reviseBody = { type: 'object', additionalProperties: false, required: ['instruction'], properties: { instruction: { type: 'string', minLength: 1, maxLength: L.instruction, pattern: '\\S' } } };
+const refreshBody = { type: 'object', additionalProperties: false, required: ['keepProfil'], properties: { keepProfil: { type: 'boolean' } } };
+const line = (max: number) => ({ type: 'string', maxLength: max });
+const letterBody = {
+  type: 'object', additionalProperties: false, minProperties: 1,
+  properties: {
+    recipient: { type: 'array', maxItems: L.recipientLines, items: line(L.line) },
+    subject: { type: 'string', minLength: 1, maxLength: L.subject },
+    salutation: line(L.salutation),
+    paragraphs: { type: 'array', minItems: L.paragraphsMin, maxItems: L.paragraphsMax, items: { type: 'string', minLength: 1, maxLength: L.paragraph } },
+    closing: line(L.closing),
+    signature: line(L.signature),
+  },
+};
+const profilBody = { type: 'object', additionalProperties: false, required: ['profil'], properties: { profil: line(L.profil) } };
+const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
+
+export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
+  const now = d.now ?? (() => new Date());
+  const view = (id: string) => toView(d.store.require(id), d.profile());
+  const notBusy = (id: string) => {
+    if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
+  };
+  const pagesOf = async (id: string) => countPages(await d.printer.print(letterHtml(d.store.require(id), now())));
+
+  app.get('/api/applications', async () => toListView(d.store, d.profile()));
+
+  app.get('/api/applications/new', { schema: { querystring: newQuery } }, async (req) => {
+    const { vacancyId } = req.query as { vacancyId: string };
+    const v = d.vacancies.require(vacancyId);
+    const text = d.vacancies.readText(v.id) ?? '';
+    const profile = d.profile();
+    return {
+      suggestedLanguage: detectLanguage(`${v.title}\n${text}`),
+      englishBelowB2: englishBelowB2(profile.sections.languages.data.items),
+      shortText: text.trim().length < SHORT_TEXT,
+      existingId: d.store.byVacancy(v.id)?.id ?? null,
+      readiness: packageReadiness(profile),
+    };
+  });
+
+  app.get('/api/applications/readiness', async () => packageReadiness(d.profile()));
+
+  app.get('/api/applications/job', async () => d.job.state());
+
+  app.post('/api/applications/job/cancel', async () => {
+    d.job.cancel();
+    await d.job.whenIdle();
+    return d.job.state();
+  });
+
+  app.post('/api/applications', { schema: { body: createBody } }, async (req, reply) => {
+    const { vacancyId, language } = req.body as { vacancyId: string; language: DocLanguage };
+    return reply.code(202).send(d.job.start({ kind: 'create', vacancyId, language }));
+  });
+
+  app.get('/api/applications/:id', { schema: { params: idParams } }, async (req) => view((req.params as { id: string }).id));
+
+  app.patch('/api/applications/:id/letter', { schema: { params: idParams, body: letterBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const patch = req.body as LetterPatch;
+    const draft = d.store.require(id);
+    draft.letter = { ...draft.letter, ...patch };
+    // A hand edit is never lost because no browser is installed: pages 0 = "not counted" (approve recounts).
+    let counted = 0;
+    try {
+      counted = await countPages(await d.printer.print(letterHtml(draft, now())));
+    } catch (err) {
+      if (!(err instanceof AppError && err.code === 'BROWSER_MISSING')) throw err;
+    }
+    notBusy(id);
+    d.store.update(id, (p) => { p.letter = { ...p.letter, ...patch, pages: counted }; touchDraft(p, now()); });
+    return view(id);
+  });
+
+  app.patch('/api/applications/:id/cv-profil', { schema: { params: idParams, body: profilBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const { profil } = req.body as { profil: string };
+    d.store.update(id, (p) => { p.cv.profil = profil; p.cv.profilEditedByHand = true; touchDraft(p, now()); });
+    return view(id);
+  });
+
+  app.patch('/api/applications/:id/attachments', { schema: { params: idParams, body: attachmentsBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const { ids } = req.body as { ids: string[] };
+    const current = d.store.require(id);
+    const allowed = new Set([...d.profile().documents.map((doc) => doc.id), ...current.attachments]);
+    const unknown = ids.filter((x) => !allowed.has(x));
+    if (unknown.length > 0) throw new AppError('BAD_REQUEST', `${unknown.length} unknown document id(s)`);
+    d.store.update(id, (p) => { p.attachments = ids; touchDraft(p, now()); });
+    return view(id);
+  });
+
+  app.post('/api/applications/:id/revise', { schema: { params: idParams, body: reviseBody } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { instruction } = req.body as { instruction: string };
+    return reply.code(202).send(d.job.start({ kind: 'revise', applicationId: id, instruction: instruction.trim() }));
+  });
+
+  app.post('/api/applications/:id/refresh-cv', { schema: { params: idParams, body: refreshBody } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { keepProfil } = req.body as { keepProfil: boolean };
+    return reply.code(202).send(d.job.start({ kind: 'refreshCv', applicationId: id, keepProfil }));
+  });
+
+  app.post('/api/applications/:id/recreate', { schema: { params: idParams, body: languageBody } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { language } = req.body as { language: DocLanguage };
+    return reply.code(202).send(d.job.start({ kind: 'recreate', applicationId: id, language }));
+  });
+
+  app.post('/api/applications/:id/approve', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    let pages = d.store.require(id).letter.pages;
+    if (pages !== 1) pages = await pagesOf(id);
+    if (pages !== 1) {
+      d.store.update(id, (p) => { p.letter.pages = pages; });
+      throw new AppError('LETTER_TOO_LONG', `${pages} pages`);
+    }
+    d.store.update(id, (p) => { p.letter.pages = 1; p.status = 'approved'; p.approvedAt = now().toISOString(); p.updatedAt = now().toISOString(); });
+    return view(id);
+  });
+
+  app.post('/api/applications/:id/unapprove', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    d.store.update(id, (p) => touchDraft(p, now()));
+    return view(id);
+  });
+
+  app.delete('/api/applications/:id', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    d.store.remove(id);
+    return { ok: true };
+  });
+}
