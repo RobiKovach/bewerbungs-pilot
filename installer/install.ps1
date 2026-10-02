@@ -69,11 +69,11 @@ Say 'checkingBrowser'
 $browserPaths = @()
 foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
   if ($base) {
-    $browserPaths += (Join-Path $base 'MicrosoftEdgeApplicationmsedge.exe')
-    $browserPaths += (Join-Path $base 'GoogleChromeApplicationchrome.exe')
+    $browserPaths += (Join-Path $base 'Microsoft\Edge\Application\msedge.exe')
+    $browserPaths += (Join-Path $base 'Google\Chrome\Application\chrome.exe')
   }
 }
-if ($env:LOCALAPPDATA) { $browserPaths += (Join-Path $env:LOCALAPPDATA 'GoogleChromeApplicationchrome.exe') }
+if ($env:LOCALAPPDATA) { $browserPaths += (Join-Path $env:LOCALAPPDATA 'Google\Chrome\Application\chrome.exe') }
 if (-not ($browserPaths | Where-Object { Test-Path $_ })) { Say 'browserMissing' }
 
 # 3. Stop a running copy (update case), then copy the app. User data in $DataDir is never touched.
