@@ -8,7 +8,7 @@ export const SAMPLE_CV: ExtractedCv = {
   personal: {
     fullName: 'Max Mustermann', email: 'max@example.com', phone: '+49 30 1234567', street: 'Musterstraße 1',
     postalCode: '10115', city: 'Berlin', country: 'Deutschland', birthDate: '15.03.1990', nationality: '',
-    workPermit: '', drivingLicense: 'B',
+    workPermit: '', drivingLicense: 'B', links: [],
   },
   education: [{
     kind: 'vocational', degree: 'Fachinformatiker für Anwendungsentwicklung', institution: 'OSZ IMT Berlin', city: 'Berlin',

@@ -4,11 +4,11 @@ import type { Profile, ProfileView } from '../types';
 export function emptyProfile(): Profile {
   const blank = <T>(data: T) => ({ data, aiFields: [] as string[], confirmedAt: null as string | null, editedAt: null as string | null });
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     wizard: { step: 1, completedAt: null },
     cv: null,
     sections: {
-      personal: blank({ fullName: '', email: '', phone: '', street: '', postalCode: '', city: '', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '' }),
+      personal: blank({ fullName: '', email: '', phone: '', street: '', postalCode: '', city: '', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] }),
       education: blank({ items: [] }),
       experience: blank({ items: [] }),
       skills: blank({ items: [] }),

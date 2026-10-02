@@ -6,7 +6,7 @@ export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationP
     schemaVersion: 1, id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     profileFingerprint: '0'.repeat(64),
     snapshot: {
-      personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '', street: '', postalCode: '10115', city: 'Berlin', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '' },
+      personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '', street: '', postalCode: '10115', city: 'Berlin', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] },
       education: [], experience: [], skills: [{ id: 'sk1', name: 'JavaScript', level: 'good' }], languages: [], photo: null,
     },
     vacancy: { id: 'v1', title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Hamburg'], remote: 'partial', contact: null, url: '' },

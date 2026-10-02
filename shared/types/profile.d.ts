@@ -3,6 +3,9 @@ export type SectionId = 'personal' | 'education' | 'experience' | 'skills' | 'la
 /** "YYYY", "YYYY-MM" or "" (unknown). In `to`, "" means "until now". */
 export type YearMonth = string;
 
+/** A web address the person wants on the CV (GitHub, LinkedIn, portfolio…). Never sent to Claude. */
+export interface ProfileLink { label: string; url: string }
+
 export interface PersonalData {
   fullName: string;
   email: string;
@@ -17,6 +20,8 @@ export interface PersonalData {
   /** Free text, e.g. "EU citizen" or "Aufenthaltstitel § 24". */
   workPermit: string;
   drivingLicense: string;
+  /** 0–3 links shown in the CV's contact block. */
+  links: ProfileLink[];
 }
 
 export type EducationKind = 'school' | 'vocational' | 'university' | 'course' | 'certificate';
@@ -115,7 +120,7 @@ export interface StoredFile { id: string; ext: FileExt; originalName: string; si
 export interface ProfileDocument extends StoredFile { label: string; attachAlways: boolean }
 
 export interface Profile {
-  schemaVersion: 3;
+  schemaVersion: 4;
   wizard: { step: 1 | 2 | 3 | 4; completedAt: string | null };
   cv: StoredFile | null;
   sections: Sections;

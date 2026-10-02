@@ -7,14 +7,22 @@ import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
 import { filledPaths } from './sections.js';
 
-export const PROFILE_SCHEMA_VERSION = 3;
+export const PROFILE_SCHEMA_VERSION = 4;
 /** migrations[n] turns version n into n + 1. */
 export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
   // 2: open CV proposals (none in old files) and Section.editedAt (see migrateEditedAt).
   1: (doc) => ({ ...doc, cvProposals: {}, sections: migrateEditedAt(doc.sections, new Date().toISOString()) }),
   // 3: job wishes get the Zeitarbeit switch, on (= the search behaves as it would have before).
   2: (doc) => ({ ...doc, sections: withWishesDefault(doc.sections) }),
+  // 4: personal details get a list of links (none in old files).
+  3: (doc) => ({ ...doc, sections: withLinksDefault(doc.sections) }),
 };
+
+function withLinksDefault(sections: unknown): unknown {
+  const s = sections as { personal?: { data?: unknown } } | null;
+  if (!s || typeof s !== 'object' || !s.personal || typeof s.personal.data !== 'object' || s.personal.data === null) return sections;
+  return { ...s, personal: { ...s.personal, data: { links: [], ...(s.personal.data as object) } } };
+}
 
 /** A malformed document is left alone for validateProfile to refuse. */
 function withWishesDefault(sections: unknown): unknown {
@@ -57,7 +65,9 @@ export const LIMITS = { name: 300, short: 100, text: 5000, question: 1000, entri
 export const PERSONAL_LIMITS = {
   fullName: LIMITS.name, email: LIMITS.name, phone: LIMITS.short, street: LIMITS.name, postalCode: LIMITS.short,
   city: LIMITS.short, country: LIMITS.short, nationality: LIMITS.short, workPermit: LIMITS.name, drivingLicense: LIMITS.short,
-} as const satisfies Record<Exclude<keyof PersonalData, 'birthDate'>, number>;
+} as const satisfies Record<Exclude<keyof PersonalData, 'birthDate' | 'links'>, number>;
+export const LINK_LIMITS = { count: 3, label: 40, url: 300 } as const;
+export const LINK_URL = /^https?:\/\/\S+$/;
 
 const ID = { type: 'string', pattern: '^[A-Za-z0-9_-]{1,64}$' };
 const YEAR_MONTH = { type: 'string', pattern: '^(\\d{4}(-(0[1-9]|1[0-2]))?)?$' };
@@ -73,9 +83,11 @@ function obj(properties: Record<string, JsonSchema>): JsonSchema {
 }
 const items = (item: JsonSchema, maxItems: number) => obj({ items: array(item, maxItems) });
 
+const LINK = obj({ label: str(LINK_LIMITS.label, 1), url: { type: 'string', minLength: 1, maxLength: LINK_LIMITS.url, pattern: LINK_URL.source } });
 const PERSONAL = obj({
   ...Object.fromEntries(Object.entries(PERSONAL_LIMITS).map(([k, n]) => [k, str(n)])),
   birthDate: DAY,
+  links: array(LINK, LINK_LIMITS.count),
 });
 const EDUCATION_ENTRY = obj({
   id: ID, kind: oneOf(EDUCATION_KINDS), degree: str(LIMITS.name), institution: str(LIMITS.name), city: str(LIMITS.short),
@@ -180,7 +192,7 @@ export function emptySectionData(): SectionDataMap {
   return {
     personal: {
       fullName: '', email: '', phone: '', street: '', postalCode: '', city: '', country: '', birthDate: '',
-      nationality: '', workPermit: '', drivingLicense: '',
+      nationality: '', workPermit: '', drivingLicense: '', links: [],
     },
     education: { items: [] },
     experience: { items: [] },

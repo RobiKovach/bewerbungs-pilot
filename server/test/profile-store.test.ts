@@ -73,7 +73,7 @@ describe('ProfileStore', () => {
     expect(fs.readdirSync(dir).some((f) => f.startsWith('profile.invalid-'))).toBe(true);
     expect(events).toEqual(['profile_invalid']);
   });
-  it('loads a profile saved by version 0.2.0 (schema 1): data kept, no CV proposals, next save writes schema 3', () => {
+  it('loads a profile saved by version 0.2.0 (schema 1): data kept, no CV proposals, next save writes schema 4', () => {
     const dir = tempDir();
     const file = path.join(dir, 'profile.json');
     // As version 0.2.0 wrote it: no cvProposals, no editedAt.
@@ -84,17 +84,17 @@ describe('ProfileStore', () => {
     const events: string[] = [];
     const store = new ProfileStore(file, (e) => events.push(e));
     const loaded = store.load();
-    expect(loaded.schemaVersion).toBe(3);
+    expect(loaded.schemaVersion).toBe(4);
     expect(loaded.cvProposals).toEqual({});
     expect(loaded.sections.personal.editedAt).toBeNull();
     expect(loaded.neverMention).toEqual(['Kunde X']);
     expect(loaded.sections.wishes.data.includeTemporaryAgencies).toBe(true);
     expect(events).toEqual([]);
     store.update(() => {});
-    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: 3, cvProposals: {} });
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: 4, cvProposals: {} });
   });
 
-  describe('keeps a copy of a schema-1 file before it is first written as schema 3', () => {
+  describe('keeps a copy of a schema-1 file before it is first written as schema 4', () => {
     const writeV1 = (file: string) => {
       const old: Record<string, unknown> = { ...emptyProfile(), schemaVersion: 1, neverMention: ['Kunde X'] };
       delete old.cvProposals;
@@ -118,9 +118,9 @@ describe('ProfileStore', () => {
       const [backup] = backups(dir);
       expect(backups(dir)).toEqual([expect.stringMatching(/^profile\.v1-\d+\.json$/)]);
       expect(fs.readFileSync(path.join(dir, backup), 'utf8')).toBe(original);
-      expect(JSON.parse(fs.readFileSync(file, 'utf8')).schemaVersion).toBe(3);
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).schemaVersion).toBe(4);
       store.update((p) => { p.neverMention = ['Kunde Z']; });
-      // The file is schema 3 now: a restart does not copy it again.
+      // The file is schema 4 now: a restart does not copy it again.
       const restarted = new ProfileStore(file);
       expect(restarted.load().neverMention).toEqual(['Kunde Z']);
       restarted.update(() => {});
@@ -142,7 +142,7 @@ describe('ProfileStore', () => {
       expect(fs.readFileSync(path.join(dir, others[0]), 'utf8')).toBe(original);
     });
 
-    it('does not write schema 3 when the copy cannot be made', () => {
+    it('does not write schema 4 when the copy cannot be made', () => {
       const dir = tempDir();
       const file = path.join(dir, 'profile.json');
       const original = writeV1(file);
@@ -154,7 +154,7 @@ describe('ProfileStore', () => {
       expect(store.get().neverMention).toEqual(['Kunde X']);
     });
 
-    it('a profile that starts as schema 3 gets no copy', () => {
+    it('a profile that starts as schema 4 gets no copy', () => {
       const dir = tempDir();
       const file = path.join(dir, 'profile.json');
       const store = new ProfileStore(file);

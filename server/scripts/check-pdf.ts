@@ -11,7 +11,7 @@ const sample: ApplicationPackage = {
   schemaVersion: 1, id: 'check', vacancyId: 'check', language: 'de', status: 'draft',
   createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), approvedAt: null, profileFingerprint: '0'.repeat(64),
   snapshot: {
-    personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '+49 30 1234567', street: 'Musterstraße 1', postalCode: '10115', city: 'Berlin', country: 'Deutschland', birthDate: '', nationality: '', workPermit: '', drivingLicense: '' },
+    personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '+49 30 1234567', street: 'Musterstraße 1', postalCode: '10115', city: 'Berlin', country: 'Deutschland', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] },
     education: [{ id: 'ed1', kind: 'vocational', degree: 'Fachinformatiker für Anwendungsentwicklung', institution: 'OSZ IMT Berlin', city: 'Berlin', country: 'Deutschland', from: '2015-09', to: '2018-06', description: 'Ausbildung mit Schwerpunkt Webentwicklung.' }],
     experience: [{ id: 'ex1', jobTitle: 'Webentwickler', employer: 'Beispiel GmbH', city: 'Berlin', country: 'Deutschland', from: '2018-07', to: '', description: 'Entwicklung von Kundenwebseiten mit WordPress und JavaScript.' }],
     skills: [{ id: 'sk1', name: 'JavaScript', level: 'good' }, { id: 'sk2', name: 'WordPress', level: 'expert' }, { id: 'sk3', name: 'CSS', level: 'good' }],

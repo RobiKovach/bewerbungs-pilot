@@ -83,7 +83,7 @@ describe('migrate', () => {
     delete wishes.includeTemporaryAgencies;
     wishes.jobTitles = ['Webentwickler'];
     const out = migrate(v2, PROFILE_SCHEMA_VERSION, PROFILE_MIGRATIONS) as unknown as Profile;
-    expect(out.schemaVersion).toBe(3);
+    expect(out.schemaVersion).toBe(4);
     expect(out.sections.wishes.data).toMatchObject({ jobTitles: ['Webentwickler'], includeTemporaryAgencies: true });
     expect(validateProfile(out)).toBeNull();
   });

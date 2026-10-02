@@ -3,7 +3,7 @@ import type {
 } from '@bp/shared';
 import { fenceUntrusted } from '../../llm/fence.js';
 import type { JsonSchema, LlmTask } from '../../llm/types.js';
-import { EDUCATION_KINDS, LANGUAGE_LEVELS, LIMITS, PERSONAL_LIMITS, SKILL_LEVELS, type CvSectionId } from '../schema.js';
+import { EDUCATION_KINDS, LANGUAGE_LEVELS, LIMITS, LINK_LIMITS, LINK_URL, PERSONAL_LIMITS, SKILL_LEVELS, type CvSectionId } from '../schema.js';
 
 export type CvSource = { kind: 'file'; path: string } | { kind: 'text'; text: string };
 type NoId<T> = Omit<T, 'id'>;
@@ -31,7 +31,7 @@ const list = (item: JsonSchema): JsonSchema => ({ type: 'array', items: item });
 // (toSectionData), which is kinder than failing the whole run over "07/2018".
 const EXTRACT_SCHEMA = obj({
   readable: { type: 'boolean' },
-  personal: obj({ ...Object.fromEntries(Object.keys(PERSONAL_LIMITS).map((k) => [k, S])), birthDate: S }),
+  personal: obj({ ...Object.fromEntries(Object.keys(PERSONAL_LIMITS).map((k) => [k, S])), birthDate: S, links: list(obj({ label: S, url: S })) }),
   education: list(obj({ kind: { enum: [...EDUCATION_KINDS] }, degree: S, institution: S, city: S, country: S, from: S, to: S, description: S })),
   experience: list(obj({ jobTitle: S, employer: S, city: S, country: S, from: S, to: S, description: S })),
   skills: list(obj({ name: S, level: { enum: [...SKILL_LEVELS] } })),
@@ -47,6 +47,7 @@ Rules:
 - Write every "description" in the reply language (translate if needed): 1–4 short sentences, only facts from the CV.
 - Dates: "YYYY-MM" when the month is known, otherwise "YYYY". "to" is "" when the entry is still ongoing.
 - birthDate: "YYYY-MM-DD" or "".
+- personal.links: web addresses from the CV (GitHub, LinkedIn, portfolio or personal website) with a short label such as "GitHub"; full https:// address; at most 3.
 - education.kind: school, vocational (Ausbildung / vocational training), university, course, certificate.
 - skills: one entry per skill, tool or program; level only if the CV states it, otherwise "".
 - languages: level as CEFR (A1–C2) or "native" only if the CV states it, otherwise "".
@@ -97,9 +98,13 @@ const clip = (v: string, max: number) => v.trim().slice(0, max);
 export function toSectionData(cv: ExtractedCv, newId: () => string): Pick<SectionDataMap, CvSectionId> {
   const personal = Object.fromEntries(
     Object.entries(PERSONAL_LIMITS).map(([k, max]) => [k, clip(cv.personal[k as keyof typeof PERSONAL_LIMITS], max)]),
-  ) as Omit<PersonalData, 'birthDate'>;
+  ) as Omit<PersonalData, 'birthDate' | 'links'>;
+  const links = cv.personal.links
+    .map((l) => ({ label: clip(l.label, LINK_LIMITS.label) || 'Website', url: clip(l.url, LINK_LIMITS.url) }))
+    .filter((l) => LINK_URL.test(l.url))
+    .slice(0, LINK_LIMITS.count);
   return {
-    personal: { ...personal, birthDate: normalizeDay(cv.personal.birthDate) },
+    personal: { ...personal, birthDate: normalizeDay(cv.personal.birthDate), links },
     education: {
       items: cv.education.filter((e) => e.degree.trim() || e.institution.trim()).slice(0, LIMITS.entries).map((e) => ({
         id: newId(), kind: e.kind, degree: clip(e.degree, LIMITS.name), institution: clip(e.institution, LIMITS.name),
