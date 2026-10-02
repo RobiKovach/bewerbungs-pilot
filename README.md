@@ -4,10 +4,10 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.3 — foundation, profile and job offers.** The app installs, runs, speaks six languages,
-walks you through the first steps, talks to Claude, builds your profile from your CV and your own
-stories, and finds job offers that fit your profile. Application packages and sending are being
-built next.
+**Status: v0.4 — foundation, profile, job offers and application packages.** The app installs, runs, speaks six
+languages, walks you through the first steps, talks to Claude, builds your profile from your CV and your own stories,
+finds job offers that fit your profile and writes an application package (cover letter + tailored CV) for the offers
+you choose. Sending applications from your own email is being built next.
 
 ## Requirements
 
@@ -55,6 +55,20 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. BewerbungsPilot only talks to
   `rest.arbeitsagentur.de`; it never opens links you paste.
+
+## Application packages
+
+- Mark a job offer as **Interesting**, then click **Create package** on its card. Choose German or English for the
+  documents (the language of the offer is suggested).
+- You need a checked profile (personal details, education, experience, skills, languages) and at least one checked
+  story that may be told to employers.
+- Claude writes the cover letter from your stories — one or two true stories tied to what the offer asks for, never a
+  list of skills from your CV — and tailors the CV: descriptions translated into the document language, the skills
+  that matter first, a short Profile at the top. Nothing is made up; your "never mention" list is respected.
+- Edit every part of the letter yourself or ask Claude to change it. The letter must fit on one page before you can
+  approve the package. Any change after approving makes it a draft again.
+- Download the letter, the CV and your attachments one by one, or everything as one PDF. PDFs are made with
+  Microsoft Edge or Google Chrome installed on your computer.
 
 ## Development
 

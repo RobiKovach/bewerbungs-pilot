@@ -64,6 +64,18 @@ if (-not $Claude) {
   if (-not $Claude) { Fail 'claude not found after installation' }
 }
 
+# 2b. A browser for PDFs (Edge or Chrome). Only a warning: everything else works without it.
+Say 'checkingBrowser'
+$browserPaths = @()
+foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+  if ($base) {
+    $browserPaths += (Join-Path $base 'MicrosoftEdgeApplicationmsedge.exe')
+    $browserPaths += (Join-Path $base 'GoogleChromeApplicationchrome.exe')
+  }
+}
+if ($env:LOCALAPPDATA) { $browserPaths += (Join-Path $env:LOCALAPPDATA 'GoogleChromeApplicationchrome.exe') }
+if (-not ($browserPaths | Where-Object { Test-Path $_ })) { Say 'browserMissing' }
+
 # 3. Stop a running copy (update case), then copy the app. User data in $DataDir is never touched.
 $ServerJson = Join-Path $DataDir 'server.json'
 if (Test-Path $ServerJson) {
