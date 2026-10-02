@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { ApplicationEditor } from '../applications/ApplicationEditor';
 import { formatDay } from '../applications/format';
 import { ErrorBanner } from '../components/ErrorBanner';
 import type { ApplicationListView } from '../types';
@@ -54,6 +55,13 @@ function ApplicationList() {
   );
 }
 
-export function ApplicationsPage() {
-  return <ApplicationList />;
+export function ApplicationsPage({ pollMs }: { pollMs?: number } = {}) {
+  const [hash, setHash] = useState(window.location.hash);
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  const id = applicationIdFromHash(hash);
+  return id ? <ApplicationEditor key={id} id={id} pollMs={pollMs} /> : <ApplicationList />;
 }

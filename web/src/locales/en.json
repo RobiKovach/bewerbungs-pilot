@@ -232,6 +232,43 @@
     "open": "Open package",
     "busy": "Claude is working on another package. Please wait a moment.",
     "language": { "de": "Deutsch", "en": "English" },
+    "back": "← All applications",
+    "tabs": {
+      "letter": "Cover letter"
+    },
+    "approve": "Approve",
+    "unapprove": "Back to draft",
+    "recreate": "Create again",
+    "recreateConfirm": "Claude writes the letter and the CV parts again. Your changes to the letter will be lost.",
+    "recreateYes": "Yes, create again",
+    "delete": "Delete package",
+    "deleteConfirm": "Delete this package? The job offer stays in your list.",
+    "deleteYes": "Yes, delete",
+    "working": {
+      "create": "Claude is writing the letter and preparing the CV…",
+      "recreate": "Claude is writing the package again…",
+      "revise": "Claude is changing the letter…",
+      "refreshCv": "Claude is updating the CV…"
+    },
+    "letter": {
+      "hintTitle": "Tip:",
+      "tooLong": "The letter is longer than one page ({{pages}} pages). Please shorten it.",
+      "recipient": "Recipient (one line each)",
+      "subject": "Subject",
+      "salutation": "Salutation",
+      "paragraph": "Paragraph {{n}}",
+      "removeParagraph": "Remove paragraph",
+      "addParagraph": "+ Paragraph",
+      "closing": "Closing",
+      "signature": "Name under the letter",
+      "save": "Save changes",
+      "discard": "Discard changes",
+      "askLabel": "Ask Claude to change the letter",
+      "askPlaceholder": "For example: shorter, or use the story about the online shop",
+      "ask": "Ask Claude",
+      "saveFirst": "Save or discard your changes first.",
+      "preview": "Preview of the letter"
+    },
     "create": {
       "button": "Create package",
       "title": "Create an application package",

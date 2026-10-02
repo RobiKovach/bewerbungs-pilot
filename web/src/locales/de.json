@@ -232,6 +232,43 @@
     "open": "Paket öffnen",
     "busy": "Claude arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
     "language": { "de": "Deutsch", "en": "English" },
+    "back": "← Alle Bewerbungen",
+    "tabs": {
+      "letter": "Anschreiben"
+    },
+    "approve": "Freigeben",
+    "unapprove": "Zurück zum Entwurf",
+    "recreate": "Neu erstellen",
+    "recreateConfirm": "Claude schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben gehen verloren.",
+    "recreateYes": "Ja, neu erstellen",
+    "delete": "Paket löschen",
+    "deleteConfirm": "Dieses Paket löschen? Die Stellenanzeige bleibt in Ihrer Liste.",
+    "deleteYes": "Ja, löschen",
+    "working": {
+      "create": "Claude schreibt das Anschreiben und bereitet den Lebenslauf vor…",
+      "recreate": "Claude schreibt das Paket neu…",
+      "revise": "Claude ändert das Anschreiben…",
+      "refreshCv": "Claude aktualisiert den Lebenslauf…"
+    },
+    "letter": {
+      "hintTitle": "Tipp:",
+      "tooLong": "Das Anschreiben ist länger als eine Seite ({{pages}} Seiten). Bitte kürzen Sie es.",
+      "recipient": "Empfänger (je eine Zeile)",
+      "subject": "Betreff",
+      "salutation": "Anrede",
+      "paragraph": "Absatz {{n}}",
+      "removeParagraph": "Absatz entfernen",
+      "addParagraph": "+ Absatz",
+      "closing": "Grußformel",
+      "signature": "Name unter dem Brief",
+      "save": "Änderungen speichern",
+      "discard": "Änderungen verwerfen",
+      "askLabel": "Claude bitten, das Anschreiben zu ändern",
+      "askPlaceholder": "Zum Beispiel: kürzer, oder die Geschichte über den Onlineshop verwenden",
+      "ask": "Claude fragen",
+      "saveFirst": "Speichern oder verwerfen Sie zuerst Ihre Änderungen.",
+      "preview": "Vorschau des Anschreibens"
+    },
     "create": {
       "button": "Paket erstellen",
       "title": "Bewerbungspaket erstellen",

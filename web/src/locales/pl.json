@@ -232,6 +232,43 @@
     "open": "Otwórz pakiet",
     "busy": "Claude pracuje teraz nad innym pakietem. Poczekaj chwilę.",
     "language": { "de": "Deutsch", "en": "English" },
+    "back": "← Wszystkie aplikacje",
+    "tabs": {
+      "letter": "List motywacyjny"
+    },
+    "approve": "Zatwierdź",
+    "unapprove": "Wróć do wersji roboczej",
+    "recreate": "Utwórz ponownie",
+    "recreateConfirm": "Claude napisze list i części CV od nowa. Twoje zmiany w liście zostaną utracone.",
+    "recreateYes": "Tak, utwórz ponownie",
+    "delete": "Usuń pakiet",
+    "deleteConfirm": "Usunąć ten pakiet? Oferta pracy pozostanie na Twojej liście.",
+    "deleteYes": "Tak, usuń",
+    "working": {
+      "create": "Claude pisze list i przygotowuje CV…",
+      "recreate": "Claude pisze pakiet od nowa…",
+      "revise": "Claude zmienia list…",
+      "refreshCv": "Claude aktualizuje CV…"
+    },
+    "letter": {
+      "hintTitle": "Wskazówka:",
+      "tooLong": "List jest dłuższy niż jedna strona ({{pages}} str.). Proszę go skrócić.",
+      "recipient": "Adresat (każda linia osobno)",
+      "subject": "Temat",
+      "salutation": "Zwrot grzecznościowy",
+      "paragraph": "Akapit {{n}}",
+      "removeParagraph": "Usuń akapit",
+      "addParagraph": "+ Akapit",
+      "closing": "Zakończenie",
+      "signature": "Imię i nazwisko pod listem",
+      "save": "Zapisz zmiany",
+      "discard": "Odrzuć zmiany",
+      "askLabel": "Poproś Claude o zmianę listu",
+      "askPlaceholder": "Na przykład: krócej, albo użyj historii o sklepie internetowym",
+      "ask": "Zapytaj Claude",
+      "saveFirst": "Najpierw zapisz lub odrzuć swoje zmiany.",
+      "preview": "Podgląd listu"
+    },
     "create": {
       "button": "Utwórz pakiet",
       "title": "Utwórz pakiet aplikacji",

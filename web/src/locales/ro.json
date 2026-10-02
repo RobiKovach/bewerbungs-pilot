@@ -232,6 +232,43 @@
     "open": "Deschide pachetul",
     "busy": "Claude lucrează acum la alt pachet. Vă rugăm să așteptați puțin.",
     "language": { "de": "Deutsch", "en": "English" },
+    "back": "← Toate aplicațiile",
+    "tabs": {
+      "letter": "Scrisoare de intenție"
+    },
+    "approve": "Aprobă",
+    "unapprove": "Înapoi la ciornă",
+    "recreate": "Creează din nou",
+    "recreateConfirm": "Claude scrie din nou scrisoarea și părțile CV-ului. Modificările dvs. din scrisoare se vor pierde.",
+    "recreateYes": "Da, creează din nou",
+    "delete": "Șterge pachetul",
+    "deleteConfirm": "Ștergeți acest pachet? Oferta de muncă rămâne în lista dvs.",
+    "deleteYes": "Da, șterge",
+    "working": {
+      "create": "Claude scrie scrisoarea și pregătește CV-ul…",
+      "recreate": "Claude scrie din nou pachetul…",
+      "revise": "Claude modifică scrisoarea…",
+      "refreshCv": "Claude actualizează CV-ul…"
+    },
+    "letter": {
+      "hintTitle": "Sfat:",
+      "tooLong": "Scrisoarea are mai mult de o pagină ({{pages}} pagini). Vă rugăm să o scurtați.",
+      "recipient": "Destinatar (câte o linie)",
+      "subject": "Subiect",
+      "salutation": "Formula de adresare",
+      "paragraph": "Paragraful {{n}}",
+      "removeParagraph": "Elimină paragraful",
+      "addParagraph": "+ Paragraf",
+      "closing": "Încheiere",
+      "signature": "Numele de sub scrisoare",
+      "save": "Salvează modificările",
+      "discard": "Renunță la modificări",
+      "askLabel": "Rugați Claude să modifice scrisoarea",
+      "askPlaceholder": "De exemplu: mai scurt, sau folosește povestea despre magazinul online",
+      "ask": "Întreabă Claude",
+      "saveFirst": "Mai întâi salvați sau renunțați la modificări.",
+      "preview": "Previzualizarea scrisorii"
+    },
     "create": {
       "button": "Creează pachet",
       "title": "Creați un pachet de candidatură",
