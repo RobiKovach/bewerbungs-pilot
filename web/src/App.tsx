@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from './api';
 import { Layout } from './components/Layout';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
+import { ApplicationsPage } from './pages/ApplicationsPage';
 import { GuidePage } from './pages/GuidePage';
 import { HomePage } from './pages/HomePage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -13,6 +14,7 @@ import type { Route } from './types';
 
 function routeFromHash(hash: string): Route {
   const r = hash.replace(/^#\/?/, '');
+  if (r === 'applications' || r.startsWith('applications/')) return 'applications';
   return r === 'guide' || r === 'settings' || r === 'profile' || r === 'vacancies' ? r : 'home';
 }
 
@@ -39,6 +41,7 @@ export function App() {
   else if (route === 'settings') page = <SettingsPage onQuit={() => void onQuit()} />;
   else if (route === 'profile') page = <ProfilePage />;
   else if (route === 'vacancies') page = <VacanciesPage />;
+  else if (route === 'applications') page = <ApplicationsPage />;
   return (
     <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
       {page}

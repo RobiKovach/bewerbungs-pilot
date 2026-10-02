@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Twój asystent w poszukiwaniu pracy w Niemczech" },
-  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Oferty pracy", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
+  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Oferty pracy", "applications": "Aplikacje", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
   "common": {
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
@@ -54,7 +54,7 @@
       "profile": { "title": "Profil", "what": "Twoje CV, umiejętności i oczekiwania — podstawa każdej aplikacji. Nic nie jest zmyślane.", "todo": "Prześlij swoje CV i odpowiedz na kilka krótkich pytań." },
       "email": { "title": "E-mail", "what": "Aplikacje są wysyłane z Twojego własnego adresu e-mail.", "todo": "Podaj swój adres e-mail i specjalne hasło aplikacji — pokażemy Ci, jak je utworzyć w 3 krokach." },
       "search": { "title": "Wyszukiwanie pracy", "what": "BewerbungsPilot przeszukuje giełdę ofert pracy Federalnej Agencji Pracy i wybiera oferty pasujące do Twojego profilu. Możesz też wkleić ofertę znalezioną samodzielnie.", "todo": "Kliknij „Szukaj teraz” — albo wklej ofertę, którą znalazłeś sam. Codzienne automatyczne wyszukiwanie pojawi się później." },
-      "review": { "title": "Przegląd i zatwierdzenie", "what": "Dla każdej pasującej oferty otrzymujesz list motywacyjny, dopasowane CV, notatki o firmie i wskazówki do rozmowy kwalifikacyjnej.", "todo": "Przeczytaj dokumenty, zmień to, co chcesz, i zatwierdź aplikację." },
+      "review": { "title": "Przegląd i zatwierdzenie", "what": "Dla każdej oferty, którą oznaczysz jako interesującą, BewerbungsPilot pisze list motywacyjny na podstawie Twoich historii oraz CV dopasowane do oferty.", "todo": "Otwórz pakiet, przeczytaj i zmień dokumenty, a następnie go zatwierdź." },
       "send": { "title": "Wysyłka", "what": "Wysyłane są tylko zatwierdzone przez Ciebie aplikacje — nic więcej.", "todo": "Kliknij „Wyślij” i gotowe." },
       "statuses": { "title": "Śledzenie aplikacji", "what": "Od razu widać, gdzie zostały złożone aplikacje, kto odpowiedział i jak przebiegają sprawy.", "todo": "Oznaczaj odpowiedzi, takie jak zaproszenie lub odmowa — BewerbungsPilot pomoże Ci odpowiedzieć." }
     }
@@ -220,6 +220,15 @@
       "docCount": "{{count}} z {{max}} dokumentów"
     },
     "wizard": { "start": "Start", "review": "Sprawdź swoje dane", "stories": "Pytania i historie", "files": "Zdjęcie i dokumenty", "finish": "Zakończ" }
+  },
+  "applications": {
+    "title": "Aplikacje",
+    "intro": "Każdy pakiet zawiera list motywacyjny i CV przygotowane pod jedną ofertę pracy. Przeczytaj je, zmień, co chcesz, zatwierdź i pobierz.",
+    "empty": "Nie ma jeszcze pakietów aplikacji. Oznacz ofertę pracy jako „Interesująca” i kliknij przy niej „Utwórz pakiet”.",
+    "toVacancies": "Przejdź do ofert pracy",
+    "status": { "draft": "Wersja robocza", "approved": "Zatwierdzona" },
+    "profileChanged": "Profil się zmienił",
+    "updated": "Zmieniono {{date}}"
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },

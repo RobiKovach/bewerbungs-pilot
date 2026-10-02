@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
-  "nav": { "home": "Home", "profile": "Profile", "vacancies": "Job offers", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
+  "nav": { "home": "Home", "profile": "Profile", "vacancies": "Job offers", "applications": "Applications", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
   "common": {
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
@@ -54,7 +54,7 @@
       "profile": { "title": "Profile", "what": "Your CV, skills and wishes — the basis for every application. Nothing is ever made up.", "todo": "Upload your CV and answer a few short questions." },
       "email": { "title": "Email", "what": "Applications are sent from your own email address.", "todo": "Enter your email address and a special app password — we show you how to create one in 3 steps." },
       "search": { "title": "Job search", "what": "BewerbungsPilot searches the job board of the Federal Employment Agency and picks offers that fit your profile. You can also paste an offer you found yourself.", "todo": "Click \"Search now\" — or paste an offer you found yourself. A daily automatic search will come later." },
-      "review": { "title": "Review and approve", "what": "For every fitting offer you get a cover letter, a tailored CV, notes about the company and interview tips.", "todo": "Read the documents, change what you like and approve the application." },
+      "review": { "title": "Review and approve", "what": "For every job offer you mark as interesting, BewerbungsPilot writes a cover letter from your stories and a CV tailored to the offer.", "todo": "Open the package, read and change the documents, then approve it." },
       "send": { "title": "Sending", "what": "Only the applications you approved are sent — never anything else.", "todo": "Click \"Send\" and you are done." },
       "statuses": { "title": "Track your applications", "what": "See at a glance where you applied, who answered and how your applications are going.", "todo": "Mark replies such as an invitation or a rejection — BewerbungsPilot helps you answer." }
     }
@@ -220,6 +220,15 @@
       "docCount": "{{count}} of {{max}} documents"
     },
     "wizard": { "start": "Start", "review": "Check your details", "stories": "Questions and stories", "files": "Photo and documents", "finish": "Finish" }
+  },
+  "applications": {
+    "title": "Applications",
+    "intro": "Every package holds a cover letter and a CV made for one job offer. Read them, change what you like, approve, download.",
+    "empty": "No application packages yet. Mark a job offer as \"Interesting\" and click \"Create package\" on it.",
+    "toVacancies": "Go to job offers",
+    "status": { "draft": "Draft", "approved": "Approved" },
+    "profileChanged": "Profile changed",
+    "updated": "Changed {{date}}"
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code is not installed.", "hint": "Run the BewerbungsPilot installer again — it installs Claude Code for you." },

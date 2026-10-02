@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Ihr Assistent für Bewerbungen in Deutschland" },
-  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Stellenangebote", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
+  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Stellenangebote", "applications": "Bewerbungen", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
   "common": {
     "next": "Weiter", "back": "Zurück", "retry": "Erneut prüfen", "cancel": "Abbrechen", "details": "Details",
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
@@ -54,7 +54,7 @@
       "profile": { "title": "Profil", "what": "Ihr Lebenslauf, Ihre Fähigkeiten und Wünsche — die Grundlage jeder Bewerbung. Es wird nie etwas erfunden.", "todo": "Laden Sie Ihren Lebenslauf hoch und beantworten Sie einige kurze Fragen." },
       "email": { "title": "E-Mail", "what": "Bewerbungen werden von Ihrer eigenen E-Mail-Adresse aus versendet.", "todo": "Geben Sie Ihre E-Mail-Adresse und ein spezielles App-Passwort ein — wir zeigen Ihnen in 3 Schritten, wie Sie eines erstellen." },
       "search": { "title": "Jobsuche", "what": "BewerbungsPilot durchsucht die Jobbörse der Bundesagentur für Arbeit und wählt Angebote aus, die zu Ihrem Profil passen. Sie können auch ein selbst gefundenes Angebot einfügen.", "todo": "Klicken Sie auf „Jetzt suchen“ — oder fügen Sie ein selbst gefundenes Angebot ein. Eine tägliche automatische Suche kommt später." },
-      "review": { "title": "Prüfen und freigeben", "what": "Für jedes passende Angebot erhalten Sie ein Anschreiben, einen angepassten Lebenslauf, Notizen zum Unternehmen und Tipps für das Vorstellungsgespräch.", "todo": "Lesen Sie die Dokumente, ändern Sie, was Sie möchten, und geben Sie die Bewerbung frei." },
+      "review": { "title": "Prüfen und freigeben", "what": "Für jedes Stellenangebot, das Sie als interessant markieren, schreibt BewerbungsPilot ein Anschreiben aus Ihren Geschichten und einen auf das Angebot zugeschnittenen Lebenslauf.", "todo": "Öffnen Sie das Paket, lesen und ändern Sie die Dokumente und geben Sie es dann frei." },
       "send": { "title": "Versand", "what": "Es werden nur die von Ihnen freigegebenen Bewerbungen versendet — nie etwas anderes.", "todo": "Klicken Sie auf „Senden“, und Sie sind fertig." },
       "statuses": { "title": "Bewerbungen verfolgen", "what": "Sehen Sie auf einen Blick, wo Sie sich beworben haben, wer geantwortet hat und wie Ihre Bewerbungen laufen.", "todo": "Markieren Sie Antworten wie eine Einladung oder eine Absage — BewerbungsPilot hilft Ihnen beim Antworten." }
     }
@@ -220,6 +220,15 @@
       "docCount": "{{count}} von {{max}} Dokumenten"
     },
     "wizard": { "start": "Start", "review": "Ihre Daten prüfen", "stories": "Fragen und Geschichten", "files": "Foto und Dokumente", "finish": "Fertig" }
+  },
+  "applications": {
+    "title": "Bewerbungen",
+    "intro": "Jedes Paket enthält ein Anschreiben und einen Lebenslauf für ein Stellenangebot. Lesen Sie sie, ändern Sie, was Sie möchten, geben Sie sie frei und laden Sie sie herunter.",
+    "empty": "Noch keine Bewerbungspakete. Markieren Sie ein Stellenangebot als „Interessant“ und klicken Sie dort auf „Paket erstellen“.",
+    "toVacancies": "Zu den Stellenangeboten",
+    "status": { "draft": "Entwurf", "approved": "Freigegeben" },
+    "profileChanged": "Profil geändert",
+    "updated": "Geändert am {{date}}"
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },

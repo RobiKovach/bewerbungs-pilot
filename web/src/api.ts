@@ -1,4 +1,5 @@
 import type {
+  ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo,
   CvResult, CvSectionId, ErrorReason, Language, LlmCheck, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
@@ -98,4 +99,22 @@ export const api = {
   startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
   stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),
+  listApplications: () => request<ApplicationListView>('GET', '/api/applications'),
+  newPackageInfo: (vacancyId: string) => request<NewPackageInfo>('GET', `/api/applications/new?vacancyId=${encodeURIComponent(vacancyId)}`),
+  applicationJob: () => request<ApplicationJobState>('GET', '/api/applications/job'),
+  cancelApplicationJob: () => request<ApplicationJobState>('POST', '/api/applications/job/cancel', {}),
+  createPackage: (vacancyId: string, language: DocLanguage) => request<ApplicationJobState>('POST', '/api/applications', { vacancyId, language }),
+  getApplication: (id: string) => request<ApplicationView>('GET', `/api/applications/${encodeURIComponent(id)}`),
+  patchLetter: (id: string, patch: LetterPatch) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/letter`, patch),
+  patchProfil: (id: string, profil: string) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/cv-profil`, { profil }),
+  setAttachments: (id: string, ids: string[]) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/attachments`, { ids }),
+  reviseLetter: (id: string, instruction: string) => request<ApplicationJobState>('POST', `/api/applications/${encodeURIComponent(id)}/revise`, { instruction }),
+  refreshCv: (id: string, keepProfil: boolean) => request<ApplicationJobState>('POST', `/api/applications/${encodeURIComponent(id)}/refresh-cv`, { keepProfil }),
+  recreatePackage: (id: string, language: DocLanguage) => request<ApplicationJobState>('POST', `/api/applications/${encodeURIComponent(id)}/recreate`, { language }),
+  approveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/approve`, {}),
+  unapproveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/unapprove`, {}),
+  deleteApplication: (id: string) => request<{ ok: true }>('DELETE', `/api/applications/${encodeURIComponent(id)}`),
+  previewUrl: (id: string, kind: 'letter' | 'cv', version: string) => `/api/applications/${encodeURIComponent(id)}/preview/${kind}?v=${encodeURIComponent(version)}`,
+  pdfUrl: (id: string, part: 'letter' | 'cv' | 'bundle') => `/api/applications/${encodeURIComponent(id)}/pdf/${part}`,
+  attachmentUrl: (id: string, fileId: string) => `/api/applications/${encodeURIComponent(id)}/pdf/attachment/${encodeURIComponent(fileId)}`,
 };

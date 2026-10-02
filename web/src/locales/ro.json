@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Asistentul dumneavoastră pentru cererile de angajare în Germania" },
-  "nav": { "home": "Acasă", "profile": "Profil", "vacancies": "Oferte de muncă", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
+  "nav": { "home": "Acasă", "profile": "Profil", "vacancies": "Oferte de muncă", "applications": "Candidaturi", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
   "common": {
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
@@ -54,7 +54,7 @@
       "profile": { "title": "Profil", "what": "CV-ul, competențele și preferințele dumneavoastră — baza fiecărei candidaturi. Nu se inventează niciodată nimic.", "todo": "Încărcați CV-ul și răspundeți la câteva întrebări scurte." },
       "email": { "title": "E-mail", "what": "Cererile sunt trimise de la propria dumneavoastră adresă de e-mail.", "todo": "Introduceți adresa dumneavoastră de e-mail și o parolă specială de aplicație — vă arătăm cum să o creați în 3 pași." },
       "search": { "title": "Căutarea locurilor de muncă", "what": "BewerbungsPilot caută pe bursa de locuri de muncă a Agenției Federale pentru Ocuparea Forței de Muncă și selectează ofertele potrivite profilului dumneavoastră. Puteți, de asemenea, să inserați o ofertă găsită de dumneavoastră.", "todo": "Faceți clic pe „Căutați acum” — sau inserați o ofertă găsită de dumneavoastră. Căutarea zilnică automată va veni mai târziu." },
-      "review": { "title": "Revizuire și aprobare", "what": "Pentru fiecare ofertă potrivită primiți o scrisoare de intenție, un CV adaptat, notițe despre companie și sfaturi pentru interviu.", "todo": "Citiți documentele, modificați ce doriți și aprobați cererea." },
+      "review": { "title": "Revizuire și aprobare", "what": "Pentru fiecare ofertă pe care o marcați ca interesantă, BewerbungsPilot scrie o scrisoare de intenție din poveștile dumneavoastră și un CV adaptat ofertei.", "todo": "Deschideți pachetul, citiți și schimbați documentele, apoi aprobați-l." },
       "send": { "title": "Trimitere", "what": "Sunt trimise doar cererile aprobate de dumneavoastră — nimic altceva.", "todo": "Faceți clic pe „Trimiteți” și ați terminat." },
       "statuses": { "title": "Urmărirea candidaturilor", "what": "Vedeți dintr-o privire unde ați aplicat, cine a răspuns și cum evoluează candidaturile dumneavoastră.", "todo": "Marcați răspunsurile, cum ar fi o invitație sau un refuz — BewerbungsPilot vă ajută să răspundeți." }
     }
@@ -220,6 +220,15 @@
       "docCount": "{{count}} din {{max}} documente"
     },
     "wizard": { "start": "Început", "review": "Verificați-vă datele", "stories": "Întrebări și povești", "files": "Fotografie și documente", "finish": "Finalizează" }
+  },
+  "applications": {
+    "title": "Candidaturi",
+    "intro": "Fiecare pachet conține o scrisoare de intenție și un CV făcute pentru o singură ofertă de muncă. Citiți-le, schimbați ce doriți, aprobați și descărcați.",
+    "empty": "Nu există încă pachete de candidatură. Marcați o ofertă ca „Interesantă” și apăsați pe ea „Creează pachet”.",
+    "toVacancies": "La oferte de muncă",
+    "status": { "draft": "Ciornă", "approved": "Aprobat" },
+    "profileChanged": "Profilul s-a schimbat",
+    "updated": "Modificat {{date}}"
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },
