@@ -218,7 +218,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { id, fileId } = req.params as { id: string; fileId: string };
     const doc = chosenDocs(id).find((x) => x.id === fileId);
     if (!doc) throw new AppError('NOT_FOUND', `attachment ${fileId}`);
-    return sendPdf(reply, fs.readFileSync(d.files.pathOf(doc)), `${asciiName(doc.label || doc.originalName.replace(/.pdf$/i, '')) || 'Anlage'}.pdf`);
+    return sendPdf(reply, fs.readFileSync(d.files.pathOf(doc)), `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`);
   });
 
   app.get('/api/applications/:id/pdf/bundle', { schema: { params: idParams } }, async (req, reply) => {
