@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
+    "check:pdf": "tsx scripts/check-pdf.ts",
     "dev": "tsx watch src/index.ts --no-open"
   },
   "devDependencies": {
@@ -21,6 +22,8 @@
     "@fastify/static": "^10.1.4",
     "ajv": "^8.20.0",
     "fastify": "^5.12.5",
-    "mammoth": "^1.12.3"
+    "mammoth": "^1.12.3",
+    "pdf-lib": "^1.17.1",
+    "puppeteer-core": "^25.12.0"
   }
 }

@@ -5,6 +5,8 @@ import type { CreateOutput, CvOutput, LetterOutput } from '../../src/application
 import type { ApplicationPackage, Profile } from '@bp/shared';
 import { profileFingerprint, takeSnapshot } from '../../src/applications/snapshot.js';
 import { emptyProfile } from '../../src/profile/schema.js';
+import { PDFDocument } from 'pdf-lib';
+import type { PdfPrinter } from '../../src/applications/pdf.js';
 
 const NOW = '2026-09-29T10:00:00.000Z';
 
@@ -85,4 +87,22 @@ export function packageClaude(opts: {
     if (required.includes('profil')) return resolve(opts.refresh ?? GOOD_CV, task, signal);
     throw new Error(`unexpected task: ${required.join(',')}`);
   });
+}
+export async function makePdf(pages: number): Promise<Buffer> {
+  const doc = await PDFDocument.create();
+  for (let i = 0; i < pages; i++) doc.addPage([595, 842]);
+  return Buffer.from(await doc.save());
+}
+
+/** Never starts a browser: returns a real PDF with pagesFor(html) pages and remembers what it printed. */
+export class FakePrinter implements PdfPrinter {
+  printed: string[] = [];
+  isAvailable = true;
+  pagesFor: (html: string) => number = () => 1;
+  available(): boolean { return this.isAvailable; }
+  async print(html: string): Promise<Buffer> {
+    if (!this.isAvailable) throw new AppError('BROWSER_MISSING', 'fake: no browser');
+    this.printed.push(html);
+    return makePdf(this.pagesFor(html));
+  }
 }
