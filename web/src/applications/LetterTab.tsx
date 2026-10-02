@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -17,7 +17,7 @@ function patchOf(saved: PackageLetter, draft: Draft): LetterPatch | null {
 }
 
 /** `locked`: this package is being changed by a job (editing off). `busy`: any package job runs (Claude buttons off). */
-export function LetterTab({ view, locked, busy, onView, onRevise }: { view: ApplicationView; locked: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRevise: (instruction: string) => void }) {
+export function LetterTab({ view, locked, busy, onView, onRevise, onDirty }: { view: ApplicationView; locked: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRevise: (instruction: string) => void; onDirty: (dirty: boolean) => void }) {
   const { t } = useTranslation();
   const a = view.application;
   const L = a.letter;
@@ -28,6 +28,11 @@ export function LetterTab({ view, locked, busy, onView, onRevise }: { view: Appl
   const [error, setError] = useState<unknown>(null);
   const [instruction, setInstruction] = useState('');
   const patch = patchOf(L, draft);
+  const dirty = patch !== null;
+  useEffect(() => {
+    onDirty(dirty);
+    return () => onDirty(false);
+  }, [dirty, onDirty]);
   const valid = draft.subject.trim() !== '' && draft.paragraphs.length > 0 && draft.paragraphs.every((p) => p.trim() !== '');
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const setParagraph = (i: number, v: string) => set('paragraphs', draft.paragraphs.map((p, j) => (j === i ? v : p)));

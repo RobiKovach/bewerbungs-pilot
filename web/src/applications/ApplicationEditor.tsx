@@ -17,6 +17,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [actionError, setActionError] = useState<unknown>(null);
   const [tab, setTab] = useState<Tab>('letter');
   const [confirm, setConfirm] = useState<null | 'recreate' | 'delete'>(null);
+  const [dirty, setDirty] = useState(false);
   const [language, setLanguage] = useState<DocLanguage>('de');
 
   const load = useCallback(async () => {
@@ -70,16 +71,17 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         ))}
       </div>
       {tab === 'letter' ? (
-        <LetterTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
+        <LetterTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
       ) : null}
 
       <div className="btn-row app-actions">
         {a.status === 'draft'
-          ? <button type="button" className="btn" disabled={locked || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>
-          : <button type="button" className="btn ghost" disabled={locked} onClick={() => void act(() => api.unapproveApplication(id))}>{t('applications.unapprove')}</button>}
+          ? <button type="button" className="btn" disabled={locked || dirty || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>
+          : <button type="button" className="btn ghost" disabled={locked || dirty} onClick={() => void act(() => api.unapproveApplication(id))}>{t('applications.unapprove')}</button>}
         <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>
         <button type="button" className="btn ghost" disabled={locked} onClick={() => setConfirm('delete')}>{t('applications.delete')}</button>
       </div>
+      {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
       {confirm === 'recreate' ? (
         <div className="card notice" role="alertdialog" aria-label={t('applications.recreate')}>
           <p>{t('applications.recreateConfirm')}</p>

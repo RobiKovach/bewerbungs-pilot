@@ -110,4 +110,24 @@ describe('ApplicationEditor — letter', () => {
     const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/recreate');
     expect(JSON.parse(String(post![1]!.body))).toEqual({ language: 'en' });
   });
+
+  it('unsaved edits switch Approve off until saved or discarded', async () => {
+    const saved = appView({}, { updatedAt: '2026-09-29T11:00:00.000Z', letter: { ...appView().application.letter, subject: 'Neuer Betreff' } });
+    const { user } = setup({ 'PATCH /api/applications/app1/letter': () => ({ body: saved }) });
+    const subject = await screen.findByLabelText('Subject');
+    await user.type(subject, 'X');
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeEnabled();
+    await user.type(screen.getByLabelText('Subject'), 'Y');
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Approve' })).toBeEnabled());
+  });
+
+  it('unsaved edits switch Back to draft off on an approved package', async () => {
+    const { user } = setup({}, appView({}, { status: 'approved', approvedAt: '2026-09-29T12:00:00.000Z' }));
+    await user.type(await screen.findByLabelText('Subject'), 'X');
+    expect(screen.getByRole('button', { name: 'Back to draft' })).toBeDisabled();
+  });
 });
