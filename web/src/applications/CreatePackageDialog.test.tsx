@@ -11,8 +11,8 @@ import type { NewPackageInfo } from '../types';
 const READY = { ready: true, missingSections: [], noStory: false };
 const INFO: NewPackageInfo = { suggestedLanguage: 'de', englishBelowB2: true, shortText: false, existingId: null, readiness: READY };
 
-function setup(extra: Record<string, RouteHandler>, applications = [] as ReturnType<typeof appSummary>[]) {
-  const server = vacancyServer({ list: [vac({ id: 'v1', status: 'favorite', title: 'Webentwickler (m/w/d)' })] });
+function setup(extra: Record<string, RouteHandler>, applications = [] as ReturnType<typeof appSummary>[], list = [vac({ id: 'v1', status: 'favorite', title: 'Webentwickler (m/w/d)' })]) {
+  const server = vacancyServer({ list });
   const f = mockFetch({
     ...server.routes,
     'GET /api/applications': () => ({ body: { applications } }),
@@ -78,5 +78,41 @@ describe('Create package', () => {
     const { user } = setup({ 'GET /api/applications/job': () => ({ body: jobState() }) }, [appSummary({ id: 'app3', vacancyId: 'v1' })]);
     await favourites(user);
     expect(await screen.findByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/app3');
+  });
+
+  it('two favourites: one readiness request and one explanation block', async () => {
+    const { f, user } = setup({
+      'GET /api/applications/readiness': () => ({ body: { ready: false, missingSections: ['skills'], noStory: false } }),
+      'GET /api/applications/job': () => ({ body: jobState() }),
+    }, [], [vac({ id: 'v1', status: 'favorite', title: 'Webentwickler (m/w/d)' }), vac({ id: 'v2', status: 'favorite', title: 'Entwickler (m/w/d)' })]);
+    await favourites(user);
+    expect(await screen.findAllByRole('button', { name: 'Create package' })).toHaveLength(2);
+    for (const b of screen.getAllByRole('button', { name: 'Create package' })) expect(b).toBeDisabled();
+    expect(screen.getAllByText('Complete my profile')).toHaveLength(1);
+    expect(f.mock.calls.filter(([url]) => url === '/api/applications/readiness')).toHaveLength(1);
+  });
+
+  it('an existing package found when opening the dialog shows "Open package"', async () => {
+    const { user } = setup({
+      'GET /api/applications/new?vacancyId=v1': () => ({ body: { ...INFO, existingId: 'app5' } }),
+      'GET /api/applications/job': () => ({ body: jobState() }),
+    });
+    await favourites(user);
+    await user.click(await screen.findByRole('button', { name: 'Create package' }));
+    const dialog = await screen.findByRole('region', { name: 'Create an application package' });
+    expect(within(dialog).getByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/app5');
+  });
+
+  it('a PACKAGE_EXISTS answer to Create (race) offers "Open package"', async () => {
+    const { user } = setup({
+      'GET /api/applications/new?vacancyId=v1': () => ({ body: INFO }),
+      'GET /api/applications/job': () => ({ body: jobState() }),
+      'POST /api/applications': () => ({ status: 409, body: { error: { code: 'PACKAGE_EXISTS', detailsForLog: 'exists', params: { id: 'app7' } } } }),
+    });
+    await favourites(user);
+    await user.click(await screen.findByRole('button', { name: 'Create package' }));
+    const dialog = await screen.findByRole('region', { name: 'Create an application package' });
+    await user.click(within(dialog).getByRole('button', { name: 'Create' }));
+    expect(await within(dialog).findByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/app7');
   });
 });

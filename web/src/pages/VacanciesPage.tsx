@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
-import { PackageButton } from '../applications/PackageButton';
+import { MissingList } from '../applications/CreatePackageDialog';
+import { PackageButton, READINESS_NOTE_ID } from '../applications/PackageButton';
 import { ManualAdd } from '../vacancies/ManualAdd';
 import { ManualEdit } from '../vacancies/ManualEdit';
 import { SearchProgress } from '../vacancies/SearchProgress';
@@ -11,7 +12,7 @@ import { useSearchStatus } from '../vacancies/useSearchStatus';
 import { useVacancies, VacanciesProvider } from '../vacancies/VacanciesContext';
 import { VacancyList } from '../vacancies/VacancyList';
 import { wishesComplete } from '../vacancies/wishes';
-import type { Vacancy, VacancyStatus } from '../types';
+import type { PackageReadiness, Vacancy, VacancyStatus } from '../types';
 
 function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: number }) {
   const { t } = useTranslation();
@@ -20,6 +21,12 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
   const [tab, setTab] = useState<Tab>('new');
   const [focusId, setFocusId] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; checkHint: boolean } | null>(null);
+  const [readiness, setReadiness] = useState<PackageReadiness | null>(null);
+  useEffect(() => {
+    let alive = true;
+    api.packageReadiness().then((r) => { if (alive) setReadiness(r); }, () => undefined);
+    return () => { alive = false; };
+  }, []);
   const [packages, setPackages] = useState<Map<string, string>>(new Map());
   useEffect(() => {
     let alive = true;
@@ -51,11 +58,12 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
           onShow={(v) => { setAdding(false); showCard(v); }}
         />
       ) : null}
+      {readiness && !readiness.ready && vacancies.some((v) => v.status === 'favorite' && !packages.has(v.id)) ? <div className="card readiness"><MissingList readiness={readiness} id={READINESS_NOTE_ID} /></div> : null}
       {vacancies.length === 0 ? <p className="muted">{t('vacancies.empty')}</p> : (
         <VacancyList tab={tab} onTab={setTab} focusId={focusId} toastMs={toastMs}
           renderExtra={(v) => (
             <>
-              {v.status === 'favorite' ? <PackageButton vacancy={v} existingId={packages.get(v.id) ?? null} pollMs={pollMs} /> : null}
+              {v.status === 'favorite' ? <PackageButton vacancy={v} existingId={packages.get(v.id) ?? null} readiness={readiness} pollMs={pollMs} /> : null}
               {manualExtra(v)}
             </>
           )} />

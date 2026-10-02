@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import type { DocLanguage, NewPackageInfo, PackageReadiness, Vacancy } from '../types';
@@ -9,10 +9,10 @@ import { jobError, useApplicationJob } from './useApplicationJob';
 const LANGUAGES: DocLanguage[] = ['de', 'en'];
 
 /** What is still missing in the profile, with a link to it. */
-export function MissingList({ readiness }: { readiness: PackageReadiness }) {
+export function MissingList({ readiness, id }: { readiness: PackageReadiness; id?: string }) {
   const { t } = useTranslation();
   return (
-    <div role="status">
+    <div role="status" id={id}>
       <p>{t('applications.create.notReady')}</p>
       <ul>
         {readiness.missingSections.map((id) => <li key={id}>{t(`profile.sections.${id}.title`)}</li>)}
@@ -44,13 +44,15 @@ export function CreatePackageDialog({ vacancy, onClose, pollMs }: { vacancy: Vac
   const mine = job.state?.kind === 'create' && job.state.vacancyId === vacancy.id;
   const running = job.state?.state === 'running';
   const failed = mine ? jobError(job.state) : null;
+  const raced = job.error instanceof ApiError && job.error.code === 'PACKAGE_EXISTS' ? String(job.error.params?.id ?? '') : '';
   const title = t('applications.create.title');
 
   let body;
   if (loadError) body = <ErrorBanner error={loadError} />;
   else if (!info) body = <p className="muted">{t('common.loading')}</p>;
-  else if (info.existingId) {
-    body = <p>{t('applications.create.exists')} <a href={`#/applications/${info.existingId}`}>{t('applications.open')}</a></p>;
+  else if (info.existingId || raced) {
+    const id = info.existingId ?? raced;
+    body = <p>{t('applications.create.exists')} <a href={`#/applications/${id}`}>{t('applications.open')}</a></p>;
   } else if (!info.readiness.ready) {
     body = <MissingList readiness={info.readiness} />;
   } else {
