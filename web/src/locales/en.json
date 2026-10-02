@@ -234,7 +234,36 @@
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← All applications",
     "tabs": {
-      "letter": "Cover letter"
+      "letter": "Cover letter",
+      "cv": "CV",
+      "attachments": "Attachments"
+    },
+    "cv": {
+      "profileChanged": "Your profile changed after this package was created. The CV still shows the old data.",
+      "update": "Update CV",
+      "keepQuestion": "You changed the Profile text by hand. Keep your text?",
+      "keepYes": "Keep my text",
+      "keepNo": "Let Claude write it again",
+      "profil": "Profile (top of the CV)",
+      "profilHint": "2–3 sentences. Everything else in the CV comes from your profile.",
+      "save": "Save Profile",
+      "fromProfile": "To change dates, jobs, skills or languages, change your profile, then click \"Update CV\".",
+      "toProfile": "Open profile",
+      "preview": "Preview of the CV"
+    },
+    "attachments": {
+      "none": "Your profile has no documents to attach yet.",
+      "toProfile": "Add documents in your profile",
+      "missing": "Deleted from your profile — will be left out",
+      "total": "Attachments together: {{size}}",
+      "tooBig": "Together with the letter and the CV this is more than 5 MB. Many online forms and email servers do not accept that — leave out an attachment or send it separately."
+    },
+    "download": {
+      "title": "Download",
+      "letter": "Cover letter (PDF)",
+      "cv": "CV (PDF)",
+      "attachment": "{{name}} (PDF)",
+      "bundle": "Everything as one PDF"
     },
     "approve": "Approve",
     "unapprove": "Back to draft",

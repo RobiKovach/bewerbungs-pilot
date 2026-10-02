@@ -4,10 +4,13 @@ import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import type { ApplicationView, DocLanguage } from '../types';
+import { AttachmentsTab } from './AttachmentsTab';
+import { CvTab } from './CvTab';
+import { download } from './download';
 import { LetterTab } from './LetterTab';
 import { jobError, useApplicationJob } from './useApplicationJob';
 
-const TABS = ['letter'] as const;
+const TABS = ['letter', 'cv', 'attachments'] as const;
 type Tab = (typeof TABS)[number];
 
 export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number }) {
@@ -17,7 +20,9 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [actionError, setActionError] = useState<unknown>(null);
   const [tab, setTab] = useState<Tab>('letter');
   const [confirm, setConfirm] = useState<null | 'recreate' | 'delete'>(null);
-  const [dirty, setDirty] = useState(false);
+  const [letterDirty, setLetterDirty] = useState(false);
+  const [cvDirty, setCvDirty] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [language, setLanguage] = useState<DocLanguage>('de');
 
   const load = useCallback(async () => {
@@ -34,6 +39,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   if (error && !view) return <ErrorBanner error={error} onRetry={() => void load()} />;
   if (!view) return <p className="muted">{t('common.loading')}</p>;
   const a = view.application;
+  // Unsaved text in the letter or the CV Profil: Approve, Back to draft and tab switches wait until it is saved or discarded.
+  const dirty = letterDirty || cvDirty;
   // One job at a time: any running job switches the Claude buttons off; editing is off only for the package it works on.
   const busy = job.state?.state === 'running';
   const locked = busy && job.state?.applicationId === id;
@@ -41,6 +48,11 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const act = async (fn: () => Promise<ApplicationView>) => {
     setActionError(null);
     try { setView(await fn()); } catch (err) { setActionError(err); }
+  };
+  const save = async (url: string, name: string) => {
+    setDownloading(true);
+    setActionError(null);
+    try { await download(url, name); } catch (err) { setActionError(err); } finally { setDownloading(false); }
   };
   const remove = async () => {
     setActionError(null);
@@ -67,12 +79,23 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
 
       <div role="tablist" className="tabs">
         {TABS.map((x) => (
-          <button key={x} type="button" role="tab" aria-selected={tab === x} className={tab === x ? 'tab active' : 'tab'} onClick={() => setTab(x)}>{t(`applications.tabs.${x}`)}</button>
+          <button key={x} type="button" role="tab" aria-selected={tab === x} className={tab === x ? 'tab active' : 'tab'} disabled={dirty && tab !== x} onClick={() => setTab(x)}>{t(`applications.tabs.${x}`)}</button>
         ))}
       </div>
       {tab === 'letter' ? (
-        <LetterTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
+        <LetterTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setLetterDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
       ) : null}
+      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} onView={setView} onDirty={setCvDirty} onRefresh={(keep) => void job.start(() => api.refreshCv(id, keep))} /> : null}
+      {tab === 'attachments' ? <AttachmentsTab view={view} locked={locked} onView={setView} /> : null}
+
+      <div className="btn-row downloads" role="group" aria-label={t('applications.download.title')}>
+        <button type="button" className="btn ghost" disabled={downloading} onClick={() => void save(api.pdfUrl(id, 'letter'), 'Anschreiben.pdf')}>{t('applications.download.letter')}</button>
+        <button type="button" className="btn ghost" disabled={downloading} onClick={() => void save(api.pdfUrl(id, 'cv'), 'Lebenslauf.pdf')}>{t('applications.download.cv')}</button>
+        {view.attachments.filter((x) => x.selected && !x.missing).map((x) => (
+          <button key={x.id} type="button" className="btn ghost" disabled={downloading} onClick={() => void save(api.attachmentUrl(id, x.id), `${x.label || 'Anlage'}.pdf`)}>{t('applications.download.attachment', { name: x.label })}</button>
+        ))}
+        <button type="button" className="btn" disabled={downloading} onClick={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}>{t('applications.download.bundle')}</button>
+      </div>
 
       <div className="btn-row app-actions">
         {a.status === 'draft'

@@ -163,3 +163,5 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .error-text { color: #b42318; font-weight: 600; }
 .app-actions { margin-top: 1rem; }
 @media (prefers-color-scheme: dark) { .error-text { color: #f4a49b; } }
+.attachment-list { list-style: none; padding: 0; display: grid; gap: 0.4rem; }
+.downloads { margin-top: 1rem; }

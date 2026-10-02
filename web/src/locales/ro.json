@@ -234,7 +234,36 @@
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Toate aplicațiile",
     "tabs": {
-      "letter": "Scrisoare de intenție"
+      "letter": "Scrisoare de intenție",
+      "cv": "CV",
+      "attachments": "Anexe"
+    },
+    "cv": {
+      "profileChanged": "Profilul dvs. s-a schimbat după crearea acestui pachet. CV-ul arată încă datele vechi.",
+      "update": "Actualizează CV-ul",
+      "keepQuestion": "Ați modificat manual textul „Profil”. Păstrăm textul dvs.?",
+      "keepYes": "Păstrează textul meu",
+      "keepNo": "Lasă Claude să scrie din nou",
+      "profil": "Profil (începutul CV-ului)",
+      "profilHint": "2–3 propoziții. Tot restul din CV provine din profilul dvs.",
+      "save": "Salvează profilul",
+      "fromProfile": "Pentru a schimba date, locuri de muncă, competențe sau limbi, modificați profilul, apoi faceți clic pe „Actualizează CV-ul”.",
+      "toProfile": "Deschide profilul",
+      "preview": "Previzualizarea CV-ului"
+    },
+    "attachments": {
+      "none": "Profilul dvs. nu are încă documente de atașat.",
+      "toProfile": "Adăugați documente în profil",
+      "missing": "Șters din profilul dvs. — va fi omis",
+      "total": "Anexe în total: {{size}}",
+      "tooBig": "Împreună cu scrisoarea și CV-ul, depășește 5 MB. Multe formulare online și servere de e-mail nu acceptă asta — omiteți o anexă sau trimiteți-o separat."
+    },
+    "download": {
+      "title": "Descarcă",
+      "letter": "Scrisoare de intenție (PDF)",
+      "cv": "CV (PDF)",
+      "attachment": "{{name}} (PDF)",
+      "bundle": "Totul într-un singur PDF"
     },
     "approve": "Aprobă",
     "unapprove": "Înapoi la ciornă",

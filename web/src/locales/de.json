@@ -234,7 +234,36 @@
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Alle Bewerbungen",
     "tabs": {
-      "letter": "Anschreiben"
+      "letter": "Anschreiben",
+      "cv": "Lebenslauf",
+      "attachments": "Anlagen"
+    },
+    "cv": {
+      "profileChanged": "Ihr Profil hat sich geändert, nachdem dieses Paket erstellt wurde. Der Lebenslauf zeigt noch die alten Daten.",
+      "update": "Lebenslauf aktualisieren",
+      "keepQuestion": "Sie haben den Profiltext von Hand geändert. Ihren Text behalten?",
+      "keepYes": "Meinen Text behalten",
+      "keepNo": "Claude neu schreiben lassen",
+      "profil": "Profil (Beginn des Lebenslaufs)",
+      "profilHint": "2–3 Sätze. Alles andere im Lebenslauf stammt aus Ihrem Profil.",
+      "save": "Profil speichern",
+      "fromProfile": "Um Daten, Stationen, Kenntnisse oder Sprachen zu ändern, ändern Sie Ihr Profil und klicken Sie dann auf „Lebenslauf aktualisieren“.",
+      "toProfile": "Profil öffnen",
+      "preview": "Vorschau des Lebenslaufs"
+    },
+    "attachments": {
+      "none": "Ihr Profil enthält noch keine Dokumente zum Anhängen.",
+      "toProfile": "Dokumente im Profil hinzufügen",
+      "missing": "Aus Ihrem Profil gelöscht — wird weggelassen",
+      "total": "Anlagen zusammen: {{size}}",
+      "tooBig": "Zusammen mit Anschreiben und Lebenslauf sind das mehr als 5 MB. Viele Online-Formulare und E-Mail-Server nehmen das nicht an — lassen Sie eine Anlage weg oder senden Sie sie getrennt."
+    },
+    "download": {
+      "title": "Herunterladen",
+      "letter": "Anschreiben (PDF)",
+      "cv": "Lebenslauf (PDF)",
+      "attachment": "{{name}} (PDF)",
+      "bundle": "Alles als eine PDF"
     },
     "approve": "Freigeben",
     "unapprove": "Zurück zum Entwurf",

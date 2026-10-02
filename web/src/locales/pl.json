@@ -234,7 +234,36 @@
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Wszystkie aplikacje",
     "tabs": {
-      "letter": "List motywacyjny"
+      "letter": "List motywacyjny",
+      "cv": "CV",
+      "attachments": "Załączniki"
+    },
+    "cv": {
+      "profileChanged": "Twój profil zmienił się po utworzeniu tego pakietu. CV nadal pokazuje stare dane.",
+      "update": "Zaktualizuj CV",
+      "keepQuestion": "Tekst „Profil” został zmieniony ręcznie. Zachować Twój tekst?",
+      "keepYes": "Zachowaj mój tekst",
+      "keepNo": "Niech Claude napisze od nowa",
+      "profil": "Profil (początek CV)",
+      "profilHint": "2–3 zdania. Wszystko inne w CV pochodzi z Twojego profilu.",
+      "save": "Zapisz profil",
+      "fromProfile": "Aby zmienić daty, miejsca pracy, umiejętności lub języki, zmień swój profil, a potem kliknij „Zaktualizuj CV”.",
+      "toProfile": "Otwórz profil",
+      "preview": "Podgląd CV"
+    },
+    "attachments": {
+      "none": "W Twoim profilu nie ma jeszcze dokumentów do załączenia.",
+      "toProfile": "Dodaj dokumenty w profilu",
+      "missing": "Usunięto z Twojego profilu — zostanie pominięte",
+      "total": "Załączniki razem: {{size}}",
+      "tooBig": "Razem z listem i CV to więcej niż 5 MB. Wiele formularzy online i serwerów poczty tego nie przyjmuje — pomiń jeden załącznik lub wyślij go osobno."
+    },
+    "download": {
+      "title": "Pobierz",
+      "letter": "List motywacyjny (PDF)",
+      "cv": "CV (PDF)",
+      "attachment": "{{name}} (PDF)",
+      "bundle": "Wszystko w jednym PDF"
     },
     "approve": "Zatwierdź",
     "unapprove": "Wróć do wersji roboczej",
