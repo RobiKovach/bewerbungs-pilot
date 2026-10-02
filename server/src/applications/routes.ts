@@ -1,4 +1,5 @@
-import type { FastifyInstance } from 'fastify';
+import fs from 'node:fs';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { DocLanguage, LetterPatch, Profile } from '@bp/shared';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
@@ -7,8 +8,10 @@ import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { touchDraft, type ApplicationJob } from './job.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
-import { countPages, type PdfPrinter } from './pdf.js';
+import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
+import { cvHtml } from './render/cv.js';
+import { asciiName, fileNames } from './render/html.js';
 import { letterHtml } from './render/letter.js';
 import { APPLICATION_ID, PACKAGE_LIMITS as L } from './schema.js';
 import type { ApplicationStore } from './store.js';
@@ -24,6 +27,20 @@ export const SHORT_TEXT = 600;
 
 const LANGUAGE = { enum: ['de', 'en'] };
 const idParams = { type: 'object', required: ['id'], properties: { id: { type: 'string', pattern: APPLICATION_ID.source } } };
+const PREVIEW_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'self'";
+const fileParams = {
+  type: 'object', required: ['id', 'fileId'],
+  properties: { id: { type: 'string', pattern: APPLICATION_ID.source }, fileId: { type: 'string', pattern: '^[0-9a-f-]{36}$' } },
+};
+
+function sendHtml(reply: FastifyReply, html: string) {
+  return reply.header('X-Frame-Options', 'SAMEORIGIN').header('Content-Security-Policy', PREVIEW_CSP)
+    .type('text/html; charset=utf-8').send(html);
+}
+function sendPdf(reply: FastifyReply, data: Buffer, name: string) {
+  return reply.type('application/pdf').header('Content-Disposition', `attachment; filename="${name}"`).send(data);
+}
+
 const newQuery = { type: 'object', required: ['vacancyId'], properties: { vacancyId: { type: 'string', pattern: VACANCY_ID.source } } };
 const createBody = { type: 'object', additionalProperties: false, required: ['vacancyId', 'language'], properties: { vacancyId: { type: 'string', pattern: VACANCY_ID.source }, language: LANGUAGE } };
 const languageBody = { type: 'object', additionalProperties: false, required: ['language'], properties: { language: LANGUAGE } };
@@ -166,5 +183,52 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     notBusy(id);
     d.store.remove(id);
     return { ok: true };
+  });
+
+  const photoOf = (id: string) => {
+    const file = d.store.photoPath(id);
+    return file ? { data: fs.readFileSync(file), ext: file.endsWith('.png') ? '.png' as const : '.jpg' as const } : null;
+  };
+  const names = (id: string) => { const p = d.store.require(id); return fileNames(p.snapshot.personal.fullName, p.vacancy.company); };
+  /** Chosen attachments that still exist in the profile, with their files (spec, section 5: deleted ones are left out). */
+  const chosenDocs = (id: string) => {
+    const p = d.store.require(id);
+    return d.profile().documents.filter((doc) => p.attachments.includes(doc.id) && d.files.exists(doc));
+  };
+
+  app.get('/api/applications/:id/preview/letter', { schema: { params: idParams } }, async (req, reply) =>
+    sendHtml(reply, letterHtml(d.store.require((req.params as { id: string }).id), now())));
+
+  app.get('/api/applications/:id/preview/cv', { schema: { params: idParams } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    return sendHtml(reply, cvHtml(d.store.require(id), photoOf(id)));
+  });
+
+  app.get('/api/applications/:id/pdf/letter', { schema: { params: idParams } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    return sendPdf(reply, await d.printer.print(letterHtml(d.store.require(id), now())), names(id).letter);
+  });
+
+  app.get('/api/applications/:id/pdf/cv', { schema: { params: idParams } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    return sendPdf(reply, await d.printer.print(cvHtml(d.store.require(id), photoOf(id))), names(id).cv);
+  });
+
+  app.get('/api/applications/:id/pdf/attachment/:fileId', { schema: { params: fileParams } }, async (req, reply) => {
+    const { id, fileId } = req.params as { id: string; fileId: string };
+    const doc = chosenDocs(id).find((x) => x.id === fileId);
+    if (!doc) throw new AppError('NOT_FOUND', `attachment ${fileId}`);
+    return sendPdf(reply, fs.readFileSync(d.files.pathOf(doc)), `${asciiName(doc.label || doc.originalName.replace(/.pdf$/i, '')) || 'Anlage'}.pdf`);
+  });
+
+  app.get('/api/applications/:id/pdf/bundle', { schema: { params: idParams } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const p = d.store.require(id);
+    const parts: BundlePart[] = [
+      { name: 'letter', data: await d.printer.print(letterHtml(p, now())) },
+      { name: 'cv', data: await d.printer.print(cvHtml(p, photoOf(id))) },
+      ...chosenDocs(id).map((doc) => ({ name: doc.label || doc.originalName, data: fs.readFileSync(d.files.pathOf(doc)) })),
+    ];
+    return sendPdf(reply, await bundlePdfs(parts), names(id).bundle);
   });
 }

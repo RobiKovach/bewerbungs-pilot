@@ -94,9 +94,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // no inline <script>/<style>, no fonts from elsewhere (React's style={...} goes through CSSOM, which CSP does
   // not restrict). Images additionally allow blob: (img-src below); nothing is loaded from other sites.
   app.addHook('onSend', async (_req, reply, payload) => {
-    reply.header('X-Frame-Options', 'DENY');
+    if (!reply.hasHeader('X-Frame-Options')) reply.header('X-Frame-Options', 'DENY');
     // img-src blob: = the photo the person just picked, shown in the cropper before it is uploaded.
-    reply.header('Content-Security-Policy', "default-src 'self'; img-src 'self' blob:; frame-ancestors 'none'");
+    if (!reply.hasHeader('Content-Security-Policy')) reply.header('Content-Security-Policy', "default-src 'self'; img-src 'self' blob:; frame-ancestors 'none'");
     reply.header('X-Content-Type-Options', 'nosniff');
     return payload;
   });
