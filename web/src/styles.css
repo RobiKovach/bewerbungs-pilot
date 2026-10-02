@@ -11,6 +11,9 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); }
+/* Readable links in both themes; visited links keep the same colour. :where() keeps specificity 0 so buttons/nav win. */
+:where(a, a:visited) { color: var(--accent); }
+:where(a:hover) { text-decoration-thickness: 2px; }
 h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
 h2 { font-size: 1.15rem; margin: 0 0 0.4rem; }
 .lead { color: var(--muted); font-size: 1.05rem; max-width: 60ch; }
