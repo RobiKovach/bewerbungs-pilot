@@ -153,3 +153,6 @@ label.btn { cursor: pointer; }
   .badge.warn-badge { color: #f3d88c; }
   .proposal { border-color: #6b5520; }
 }
+.create-package { margin-top: 0.75rem; }
+.create-package__languages { border: 0; padding: 0; display: flex; gap: 1rem; flex-wrap: wrap; }
+.create-package__blocked { margin-top: 0.75rem; }

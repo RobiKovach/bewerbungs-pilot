@@ -228,7 +228,23 @@
     "toVacancies": "La oferte de muncă",
     "status": { "draft": "Ciornă", "approved": "Aprobat" },
     "profileChanged": "Profilul s-a schimbat",
-    "updated": "Modificat {{date}}"
+    "updated": "Modificat {{date}}",
+    "open": "Deschide pachetul",
+    "busy": "Claude lucrează acum la alt pachet. Vă rugăm să așteptați puțin.",
+    "language": { "de": "Deutsch", "en": "English" },
+    "create": {
+      "button": "Creează pachet",
+      "title": "Creați un pachet de candidatură",
+      "language": "Limba documentelor",
+      "englishWarning": "În profilul dumneavoastră, engleza este sub B2. Angajatorul vă poate invita la interviu în engleză.",
+      "shortText": "Textul acestei oferte este foarte scurt — scrisoarea va fi mai generală. Puteți lipi manual textul complet ca ofertă nouă.",
+      "start": "Creează",
+      "working": "Claude scrie scrisoarea și pregătește CV-ul… Durează un minut sau două.",
+      "exists": "Pentru această ofertă există deja un pachet.",
+      "notReady": "Înainte de a crea un pachet, vă rugăm să completați în profil:",
+      "noStory": "o poveste verificată, care poate fi spusă angajatorilor",
+      "toProfile": "Completați profilul"
+    }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },

@@ -228,7 +228,23 @@
     "toVacancies": "Zu den Stellenangeboten",
     "status": { "draft": "Entwurf", "approved": "Freigegeben" },
     "profileChanged": "Profil geändert",
-    "updated": "Geändert am {{date}}"
+    "updated": "Geändert am {{date}}",
+    "open": "Paket öffnen",
+    "busy": "Claude arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
+    "language": { "de": "Deutsch", "en": "English" },
+    "create": {
+      "button": "Paket erstellen",
+      "title": "Bewerbungspaket erstellen",
+      "language": "Sprache der Dokumente",
+      "englishWarning": "Ihr Englisch liegt laut Profil unter B2. Der Arbeitgeber könnte Sie auf Englisch zum Gespräch einladen.",
+      "shortText": "Der Text dieses Angebots ist sehr kurz — das Anschreiben wird allgemeiner. Sie können den vollständigen Text von Hand als neues Angebot einfügen.",
+      "start": "Erstellen",
+      "working": "Claude schreibt das Anschreiben und bereitet den Lebenslauf vor… Das dauert ein bis zwei Minuten.",
+      "exists": "Für dieses Angebot gibt es schon ein Paket.",
+      "notReady": "Bevor ein Paket erstellt werden kann, ergänzen Sie bitte in Ihrem Profil:",
+      "noStory": "eine geprüfte Geschichte, die Arbeitgebern erzählt werden darf",
+      "toProfile": "Profil vervollständigen"
+    }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },

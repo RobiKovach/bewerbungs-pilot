@@ -228,7 +228,23 @@
     "toVacancies": "Przejdź do ofert pracy",
     "status": { "draft": "Wersja robocza", "approved": "Zatwierdzona" },
     "profileChanged": "Profil się zmienił",
-    "updated": "Zmieniono {{date}}"
+    "updated": "Zmieniono {{date}}",
+    "open": "Otwórz pakiet",
+    "busy": "Claude pracuje teraz nad innym pakietem. Poczekaj chwilę.",
+    "language": { "de": "Deutsch", "en": "English" },
+    "create": {
+      "button": "Utwórz pakiet",
+      "title": "Utwórz pakiet aplikacji",
+      "language": "Język dokumentów",
+      "englishWarning": "W Twoim profilu angielski jest poniżej B2. Pracodawca może zaprosić Cię na rozmowę po angielsku.",
+      "shortText": "Tekst tej oferty jest bardzo krótki — list będzie bardziej ogólny. Możesz ręcznie wkleić pełny tekst jako nową ofertę.",
+      "start": "Utwórz",
+      "working": "Claude pisze list i przygotowuje CV… To potrwa minutę lub dwie.",
+      "exists": "Dla tej oferty jest już pakiet.",
+      "notReady": "Zanim powstanie pakiet, uzupełnij w profilu:",
+      "noStory": "sprawdzoną historię, którą wolno opowiadać pracodawcom",
+      "toProfile": "Uzupełnij profil"
+    }
   },
   "errors": {
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },
