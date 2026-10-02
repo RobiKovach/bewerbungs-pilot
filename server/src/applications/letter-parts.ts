@@ -19,7 +19,10 @@ export function buildSalutation(contact: VacancyContact | null, lang: DocLanguag
   const known = contact && contact.name.trim() && contact.salutation ? contact : null;
   if (lang === 'en') {
     if (!known) return 'Dear Hiring Team,';
-    return `Dear ${known.salutation === 'Frau' ? 'Ms' : 'Mr'} ${titledLastName(known.name)},`;
+    const nameWithTitle = titledLastName(known.name);
+    const hasTitle = TITLES.test(nameWithTitle.split(/\s+/)[0]);
+    const prefix = hasTitle ? '' : (known.salutation === 'Frau' ? 'Ms ' : 'Mr ');
+    return `Dear ${prefix}${nameWithTitle},`;
   }
   if (!known) return 'Sehr geehrte Damen und Herren,';
   return `${known.salutation === 'Frau' ? 'Sehr geehrte Frau' : 'Sehr geehrter Herr'} ${titledLastName(known.name)},`;

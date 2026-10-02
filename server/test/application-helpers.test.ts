@@ -88,7 +88,8 @@ describe('letter parts', () => {
     [{ email: '', salutation: '', name: 'Kim Berg' }, 'de', 'Sehr geehrte Damen und Herren,'],
     [null, 'en', 'Dear Hiring Team,'],
     [{ email: '', salutation: 'Frau', name: 'Anna Müller' }, 'en', 'Dear Ms Müller,'],
-    [{ email: '', salutation: 'Herr', name: 'Prof. Jan Berg' }, 'en', 'Dear Mr Prof. Berg,'],
+    [{ email: '', salutation: 'Herr', name: 'Prof. Jan Berg' }, 'en', 'Dear Prof. Berg,'],
+    [{ email: '', salutation: 'Frau', name: 'Dr. Anna Müller' }, 'en', 'Dear Dr. Müller,'],
   ] as const)('salutation for %j in %s', (contact, lang, expected) => {
     expect(buildSalutation(contact, lang)).toBe(expected);
   });
