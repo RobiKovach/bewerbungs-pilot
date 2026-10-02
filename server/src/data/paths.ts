@@ -6,6 +6,7 @@ export interface DataPaths {
   root: string; settings: string; server: string; lock: string; logs: string; tmp: string;
   profile: string; profileFile: string; profileFiles: string;
   vacancies: string; vacanciesFile: string; vacancyTexts: string; searchState: string;
+  applications: string;
 }
 
 export function resolveDataRoot(env: NodeJS.ProcessEnv = process.env): string {
@@ -29,9 +30,10 @@ export function dataPaths(root: string): DataPaths {
     vacanciesFile: path.join(root, 'vacancies', 'vacancies.json'),
     vacancyTexts: path.join(root, 'vacancies', 'texts'),
     searchState: path.join(root, 'vacancies', 'search-state.json'),
+    applications: path.join(root, 'applications'),
   };
 }
 
 export function ensureDataDirs(p: DataPaths): void {
-  for (const dir of [p.root, p.logs, p.tmp, p.profile, p.profileFiles, p.vacancies, p.vacancyTexts]) fs.mkdirSync(dir, { recursive: true });
+  for (const dir of [p.root, p.logs, p.tmp, p.profile, p.profileFiles, p.vacancies, p.vacancyTexts, p.applications]) fs.mkdirSync(dir, { recursive: true });
 }
