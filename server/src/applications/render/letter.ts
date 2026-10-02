@@ -4,7 +4,7 @@ import { escapeHtml as e, formatDate, page } from './html.js';
 // DIN 5008 form B: 25 mm left / 20 mm right margin, address field from 45 mm, date right-aligned above the subject.
 const CSS = `.letter{width:210mm;min-height:297mm;padding:27mm 20mm 20mm 25mm;font-size:11pt;line-height:1.4}
 .sender{text-align:right;font-size:10pt;line-height:1.35;margin-bottom:10mm}
-.recipient{min-height:40mm;white-space:pre-line}
+.recipient{white-space:pre-line}
 .place-date{text-align:right;margin:8mm 0 8mm}
 .subject{font-weight:bold;margin:0 0 8mm}
 .salutation{margin:0 0 4mm}
