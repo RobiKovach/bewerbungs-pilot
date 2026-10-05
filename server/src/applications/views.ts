@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
 import { profileFingerprint } from './snapshot.js';
+import { isFrozen } from './status.js';
 import type { ApplicationStore, PhotoFile } from './store.js';
 
 export function toView(p: ApplicationPackage, profile: Profile): ApplicationView {
@@ -10,13 +11,15 @@ export function toView(p: ApplicationPackage, profile: Profile): ApplicationView
     ...profile.documents.map((d) => ({ id: d.id, label: d.label || d.originalName, size: d.size, selected: p.attachments.includes(d.id), missing: false })),
     ...p.attachments.filter((id) => !known.has(id)).map((id) => ({ id, label: '', size: 0, selected: true, missing: true })),
   ];
-  return { application: p, profileChanged: profileFingerprint(profile) !== p.profileFingerprint, attachments };
+  return { application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments };
 }
+
+const changed = (p: ApplicationPackage | undefined, current: string) => !p || (!isFrozen(p) && p.profileFingerprint !== current);
 
 export function toListView(store: ApplicationStore, profile: Profile): ApplicationListView {
   const current = profileFingerprint(profile);
   return {
-    applications: store.list().map((s) => ({ ...s, profileChanged: store.get(s.id)?.profileFingerprint !== current })),
+    applications: store.list().map((s) => ({ ...s, profileChanged: changed(store.get(s.id), current) })),
   };
 }
 

@@ -17,7 +17,7 @@ import type { ApplicationStore, PhotoFile } from './store.js';
 import { packageContext, type CreateOutput, type CvOutput, type LetterOutput, type PackageContext } from './tasks/context.js';
 import { createPackageTask } from './tasks/create-package.js';
 import { refreshCvTask } from './tasks/refresh-cv.js';
-import { addStatus } from './status.js';
+import { addStatus, assertEditable } from './status.js';
 import { reviseLetterTask, SHORTEN_INSTRUCTION, withFeedback } from './tasks/revise-letter.js';
 
 export type JobRequest =
@@ -116,6 +116,7 @@ export class ApplicationJob {
       vacancyId = v.id;
     } else {
       const p = this.d.store.require(req.applicationId);
+      assertEditable(p);
       if (req.kind === 'recreate') assertPackageReady(profile);
       if (req.kind !== 'refreshCv') this.assertBrowser();
       vacancyId = p.vacancyId;

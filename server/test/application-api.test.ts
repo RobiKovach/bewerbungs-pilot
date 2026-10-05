@@ -172,6 +172,39 @@ describe('editing a package', () => {
     await ctx.applicationJob.whenIdle();
     expect((await get(ctx, `/api/applications/${id}`)).json().profileChanged).toBe(false);
   });
+  it('a frozen package refuses every change and every Claude job (409 packageSent)', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    ctx.applicationStore.update(id, (p) => { p.status = 'sent'; p.history.push({ kind: 'sent', at: '2026-10-05T10:00:00.000Z' }); });
+    const calls: ['POST' | 'PATCH', string, unknown][] = [
+      ['PATCH', `/api/applications/${id}/letter`, { subject: 'X' }],
+      ['PATCH', `/api/applications/${id}/cv-profil`, { profil: 'X' }],
+      ['PATCH', `/api/applications/${id}/cv-headline`, { headline: 'X' }],
+      ['PATCH', `/api/applications/${id}/attachments`, { ids: [] }],
+      ['POST', `/api/applications/${id}/revise`, { instruction: 'kürzer' }],
+      ['POST', `/api/applications/${id}/refresh-cv`, { keepProfil: false }],
+      ['POST', `/api/applications/${id}/recreate`, { language: 'de' }],
+      ['POST', `/api/applications/${id}/approve`, {}],
+      ['POST', `/api/applications/${id}/unapprove`, {}],
+      ['POST', `/api/applications/${id}/recount`, {}],
+    ];
+    for (const [m, url, body] of calls) {
+      const r = await send(ctx, m, url, body);
+      expect(r.statusCode, `${m} ${url}`).toBe(409);
+      expect(r.json().error.reason).toBe('packageSent');
+    }
+    expect(ctx.applicationStore.require(id).status).toBe('sent');
+  });
+  it('a frozen package never shows "profile changed"', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    ctx.profileStore.update((p) => { p.sections.experience.data.items[0].description = 'Anders.'; });
+    expect((await get(ctx, `/api/applications/${id}`)).json().profileChanged).toBe(true);
+    ctx.applicationStore.update(id, (p) => { p.status = 'sent'; p.history.push({ kind: 'sent', at: '2026-10-05T10:00:00.000Z' }); });
+    expect((await get(ctx, `/api/applications/${id}`)).json().profileChanged).toBe(false);
+    const list = (await get(ctx, '/api/applications')).json() as { applications: { id: string; profileChanged: boolean }[] };
+    expect(list.applications.find((a) => a.id === id)?.profileChanged).toBe(false);
+  });
   it('revise and recreate start jobs; editing while a job works on the package → 409 packageBusy', async () => {
     let release!: () => void;
     let gate: Promise<void> = Promise.resolve();

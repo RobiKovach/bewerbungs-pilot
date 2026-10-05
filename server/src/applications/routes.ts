@@ -7,7 +7,7 @@ import type { ProfileFiles } from '../profile/files.js';
 import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { touchDraft, type ApplicationJob } from './job.js';
-import { addStatus } from './status.js';
+import { addStatus, assertEditable } from './status.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
@@ -66,6 +66,7 @@ const attachmentsBody = { type: 'object', additionalProperties: false, required:
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
   const now = d.now ?? (() => new Date());
   const view = (id: string) => toView(d.store.require(id), d.profile());
+  const editable = (id: string) => assertEditable(d.store.require(id));
   const notBusy = (id: string) => {
     if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
   };
@@ -106,6 +107,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.patch('/api/applications/:id/letter', { schema: { params: idParams, body: letterBody } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     const patch = req.body as LetterPatch;
     const draft = d.store.require(id);
@@ -124,6 +126,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.patch('/api/applications/:id/cv-profil', { schema: { params: idParams, body: profilBody } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     const { profil } = req.body as { profil: string };
     d.store.update(id, (p) => { p.cv.profil = profil; p.cv.profilEditedByHand = true; touchDraft(p, now()); });
@@ -132,6 +135,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.patch('/api/applications/:id/cv-headline', { schema: { params: idParams, body: headlineBody } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     const { headline } = req.body as { headline: string };
     if (headline.trim() === '') throw new AppError('BAD_REQUEST', 'headline is empty');
@@ -141,6 +145,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.patch('/api/applications/:id/attachments', { schema: { params: idParams, body: attachmentsBody } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     const { ids } = req.body as { ids: string[] };
     const current = d.store.require(id);
@@ -171,6 +176,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.post('/api/applications/:id/approve', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     // Always recount: the stored number may be stale or 0 ("not counted").
     const pages = await pagesOf(id);
@@ -186,6 +192,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   // Re-counts the letter's pages with the current layout (a stored number can be stale after an app update). Only `pages` changes.
   app.post('/api/applications/:id/recount', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     const pages = await pagesOf(id);
     notBusy(id);
@@ -195,6 +202,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.post('/api/applications/:id/unapprove', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
+    editable(id);
     notBusy(id);
     d.store.update(id, (p) => touchDraft(p, now()));
     return view(id);
