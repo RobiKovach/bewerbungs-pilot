@@ -7,6 +7,7 @@ import type { ProfileFiles } from '../profile/files.js';
 import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { touchDraft, type ApplicationJob } from './job.js';
+import { addStatus } from './status.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
@@ -178,7 +179,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       d.store.update(id, (p) => { p.letter.pages = pages; });
       throw new AppError('LETTER_TOO_LONG', `${pages} pages`);
     }
-    d.store.update(id, (p) => { p.letter.pages = 1; p.status = 'approved'; p.approvedAt = now().toISOString(); p.updatedAt = now().toISOString(); });
+    d.store.update(id, (p) => { const at = now().toISOString(); p.letter.pages = 1; addStatus(p, 'approved', at); p.approvedAt = at; });
     return view(id);
   });
 

@@ -362,7 +362,8 @@
       "offerGone": "The Federal Employment Agency no longer lists this offer.",
       "noStory": "You have no checked story yet that may be told to employers. Add one under \"Stories for cover letters\" in your profile.",
       "attachmentUnreadable": "The attachment \"{{name}}\" cannot be read (damaged or password-protected). Remove it from this package or replace it in your profile.",
-      "packageBusy": "Claude is working on this package right now. Please wait until it is finished."
+      "packageBusy": "Claude is working on this package right now. Please wait until it is finished.",
+      "packageSent": "This application was already sent or submitted — it can no longer be changed."
     }
   },
   "vacancies": {

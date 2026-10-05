@@ -3,7 +3,14 @@ import type { ErrorCode } from './errors.js';
 import type { RemoteKind, VacancyContact } from './vacancy.js';
 
 export type DocLanguage = 'de' | 'en';
-export type ApplicationStatus = 'draft' | 'approved';
+export type ApplicationStatus = 'draft' | 'approved' | 'sent' | 'submitted' | 'interview' | 'rejected' | 'offer' | 'withdrawn';
+export type OutcomeStatus = 'interview' | 'rejected' | 'offer' | 'withdrawn';
+
+/** One step in a package's life. 0.7.0 adds non-status kinds; code treats entries whose kind is an ApplicationStatus as status entries. */
+export interface HistoryEntry { kind: ApplicationStatus; at: string; note?: string; to?: string; messageId?: string }
+
+/** The email as it was sent (kept so the person can read it later). */
+export interface SentEmail { to: string; subject: string; body: string; attachments: string[] }
 
 /** The letter in parts (spec, section 2). recipient/salutation/closing/signature are filled by the server, the rest by Claude; the person can edit all of them. */
 export interface PackageLetter {
@@ -59,7 +66,7 @@ export interface PackageVacancy {
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 2;
+  schemaVersion: 3;
   id: string;
   vacancyId: string;
   language: DocLanguage;
@@ -74,6 +81,11 @@ export interface ApplicationPackage {
   cv: PackageCv;
   /** Ids of profile documents chosen for this package. */
   attachments: string[];
+  /** Status changes, oldest first. */
+  history: HistoryEntry[];
+  /** When the email was sent; null = not sent by the app. */
+  sentAt: string | null;
+  sentEmail: SentEmail | null;
 }
 
 export interface ApplicationSummary {
@@ -86,6 +98,8 @@ export interface ApplicationSummary {
   createdAt: string;
   updatedAt: string;
   approvedAt: string | null;
+  /** The last history entry, else updatedAt. */
+  lastChangeAt: string;
 }
 
 export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean })[] }

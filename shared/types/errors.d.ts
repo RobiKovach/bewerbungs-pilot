@@ -47,4 +47,5 @@ export type ErrorReason =
   | 'offerGone'
   | 'noStory'
   | 'attachmentUnreadable'
-  | 'packageBusy';
+  | 'packageBusy'
+  | 'packageSent';

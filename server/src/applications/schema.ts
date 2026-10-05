@@ -5,10 +5,17 @@ import { LIMITS, validateSectionData } from '../profile/schema.js';
 import { VACANCY_LIMITS } from '../vacancies/schema.js';
 
 export const APPLICATIONS_SCHEMA_VERSION = 1;
-export const PACKAGE_SCHEMA_VERSION = 2;
+export const PACKAGE_SCHEMA_VERSION = 3;
 
 /** migrations[n] turns package version n into n + 1 (applied on read; written back on the next save). */
 export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 3: statuses beyond approved, history, the sent email.
+  2: (doc) => ({
+    ...doc,
+    history: doc.status === 'approved' && typeof doc.approvedAt === 'string' ? [{ kind: 'approved', at: doc.approvedAt }] : [],
+    sentAt: null,
+    sentEmail: null,
+  }),
   // 2: CV headline, skill groups instead of a flat order, translations; snapshot personal details get links.
   1: (doc) => {
     const cv = (doc.cv ?? {}) as Record<string, unknown>;
@@ -31,6 +38,7 @@ export const PACKAGE_LIMITS = {
   paragraphsMin: 1, paragraphsMax: 6, paragraph: 2000,
   closing: 100, signature: Math.max(200, LIMITS.name), hint: 300, profil: 800, description: 5000, instruction: 1000, attachments: 20,
   headline: 80, groupName: 40, translation: 100, groupsMax: 5,
+  emailSubject: 200, emailBody: 5000, note: 300, address: 254,
 } as const;
 
 const L = PACKAGE_LIMITS;
@@ -43,11 +51,11 @@ function obj(properties: Record<string, JsonSchema>): JsonSchema {
 const ID = { type: 'string', pattern: APPLICATION_ID.source };
 const TIMESTAMP = str(40);
 const LANGUAGE = { enum: ['de', 'en'] };
-const STATUS = { enum: ['draft', 'approved'] };
+const STATUS = { enum: ['draft', 'approved', 'sent', 'submitted', 'interview', 'rejected', 'offer', 'withdrawn'] };
 
 const SUMMARY = obj({
   id: ID, vacancyId: ID, company: str(V.company), title: str(V.title), language: LANGUAGE, status: STATUS,
-  createdAt: TIMESTAMP, updatedAt: TIMESTAMP, approvedAt: nullable(TIMESTAMP),
+  createdAt: TIMESTAMP, updatedAt: TIMESTAMP, approvedAt: nullable(TIMESTAMP), lastChangeAt: TIMESTAMP,
 });
 
 const PACKAGE = obj({
@@ -81,6 +89,12 @@ const PACKAGE = obj({
     translations: { type: 'object', maxProperties: 200, additionalProperties: str(L.translation) },
   }),
   attachments: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } },
+  history: {
+    type: 'array', maxItems: 200,
+    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: STATUS, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(300) } },
+  },
+  sentAt: nullable(TIMESTAMP),
+  sentEmail: nullable(obj({ to: str(L.address), subject: str(L.emailSubject), body: str(L.emailBody), attachments: { type: 'array', maxItems: 30, items: str(200) } })),
 });
 
 const LIST = obj({ schemaVersion: { const: APPLICATIONS_SCHEMA_VERSION }, applications: { type: 'array', items: SUMMARY } });

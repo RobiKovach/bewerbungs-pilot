@@ -28,7 +28,7 @@ describe('package v1 → v2', () => {
     store.load();
     const got = store.require(p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(2);
+    expect(got.schemaVersion).toBe(3);
     expect(got.cv).toMatchObject({ headline: '', headlineEditedByHand: false, translations: {}, skillGroups: [{ name: '', skillIds: old.cv.skillOrder }] });
     expect(got.snapshot.personal.links).toEqual([]);
     expect(validatePackage(got)).toBeNull();
@@ -44,6 +44,44 @@ describe('package v1 → v2', () => {
     store.load();
     expect(store.list()).toEqual([]);
     expect(warnings).toEqual(['application_invalid']);
+  });
+});
+
+function v2From(p: ReturnType<typeof pkg>) {
+  const { history: _h, sentAt: _s, sentEmail: _e, ...rest } = p;
+  void _h; void _s; void _e;
+  return { ...rest, schemaVersion: 2 };
+}
+
+describe('package v2 → v3', () => {
+  function loadOne(doc: unknown, id: string) {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+    const warnings: string[] = [];
+    fs.mkdirSync(path.join(dir, id), { recursive: true });
+    fs.writeFileSync(path.join(dir, id, 'package.json'), JSON.stringify(doc));
+    const store = new ApplicationStore(dir, (event) => warnings.push(event));
+    store.load();
+    return { got: store.require(id), warnings };
+  }
+  it('an approved v2 package gets one approved history entry', () => {
+    const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z' });
+    const { got, warnings } = loadOne(v2From(p), p.id);
+    expect(warnings).toEqual([]);
+    expect(got.schemaVersion).toBe(3);
+    expect(got.history).toEqual([{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }]);
+    expect(got.sentAt).toBeNull();
+    expect(got.sentEmail).toBeNull();
+  });
+  it('a draft v2 package gets an empty history', () => {
+    const p = pkg();
+    const { got } = loadOne(v2From(p), p.id);
+    expect(got.history).toEqual([]);
+  });
+  it('a v1 package migrates 1 → 2 → 3', () => {
+    const p = pkg();
+    const { got, warnings } = loadOne(v1From(p), p.id);
+    expect(warnings).toEqual([]);
+    expect(got).toMatchObject({ schemaVersion: 3, history: [], sentAt: null, sentEmail: null });
   });
 });
 

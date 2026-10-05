@@ -362,7 +362,8 @@
       "offerGone": "Federalna Agencja Pracy nie wyświetla już tej oferty.",
       "noStory": "Nie masz jeszcze żadnej sprawdzonej historii, którą można opowiadać pracodawcom. Dodaj jedną w profilu w sekcji „Historie do listów motywacyjnych”.",
       "attachmentUnreadable": "Załącznika „{{name}}” nie można odczytać (uszkodzony lub chroniony hasłem). Usuń go z tego pakietu lub zastąp w profilu.",
-      "packageBusy": "Claude pracuje teraz nad tym pakietem. Poczekaj, aż skończy."
+      "packageBusy": "Claude pracuje teraz nad tym pakietem. Poczekaj, aż skończy.",
+      "packageSent": "Ta aplikacja została już wysłana lub złożona — nie można jej już zmienić."
     }
   },
   "vacancies": {

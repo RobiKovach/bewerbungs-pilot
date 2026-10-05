@@ -104,6 +104,21 @@ describe('editing a package', () => {
     expect((await send(ctx, 'PATCH', `/api/applications/${id}/letter`, {})).statusCode).toBe(400);
     expect((await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { paragraphs: [] })).statusCode).toBe(400);
   });
+  it('history: approve adds approved, unapprove adds draft, editing an approved package adds draft, editing a draft adds nothing', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const kinds = () => ctx.applicationStore.require(id).history.map((h) => h.kind);
+    expect(kinds()).toEqual([]);
+    await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'Betreff eins' });
+    expect(kinds()).toEqual([]);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect(kinds()).toEqual(['approved']);
+    await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'Betreff zwei' });
+    expect(kinds()).toEqual(['approved', 'draft']);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    await send(ctx, 'POST', `/api/applications/${id}/unapprove`, {});
+    expect(kinds()).toEqual(['approved', 'draft', 'approved', 'draft']);
+  });
   it('approve: one page → approved; two pages → 409 LETTER_TOO_LONG and pages stored; unapprove → draft', async () => {
     const ctx = await setup();
     const id = await created(ctx);

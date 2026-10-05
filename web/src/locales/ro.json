@@ -362,7 +362,8 @@
       "offerGone": "Agenția Federală a Muncii nu mai afișează acest anunț.",
       "noStory": "Nu aveți încă nicio poveste verificată care poate fi spusă angajatorilor. Adăugați una în profil, la secțiunea „Povești pentru scrisorile de intenție”.",
       "attachmentUnreadable": "Atașamentul „{{name}}” nu poate fi citit (deteriorat sau protejat cu parolă). Eliminați-l din acest pachet sau înlocuiți-l în profil.",
-      "packageBusy": "Claude lucrează chiar acum la acest pachet. Vă rugăm să așteptați până termină."
+      "packageBusy": "Claude lucrează chiar acum la acest pachet. Vă rugăm să așteptați până termină.",
+      "packageSent": "Această candidatură a fost deja trimisă sau depusă – nu mai poate fi modificată."
     }
   },
   "vacancies": {

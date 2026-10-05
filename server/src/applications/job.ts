@@ -17,6 +17,7 @@ import type { ApplicationStore, PhotoFile } from './store.js';
 import { packageContext, type CreateOutput, type CvOutput, type LetterOutput, type PackageContext } from './tasks/context.js';
 import { createPackageTask } from './tasks/create-package.js';
 import { refreshCvTask } from './tasks/refresh-cv.js';
+import { addStatus } from './status.js';
 import { reviseLetterTask, SHORTEN_INSTRUCTION, withFeedback } from './tasks/revise-letter.js';
 
 export type JobRequest =
@@ -40,9 +41,10 @@ export function idleJobState(): ApplicationJobState {
 
 /** Any change the person did not approve yet makes the package a draft again (spec, section 1). */
 export function touchDraft(p: ApplicationPackage, now: Date): void {
-  p.status = 'draft';
+  const at = now.toISOString();
+  if (p.status !== 'draft') addStatus(p, 'draft', at);
   p.approvedAt = null;
-  p.updatedAt = now.toISOString();
+  p.updatedAt = at;
 }
 
 export function toPackageVacancy(v: Vacancy): PackageVacancy {
@@ -161,6 +163,9 @@ export class ApplicationJob {
       createdAt: previous?.createdAt ?? now,
       updatedAt: now,
       approvedAt: null,
+      history: [],
+      sentAt: null,
+      sentEmail: null,
       profileFingerprint: profileFingerprint(profile),
       snapshot: takeSnapshot(profile),
       vacancy,

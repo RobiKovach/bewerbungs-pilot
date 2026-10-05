@@ -4,6 +4,7 @@ import type { ApplicationPackage, ApplicationSummary } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import { migrate, MigrationError } from '../data/migrate.js';
+import { lastChangeAt } from './status.js';
 import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validateList, validatePackage } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
@@ -11,7 +12,7 @@ export interface PhotoFile { data: Buffer; ext: '.jpg' | '.png' }
 
 const summaryOf = (p: ApplicationPackage): ApplicationSummary => ({
   id: p.id, vacancyId: p.vacancyId, company: p.vacancy.company, title: p.vacancy.title, language: p.language, status: p.status,
-  createdAt: p.createdAt, updatedAt: p.updatedAt, approvedAt: p.approvedAt,
+  createdAt: p.createdAt, updatedAt: p.updatedAt, approvedAt: p.approvedAt, lastChangeAt: lastChangeAt(p),
 });
 
 /**
@@ -51,7 +52,7 @@ export class ApplicationStore {
   }
 
   list(): ApplicationSummary[] {
-    return [...this.packages.values()].map(summaryOf).sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+    return [...this.packages.values()].map(summaryOf).sort((a, b) => (a.lastChangeAt < b.lastChangeAt ? 1 : a.lastChangeAt > b.lastChangeAt ? -1 : 0));
   }
 
   get(id: string): ApplicationPackage | undefined {

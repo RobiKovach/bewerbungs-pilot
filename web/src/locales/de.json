@@ -362,7 +362,8 @@
       "offerGone": "Die Bundesagentur für Arbeit listet dieses Angebot nicht mehr.",
       "noStory": "Sie haben noch keine geprüfte Geschichte, die Arbeitgebern erzählt werden darf. Fügen Sie in Ihrem Profil unter „Geschichten für Anschreiben“ eine hinzu.",
       "attachmentUnreadable": "Der Anhang „{{name}}“ kann nicht gelesen werden (beschädigt oder passwortgeschützt). Entfernen Sie ihn aus diesem Paket oder ersetzen Sie ihn in Ihrem Profil.",
-      "packageBusy": "Claude arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist."
+      "packageBusy": "Claude arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist.",
+      "packageSent": "Diese Bewerbung wurde bereits versendet oder eingereicht – sie kann nicht mehr geändert werden."
     }
   },
   "vacancies": {

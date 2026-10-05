@@ -3,7 +3,8 @@ import type { ApplicationJobState, ApplicationPackage, ApplicationSummary, Appli
 const NOW = '2026-09-29T10:00:00.000Z';
 export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationPackage {
   return {
-    schemaVersion: 2, id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 3, id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    history: [], sentAt: null, sentEmail: null,
     profileFingerprint: '0'.repeat(64),
     snapshot: {
       personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '', street: '', postalCode: '10115', city: 'Berlin', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] },
@@ -24,7 +25,7 @@ export function appView(over: Partial<ApplicationView> = {}, pkg: Partial<Applic
   return { application: appPackage(pkg), profileChanged: false, attachments: [], ...over };
 }
 export function appSummary(over: Partial<ApplicationSummary & { profileChanged: boolean }> = {}): ApplicationSummary & { profileChanged: boolean } {
-  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, profileChanged: false, ...over };
+  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, lastChangeAt: NOW, profileChanged: false, ...over };
 }
 export function jobState(over: Partial<ApplicationJobState> = {}): ApplicationJobState {
   return { state: 'idle', kind: null, vacancyId: null, applicationId: null, error: null, startedAt: null, finishedAt: null, ...over };
