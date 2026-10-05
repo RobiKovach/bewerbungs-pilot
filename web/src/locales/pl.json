@@ -210,6 +210,7 @@
       "photoDelete": "Usuń zdjęcie",
       "photoAlt": "Twoje zdjęcie do CV",
       "photoNone": "Nie masz jeszcze zdjęcia. W Niemczech zdjęcie jest powszechne, ale nieobowiązkowe.",
+      "photoRecrop": "Wskazówka: przytnij zdjęcie ponownie w kole, aby jak najlepiej wyglądało w CV.",
       "docsTitle": "Dokumenty do załączników",
       "docLabel": "Nazwa nowego dokumentu (na przykład „Zeugnis Ausbildung”)",
       "docName": "Nazwa",

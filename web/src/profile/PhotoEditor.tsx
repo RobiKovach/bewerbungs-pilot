@@ -19,6 +19,7 @@ export function PhotoEditor() {
   const [area, setArea] = useState<Area | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [notSquare, setNotSquare] = useState(false);
 
   // The picked file lives in memory as a blob: URL until it is replaced or the editor closes.
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
@@ -68,7 +69,7 @@ export function PhotoEditor() {
             {/* disableAutomaticStylesInjection: the library otherwise injects a <style> tag at runtime, which our
                 strict CSP (no style-src 'unsafe-inline') blocks; the same CSS is imported above instead, bundled
                 same-origin. */}
-            <Cropper image={src} crop={crop} zoom={zoom} aspect={3 / 4} onCropChange={setCrop} onZoomChange={setZoom}
+            <Cropper image={src} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onZoomChange={setZoom}
               onCropComplete={onCropComplete} disableAutomaticStylesInjection />
           </div>
           <div className="field">
@@ -83,8 +84,10 @@ export function PhotoEditor() {
       ) : (
         <>
           {photo
-            ? <img className="photo-preview" src={api.fileUrl(photo.id)} alt={t('profile.files.photoAlt')} />
+            ? <img className="photo-preview" src={api.fileUrl(photo.id)} alt={t('profile.files.photoAlt')}
+                onLoad={(e) => setNotSquare(Math.abs(e.currentTarget.naturalWidth - e.currentTarget.naturalHeight) > 2)} />
             : <p className="muted">{t('profile.files.photoNone')}</p>}
+          {photo && notSquare ? <p className="field-hint">{t('profile.files.photoRecrop')}</p> : null}
           <div className="btn-row">
             <label className="btn ghost" htmlFor={inputId}>{t('profile.files.photoChoose')}</label>
             {photo ? <button type="button" className="btn ghost" onClick={() => void remove()}>{t('profile.files.photoDelete')}</button> : null}

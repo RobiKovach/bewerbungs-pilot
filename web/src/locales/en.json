@@ -210,6 +210,7 @@
       "photoDelete": "Remove photo",
       "photoAlt": "Your CV photo",
       "photoNone": "No photo yet. In Germany a photo is common, but not required.",
+      "photoRecrop": "Tip: crop your photo again in a circle so it looks its best in the CV.",
       "docsTitle": "Documents for attachments",
       "docLabel": "Name of the new document (for example \"Zeugnis Ausbildung\")",
       "docName": "Name",
