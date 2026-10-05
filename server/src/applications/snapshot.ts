@@ -38,7 +38,13 @@ const descriptions = (s: PackageSnapshot) =>
   stable(Object.fromEntries([...s.education, ...s.experience].map((e) => [e.id, e.description.trim()])));
 const skillIds = (s: PackageSnapshot) => stable(s.skills.map((k) => k.id).sort());
 
-/** "Update CV" needs Claude only when descriptions or the set of skills changed (spec, section 1). */
+/** Distinct trimmed non-empty countries and language names, sorted — what Claude translates for the CV. */
+export function translatableValues(s: PackageSnapshot): string[] {
+  const all = [s.personal.country, ...s.education.map((e) => e.country), ...s.experience.map((e) => e.country), ...s.languages.map((l) => l.language)];
+  return [...new Set(all.map((v) => v.trim()).filter(Boolean))].sort();
+}
+
+/** "Update CV" needs Claude only when descriptions, the set of skills or the values to translate changed (spec, section 1). */
 export function sameCvInputs(a: PackageSnapshot, b: PackageSnapshot): boolean {
-  return descriptions(a) === descriptions(b) && skillIds(a) === skillIds(b);
+  return descriptions(a) === descriptions(b) && skillIds(a) === skillIds(b) && stable(translatableValues(a)) === stable(translatableValues(b));
 }

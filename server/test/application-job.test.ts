@@ -46,7 +46,7 @@ describe('create', () => {
       recipient: ['Muster GmbH', 'Hamburg'], salutation: 'Sehr geehrte Damen und Herren,', closing: 'Mit freundlichen Grüßen',
       signature: 'Max Mustermann', subject: GOOD_LETTER.subject, paragraphs: GOOD_LETTER.paragraphs, storyIds: ['st1'], pages: 1,
     });
-    expect(p.cv).toEqual({ profil: GOOD_CV.profil, profilEditedByHand: false, descriptions: { ed1: GOOD_CV.descriptions[0].text, ex1: GOOD_CV.descriptions[1].text }, skillOrder: GOOD_CV.skillOrder });
+    expect(p.cv).toEqual({ profil: GOOD_CV.profil, profilEditedByHand: false, descriptions: { ed1: GOOD_CV.descriptions[0].text, ex1: GOOD_CV.descriptions[1].text }, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: GOOD_CV.skillOrder }], translations: {} });
     expect(p.status).toBe('draft');
     expect(t.store.readVacancyText('app1')).toBe(OFFER);
     expect(t.provider.calls).toHaveLength(1);

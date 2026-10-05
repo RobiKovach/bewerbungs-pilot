@@ -63,7 +63,7 @@ describe('cvHtml', () => {
   it('uses Claude\'s translated descriptions and skill order, falls back to the profile text, and labels in English', () => {
     const p = pkg({ language: 'en' });
     p.cv.descriptions = { ex1: 'Built client websites.' };
-    p.cv.skillOrder = ['sk5', 'sk1'];
+    p.cv.skillGroups = [{ name: '', skillIds: ['sk5', 'sk1'] }];
     const html = cvHtml(p, null);
     expect(html).toContain('Built client websites.');
     expect(html).toContain('Ausbildung mit Schwerpunkt Web.'); // no translation given → profile text

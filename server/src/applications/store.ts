@@ -3,7 +3,8 @@ import path from 'node:path';
 import type { ApplicationPackage, ApplicationSummary } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
-import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, validateList, validatePackage } from './schema.js';
+import { migrate, MigrationError } from '../data/migrate.js';
+import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validateList, validatePackage } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 export interface PhotoFile { data: Buffer; ext: '.jpg' | '.png' }
@@ -145,12 +146,16 @@ export class ApplicationStore {
       return null;
     }
     if (raw === null) return null;
-    const problem = validatePackage(raw);
-    if (problem) {
-      this.setAsidePackage(id, 'invalid', forLog(problem));
+    try {
+      const doc = migrate(raw, PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS);
+      const problem = validatePackage(doc);
+      if (problem) throw new MigrationError(forLog(problem));
+      return doc as unknown as ApplicationPackage;
+    } catch (err) {
+      if (!(err instanceof MigrationError)) throw err;
+      this.setAsidePackage(id, 'invalid', forLog(err.message));
       return null;
     }
-    return raw as ApplicationPackage;
   }
 
   private writeList(): void {

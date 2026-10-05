@@ -188,7 +188,10 @@ export class ApplicationJob {
       const out = await this.ask<CvOutput>(refreshCvTask(ctx, existing.vacancy, text), (o) => checkCv(o, ctx), signal);
       const fresh = toCv(out);
       const keep = keepProfil && existing.cv.profilEditedByHand;
-      cv = { ...fresh, profil: keep ? existing.cv.profil : fresh.profil, profilEditedByHand: keep };
+      cv = {
+        ...fresh, profil: keep ? existing.cv.profil : fresh.profil, profilEditedByHand: keep,
+        headline: existing.cv.headline, headlineEditedByHand: existing.cv.headlineEditedByHand,
+      };
     }
     signal.throwIfAborted();
     const next = structuredClone(existing);

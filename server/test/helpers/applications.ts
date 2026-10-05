@@ -39,7 +39,7 @@ let n = 0;
 export function pkg(over: Partial<ApplicationPackage> = {}, profile: Profile = readyPackageProfile()): ApplicationPackage {
   n++;
   return {
-    schemaVersion: 1, id: `a${n}`, vacancyId: `v${n}`, language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 2, id: `a${n}`, vacancyId: `v${n}`, language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     profileFingerprint: profileFingerprint(profile), snapshot: takeSnapshot(profile),
     vacancy: { id: `v${n}`, title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Berlin'], remote: 'partial', contact: null, url: '' },
     letter: {
@@ -47,7 +47,7 @@ export function pkg(over: Partial<ApplicationPackage> = {}, profile: Profile = r
       paragraphs: ['Absatz eins.', 'Absatz zwei.', 'Absatz drei.'], closing: 'Mit freundlichen Grüßen', signature: 'Max Mustermann',
       storyIds: ['st1'], hint: null, pages: 1,
     },
-    cv: { profil: 'Webentwickler mit sechs Jahren Erfahrung.', profilEditedByHand: false, descriptions: { ed1: 'Ausbildung mit Schwerpunkt Web.', ex1: 'Kundenwebseiten entwickelt.' }, skillOrder: ['sk1', 'sk2', 'sk3', 'sk4', 'sk5'] },
+    cv: { profil: 'Webentwickler mit sechs Jahren Erfahrung.', profilEditedByHand: false, descriptions: { ed1: 'Ausbildung mit Schwerpunkt Web.', ex1: 'Kundenwebseiten entwickelt.' }, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: ['sk1', 'sk2', 'sk3', 'sk4', 'sk5'] }], translations: {} },
     attachments: [],
     ...over,
   };

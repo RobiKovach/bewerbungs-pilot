@@ -52,7 +52,8 @@ export function cvHtml(p: ApplicationPackage, photo: { data: Buffer; ext: '.jpg'
   const education = s.education.map((x) => entry(x.id, x.from, x.to, x.degree, x.institution, x.city, x.country, x.description)).join('');
 
   const byId = new Map(s.skills.map((k) => [k.id, k]));
-  const ordered = [...p.cv.skillOrder.map((id) => byId.get(id)).filter((k) => k !== undefined), ...s.skills.filter((k) => !p.cv.skillOrder.includes(k.id))];
+  const order = p.cv.skillGroups.flatMap((g) => g.skillIds);
+  const ordered = [...order.map((id) => byId.get(id)).filter((k) => k !== undefined), ...s.skills.filter((k) => !order.includes(k.id))];
   const skills = ordered.map((k) => `<div class="row"><span>${e(k.name)}</span><span>${k.level ? e(SKILL_LEVEL[lang][k.level]) : ''}</span></div>`).join('');
   const level = (l: LanguageLevel, cert: string) => [l === 'native' ? NATIVE[lang] : l, cert.trim()].filter(Boolean).join(', ');
   const languages = s.languages.map((l) => `<div class="row"><span>${e(l.language)}</span><span>${e(level(l.level, l.certificate))}</span></div>`).join('');

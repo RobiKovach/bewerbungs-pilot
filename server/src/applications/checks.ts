@@ -1,3 +1,4 @@
+import type { PackageCv } from '@bp/shared';
 import { PACKAGE_LIMITS as L } from './schema.js';
 import type { CvOutput, LetterOutput, PackageContext } from './tasks/context.js';
 
@@ -55,6 +56,11 @@ export function mergeChecks(...results: CheckResult[]): CheckResult {
   };
 }
 
-export function toCv(out: CvOutput): { profil: string; descriptions: Record<string, string>; skillOrder: string[] } {
-  return { profil: out.profil.trim(), descriptions: Object.fromEntries(out.descriptions.map((d) => [d.id, d.text.trim()])), skillOrder: [...out.skillOrder] };
+export function toCv(out: CvOutput): Omit<PackageCv, 'profilEditedByHand'> {
+  // Temporary mapping of the old output shape; Task 5 replaces it.
+  return {
+    profil: out.profil.trim(), headline: '', headlineEditedByHand: false,
+    descriptions: Object.fromEntries(out.descriptions.map((d) => [d.id, d.text.trim()])),
+    skillGroups: [{ name: '', skillIds: [...out.skillOrder] }], translations: {},
+  };
 }

@@ -3,7 +3,7 @@ import type { ApplicationJobState, ApplicationPackage, ApplicationSummary, Appli
 const NOW = '2026-09-29T10:00:00.000Z';
 export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationPackage {
   return {
-    schemaVersion: 1, id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 2, id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     profileFingerprint: '0'.repeat(64),
     snapshot: {
       personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '', street: '', postalCode: '10115', city: 'Berlin', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] },
@@ -15,7 +15,7 @@ export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationP
       paragraphs: ['Absatz eins.', 'Absatz zwei.', 'Absatz drei.'], closing: 'Mit freundlichen Grüßen', signature: 'Max Mustermann',
       storyIds: ['st1'], hint: null, pages: 1,
     },
-    cv: { profil: 'Webentwickler mit Erfahrung.', profilEditedByHand: false, descriptions: {}, skillOrder: ['sk1'] },
+    cv: { profil: 'Webentwickler mit Erfahrung.', profilEditedByHand: false, descriptions: {}, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: ['sk1'] }], translations: {} },
     attachments: [],
     ...over,
   };

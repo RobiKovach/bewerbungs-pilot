@@ -22,13 +22,19 @@ export interface PackageLetter {
 }
 
 /** What Claude contributes to the CV (spec, decision 3). */
+export interface SkillGroup { name: string; skillIds: string[] }
 export interface PackageCv {
   profil: string;
   profilEditedByHand: boolean;
+  /** CV headline under the name (Claude, per offer); '' = none. */
+  headline: string;
+  headlineEditedByHand: boolean;
   /** Translated descriptions by entry id (education and experience). */
   descriptions: Record<string, string>;
-  /** Skill ids, most relevant first. */
-  skillOrder: string[];
+  /** Skills in groups, groups and skills most relevant first. A v1 package migrates to one unnamed group. */
+  skillGroups: SkillGroup[];
+  /** Countries and language names in the document language: original value → translation. */
+  translations: Record<string, string>;
 }
 
 /** The profile as it was when the package was created or its CV last updated. */
@@ -53,7 +59,7 @@ export interface PackageVacancy {
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 1;
+  schemaVersion: 2;
   id: string;
   vacancyId: string;
   language: DocLanguage;

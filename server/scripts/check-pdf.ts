@@ -8,7 +8,7 @@ import { cvHtml } from '../src/applications/render/cv.js';
 import { letterHtml } from '../src/applications/render/letter.js';
 
 const sample: ApplicationPackage = {
-  schemaVersion: 1, id: 'check', vacancyId: 'check', language: 'de', status: 'draft',
+  schemaVersion: 2, id: 'check', vacancyId: 'check', language: 'de', status: 'draft',
   createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), approvedAt: null, profileFingerprint: '0'.repeat(64),
   snapshot: {
     personal: { fullName: 'Max Mustermann', email: 'max@example.com', phone: '+49 30 1234567', street: 'Musterstraße 1', postalCode: '10115', city: 'Berlin', country: 'Deutschland', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] },
@@ -24,7 +24,7 @@ const sample: ApplicationPackage = {
     paragraphs: Array.from({ length: 4 }, (_, i) => `Absatz ${i + 1}: ${'Dies ist ein Beispieltext für die Prüfung des Seitenumbruchs. '.repeat(4)}`),
     closing: 'Mit freundlichen Grüßen', signature: 'Max Mustermann', storyIds: [], hint: null, pages: 0,
   },
-  cv: { profil: 'Webentwickler mit mehrjähriger Erfahrung.', profilEditedByHand: false, descriptions: {}, skillOrder: ['sk2', 'sk1', 'sk3'] },
+  cv: { profil: 'Webentwickler mit mehrjähriger Erfahrung.', profilEditedByHand: false, descriptions: {}, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: ['sk2', 'sk1', 'sk3'] }], translations: {} },
   attachments: [],
 };
 

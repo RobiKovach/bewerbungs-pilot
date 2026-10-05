@@ -99,7 +99,7 @@ describe('checkLetter', () => {
 describe('checkCv', () => {
   it('a good CV part passes and converts to the stored shape', () => {
     expect(checkCv(GOOD_CV, ctx())).toEqual({ fatal: null, violations: [] });
-    expect(toCv(GOOD_CV)).toEqual({ profil: GOOD_CV.profil, descriptions: { ed1: 'Ausbildung mit Schwerpunkt Web.', ex1: 'Kundenwebseiten entwickelt.' }, skillOrder: GOOD_CV.skillOrder });
+    expect(toCv(GOOD_CV)).toEqual({ profil: GOOD_CV.profil, descriptions: { ed1: 'Ausbildung mit Schwerpunkt Web.', ex1: 'Kundenwebseiten entwickelt.' }, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: GOOD_CV.skillOrder }], translations: {} });
   });
   it.each([
     ['empty Profil', { profil: '' }],

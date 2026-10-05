@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { PackageVacancy, Profile } from '@bp/shared';
 import { detectLanguage, englishBelowB2 } from '../src/applications/language.js';
 import { buildRecipient, buildSalutation, closingFor, mentionHomeOffice } from '../src/applications/letter-parts.js';
-import { profileFingerprint, sameCvInputs, takeSnapshot } from '../src/applications/snapshot.js';
+import { profileFingerprint, sameCvInputs, takeSnapshot, translatableValues } from '../src/applications/snapshot.js';
 import { emptyProfile } from '../src/profile/schema.js';
 
 const DE = 'Wir suchen für unser Team in Berlin einen Webentwickler (m/w/d). Sie arbeiten mit React und die Arbeit ist spannend. Wir bieten Ihnen ein tolles Team.';
@@ -115,5 +115,26 @@ describe('mentionHomeOffice city matching', () => {
   it('a different city still gets the sentence', () => {
     expect(mentionHomeOffice(remote, vac({ locations: ['01067 Berlin'] }))).toBe(true);
     expect(mentionHomeOffice(remote, vac({ locations: ['Dresdener Straße 5, Berlin'] }))).toBe(true);
+  });
+});
+
+describe('translatableValues', () => {
+  const filled = () => {
+    const p = emptyProfile();
+    p.sections.personal.data.country = 'Україна';
+    p.sections.education.data.items = [{ id: 'ed1', kind: 'university', degree: 'B', institution: 'U', city: 'K', country: 'Україна', from: '', to: '', description: '' }];
+    p.sections.experience.data.items = [{ id: 'ex1', jobTitle: 'J', employer: 'E', city: 'B', country: 'Німеччина', from: '', to: '', description: '' }];
+    p.sections.languages.data.items = [{ id: 'l1', language: 'Українська', level: 'native', certificate: '' }, { id: 'l2', language: ' Німецька ', level: 'B2', certificate: '' }];
+    return p;
+  };
+  it('lists each country and language name once', () => {
+    expect(translatableValues(takeSnapshot(filled()))).toEqual(['Німеччина', 'Німецька', 'Україна', 'Українська'].sort());
+  });
+  it('sameCvInputs is false when a country changes', () => {
+    const a = takeSnapshot(filled());
+    const b = takeSnapshot(filled());
+    b.experience[0].country = 'Польща';
+    expect(sameCvInputs(a, b)).toBe(false);
+    expect(sameCvInputs(a, takeSnapshot(filled()))).toBe(true);
   });
 });
