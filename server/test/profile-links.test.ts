@@ -1,6 +1,10 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { migrate } from '../src/data/migrate.js';
 import { emptyProfile, PROFILE_MIGRATIONS, PROFILE_SCHEMA_VERSION, validateProfile, validateSectionData } from '../src/profile/schema.js';
+import { ProfileStore } from '../src/profile/store.js';
 import { toSectionData } from '../src/profile/tasks/extract-cv.js';
 
 const personal = (links: unknown) => ({ ...emptyProfile().sections.personal.data, fullName: 'Max Mustermann', links });
@@ -30,6 +34,37 @@ describe('profile v4 links', () => {
     const doc = migrate(v3, PROFILE_SCHEMA_VERSION, PROFILE_MIGRATIONS);
     expect(validateProfile(doc)).toBeNull();
     expect(doc).toEqual(v4);
+  });
+  it('migrates an open personal CV proposal of a v3 profile too, so the file is not set aside', () => {
+    const v4 = emptyProfile();
+    const { links: _drop, ...oldPersonal } = v4.sections.personal.data;
+    void _drop;
+    const proposal = { ...oldPersonal, fullName: 'Max Neu' };
+    const v3 = {
+      ...v4, schemaVersion: 3, cvProposals: { personal: proposal },
+      sections: { ...v4.sections, personal: { ...v4.sections.personal, data: oldPersonal } },
+    };
+    const doc = migrate(v3, PROFILE_SCHEMA_VERSION, PROFILE_MIGRATIONS) as unknown as typeof v4;
+    expect(validateProfile(doc)).toBeNull();
+    expect(doc.cvProposals).toEqual({ personal: { ...proposal, links: [] } });
+    expect(doc.sections).toEqual(v4.sections);
+  });
+  it('a v3 file with an open personal proposal loads without being set aside', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-links-'));
+    const file = path.join(dir, 'profile.json');
+    const v4 = emptyProfile();
+    const { links: _drop, ...oldPersonal } = v4.sections.personal.data;
+    void _drop;
+    fs.writeFileSync(file, JSON.stringify({
+      ...v4, schemaVersion: 3, neverMention: ['Kunde X'], cvProposals: { personal: { ...oldPersonal, fullName: 'Max Neu' } },
+      sections: { ...v4.sections, personal: { ...v4.sections.personal, data: oldPersonal } },
+    }));
+    const events: string[] = [];
+    const loaded = new ProfileStore(file, (e) => events.push(e)).load();
+    expect(events).toEqual([]);
+    expect(loaded.neverMention).toEqual(['Kunde X']);
+    expect(loaded.cvProposals.personal).toMatchObject({ fullName: 'Max Neu', links: [] });
+    expect(fs.readdirSync(dir)).toEqual(['profile.json']);
   });
   it('CV extraction keeps up to 3 valid links and drops bad ones', () => {
     let n = 0;

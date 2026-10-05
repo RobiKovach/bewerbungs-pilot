@@ -15,8 +15,15 @@ export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
   // 3: job wishes get the Zeitarbeit switch, on (= the search behaves as it would have before).
   2: (doc) => ({ ...doc, sections: withWishesDefault(doc.sections) }),
   // 4: personal details get a list of links (none in old files).
-  3: (doc) => ({ ...doc, sections: withLinksDefault(doc.sections) }),
+  3: (doc) => ({ ...doc, sections: withLinksDefault(doc.sections), cvProposals: withProposalLinksDefault(doc.cvProposals) }),
 };
+
+/** An open "replace CV" proposal for personal details gets the same default; anything malformed is left alone. */
+function withProposalLinksDefault(proposals: unknown): unknown {
+  const p = proposals as { personal?: unknown } | null;
+  if (!p || typeof p !== 'object' || !p.personal || typeof p.personal !== 'object') return proposals;
+  return { ...p, personal: { links: [], ...(p.personal as object) } };
+}
 
 function withLinksDefault(sections: unknown): unknown {
   const s = sections as { personal?: { data?: unknown } } | null;
