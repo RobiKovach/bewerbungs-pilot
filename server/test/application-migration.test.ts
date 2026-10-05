@@ -85,6 +85,25 @@ describe('package v2 → v3', () => {
   });
 });
 
+describe('an applications.json from 0.5.x', () => {
+  it('stays valid next to a v2 package: no warning, nothing set aside', () => {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+    const warnings: string[] = [];
+    const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z' });
+    fs.mkdirSync(path.join(dir, p.id), { recursive: true });
+    fs.writeFileSync(path.join(dir, p.id, 'package.json'), JSON.stringify(v2From(p)));
+    const summary = {
+      id: p.id, vacancyId: p.vacancyId, company: p.vacancy.company, title: p.vacancy.title, language: p.language, status: p.status,
+      createdAt: p.createdAt, updatedAt: p.updatedAt, approvedAt: p.approvedAt,
+    };
+    fs.writeFileSync(path.join(dir, 'applications.json'), JSON.stringify({ schemaVersion: 1, applications: [summary] }));
+    const store = new ApplicationStore(dir, (event) => warnings.push(event));
+    expect(store.load().map((s) => s.id)).toEqual([p.id]);
+    expect(warnings).toEqual([]);
+    expect(fs.readdirSync(dir).filter((f) => f.includes('invalid') || f.includes('corrupt'))).toEqual([]);
+  });
+});
+
 describe('a migrated v1 package prints every skill', () => {
   it('with a partial or empty skillOrder, skills outside it still appear in the CV', () => {
     for (const order of [['sk5'], []]) {

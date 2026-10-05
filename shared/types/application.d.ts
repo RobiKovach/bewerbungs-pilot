@@ -98,8 +98,6 @@ export interface ApplicationSummary {
   createdAt: string;
   updatedAt: string;
   approvedAt: string | null;
-  /** The last history entry, else updatedAt. */
-  lastChangeAt: string;
 }
 
 export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean })[] }

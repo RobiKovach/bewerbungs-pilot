@@ -25,7 +25,7 @@ export function appView(over: Partial<ApplicationView> = {}, pkg: Partial<Applic
   return { application: appPackage(pkg), profileChanged: false, attachments: [], ...over };
 }
 export function appSummary(over: Partial<ApplicationSummary & { profileChanged: boolean }> = {}): ApplicationSummary & { profileChanged: boolean } {
-  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, lastChangeAt: NOW, profileChanged: false, ...over };
+  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, profileChanged: false, ...over };
 }
 export function jobState(over: Partial<ApplicationJobState> = {}): ApplicationJobState {
   return { state: 'idle', kind: null, vacancyId: null, applicationId: null, error: null, startedAt: null, finishedAt: null, ...over };

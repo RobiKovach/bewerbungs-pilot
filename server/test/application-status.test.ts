@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addStatus, assertEditable, isFrozen, lastChangeAt } from '../src/applications/status.js';
+import { addStatus, assertEditable, isFrozen } from '../src/applications/status.js';
 import { AppError } from '../src/errors.js';
 import { pkg } from './helpers/applications.js';
 
@@ -17,9 +17,5 @@ describe('package status', () => {
       expect(isFrozen(pkg({ status: s }))).toBe(true);
       try { assertEditable(pkg({ status: s })); expect.fail('should throw'); } catch (e) { expect((e as AppError).code).toBe('CONFLICT'); expect((e as AppError).reason).toBe('packageSent'); }
     }
-  });
-  it('lastChangeAt is the last history entry, else updatedAt', () => {
-    expect(lastChangeAt(pkg({ history: [], updatedAt: '2026-10-01T00:00:00.000Z' }))).toBe('2026-10-01T00:00:00.000Z');
-    expect(lastChangeAt(pkg({ history: [{ kind: 'approved', at: '2026-10-02T00:00:00.000Z' }] }))).toBe('2026-10-02T00:00:00.000Z');
   });
 });

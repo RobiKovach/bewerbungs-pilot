@@ -18,8 +18,3 @@ export function addStatus(p: ApplicationPackage, kind: ApplicationStatus, at: st
   p.status = kind;
   p.updatedAt = at;
 }
-
-/** When the package last changed: the last history entry, else updatedAt. */
-export function lastChangeAt(p: ApplicationPackage): string {
-  return p.history.at(-1)?.at ?? p.updatedAt;
-}

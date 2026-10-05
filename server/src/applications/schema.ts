@@ -55,7 +55,7 @@ const STATUS = { enum: ['draft', 'approved', 'sent', 'submitted', 'interview', '
 
 const SUMMARY = obj({
   id: ID, vacancyId: ID, company: str(V.company), title: str(V.title), language: LANGUAGE, status: STATUS,
-  createdAt: TIMESTAMP, updatedAt: TIMESTAMP, approvedAt: nullable(TIMESTAMP), lastChangeAt: TIMESTAMP,
+  createdAt: TIMESTAMP, updatedAt: TIMESTAMP, approvedAt: nullable(TIMESTAMP),
 });
 
 const PACKAGE = obj({
