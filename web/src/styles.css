@@ -65,9 +65,9 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 /* Profile forms */
 .field { display: flex; flex-direction: column; gap: 0.3rem; }
 .field-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-weight: 600; font-size: 0.95rem; }
-.field input, .field textarea, .field select { font: inherit; padding: 0.45rem 0.6rem; border-radius: 10px; border: 1px solid var(--border);
+.field input, .field textarea, .field select, .links-field input { font: inherit; padding: 0.45rem 0.6rem; border-radius: 10px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text); width: 100%; box-sizing: border-box; }
-.field input[aria-invalid="true"] { border-color: var(--danger); }
+.field input[aria-invalid="true"], .links-field input[aria-invalid="true"] { border-color: var(--danger); }
 .field-hint { margin: 0; font-size: 0.85rem; color: var(--muted); }
 .field-error { margin: 0; font-size: 0.85rem; color: var(--danger); }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.9rem 1.2rem; }
@@ -88,7 +88,7 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 label.btn { cursor: pointer; }
 .story { margin-bottom: 1rem; }
 .question { margin-bottom: 1rem; }
-.cropper { position: relative; width: 100%; max-width: 24rem; aspect-ratio: 3 / 4; background: var(--bg); border-radius: var(--radius); overflow: hidden; }
+.cropper { position: relative; width: 100%; max-width: 24rem; aspect-ratio: 1; background: var(--bg); border-radius: var(--radius); overflow: hidden; }
 .photo-preview { display: block; width: 9rem; aspect-ratio: 1; object-fit: cover; object-position: center 30%; border-radius: 50%; border: 1px solid var(--border); }
 .check { display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0; }
 .readiness ul { margin: 0.3rem 0 0.6rem; }
@@ -178,5 +178,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .attachment-list { list-style: none; padding: 0; display: grid; gap: 0.4rem; }
 .downloads { margin-top: 1rem; }
 
+/* The links editor (LinksField.tsx) spans the whole form row and looks like the other fields. */
+.links-field { border: 0; padding: 0; margin: 0; min-width: 0; }
+.form-grid .links-field { grid-column: 1 / -1; }
+.links-field legend { padding: 0; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.95rem; }
 .links-field .link-row { display: grid; grid-template-columns: 10rem 1fr auto; gap: .5rem; align-items: center; margin-bottom: .4rem; }
 .links-field .link-row .field-error { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 640px) { .links-field .link-row { grid-template-columns: 1fr; } .links-field .link-row .btn { justify-self: start; } }

@@ -17,6 +17,15 @@ describe('LinksField', () => {
     render(<LinksField value={three} onChange={() => {}} />);
     expect(screen.queryByRole('button', { name: 'Add a link' })).toBeNull();
   });
+  it('every row has its own accessible names (Label 2, Address 2, Remove link 2)', async () => {
+    const onChange = vi.fn();
+    const two = [{ label: 'GitHub', url: 'https://a.example' }, { label: 'LinkedIn', url: 'https://b.example' }];
+    render(<LinksField value={two} onChange={onChange} />);
+    expect(screen.getByRole('combobox', { name: 'Label 2' })).toHaveValue('LinkedIn');
+    expect(screen.getByRole('textbox', { name: 'Address 2' })).toHaveValue('https://b.example');
+    await userEvent.click(screen.getByRole('button', { name: 'Remove link 2' }));
+    expect(onChange).toHaveBeenLastCalledWith([two[0]]);
+  });
   it('marks a non-http address and blocks saving the section', () => {
     render(<LinksField value={[{ label: 'GitHub', url: 'github.com/maxmuster' }]} onChange={() => {}} />);
     expect(screen.getByText('Please enter a full address starting with https://')).toBeInTheDocument();

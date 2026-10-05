@@ -134,7 +134,7 @@
     "fixDates": "Vă rugăm să corectați mai întâi datele marcate cu roșu.",
     "fixLines": "Vă rugăm să scurtați mai întâi listele marcate cu roșu.",
     "fixLinks": "Vă rugăm să verificați linkurile: fiecare are nevoie de o denumire și de o adresă completă care începe cu https://",
-    "links": { "title": "Linkuri (GitHub, LinkedIn, portofoliu)", "label": "Denumire", "url": "Adresă", "add": "Adaugă un link", "remove": "Elimină", "badUrl": "Vă rugăm să introduceți o adresă completă care începe cu https://" },
+    "links": { "title": "Linkuri (GitHub, LinkedIn, portofoliu)", "label": "Denumire {{n}}", "url": "Adresă {{n}}", "add": "Adaugă un link", "remove": "Elimină", "removeN": "Eliminați linkul {{n}}", "badUrl": "Vă rugăm să introduceți o adresă completă care începe cu https://" },
     "tooManyLines": "Vă rugăm să scrieți cel mult {{max}} rânduri.",
     "discard": "Renunțați la modificări",
     "unsavedHint": "Unele modificări nu sunt încă salvate. Vă rugăm să le salvați sau să renunțați la ele înainte de a continua.",
@@ -251,7 +251,7 @@
       "headline": "Titlul postului sub numele dvs.",
       "headlineHint": "Claude îl propune pentru această ofertă; îl puteți modifica.",
       "profilHint": "2–3 propoziții. Tot restul din CV provine din profilul dvs.",
-      "save": "Salvează profilul",
+      "save": "Salvați",
       "fromProfile": "Pentru a schimba date, locuri de muncă, competențe sau limbi, modificați profilul, apoi faceți clic pe „Actualizează CV-ul”.",
       "toProfile": "Deschide profilul",
       "preview": "Previzualizarea CV-ului"

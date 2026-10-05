@@ -134,7 +134,7 @@
     "fixDates": "Najpierw popraw daty zaznaczone na czerwono.",
     "fixLines": "Najpierw skróć listy zaznaczone na czerwono.",
     "fixLinks": "Sprawdź linki: każdy potrzebuje nazwy i pełnego adresu zaczynającego się od https://",
-    "links": { "title": "Linki (GitHub, LinkedIn, portfolio)", "label": "Nazwa", "url": "Adres", "add": "Dodaj link", "remove": "Usuń", "badUrl": "Wpisz pełny adres zaczynający się od https://" },
+    "links": { "title": "Linki (GitHub, LinkedIn, portfolio)", "label": "Nazwa {{n}}", "url": "Adres {{n}}", "add": "Dodaj link", "remove": "Usuń", "removeN": "Usuń link {{n}}", "badUrl": "Proszę wpisać pełny adres zaczynający się od https://" },
     "tooManyLines": "Wpisz najwyżej {{max}} wierszy.",
     "discard": "Odrzuć zmiany",
     "unsavedHint": "Niektóre zmiany nie są jeszcze zapisane. Zapisz je lub cofnij, zanim przejdziesz dalej.",
@@ -251,7 +251,7 @@
       "headline": "Stanowisko pod Twoim imieniem",
       "headlineHint": "Claude proponuje je do tej oferty; możesz je zmienić.",
       "profilHint": "2–3 zdania. Wszystko inne w CV pochodzi z Twojego profilu.",
-      "save": "Zapisz profil",
+      "save": "Zapisz",
       "fromProfile": "Aby zmienić daty, miejsca pracy, umiejętności lub języki, zmień swój profil, a potem kliknij „Zaktualizuj CV”.",
       "toProfile": "Otwórz profil",
       "preview": "Podgląd CV"

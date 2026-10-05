@@ -134,7 +134,7 @@
     "fixDates": "Bitte korrigieren Sie zuerst die rot markierten Daten.",
     "fixLines": "Bitte kürzen Sie zuerst die rot markierten Listen.",
     "fixLinks": "Bitte prüfen Sie die Links: Jeder braucht eine Bezeichnung und eine vollständige Adresse, die mit https:// beginnt.",
-    "links": { "title": "Links (GitHub, LinkedIn, Portfolio)", "label": "Bezeichnung", "url": "Adresse", "add": "Link hinzufügen", "remove": "Entfernen", "badUrl": "Bitte geben Sie eine vollständige Adresse ein, die mit https:// beginnt." },
+    "links": { "title": "Links (GitHub, LinkedIn, Portfolio)", "label": "Bezeichnung {{n}}", "url": "Adresse {{n}}", "add": "Link hinzufügen", "remove": "Entfernen", "removeN": "Link {{n}} entfernen", "badUrl": "Bitte geben Sie eine vollständige Adresse ein, die mit https:// beginnt." },
     "tooManyLines": "Bitte schreiben Sie höchstens {{max}} Zeilen.",
     "discard": "Änderungen verwerfen",
     "unsavedHint": "Einige Änderungen sind noch nicht gespeichert. Bitte speichern oder verwerfen Sie sie, bevor Sie weitermachen.",
@@ -251,7 +251,7 @@
       "headline": "Berufsbezeichnung unter Ihrem Namen",
       "headlineHint": "Claude schlägt sie für dieses Angebot vor; Sie können sie ändern.",
       "profilHint": "2–3 Sätze. Alles andere im Lebenslauf stammt aus Ihrem Profil.",
-      "save": "Profil speichern",
+      "save": "Speichern",
       "fromProfile": "Um Daten, Stationen, Kenntnisse oder Sprachen zu ändern, ändern Sie Ihr Profil und klicken Sie dann auf „Lebenslauf aktualisieren“.",
       "toProfile": "Profil öffnen",
       "preview": "Vorschau des Lebenslaufs"

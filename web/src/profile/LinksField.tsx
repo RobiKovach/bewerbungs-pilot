@@ -17,9 +17,9 @@ export function LinksField({ value, onChange, ai }: { value: ProfileLink[]; onCh
         const bad = l.url.trim() !== '' && !LINK_URL.test(l.url.trim());
         return (
           <div className="link-row" key={i}>
-            <input aria-label={t('profile.links.label')} list={listId} maxLength={LINK_LIMITS.label} value={l.label} onChange={(e) => set(i, { label: e.target.value })} />
-            <input aria-label={t('profile.links.url')} type="url" placeholder="https://" maxLength={LINK_LIMITS.url} value={l.url} aria-invalid={bad || undefined} onChange={(e) => set(i, { url: e.target.value })} />
-            <button type="button" className="btn ghost small" onClick={() => onChange(value.filter((_, j) => j !== i))}>{t('profile.links.remove')}</button>
+            <input aria-label={t('profile.links.label', { n: i + 1 })} list={listId} maxLength={LINK_LIMITS.label} value={l.label} onChange={(e) => set(i, { label: e.target.value })} />
+            <input aria-label={t('profile.links.url', { n: i + 1 })} type="url" placeholder="https://" maxLength={LINK_LIMITS.url} value={l.url} aria-invalid={bad || undefined} onChange={(e) => set(i, { url: e.target.value })} />
+            <button type="button" className="btn ghost small" aria-label={t('profile.links.removeN', { n: i + 1 })} onClick={() => onChange(value.filter((_, j) => j !== i))}>{t('profile.links.remove')}</button>
             {bad ? <p className="field-error">{t('profile.links.badUrl')}</p> : null}
           </div>
         );

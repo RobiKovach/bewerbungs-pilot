@@ -51,8 +51,8 @@ describe('SectionCard', () => {
     await screen.findByLabelText('Full name');
     await user.click(screen.getByRole('button', { name: 'Add a link' }));
     await user.click(screen.getByRole('button', { name: 'Add a link' }));
-    const labels = screen.getAllByLabelText('Label');
-    const urls = screen.getAllByLabelText('Address');
+    const labels = screen.getAllByLabelText(/^Label [12]$/);
+    const urls = screen.getAllByLabelText(/^Address [12]$/);
     await user.clear(labels[0]);
     await user.type(labels[0], '   ');
     await user.type(urls[0], 'https://github.com/maxmuster');

@@ -19,14 +19,14 @@ function setup(routes: Record<string, RouteHandler>, view: ApplicationView = app
 }
 
 describe('CV tab', () => {
-  it('shows the CV preview and saves an edited Profil', async () => {
+  it('shows the CV preview and saves an edited Profil with the generic Save button (it saves the job title too)', async () => {
     const { f, user } = setup({ 'PATCH /api/applications/app1/cv-profil': () => ({ body: appView({}, { updatedAt: '2026-09-29T11:00:00.000Z', cv: { ...appView().application.cv, profil: 'Mein Text.', profilEditedByHand: true } }) }) });
     await user.click(await screen.findByRole('tab', { name: 'CV' }));
     expect(screen.getByTitle('Preview of the CV').getAttribute('src')).toContain('/preview/cv');
     const profil = screen.getByLabelText('Profile (top of the CV)');
     await user.clear(profil);
     await user.type(profil, 'Mein Text.');
-    await user.click(screen.getByRole('button', { name: 'Save Profile' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
     const patch = f.mock.calls.find(([url]) => url === '/api/applications/app1/cv-profil');
     expect(JSON.parse(String(patch![1]!.body))).toEqual({ profil: 'Mein Text.' });
   });
@@ -48,7 +48,7 @@ describe('CV tab', () => {
     expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Update CV' })).toBeDisabled();
     expect(screen.getByRole('tab', { name: 'Attachments' })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: 'Save Profile' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
     const patch = f.mock.calls.find(([url]) => url === '/api/applications/app1/cv-headline');
     expect(JSON.parse(String(patch![1]!.body))).toEqual({ headline: 'Frontend-Entwickler' });
     expect(f.mock.calls.some(([url]) => url === '/api/applications/app1/cv-profil')).toBe(false);
@@ -59,7 +59,7 @@ describe('CV tab', () => {
     const { f, user } = setup({ 'POST /api/applications/app1/refresh-cv': () => ({ status: 202, body: jobState({ state: 'running', kind: 'refreshCv', applicationId: 'app1' }) }) }, view);
     await user.click(await screen.findByRole('tab', { name: 'CV' }));
     await user.click(screen.getByRole('button', { name: 'Update CV' }));
-    expect(screen.getByText('Keep the texts you changed yourself (Profil, job title)?')).toBeInTheDocument();
+    expect(screen.getByText('Keep the texts you changed yourself (Profile, job title)?')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Keep my text' }));
     const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/refresh-cv');
     expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: true, keepHeadline: true });
