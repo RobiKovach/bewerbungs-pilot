@@ -4,7 +4,7 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.4 — foundation, profile, job offers and application packages.** The app installs, runs, speaks six
+**Status: v0.5 — foundation, profile, job offers and application packages.** The app installs, runs, speaks six
 languages, walks you through the first steps, talks to Claude, builds your profile from your CV and your own stories,
 finds job offers that fit your profile and writes an application package (cover letter + tailored CV) for the offers
 you choose. Sending applications from your own email is being built next.
@@ -65,6 +65,10 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Claude writes the cover letter from your stories — one or two true stories tied to what the offer asks for, never a
   list of skills from your CV — and tailors the CV: descriptions translated into the document language, the skills
   that matter first, a short Profile at the top. Nothing is made up; your "never mention" list is respected.
+- The CV shows a round photo (crop it in a circle in your profile), a job title chosen for each offer (you can edit
+  it), up to 3 links from your profile, and skills in groups. Education entries of type course or certificate get
+  their own "Further training & certificates" section.
+- Countries and language names are translated into the document language.
 - Edit every part of the letter yourself or ask Claude to change it. The letter must fit on one page before you can
   approve the package. Any change after approving makes it a draft again.
 - Download the letter, the CV and your attachments one by one, or everything as one PDF. PDFs are made with
