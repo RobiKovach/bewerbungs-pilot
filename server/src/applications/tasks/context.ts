@@ -11,6 +11,8 @@ export interface PackageContext {
   languages: { language: string; level: string; certificate: string }[];
   stories: { id: string; title: string; text: string; kind: string }[];
   neverMention: string[];
+  /** The person's wished job titles (Wishes) — one source for the CV headline. */
+  jobTitles: string[];
   /** Countries and language names Claude translates for the CV (never links or other personal data). */
   toTranslate: string[];
 }
@@ -39,6 +41,7 @@ export function packageContext(profile: Profile, language: DocLanguage, mentionH
     languages: s.languages.data.items.map((l) => ({ language: l.language, level: l.level, certificate: l.certificate })),
     stories: profile.stories.filter((st) => st.confirmed && st.disclosure === 'ok').map((st) => ({ id: st.id, title: st.title, text: st.text, kind: st.kind })),
     neverMention: profile.neverMention.map((m) => m.trim()).filter(Boolean),
+    jobTitles: s.wishes.data.jobTitles.map((t) => t.trim()).filter(Boolean),
     toTranslate: translatableValues(takeSnapshot(profile)),
   };
 }

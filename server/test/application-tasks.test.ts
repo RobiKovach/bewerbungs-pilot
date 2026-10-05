@@ -130,6 +130,14 @@ describe('checkCv — groups, headline, translations', () => {
     expect(task.prompt).not.toContain('github.com');
     expect(JSON.stringify(c)).not.toContain('github.com');
   });
+  it('the headline rule names wished job titles, so the context carries them (trimmed, no blanks) into every prompt', () => {
+    const profile = readyPackageProfile((p) => { p.sections.wishes.data.jobTitles = [' Frontend-Entwickler ', '  ', 'WordPress-Entwickler']; });
+    const c = packageContext(profile, 'de', false);
+    expect(c.jobTitles).toEqual(['Frontend-Entwickler', 'WordPress-Entwickler']);
+    const prompt = refreshCvTask(c, VAC, 'Text').prompt;
+    expect(prompt).toMatch(/"jobTitles": \[\s*"Frontend-Entwickler",\s*"WordPress-Entwickler"\s*\]/);
+    expect(prompt).toContain('wished job titles ("jobTitles")');
+  });
 });
 
 describe('checkCv', () => {

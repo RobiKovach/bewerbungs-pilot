@@ -277,6 +277,38 @@ describe('revise, recreate, refresh CV', () => {
     expect(t.store.require('app1').cv).toMatchObject({ headline: 'Webentwickler', headlineEditedByHand: false });
   });
 
+  it('refresh CV on a package from 0.4.0 (migrated v1): Claude is asked even with unchanged inputs; headline, groups and translations arrive', async () => {
+    const t = await created();
+    const p = t.store.require('app1');
+    const { headline: _h, headlineEditedByHand: _e, skillGroups, translations: _t, ...cv } = p.cv;
+    void _h; void _e; void _t;
+    const { links: _l, ...personal } = p.snapshot.personal;
+    void _l;
+    const old = { ...p, schemaVersion: 1, cv: { ...cv, skillOrder: skillGroups.flatMap((g) => g.skillIds) }, snapshot: { ...p.snapshot, personal } };
+    fs.writeFileSync(path.join(t.dir, 'applications', 'app1', 'package.json'), JSON.stringify(old));
+    const store = new ApplicationStore(path.join(t.dir, 'applications'));
+    store.load();
+    expect(store.require('app1').cv.headline).toBe('');
+    const job = new ApplicationJob({ ...t.deps, store });
+    job.init();
+    const calls = t.provider.calls.length;
+    job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
+    await job.whenIdle();
+    expect(job.state().state).toBe('done');
+    expect(t.provider.calls.length).toBe(calls + 1);
+    expect(store.require('app1').cv).toMatchObject({
+      headline: GOOD_CV.headline, skillGroups: GOOD_CV.skillGroups, translations: { Deutsch: 'Deutsch', Englisch: 'Englisch' },
+    });
+  });
+
+  it('refresh CV on a current package whose inputs did not change still skips Claude', async () => {
+    const t = await created();
+    const calls = t.provider.calls.length;
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
+    await t.job.whenIdle();
+    expect(t.provider.calls.length).toBe(calls);
+  });
+
   it('refresh CV with a new country to translate: a bad Claude answer leaves the package unchanged', async () => {
     const t = await created();
     const before = t.store.require('app1');

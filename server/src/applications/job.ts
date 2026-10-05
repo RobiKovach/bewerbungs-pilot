@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { ApplicationJobState, ApplicationPackage, DocLanguage, PackageLetter, PackageVacancy, Profile, Vacancy } from '@bp/shared';
+import type { ApplicationJobState, ApplicationPackage, DocLanguage, PackageLetter, PackageSnapshot, PackageVacancy, Profile, Vacancy } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
@@ -12,7 +12,7 @@ import { countPages, type PdfPrinter } from './pdf.js';
 import { assertPackageReady } from './readiness.js';
 import { letterHtml } from './render/letter.js';
 import { PACKAGE_SCHEMA_VERSION } from './schema.js';
-import { profileFingerprint, sameCvInputs, takeSnapshot } from './snapshot.js';
+import { profileFingerprint, sameCvInputs, takeSnapshot, translatableValues } from './snapshot.js';
 import type { ApplicationStore, PhotoFile } from './store.js';
 import { packageContext, type CreateOutput, type CvOutput, type LetterOutput, type PackageContext } from './tasks/context.js';
 import { createPackageTask } from './tasks/create-package.js';
@@ -54,7 +54,17 @@ function withLetterFields(base: PackageLetter, out: LetterOutput): PackageLetter
   return { ...base, subject: out.subject.trim(), paragraphs: out.paragraphs.map((p) => p.trim()), storyIds: out.storyIds, hint: out.hint?.trim() || null };
 }
 
-const isCancel = (err: unknown, signal: AbortSignal) => signal.aborted || (err instanceof AppError && err.code === 'LLM_CANCELLED');
+/**
+ * "Update CV" asks Claude when the CV inputs changed — or when the CV still lacks what Claude writes: a package from
+ * 0.4.0 (migrated v1) has no headline, one unnamed skill group and no translations (spec: old packages work "until Update CV").
+ */
+function cvNeedsClaude(existing: ApplicationPackage, snapshot: PackageSnapshot): boolean {
+  const cv = existing.cv;
+  return !sameCvInputs(existing.snapshot, snapshot) || cv.headline === '' || cv.skillGroups.some((g) => g.name === '')
+    || translatableValues(snapshot).some((v) => !Object.hasOwn(cv.translations, v));
+}
+
+const isCancel =(err: unknown, signal: AbortSignal) => signal.aborted || (err instanceof AppError && err.code === 'LLM_CANCELLED');
 
 /** One package job at a time, in the background; the page polls GET /api/applications/job (spec, section 5). */
 export class ApplicationJob {
@@ -182,7 +192,7 @@ export class ApplicationJob {
   private async refreshCv(existing: ApplicationPackage, keepProfil: boolean, keepHeadline: boolean, profile: Profile, signal: AbortSignal): Promise<string> {
     const snapshot = takeSnapshot(profile);
     let cv = existing.cv;
-    if (!sameCvInputs(existing.snapshot, snapshot)) {
+    if (cvNeedsClaude(existing, snapshot)) {
       const text = this.d.store.readVacancyText(existing.id);
       const ctx = packageContext(profile, existing.language, mentionHomeOffice(profile, existing.vacancy));
       const out = await this.ask<CvOutput>(refreshCvTask(ctx, existing.vacancy, text), (o) => checkCv(o, ctx), signal);
