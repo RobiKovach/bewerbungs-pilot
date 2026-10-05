@@ -45,7 +45,7 @@ const newQuery = { type: 'object', required: ['vacancyId'], properties: { vacanc
 const createBody = { type: 'object', additionalProperties: false, required: ['vacancyId', 'language'], properties: { vacancyId: { type: 'string', pattern: VACANCY_ID.source }, language: LANGUAGE } };
 const languageBody = { type: 'object', additionalProperties: false, required: ['language'], properties: { language: LANGUAGE } };
 const reviseBody = { type: 'object', additionalProperties: false, required: ['instruction'], properties: { instruction: { type: 'string', minLength: 1, maxLength: L.instruction, pattern: '\\S' } } };
-const refreshBody = { type: 'object', additionalProperties: false, required: ['keepProfil'], properties: { keepProfil: { type: 'boolean' } } };
+const refreshBody = { type: 'object', additionalProperties: false, required: ['keepProfil'], properties: { keepProfil: { type: 'boolean' }, keepHeadline: { type: 'boolean' } } };
 const line = (max: number) => ({ type: 'string', maxLength: max });
 const letterBody = {
   type: 'object', additionalProperties: false, minProperties: 1,
@@ -148,8 +148,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.post('/api/applications/:id/refresh-cv', { schema: { params: idParams, body: refreshBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const { keepProfil } = req.body as { keepProfil: boolean };
-    return reply.code(202).send(d.job.start({ kind: 'refreshCv', applicationId: id, keepProfil }));
+    const { keepProfil, keepHeadline } = req.body as { keepProfil: boolean; keepHeadline?: boolean };
+    return reply.code(202).send(d.job.start({ kind: 'refreshCv', applicationId: id, keepProfil, keepHeadline: keepHeadline ?? false }));
   });
 
   app.post('/api/applications/:id/recreate', { schema: { params: idParams, body: languageBody } }, async (req, reply) => {

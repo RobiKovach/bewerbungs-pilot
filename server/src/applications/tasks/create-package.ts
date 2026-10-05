@@ -8,10 +8,13 @@ const STRINGS: JsonSchema = { type: 'array', items: { type: 'string' } };
 export const LETTER_FIELDS: Record<string, JsonSchema> = {
   subject: { type: 'string' }, paragraphs: STRINGS, storyIds: STRINGS, hint: { anyOf: [{ type: 'string' }, { type: 'null' }] },
 };
+const PAIRS: JsonSchema = { type: 'array', items: { type: 'object', additionalProperties: false, required: ['from', 'to'], properties: { from: { type: 'string' }, to: { type: 'string' } } } };
 export const CV_FIELDS: Record<string, JsonSchema> = {
   profil: { type: 'string' },
+  headline: { type: 'string' },
   descriptions: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['id', 'text'], properties: { id: { type: 'string' }, text: { type: 'string' } } } },
-  skillOrder: STRINGS,
+  skillGroups: { type: 'array', items: { type: 'object', additionalProperties: false, required: ['name', 'skillIds'], properties: { name: { type: 'string' }, skillIds: STRINGS } } },
+  translations: PAIRS,
 };
 export const objectOf = (fields: Record<string, JsonSchema>): JsonSchema => ({ type: 'object', additionalProperties: false, required: Object.keys(fields), properties: fields });
 
@@ -41,13 +44,15 @@ export function cvRules(ctx: PackageContext): string {
   return `CV rules:
 - "profil": 2–3 sentences in ${lang} for the top of the CV, only from facts in the profile, focused on what matters for this offer. No invented facts, no clichés.
 - "descriptions": for EVERY education and experience entry with a non-empty description, return { id, text } with the description translated into ${lang}. Translate only — add nothing, drop nothing important. Entries with an empty description are left out.
-- "skillOrder": ALL skill ids from the profile, each exactly once, the ones most relevant to the offer first.`;
+- "headline": the job title shown under the name, in ${lang}, at most 80 characters, fitting this offer but ONLY from facts in the profile (job titles held, education, the person's wished job titles). Never claim a title or seniority the person never had. Example: "Webentwickler / WordPress".
+- "skillGroups": 3–5 groups (1–2 if the profile has fewer than 6 skills) with short names in ${lang} (e.g. "Web", "Tools", "KI & Entwicklung"). Put EVERY skill id from the profile into exactly one group. Groups most relevant to the offer first, and inside a group the most relevant skills first.
+- "translations": for EVERY value in "toTranslate" return { from, to } with "from" copied exactly and "to" in ${lang} (countries and language names, e.g. "Україна" → "Ukraine", "Німецька" → "${ctx.language === 'de' ? 'Deutsch' : 'German'}"). A value already in ${lang} is returned unchanged. Nothing else.`;
 }
 
 export function contextBlock(ctx: PackageContext): string {
   const data = {
     city: ctx.city, education: ctx.education, experience: ctx.experience, skills: ctx.skills,
-    languages: ctx.languages, stories: ctx.stories, neverMention: ctx.neverMention,
+    languages: ctx.languages, stories: ctx.stories, neverMention: ctx.neverMention, toTranslate: ctx.toTranslate,
   };
   return `The person's profile and stories:\n${fenceUntrusted('profile', JSON.stringify(data, null, 1))}`;
 }

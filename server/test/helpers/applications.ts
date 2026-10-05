@@ -66,8 +66,20 @@ export const GOOD_LETTER: LetterOutput = {
 export const GOOD_CV: CvOutput = {
   profil: 'Webentwickler mit mehrjähriger Erfahrung in Kundenwebseiten.',
   descriptions: [{ id: 'ed1', text: 'Ausbildung mit Schwerpunkt Web.' }, { id: 'ex1', text: 'Kundenwebseiten entwickelt.' }],
-  skillOrder: ['sk2', 'sk1', 'sk3', 'sk4', 'sk5'],
+  headline: 'Webentwickler',
+  skillGroups: [{ name: 'Kenntnisse', skillIds: ['sk2', 'sk1', 'sk3', 'sk4', 'sk5'] }],
+  translations: [{ from: 'Deutsch', to: 'Deutsch' }, { from: 'Deutschland', to: 'Deutschland' }, { from: 'Englisch', to: 'Englisch' }],
 };
+
+/** The values the prompt's profile block asks Claude to translate (read back from the fence, like Claude would). */
+function toTranslateIn(task: LlmTask): string[] {
+  const m = /"toTranslate": (\[[^\]]*\])/.exec(task.prompt);
+  return m ? (JSON.parse(m[1]) as string[]) : [];
+}
+/** GOOD_CV with every value of the prompt's "toTranslate" mapped to itself. */
+function goodCvFor(task: LlmTask): CvOutput {
+  return { ...GOOD_CV, translations: toTranslateIn(task).map((v) => ({ from: v, to: v })) };
+}
 
 type Answer<T> = T | ((task: LlmTask, signal: AbortSignal) => T | Promise<T>);
 const resolve = async <T>(a: Answer<T>, task: LlmTask, signal: AbortSignal) =>
@@ -82,9 +94,9 @@ export function packageClaude(opts: {
     await opts.before?.(task, signal);
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled', 'cancelledByUser');
     const required = (task.schema as { required?: string[] }).required ?? [];
-    if (required.includes('paragraphs') && required.includes('profil')) return resolve(opts.create ?? { ...GOOD_LETTER, ...GOOD_CV }, task, signal);
+    if (required.includes('paragraphs') && required.includes('profil')) return resolve(opts.create ?? { ...GOOD_LETTER, ...goodCvFor(task) }, task, signal);
     if (required.includes('paragraphs')) return resolve(opts.revise ?? GOOD_LETTER, task, signal);
-    if (required.includes('profil')) return resolve(opts.refresh ?? GOOD_CV, task, signal);
+    if (required.includes('profil')) return resolve(opts.refresh ?? goodCvFor(task), task, signal);
     throw new Error(`unexpected task: ${required.join(',')}`);
   });
 }

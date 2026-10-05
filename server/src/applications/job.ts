@@ -23,7 +23,7 @@ export type JobRequest =
   | { kind: 'create'; vacancyId: string; language: DocLanguage }
   | { kind: 'recreate'; applicationId: string; language: DocLanguage }
   | { kind: 'revise'; applicationId: string; instruction: string }
-  | { kind: 'refreshCv'; applicationId: string; keepProfil: boolean };
+  | { kind: 'refreshCv'; applicationId: string; keepProfil: boolean; keepHeadline: boolean };
 
 export interface ApplicationJobDeps {
   store: ApplicationStore; vacancies: VacancyStore; queue: LlmQueue; printer: PdfPrinter; logger: Logger;
@@ -132,7 +132,7 @@ export class ApplicationJob {
     const existing = this.d.store.require(req.applicationId);
     if (req.kind === 'recreate') return this.create(existing.vacancyId, req.language, profile, signal, existing);
     if (req.kind === 'revise') return this.revise(existing, req.instruction, profile, signal);
-    return this.refreshCv(existing, req.keepProfil, profile, signal);
+    return this.refreshCv(existing, req.keepProfil, req.keepHeadline, profile, signal);
   }
 
   private async create(vacancyId: string, language: DocLanguage, profile: Profile, signal: AbortSignal, previous: ApplicationPackage | null): Promise<string> {
@@ -159,7 +159,7 @@ export class ApplicationJob {
         paragraphs: [], closing: closingFor(language), signature: profile.sections.personal.data.fullName.trim(),
         storyIds: [], hint: null, pages: 0,
       }, out),
-      cv: { ...toCv(out), profilEditedByHand: false },
+      cv: { ...toCv(out), profilEditedByHand: false, headlineEditedByHand: false },
       attachments: previous?.attachments ?? profile.documents.filter((doc) => doc.attachAlways).map((doc) => doc.id),
     };
     pkg.letter = await this.fitOnePage(pkg, ctx, text, signal);
@@ -179,7 +179,7 @@ export class ApplicationJob {
     return this.d.store.update(existing.id, (p) => { p.letter = next.letter; touchDraft(p, now); }).id;
   }
 
-  private async refreshCv(existing: ApplicationPackage, keepProfil: boolean, profile: Profile, signal: AbortSignal): Promise<string> {
+  private async refreshCv(existing: ApplicationPackage, keepProfil: boolean, keepHeadline: boolean, profile: Profile, signal: AbortSignal): Promise<string> {
     const snapshot = takeSnapshot(profile);
     let cv = existing.cv;
     if (!sameCvInputs(existing.snapshot, snapshot)) {
@@ -187,10 +187,11 @@ export class ApplicationJob {
       const ctx = packageContext(profile, existing.language, mentionHomeOffice(profile, existing.vacancy));
       const out = await this.ask<CvOutput>(refreshCvTask(ctx, existing.vacancy, text), (o) => checkCv(o, ctx), signal);
       const fresh = toCv(out);
-      const keep = keepProfil && existing.cv.profilEditedByHand;
+      const keepP = keepProfil && existing.cv.profilEditedByHand;
+      const keepH = keepHeadline && existing.cv.headlineEditedByHand;
       cv = {
-        ...fresh, profil: keep ? existing.cv.profil : fresh.profil, profilEditedByHand: keep,
-        headline: existing.cv.headline, headlineEditedByHand: existing.cv.headlineEditedByHand,
+        ...fresh, profil: keepP ? existing.cv.profil : fresh.profil, profilEditedByHand: keepP,
+        headline: keepH ? existing.cv.headline : fresh.headline, headlineEditedByHand: keepH,
       };
     }
     signal.throwIfAborted();

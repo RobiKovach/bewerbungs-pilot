@@ -5,6 +5,7 @@ import { packageContext } from '../src/applications/tasks/context.js';
 import { createPackageTask } from '../src/applications/tasks/create-package.js';
 import { refreshCvTask } from '../src/applications/tasks/refresh-cv.js';
 import { reviseLetterTask, SHORTEN_INSTRUCTION, withFeedback } from '../src/applications/tasks/revise-letter.js';
+import type { CvOutput } from '../src/applications/tasks/context.js';
 import { GOOD_CV, GOOD_LETTER, pkg, readyPackageProfile } from './helpers/applications.js';
 
 const VAC: PackageVacancy = { id: 'v1', title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Hamburg'], remote: 'partial', contact: null, url: '' };
@@ -30,7 +31,7 @@ describe('task prompts', () => {
     expect(t.prompt).toContain('Home Office');
     expect(createPackageTask(ctx(false), VAC, 'x').prompt).not.toContain('Home Office');
     expect(t.allowWebSearch).toBeFalsy();
-    expect((t.schema as { required: string[] }).required).toEqual(expect.arrayContaining(['subject', 'paragraphs', 'storyIds', 'hint', 'profil', 'descriptions', 'skillOrder']));
+    expect((t.schema as { required: string[] }).required).toEqual(expect.arrayContaining(['subject', 'paragraphs', 'storyIds', 'hint', 'profil', 'headline', 'descriptions', 'skillGroups', 'translations']));
   });
   it('revise: the person\'s request is fenced; the built-in shorten request is not', () => {
     const letter = pkg().letter;
@@ -49,7 +50,7 @@ describe('task prompts', () => {
   });
   it('refresh-cv asks only for the CV parts', () => {
     const required = (refreshCvTask(ctx(), VAC, 'x').schema as { required: string[] }).required;
-    expect(required).toEqual(expect.arrayContaining(['profil', 'descriptions', 'skillOrder']));
+    expect(required).toEqual(expect.arrayContaining(['profil', 'headline', 'descriptions', 'skillGroups', 'translations']));
     expect(required).not.toContain('paragraphs');
   });
   it('withFeedback appends the violations and keeps schema and language', () => {
@@ -96,17 +97,49 @@ describe('checkLetter', () => {
   });
 });
 
+const validCvOutput = (): CvOutput => structuredClone(GOOD_CV);
+
+describe('checkCv — groups, headline, translations', () => {
+  it.each([
+    ['a skill twice', (o: CvOutput) => ({ ...o, skillGroups: [{ name: 'Web', skillIds: [...o.skillGroups[0].skillIds, o.skillGroups[0].skillIds[0]] }] })],
+    ['a skill missing', (o: CvOutput) => ({ ...o, skillGroups: [{ name: 'Web', skillIds: o.skillGroups.flatMap((g) => g.skillIds).slice(1) }] })],
+    ['a foreign id', (o: CvOutput) => ({ ...o, skillGroups: [...o.skillGroups, { name: 'X', skillIds: ['nope'] }] })],
+    ['an empty group name', (o: CvOutput) => ({ ...o, skillGroups: o.skillGroups.map((g) => ({ ...g, name: ' ' })) })],
+    ['six groups', (o: CvOutput) => ({ ...o, skillGroups: Array.from({ length: 6 }, (_, i) => ({ name: `G${i}`, skillIds: i === 0 ? o.skillGroups.flatMap((g) => g.skillIds) : [] })) })],
+    ['no groups', (o: CvOutput) => ({ ...o, skillGroups: [] })],
+    ['an empty headline', (o: CvOutput) => ({ ...o, headline: '' })],
+    ['a headline over 80', (o: CvOutput) => ({ ...o, headline: 'x'.repeat(81) })],
+    ['an extra translation', (o: CvOutput) => ({ ...o, translations: [...o.translations, { from: 'Mars', to: 'Mars' }] })],
+    ['a missing translation', (o: CvOutput) => ({ ...o, translations: o.translations.slice(1) })],
+    ['a repeated translation', (o: CvOutput) => ({ ...o, translations: [...o.translations, o.translations[0]] })],
+    ['an empty translation', (o: CvOutput) => ({ ...o, translations: o.translations.map((t, i) => (i === 0 ? { ...t, to: '' } : t)) })],
+    ['a translation over 100', (o: CvOutput) => ({ ...o, translations: o.translations.map((t, i) => (i === 0 ? { ...t, to: 'x'.repeat(101) } : t)) })],
+  ])('%s → fatal', (_n, change) => {
+    expect(checkCv(change(validCvOutput()), ctx()).fatal).not.toBeNull();
+  });
+  it('a valid answer passes and a never-mention word in the headline is a violation', () => {
+    expect(checkCv(validCvOutput(), ctx())).toEqual({ fatal: null, violations: [] });
+    expect(checkCv({ ...validCvOutput(), headline: 'Kunde X Entwickler' }, ctx()).violations).toHaveLength(1);
+  });
+  it('the context lists what to translate, and the CV prompt asks for headline, groups and translations but carries no links', () => {
+    const profile = readyPackageProfile((p) => { p.sections.personal.data.links = [{ label: 'GitHub', url: 'https://github.com/maxmuster' }]; });
+    const c = packageContext(profile, 'de', false);
+    expect(c.toTranslate).toEqual(['Deutsch', 'Deutschland', 'Englisch']);
+    const task = createPackageTask(c, VAC, 'Text');
+    for (const word of ['"headline"', '"skillGroups"', '"translations"', 'toTranslate']) expect(task.prompt).toContain(word);
+    expect(task.prompt).not.toContain('github.com');
+    expect(JSON.stringify(c)).not.toContain('github.com');
+  });
+});
+
 describe('checkCv', () => {
   it('a good CV part passes and converts to the stored shape', () => {
     expect(checkCv(GOOD_CV, ctx())).toEqual({ fatal: null, violations: [] });
-    expect(toCv(GOOD_CV)).toEqual({ profil: GOOD_CV.profil, descriptions: { ed1: 'Ausbildung mit Schwerpunkt Web.', ex1: 'Kundenwebseiten entwickelt.' }, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: GOOD_CV.skillOrder }], translations: {} });
+    expect(toCv(GOOD_CV)).toEqual({ profil: GOOD_CV.profil, descriptions: { ed1: 'Ausbildung mit Schwerpunkt Web.', ex1: 'Kundenwebseiten entwickelt.' }, headline: 'Webentwickler', skillGroups: [{ name: 'Kenntnisse', skillIds: ['sk2', 'sk1', 'sk3', 'sk4', 'sk5'] }], translations: { Deutsch: 'Deutsch', Deutschland: 'Deutschland', Englisch: 'Englisch' } });
   });
   it.each([
     ['empty Profil', { profil: '' }],
     ['a too long Profil', { profil: 'p'.repeat(801) }],
-    ['a missing skill', { skillOrder: ['sk1', 'sk2', 'sk3', 'sk4'] }],
-    ['an invented skill', { skillOrder: ['sk1', 'sk2', 'sk3', 'sk4', 'sk5', 'sk9'] }],
-    ['a repeated skill', { skillOrder: ['sk1', 'sk1', 'sk3', 'sk4', 'sk5'] }],
     ['a missing description', { descriptions: [{ id: 'ed1', text: 'x' }] }],
     ['an invented entry', { descriptions: [...GOOD_CV.descriptions, { id: 'new', text: 'x' }] }],
     ['an empty description', { descriptions: [{ id: 'ed1', text: '' }, { id: 'ex1', text: 'x' }] }],

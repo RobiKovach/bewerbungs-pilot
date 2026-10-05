@@ -46,7 +46,7 @@ describe('create', () => {
       recipient: ['Muster GmbH', 'Hamburg'], salutation: 'Sehr geehrte Damen und Herren,', closing: 'Mit freundlichen Grüßen',
       signature: 'Max Mustermann', subject: GOOD_LETTER.subject, paragraphs: GOOD_LETTER.paragraphs, storyIds: ['st1'], pages: 1,
     });
-    expect(p.cv).toEqual({ profil: GOOD_CV.profil, profilEditedByHand: false, descriptions: { ed1: GOOD_CV.descriptions[0].text, ex1: GOOD_CV.descriptions[1].text }, headline: '', headlineEditedByHand: false, skillGroups: [{ name: '', skillIds: GOOD_CV.skillOrder }], translations: {} });
+    expect(p.cv).toEqual({ profil: GOOD_CV.profil, profilEditedByHand: false, descriptions: { ed1: GOOD_CV.descriptions[0].text, ex1: GOOD_CV.descriptions[1].text }, headline: 'Webentwickler', headlineEditedByHand: false, skillGroups: GOOD_CV.skillGroups, translations: { Deutsch: 'Deutsch', Deutschland: 'Deutschland', Englisch: 'Englisch' } });
     expect(p.status).toBe('draft');
     expect(t.store.readVacancyText('app1')).toBe(OFFER);
     expect(t.provider.calls).toHaveLength(1);
@@ -233,7 +233,7 @@ describe('revise, recreate, refresh CV', () => {
     const t = await created();
     const calls = t.provider.calls.length;
     t.setProfile(readyPackageProfile((p) => { p.sections.personal.data.phone = '+49 40 999'; }));
-    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: true });
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: true, keepHeadline: false });
     await t.job.whenIdle();
     expect(t.provider.calls.length).toBe(calls);
     const p = t.store.require('app1');
@@ -245,7 +245,7 @@ describe('revise, recreate, refresh CV', () => {
     const t = await created();
     t.store.update('app1', (p) => { p.cv.profil = 'Mein eigener Text.'; p.cv.profilEditedByHand = true; });
     t.setProfile(readyPackageProfile((p) => { p.sections.experience.data.items[0].description = 'Neue Beschreibung.'; }));
-    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: true });
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: true, keepHeadline: false });
     await t.job.whenIdle();
     const p = t.store.require('app1');
     expect((t.provider.calls.at(-1)!.schema as { required: string[] }).required).not.toContain('paragraphs');
@@ -258,9 +258,33 @@ describe('revise, recreate, refresh CV', () => {
     const t = await created();
     t.store.update('app1', (p) => { p.cv.profil = 'Mein eigener Text.'; p.cv.profilEditedByHand = true; });
     t.setProfile(readyPackageProfile((p) => { p.sections.skills.data.items.push({ id: 'sk6', name: 'React', level: '' }); }));
-    (t.provider as FakeProvider).respond = async () => ({ ...GOOD_CV, skillOrder: [...GOOD_CV.skillOrder, 'sk6'] });
-    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false });
+    (t.provider as FakeProvider).respond = async () => ({ ...GOOD_CV, skillGroups: [{ name: 'Kenntnisse', skillIds: [...GOOD_CV.skillGroups[0].skillIds, 'sk6'] }] });
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
     await t.job.whenIdle();
     expect(t.store.require('app1').cv).toMatchObject({ profil: GOOD_CV.profil, profilEditedByHand: false });
+  });
+
+  it('refresh CV with keepHeadline keeps a hand-edited headline, without it Claude\'s headline replaces it', async () => {
+    const t = await created();
+    t.store.update('app1', (p) => { p.cv.headline = 'Mein Titel'; p.cv.headlineEditedByHand = true; });
+    t.setProfile(readyPackageProfile((p) => { p.sections.experience.data.items[0].description = 'Neue Beschreibung.'; }));
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: true });
+    await t.job.whenIdle();
+    expect(t.store.require('app1').cv).toMatchObject({ headline: 'Mein Titel', headlineEditedByHand: true, translations: { Deutsch: 'Deutsch', Englisch: 'Englisch' } });
+    t.setProfile(readyPackageProfile((p) => { p.sections.experience.data.items[0].description = 'Noch neuer.'; }));
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
+    await t.job.whenIdle();
+    expect(t.store.require('app1').cv).toMatchObject({ headline: 'Webentwickler', headlineEditedByHand: false });
+  });
+
+  it('refresh CV with a new country to translate: a bad Claude answer leaves the package unchanged', async () => {
+    const t = await created();
+    const before = t.store.require('app1');
+    t.setProfile(readyPackageProfile((p) => { p.sections.personal.data.country = 'Україна'; }));
+    (t.provider as FakeProvider).respond = async () => ({ ...GOOD_CV }); // does not translate "Україна"
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
+    await t.job.whenIdle();
+    expect(t.job.state()).toMatchObject({ state: 'failed', error: expect.anything() });
+    expect(t.store.require('app1')).toEqual(before);
   });
 });

@@ -39,14 +39,20 @@ export function checkLetter(out: LetterOutput, ctx: PackageContext): CheckResult
 export function checkCv(out: CvOutput, ctx: PackageContext): CheckResult {
   if (!out.profil.trim() || out.profil.length > L.profil) return bad('profil empty or too long');
   const skillIds = ctx.skills.map((k) => k.id);
-  if (out.skillOrder.length !== skillIds.length || new Set(out.skillOrder).size !== skillIds.length || out.skillOrder.some((id) => !skillIds.includes(id))) {
-    return bad('skillOrder is not the same set of skills');
-  }
+  const placed = out.skillGroups.flatMap((g) => g.skillIds);
+  // The "3–5 groups" preference is a prompt rule; the code allows 1–5 so a small profile never fails.
+  if (out.skillGroups.length < 1 || out.skillGroups.length > L.groupsMax) return bad(`skillGroups: ${out.skillGroups.length} groups`);
+  if (out.skillGroups.some((g) => !g.name.trim() || g.name.length > L.groupName)) return bad('skillGroups: empty or long name');
+  if (placed.length !== skillIds.length || new Set(placed).size !== placed.length || placed.some((id) => !skillIds.includes(id))) return bad('skillGroups: not every skill exactly once');
+  if (!out.headline.trim() || out.headline.length > L.headline) return bad('headline empty or too long');
+  const from = out.translations.map((t) => t.from).sort();
+  if (from.join('\n') !== [...ctx.toTranslate].sort().join('\n')) return bad(`translations: ${from.length} given, ${ctx.toTranslate.length} expected`);
+  if (out.translations.some((t) => !t.to.trim() || t.to.length > L.translation)) return bad('a translation is empty or too long');
   const wanted = [...ctx.education, ...ctx.experience].filter((e) => e.description.trim()).map((e) => e.id).sort();
   const given = out.descriptions.map((d) => d.id).sort();
   if (wanted.join('\n') !== given.join('\n')) return bad(`descriptions: ${given.length} given, ${wanted.length} expected`);
   if (out.descriptions.some((d) => !d.text.trim() || d.text.length > L.description)) return bad('a description is empty or too long');
-  return { fatal: null, violations: neverMentioned([out.profil, ...out.descriptions.map((d) => d.text)], ctx) };
+  return { fatal: null, violations: neverMentioned([out.profil, out.headline, ...out.descriptions.map((d) => d.text)], ctx) };
 }
 
 export function mergeChecks(...results: CheckResult[]): CheckResult {
@@ -56,11 +62,11 @@ export function mergeChecks(...results: CheckResult[]): CheckResult {
   };
 }
 
-export function toCv(out: CvOutput): Omit<PackageCv, 'profilEditedByHand'> {
-  // Temporary mapping of the old output shape; Task 5 replaces it.
+export function toCv(out: CvOutput): Pick<PackageCv, 'profil' | 'headline' | 'descriptions' | 'skillGroups' | 'translations'> {
   return {
-    profil: out.profil.trim(), headline: '', headlineEditedByHand: false,
+    profil: out.profil.trim(), headline: out.headline.trim(),
     descriptions: Object.fromEntries(out.descriptions.map((d) => [d.id, d.text.trim()])),
-    skillGroups: [{ name: '', skillIds: [...out.skillOrder] }], translations: {},
+    skillGroups: out.skillGroups.map((g) => ({ name: g.name.trim(), skillIds: [...g.skillIds] })),
+    translations: Object.fromEntries(out.translations.map((t) => [t.from, t.to.trim()])),
   };
 }
