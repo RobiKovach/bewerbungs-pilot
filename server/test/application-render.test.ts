@@ -52,9 +52,9 @@ describe('letterHtml', () => {
 });
 
 describe('cvHtml', () => {
-  it('reads name/contacts → main (Profil, experience, education) → sidebar (skills, languages) in HTML order', () => {
+  it('reads side column (name, contacts, skills, languages) → main (Profil, experience, education) in HTML order', () => {
     const html = cvHtml(pkg(), null);
-    const order = ['Max Mustermann', 'max@example.com', 'Profil', 'Webentwickler mit sechs Jahren', 'Berufserfahrung', 'Beispiel GmbH', 'Ausbildung', 'OSZ IMT Berlin', 'Kenntnisse', 'Sprachen', 'Muttersprache'];
+    const order = ['Max Mustermann', 'max@example.com', 'Kenntnisse', 'Sprachen', 'Muttersprache', 'Profil', 'Webentwickler mit sechs Jahren', 'Berufserfahrung', 'Beispiel GmbH', 'Ausbildung', 'OSZ IMT Berlin'];
     const positions = order.map((s) => html.indexOf(s));
     expect(positions.every((p) => p >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
@@ -68,7 +68,7 @@ describe('cvHtml', () => {
     expect(html).toContain('Built client websites.');
     expect(html).toContain('Ausbildung mit Schwerpunkt Web.'); // no translation given → profile text
     expect(html.indexOf('Git')).toBeLessThan(html.indexOf('JavaScript'));
-    expect(html.indexOf('JavaScript')).toBeLessThan(html.indexOf('WordPress')); // skills not in skillOrder come after, in profile order
+    expect(html).not.toContain('WordPress'); // skills outside every group are not printed
     expect(html).toContain('Work experience');
     expect(html).toContain('Native');
     expect(html).toContain('07/2018 – present');
@@ -80,5 +80,60 @@ describe('cvHtml', () => {
   it('escapes profile text', () => {
     const p = pkg({}, readyPackageProfile((x) => { x.sections.experience.data.items[0].employer = 'A & <B>'; }));
     expect(cvHtml(p, null)).toContain('A &amp; &lt;B&gt;');
+  });
+});
+
+function pkgWith(o: { headline?: string; links?: { label: string; url: string }[]; skillGroups?: { name: string; skillIds: string[] }[]; translations?: Record<string, string>; certificate?: boolean }) {
+  const profile = readyPackageProfile((x) => {
+    x.sections.skills.data.items = [{ id: 's1', name: 'HTML5', level: 'good' }, { id: 's2', name: 'CSS3', level: '' }];
+    x.sections.personal.data = { ...x.sections.personal.data, country: 'Україна', links: o.links ?? [] };
+    x.sections.languages.data.items = [{ id: 'la1', language: 'Українська', level: 'native', certificate: '' }];
+    x.sections.experience.data.items[0]!.country = 'Україна';
+    if (o.certificate) x.sections.education.data.items.push({ id: 'ed2', kind: 'certificate', degree: 'Zertifikat X', institution: 'Akademie', city: 'Berlin', country: 'Deutschland', from: '2020-01', to: '2020-02', description: '' });
+  });
+  const p = pkg({}, profile);
+  p.cv.headline = o.headline ?? '';
+  p.cv.skillGroups = o.skillGroups ?? [{ name: 'Web', skillIds: ['s1', 's2'] }];
+  p.cv.translations = o.translations ?? {};
+  return p;
+}
+
+describe('cvHtml — layout like the example', () => {
+  it('left column order: photo, name, headline, KONTAKT with labels and links, skill groups, languages', () => {
+    const html = cvHtml(pkgWith({ headline: 'Webentwickler / WordPress', links: [{ label: 'GitHub', url: 'https://github.com/maxmuster' }] }), { data: Buffer.from([1]), ext: '.png' });
+    const order = ['class="photo"', '<h1>Max Mustermann', 'Webentwickler / WordPress', '>Kontakt<', 'Adresse', 'Telefon', 'E-Mail', 'GitHub', 'github.com/maxmuster', '>Kenntnisse<', '>Sprachen<']
+      .map((s) => html.indexOf(s));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(html).not.toContain('https://github.com');
+    expect(html).not.toMatch(/<a[\s>]/);
+  });
+  it('skills: group name in bold, names comma-separated, no levels', () => {
+    const html = cvHtml(pkgWith({ skillGroups: [{ name: 'Web', skillIds: ['s1', 's2'] }] }), null);
+    expect(html).toContain('<strong>Web</strong>');
+    expect(html).toContain('HTML5, CSS3');
+    expect(html).not.toMatch(/Grundkenntnisse|Gute Kenntnisse|Sehr gute Kenntnisse/);
+  });
+  it('countries and language names use the translations', () => {
+    const html = cvHtml(pkgWith({ translations: { 'Україна': 'Ukraine', 'Українська': 'Ukrainisch' } }), null);
+    expect(html).toContain('Ukraine');
+    expect(html).toContain('Ukrainisch');
+    expect(html).not.toContain('Україна');
+  });
+  it('courses and certificates get their own section; without them it is absent', () => {
+    expect(cvHtml(pkgWith({ certificate: true }), null)).toContain('Weiterbildung &amp; Zertifikate');
+    expect(cvHtml(pkgWith({}), null)).not.toContain('Weiterbildung');
+  });
+  it('escapes link labels and urls and the headline', () => {
+    const html = cvHtml(pkgWith({ headline: '<b>x</b>', links: [{ label: '<script>', url: 'https://a.example/?q="1"&x' }] }), null);
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('<b>x</b>');
+    expect(html).toContain('&lt;script&gt;');
+  });
+  it('a migrated v1 package (one unnamed group, no headline) renders without a group title or headline line', () => {
+    const html = cvHtml(pkgWith({ headline: '', skillGroups: [{ name: '', skillIds: ['s1', 's2'] }] }), null);
+    expect(html).not.toContain('<strong></strong>');
+    expect(html).not.toContain('class="headline"');
+    expect(html).toContain('HTML5, CSS3');
   });
 });
