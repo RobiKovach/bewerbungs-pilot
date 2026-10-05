@@ -17,3 +17,8 @@ export const MAX_BYTES = { cv: 10 * MB, photo: 5 * MB, document: 10 * MB } as co
 export const MAX_DOCUMENTS = 20;
 /** Subset of the server's LIMITS (schema.ts) that a person can hit while typing. */
 export const LIMITS = { name: 300, text: 5000, lines: 20, neverMention: 50 } as const;
+
+/** Same as the server (profile/schema.ts LINK_LIMITS / LINK_URL). */
+export const LINK_LIMITS = { count: 3, label: 40, url: 300 } as const;
+export const LINK_URL = /^https?:\/\/\S+$/;
+export const LINK_LABEL_SUGGESTIONS = ['GitHub', 'LinkedIn', 'Portfolio', 'Website'] as const;

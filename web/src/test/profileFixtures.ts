@@ -1,5 +1,5 @@
 import { SECTION_IDS } from '../profile/constants';
-import type { Profile, ProfileView } from '../types';
+import type { PersonalData, Profile, ProfileView } from '../types';
 
 export function emptyProfile(): Profile {
   const blank = <T>(data: T) => ({ data, aiFields: [] as string[], confirmedAt: null as string | null, editedAt: null as string | null });
@@ -39,3 +39,5 @@ export function viewOf(profile: Profile): ProfileView {
   const hasStory = profile.stories.some((s) => s.confirmed && s.disclosure === 'ok');
   return { profile, readiness: { ready: missing.length === 0, missing: [...missing], warnings: hasStory ? [] : ['noStories'] } };
 }
+
+export const emptyPersonal = (): PersonalData => ({ fullName: '', email: '', phone: '', street: '', postalCode: '', city: '', country: '', birthDate: '', nationality: '', workPermit: '', drivingLicense: '', links: [] });

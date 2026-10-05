@@ -133,6 +133,8 @@
     "dateInvalid": "Vă rugăm să scrieți data ca 2021-05 sau 2021.",
     "fixDates": "Vă rugăm să corectați mai întâi datele marcate cu roșu.",
     "fixLines": "Vă rugăm să scurtați mai întâi listele marcate cu roșu.",
+    "fixLinks": "Vă rugăm să verificați linkurile: fiecare are nevoie de o denumire și de o adresă completă care începe cu https://",
+    "links": { "title": "Linkuri (GitHub, LinkedIn, portofoliu)", "label": "Denumire", "url": "Adresă", "add": "Adaugă un link", "remove": "Elimină", "badUrl": "Vă rugăm să introduceți o adresă completă care începe cu https://" },
     "tooManyLines": "Vă rugăm să scrieți cel mult {{max}} rânduri.",
     "discard": "Renunțați la modificări",
     "unsavedHint": "Unele modificări nu sunt încă salvate. Vă rugăm să le salvați sau să renunțați la ele înainte de a continua.",

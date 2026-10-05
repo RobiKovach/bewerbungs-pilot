@@ -133,6 +133,8 @@
     "dateInvalid": "Proszę podać datę jako 2021-05 lub 2021.",
     "fixDates": "Najpierw popraw daty zaznaczone na czerwono.",
     "fixLines": "Najpierw skróć listy zaznaczone na czerwono.",
+    "fixLinks": "Sprawdź linki: każdy potrzebuje nazwy i pełnego adresu zaczynającego się od https://",
+    "links": { "title": "Linki (GitHub, LinkedIn, portfolio)", "label": "Nazwa", "url": "Adres", "add": "Dodaj link", "remove": "Usuń", "badUrl": "Wpisz pełny adres zaczynający się od https://" },
     "tooManyLines": "Wpisz najwyżej {{max}} wierszy.",
     "discard": "Odrzuć zmiany",
     "unsavedHint": "Niektóre zmiany nie są jeszcze zapisane. Zapisz je lub cofnij, zanim przejdziesz dalej.",

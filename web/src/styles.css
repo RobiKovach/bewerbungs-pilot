@@ -168,3 +168,6 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 @media (prefers-color-scheme: dark) { .error-text { color: #f4a49b; } }
 .attachment-list { list-style: none; padding: 0; display: grid; gap: 0.4rem; }
 .downloads { margin-top: 1rem; }
+
+.links-field .link-row { display: grid; grid-template-columns: 10rem 1fr auto; gap: .5rem; align-items: center; margin-bottom: .4rem; }
+.links-field .link-row .field-error { grid-column: 1 / -1; margin: 0; }

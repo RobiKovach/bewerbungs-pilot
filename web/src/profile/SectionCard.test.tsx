@@ -43,6 +43,28 @@ describe('SectionCard', () => {
     expect(screen.queryByText('AI – please check')).toBeNull();
   });
 
+  it('trims links and drops empty link rows when saving; blocks a whitespace-only label', async () => {
+    let sent: { data: { links: unknown[] } } | null = null;
+    const { user } = setup(withName, 'personal', {
+      'PUT /api/profile/sections/personal': (init) => { sent = JSON.parse(String(init?.body)); return { body: viewOf(withName) }; },
+    });
+    await screen.findByLabelText('Full name');
+    await user.click(screen.getByRole('button', { name: 'Add a link' }));
+    await user.click(screen.getByRole('button', { name: 'Add a link' }));
+    const labels = screen.getAllByLabelText('Label');
+    const urls = screen.getAllByLabelText('Address');
+    await user.clear(labels[0]);
+    await user.type(labels[0], '   ');
+    await user.type(urls[0], 'https://github.com/maxmuster');
+    expect(screen.getByText(/Please check the links/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await user.type(labels[0], 'GitHub ');
+    await user.clear(labels[1]);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(sent).not.toBeNull());
+    expect(sent!.data.links).toEqual([{ label: 'GitHub', url: 'https://github.com/maxmuster' }]);
+  });
+
   it('"All correct" saves pending edits first, then confirms', async () => {
     const confirmed = profileWith((p) => { p.sections.personal.data.fullName = 'Max'; p.sections.personal.confirmedAt = '2026-09-24T10:00:00.000Z'; });
     const { f, user } = setup(withName, 'personal', {

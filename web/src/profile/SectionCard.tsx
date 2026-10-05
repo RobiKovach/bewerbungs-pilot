@@ -42,6 +42,14 @@ export function SectionCard({ id, showHeader = true, readOnly = false }: { id: S
   );
 }
 
+/** What is sent on save: link labels/addresses trimmed, link rows with both fields empty dropped. */
+function cleaned(id: SectionId, data: SectionDataMap[SectionId]): SectionDataMap[SectionId] {
+  if (id !== 'personal') return data;
+  const d = data as SectionDataMap['personal'];
+  const links = d.links.map((l) => ({ label: l.label.trim(), url: l.url.trim() })).filter((l) => l.label !== '' || l.url !== '');
+  return { ...d, links };
+}
+
 interface EditorProps { id: SectionId; onError: (err: unknown) => void; onDirtyChange: (dirty: boolean) => void }
 
 function SectionEditor({ id, onError, onDirtyChange }: EditorProps) {
@@ -67,7 +75,11 @@ function SectionEditor({ id, onError, onDirtyChange }: EditorProps) {
     setBusy(true);
     onError(null);
     try {
-      if (dirty) apply(await api.saveSection(id, draft));
+      if (dirty) {
+        const toSave = cleaned(id, draft);
+        apply(await api.saveSection(id, toSave));
+        setDraft(toSave);
+      }
       if (confirm) apply(await api.confirmSection(id));
     } catch (err) {
       onError(err);

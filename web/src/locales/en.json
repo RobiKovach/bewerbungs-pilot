@@ -133,6 +133,8 @@
     "dateInvalid": "Please write the date as 2021-05 or 2021.",
     "fixDates": "Please correct the dates marked in red first.",
     "fixLines": "Please shorten the lists marked in red first.",
+    "fixLinks": "Please check the links: each needs a label and a full address starting with https://",
+    "links": { "title": "Links (GitHub, LinkedIn, portfolio)", "label": "Label", "url": "Address", "add": "Add a link", "remove": "Remove", "badUrl": "Please enter a full address starting with https://" },
     "tooManyLines": "Please write at most {{max}} lines.",
     "discard": "Discard changes",
     "unsavedHint": "Some changes are not saved yet. Please save them or undo them before you go on.",

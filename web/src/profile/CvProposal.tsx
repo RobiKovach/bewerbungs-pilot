@@ -62,7 +62,10 @@ function toEntries(id: CvSectionId, data: unknown, t: TFunction): { label: strin
   switch (id) {
     case 'personal': {
       const d = data as PersonalData;
-      return [PERSONAL_FIELDS.map((k) => row(`profile.personal.${k}`, d[k]))];
+      return [[
+        ...PERSONAL_FIELDS.map((k) => row(`profile.personal.${k}`, d[k])),
+        row('profile.links.title', d.links.map((l) => `${l.label}: ${l.url}`).join('\n')),
+      ]];
     }
     case 'education':
       return (data as SectionDataMap['education']).items.map((e) => [
