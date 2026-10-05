@@ -111,7 +111,7 @@ export interface AttachmentInfo {
   missing: boolean;
 }
 
-export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[] }
+export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean }
 
 export interface PackageReadiness { ready: boolean; missingSections: CvSectionId[]; noStory: boolean }
 

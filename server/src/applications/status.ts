@@ -18,3 +18,32 @@ export function addStatus(p: ApplicationPackage, kind: ApplicationStatus, at: st
   p.status = kind;
   p.updatedAt = at;
 }
+
+const STATUSES: ReadonlySet<string> = new Set<ApplicationStatus>(['draft', 'approved', 'sent', 'submitted', 'interview', 'rejected', 'offer', 'withdrawn']);
+
+/** The last change can be taken back unless it is a real sent email (that can never be undone). */
+export function canUndo(p: ApplicationPackage): boolean {
+  const last = p.history.at(-1);
+  return isFrozen(p) && last !== undefined && last.kind !== 'sent' && !last.messageId;
+}
+
+/** Removes the last history entry; the status becomes the kind of the last remaining status entry ('approved' if none). */
+export function undoLast(p: ApplicationPackage, now: string): void {
+  p.history.pop();
+  const lastStatus = [...p.history].reverse().find((h) => STATUSES.has(h.kind));
+  p.status = lastStatus ? lastStatus.kind : 'approved';
+  p.updatedAt = now;
+}
+
+const DAY_MS = 86_400_000;
+
+/** 'YYYY-MM-DD' → that day at 12:00 UTC (ISO). Throws BAD_REQUEST for an invalid date or one more than 365 days after `now`. */
+export function dateToIso(date: string, now: Date): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!m) throw new AppError('BAD_REQUEST', 'date must be YYYY-MM-DD');
+  const [y, mo, da] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const t = new Date(Date.UTC(y, mo - 1, da, 12));
+  if (t.getUTCFullYear() !== y || t.getUTCMonth() !== mo - 1 || t.getUTCDate() !== da) throw new AppError('BAD_REQUEST', 'date does not exist');
+  if (t.getTime() - now.getTime() > 365 * DAY_MS) throw new AppError('BAD_REQUEST', 'date is too far in the future');
+  return t.toISOString();
+}

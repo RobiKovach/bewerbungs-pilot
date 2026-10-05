@@ -262,6 +262,87 @@ describe('approved packages', () => {
   });
 });
 
+describe('status routes', () => {
+  it('submitted only from approved; it freezes the package', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/submitted`, {})).statusCode).toBe(409);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    const r = await send(ctx, 'POST', `/api/applications/${id}/submitted`, {});
+    expect(r.statusCode).toBe(200);
+    const v = r.json() as ApplicationView;
+    expect(v.application).toMatchObject({ status: 'submitted' });
+    expect(v.application.history.at(-1)?.kind).toBe('submitted');
+    expect(v.application.history.at(-1)?.at).toBe(v.application.updatedAt);
+    expect(v.canUndo).toBe(true);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/submitted`, {})).statusCode).toBe(409);
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'X' })).json().error.reason).toBe('packageSent');
+  });
+  it('every status route refuses while a job works on the package → 409 packageBusy, nothing changes', async () => {
+    let release!: () => void;
+    let gate: Promise<void> = Promise.resolve();
+    const ctx = await setup({ provider: packageClaude({ before: () => gate }) });
+    const id = await created(ctx);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    const before = ctx.applicationStore.require(id);
+    gate = new Promise<void>((r) => { release = r; });
+    expect((await send(ctx, 'POST', `/api/applications/${id}/revise`, { instruction: 'Kürzer bitte' })).statusCode).toBe(202);
+    for (const url of [`/api/applications/${id}/submitted`, `/api/applications/${id}/status`, `/api/applications/${id}/status/undo`]) {
+      const r = await send(ctx, 'POST', url, { status: 'interview', date: '2026-10-07' });
+      expect(r.statusCode, url).toBe(409);
+      expect(r.json().error.reason, url).toBe('packageBusy');
+    }
+    expect(ctx.applicationStore.require(id)).toEqual(before);
+    release();
+    await ctx.applicationJob.whenIdle();
+  });
+  it('change status: any outcome in any order, interview twice, note and date kept; refusals', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const st = (body: unknown) => send(ctx, 'POST', `/api/applications/${id}/status`, body);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    expect((await st({ status: 'interview', date: '2026-10-07' })).statusCode).toBe(409);
+    await send(ctx, 'POST', `/api/applications/${id}/submitted`, {});
+    expect((await st({ status: 'interview', date: '2026-10-07', note: '  online  ' })).statusCode).toBe(200);
+    expect((await st({ status: 'interview', date: '2026-10-14' })).statusCode).toBe(200);
+    const last = (await st({ status: 'rejected', date: '2026-10-20', note: '   ' })).json() as ApplicationView;
+    expect(last.application.status).toBe('rejected');
+    expect(last.application.history.map((h) => h.kind)).toEqual(['approved', 'submitted', 'interview', 'interview', 'rejected']);
+    expect(last.application.history[2]).toEqual({ kind: 'interview', at: '2026-10-07T12:00:00.000Z', note: 'online' });
+    expect(last.application.history[3]).toEqual({ kind: 'interview', at: '2026-10-14T12:00:00.000Z' });
+    expect(last.application.history[4]).toEqual({ kind: 'rejected', at: '2026-10-20T12:00:00.000Z' });
+    // updatedAt is the real time of the change, not the chosen date
+    expect(last.application.updatedAt).not.toBe('2026-10-20T12:00:00.000Z');
+    expect(Math.abs(Date.now() - new Date(last.application.updatedAt).getTime())).toBeLessThan(60_000);
+    expect((await st({ status: 'offer', date: '2030-01-01' })).statusCode).toBe(400);
+    expect((await st({ status: 'offer', date: '2026-10-07', note: 'x'.repeat(301) })).statusCode).toBe(400);
+    expect((await st({ status: 'sent', date: '2026-10-07' })).statusCode).toBe(400);
+    expect((await st({ status: 'offer', date: '07.10.2026' })).statusCode).toBe(400);
+    expect((await st({ status: 'offer', date: '2026-02-30' })).statusCode).toBe(400);
+    expect(ctx.applicationStore.require(id).history).toHaveLength(5);
+  });
+  it('undo removes the last entry; never a real sent email', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    await send(ctx, 'POST', `/api/applications/${id}/submitted`, {});
+    await send(ctx, 'POST', `/api/applications/${id}/status`, { status: 'interview', date: '2026-10-07' });
+    const u1 = (await send(ctx, 'POST', `/api/applications/${id}/status/undo`, {})).json() as ApplicationView;
+    expect(u1.application.status).toBe('submitted');
+    expect(u1.canUndo).toBe(true);
+    const u2 = (await send(ctx, 'POST', `/api/applications/${id}/status/undo`, {})).json() as ApplicationView;
+    expect(u2.application.status).toBe('approved');
+    expect(u2.canUndo).toBe(false);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/status/undo`, {})).statusCode).toBe(409);
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/letter`, { subject: 'Wieder editierbar' })).statusCode).toBe(200);
+
+    ctx.applicationStore.update(id, (p) => { p.status = 'sent'; p.history.push({ kind: 'sent', at: '2026-10-05T10:00:00.000Z', messageId: '<m1@x>' }); });
+    expect((await get(ctx, `/api/applications/${id}`)).json().canUndo).toBe(false);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/status/undo`, {})).statusCode).toBe(409);
+    expect(ctx.applicationStore.require(id).status).toBe('sent');
+  });
+});
+
 describe('final review fixes', () => {
   it('POST recount stores the page count of the current layout and changes nothing else', async () => {
     const ctx = await setup();

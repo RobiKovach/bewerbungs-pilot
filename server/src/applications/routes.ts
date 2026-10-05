@@ -1,13 +1,13 @@
 import fs from 'node:fs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import type { DocLanguage, LetterPatch, Profile } from '@bp/shared';
+import type { DocLanguage, LetterPatch, OutcomeStatus, Profile } from '@bp/shared';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
 import type { ProfileFiles } from '../profile/files.js';
 import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { touchDraft, type ApplicationJob } from './job.js';
-import { addStatus, assertEditable } from './status.js';
+import { addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from './status.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
@@ -61,6 +61,10 @@ const letterBody = {
 };
 const profilBody = { type: 'object', additionalProperties: false, required: ['profil'], properties: { profil: line(L.profil) } };
 const headlineBody = { type: 'object', additionalProperties: false, required: ['headline'], properties: { headline: { type: 'string', minLength: 1, maxLength: L.headline } } };
+const statusBody = {
+  type: 'object', additionalProperties: false, required: ['status', 'date'],
+  properties: { status: { enum: ['interview', 'rejected', 'offer', 'withdrawn'] }, date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }, note: { type: 'string', maxLength: L.note } },
+};
 const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
 
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
@@ -205,6 +209,33 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     editable(id);
     notBusy(id);
     d.store.update(id, (p) => touchDraft(p, now()));
+    return view(id);
+  });
+
+  app.post('/api/applications/:id/submitted', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    if (d.store.require(id).status !== 'approved') throw new AppError('CONFLICT', 'only an approved package can be marked as submitted');
+    d.store.update(id, (p) => addStatus(p, 'submitted', now().toISOString()));
+    return view(id);
+  });
+
+  app.post('/api/applications/:id/status', { schema: { params: idParams, body: statusBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const { status, date, note } = req.body as { status: OutcomeStatus; date: string; note?: string };
+    if (!isFrozen(d.store.require(id))) throw new AppError('CONFLICT', 'the package was not sent yet');
+    const at = dateToIso(date, now());
+    const text = note?.trim();
+    d.store.update(id, (p) => { addStatus(p, status, at, text ? { note: text } : {}); p.updatedAt = now().toISOString(); });
+    return view(id);
+  });
+
+  app.post('/api/applications/:id/status/undo', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    if (!canUndo(d.store.require(id))) throw new AppError('CONFLICT', 'nothing to undo');
+    d.store.update(id, (p) => undoLast(p, now().toISOString()));
     return view(id);
   });
 

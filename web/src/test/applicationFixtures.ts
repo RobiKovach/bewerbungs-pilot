@@ -22,7 +22,7 @@ export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationP
   };
 }
 export function appView(over: Partial<ApplicationView> = {}, pkg: Partial<ApplicationPackage> = {}): ApplicationView {
-  return { application: appPackage(pkg), profileChanged: false, attachments: [], ...over };
+  return { application: appPackage(pkg), profileChanged: false, attachments: [], canUndo: false, ...over };
 }
 export function appSummary(over: Partial<ApplicationSummary & { profileChanged: boolean }> = {}): ApplicationSummary & { profileChanged: boolean } {
   return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, profileChanged: false, ...over };
