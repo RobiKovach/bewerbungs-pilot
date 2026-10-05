@@ -244,10 +244,12 @@
     "cv": {
       "profileChanged": "Profilul dvs. s-a schimbat după crearea acestui pachet. CV-ul arată încă datele vechi.",
       "update": "Actualizează CV-ul",
-      "keepQuestion": "Ați modificat manual textul „Profil”. Păstrăm textul dvs.?",
+      "keepQuestion": "Păstrăm textele modificate de dvs. (Profil, titlul postului)?",
       "keepYes": "Păstrează textul meu",
       "keepNo": "Lasă Claude să scrie din nou",
       "profil": "Profil (începutul CV-ului)",
+      "headline": "Titlul postului sub numele dvs.",
+      "headlineHint": "Claude îl propune pentru această ofertă; îl puteți modifica.",
       "profilHint": "2–3 propoziții. Tot restul din CV provine din profilul dvs.",
       "save": "Salvează profilul",
       "fromProfile": "Pentru a schimba date, locuri de muncă, competențe sau limbi, modificați profilul, apoi faceți clic pe „Actualizează CV-ul”.",

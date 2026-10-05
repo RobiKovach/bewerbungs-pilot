@@ -123,6 +123,17 @@ describe('editing a package', () => {
     const view = (await send(ctx, 'PATCH', `/api/applications/${id}/cv-profil`, { profil: 'Mein Text.' })).json() as ApplicationView;
     expect(view.application.cv).toMatchObject({ profil: 'Mein Text.', profilEditedByHand: true });
   });
+  it('PATCH cv-headline saves, marks it as edited by hand and returns an approved package to draft; invalid → 400', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    await send(ctx, 'POST', `/api/applications/${id}/approve`, {});
+    const r = await send(ctx, 'PATCH', `/api/applications/${id}/cv-headline`, { headline: 'Frontend-Entwickler' });
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as ApplicationView).application).toMatchObject({ status: 'draft', cv: { headline: 'Frontend-Entwickler', headlineEditedByHand: true } });
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/cv-headline`, { headline: '' })).statusCode).toBe(400);
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/cv-headline`, { headline: '   ' })).statusCode).toBe(400);
+    expect((await send(ctx, 'PATCH', `/api/applications/${id}/cv-headline`, { headline: 'x'.repeat(81) })).statusCode).toBe(400);
+  });
   it('attachments: defaults from "attach always", only known documents may be chosen, deleted ones show as missing', async () => {
     const ctx = await setup({ profile: (p) => { p.documents = [{ id: DOC_ID, ext: '.pdf', originalName: 'zeugnis.pdf', size: 1234, uploadedAt: '2026-09-01T10:00:00.000Z', label: 'Zeugnis', attachAlways: true }]; } });
     fs.writeFileSync(ctx.profileFiles.pathOf({ id: DOC_ID, ext: '.pdf' }), await makePdf(1));

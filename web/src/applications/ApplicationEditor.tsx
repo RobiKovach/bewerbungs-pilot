@@ -101,7 +101,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {tab === 'letter' ? (
         <LetterTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setLetterDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
       ) : null}
-      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setCvDirty} onRefresh={(keep) => void job.start(() => api.refreshCv(id, keep))} /> : null}
+      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setCvDirty} onRefresh={(keepProfil, keepHeadline) => void job.start(() => api.refreshCv(id, keepProfil, keepHeadline))} /> : null}
       {tab === 'attachments' ? <AttachmentsTab view={view} locked={locked} onView={setView} /> : null}
 
       <div className="btn-row downloads" role="group" aria-label={t('applications.download.title')}>

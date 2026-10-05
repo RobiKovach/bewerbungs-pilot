@@ -38,7 +38,31 @@ describe('CV tab', () => {
     await user.click(screen.getByRole('button', { name: 'Update CV' }));
     await user.click(screen.getByRole('button', { name: 'Keep my text' }));
     const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/refresh-cv');
-    expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: true });
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: true, keepHeadline: true });
+  });
+  it('the headline can be edited and saved; unsaved, it switches Approve, other tabs and Update CV off', async () => {
+    const saved = appView({}, { updatedAt: '2026-09-29T11:00:00.000Z', cv: { ...appView().application.cv, headline: 'Frontend-Entwickler', headlineEditedByHand: true } });
+    const { f, user } = setup({ 'PATCH /api/applications/app1/cv-headline': () => ({ body: saved }) }, appView({ profileChanged: true }));
+    await user.click(await screen.findByRole('tab', { name: 'CV' }));
+    await user.type(screen.getByLabelText('Job title under your name'), 'Frontend-Entwickler');
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Update CV' })).toBeDisabled();
+    expect(screen.getByRole('tab', { name: 'Attachments' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Save Profile' }));
+    const patch = f.mock.calls.find(([url]) => url === '/api/applications/app1/cv-headline');
+    expect(JSON.parse(String(patch![1]!.body))).toEqual({ headline: 'Frontend-Entwickler' });
+    expect(f.mock.calls.some(([url]) => url === '/api/applications/app1/cv-profil')).toBe(false);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Approve' })).toBeEnabled());
+  });
+  it('Update CV asks one question when only the headline was edited by hand and sends both keep flags', async () => {
+    const view = appView({ profileChanged: true }, { cv: { ...appView().application.cv, headline: 'Entwickler', headlineEditedByHand: true } });
+    const { f, user } = setup({ 'POST /api/applications/app1/refresh-cv': () => ({ status: 202, body: jobState({ state: 'running', kind: 'refreshCv', applicationId: 'app1' }) }) }, view);
+    await user.click(await screen.findByRole('tab', { name: 'CV' }));
+    await user.click(screen.getByRole('button', { name: 'Update CV' }));
+    expect(screen.getByText('Keep the texts you changed yourself (Profil, job title)?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Keep my text' }));
+    const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/refresh-cv');
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: true, keepHeadline: true });
   });
   it('unsaved Profil edits count as unsaved: Approve, other tabs and "Update CV" are off until saved', async () => {
     const { user } = setup({}, appView({ profileChanged: true }));
@@ -56,7 +80,7 @@ describe('CV tab', () => {
     await user.click(screen.getByRole('button', { name: 'Update CV' }));
     await user.click(screen.getByRole('button', { name: 'Let Claude write it again' }));
     const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/refresh-cv');
-    expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: false });
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ keepProfil: false, keepHeadline: false });
   });
   it('typing into Profil closes the open question', async () => {
     const view = appView({ profileChanged: true }, { cv: { ...appView().application.cv, profilEditedByHand: true } });

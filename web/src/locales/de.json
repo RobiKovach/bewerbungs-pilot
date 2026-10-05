@@ -244,10 +244,12 @@
     "cv": {
       "profileChanged": "Ihr Profil hat sich geändert, nachdem dieses Paket erstellt wurde. Der Lebenslauf zeigt noch die alten Daten.",
       "update": "Lebenslauf aktualisieren",
-      "keepQuestion": "Sie haben den Profiltext von Hand geändert. Ihren Text behalten?",
+      "keepQuestion": "Die Texte behalten, die Sie selbst geändert haben (Profil, Berufsbezeichnung)?",
       "keepYes": "Meinen Text behalten",
       "keepNo": "Claude neu schreiben lassen",
       "profil": "Profil (Beginn des Lebenslaufs)",
+      "headline": "Berufsbezeichnung unter Ihrem Namen",
+      "headlineHint": "Claude schlägt sie für dieses Angebot vor; Sie können sie ändern.",
       "profilHint": "2–3 Sätze. Alles andere im Lebenslauf stammt aus Ihrem Profil.",
       "save": "Profil speichern",
       "fromProfile": "Um Daten, Stationen, Kenntnisse oder Sprachen zu ändern, ändern Sie Ihr Profil und klicken Sie dann auf „Lebenslauf aktualisieren“.",

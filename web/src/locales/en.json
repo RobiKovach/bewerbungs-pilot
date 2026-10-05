@@ -244,10 +244,12 @@
     "cv": {
       "profileChanged": "Your profile changed after this package was created. The CV still shows the old data.",
       "update": "Update CV",
-      "keepQuestion": "You changed the Profile text by hand. Keep your text?",
+      "keepQuestion": "Keep the texts you changed yourself (Profil, job title)?",
       "keepYes": "Keep my text",
       "keepNo": "Let Claude write it again",
       "profil": "Profile (top of the CV)",
+      "headline": "Job title under your name",
+      "headlineHint": "Claude suggests it for this offer; you can change it.",
       "profilHint": "2–3 sentences. Everything else in the CV comes from your profile.",
       "save": "Save Profile",
       "fromProfile": "To change dates, jobs, skills or languages, change your profile, then click \"Update CV\".",

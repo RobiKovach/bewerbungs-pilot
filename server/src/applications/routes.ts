@@ -59,6 +59,7 @@ const letterBody = {
   },
 };
 const profilBody = { type: 'object', additionalProperties: false, required: ['profil'], properties: { profil: line(L.profil) } };
+const headlineBody = { type: 'object', additionalProperties: false, required: ['headline'], properties: { headline: { type: 'string', minLength: 1, maxLength: L.headline } } };
 const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
 
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
@@ -125,6 +126,15 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     notBusy(id);
     const { profil } = req.body as { profil: string };
     d.store.update(id, (p) => { p.cv.profil = profil; p.cv.profilEditedByHand = true; touchDraft(p, now()); });
+    return view(id);
+  });
+
+  app.patch('/api/applications/:id/cv-headline', { schema: { params: idParams, body: headlineBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const { headline } = req.body as { headline: string };
+    if (headline.trim() === '') throw new AppError('BAD_REQUEST', 'headline is empty');
+    d.store.update(id, (p) => { p.cv.headline = headline.trim(); p.cv.headlineEditedByHand = true; touchDraft(p, now()); });
     return view(id);
   });
 
