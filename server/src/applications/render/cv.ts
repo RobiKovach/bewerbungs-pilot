@@ -62,7 +62,10 @@ export function cvHtml(p: ApplicationPackage, photo: { data: Buffer; ext: '.jpg'
   const training = entries(s.education.filter((x) => TRAINING_KINDS.has(x.kind)));
 
   const byId = new Map(s.skills.map((k) => [k.id, k.name]));
-  const groups = p.cv.skillGroups.map((g) => {
+  // Skills no group lists (e.g. a migrated v1 package with a partial skillOrder) follow as one unnamed group.
+  const grouped = new Set(p.cv.skillGroups.flatMap((g) => g.skillIds));
+  const rest = s.skills.filter((k) => !grouped.has(k.id)).map((k) => k.id);
+  const groups = [...p.cv.skillGroups, { name: '', skillIds: rest }].map((g) => {
     const names = g.skillIds.map((id) => byId.get(id)).filter((n): n is string => !!n);
     return names.length ? `<div class="group">${g.name.trim() ? `<strong>${e(g.name)}</strong>` : ''}<span>${e(names.join(', '))}</span></div>` : '';
   }).join('');

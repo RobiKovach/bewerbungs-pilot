@@ -68,7 +68,8 @@ describe('cvHtml', () => {
     expect(html).toContain('Built client websites.');
     expect(html).toContain('Ausbildung mit Schwerpunkt Web.'); // no translation given → profile text
     expect(html.indexOf('Git')).toBeLessThan(html.indexOf('JavaScript'));
-    expect(html).not.toContain('WordPress'); // skills outside every group are not printed
+    expect(html.indexOf('JavaScript')).toBeLessThan(html.indexOf('WordPress')); // ungrouped skills follow the grouped ones, in profile order
+    expect(html).toContain('PHP');
     expect(html).toContain('Work experience');
     expect(html).toContain('Native');
     expect(html).toContain('07/2018 – present');

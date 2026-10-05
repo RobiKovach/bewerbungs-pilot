@@ -5,6 +5,7 @@ import path from 'node:path';
 import { ApplicationStore } from '../src/applications/store.js';
 import { validatePackage } from '../src/applications/schema.js';
 import { pkg } from './helpers/applications.js';
+import { cvHtml } from '../src/applications/render/cv.js';
 
 /** A package as version 0.4.0 wrote it. */
 function v1From(p: ReturnType<typeof pkg>) {
@@ -43,5 +44,23 @@ describe('package v1 → v2', () => {
     store.load();
     expect(store.list()).toEqual([]);
     expect(warnings).toEqual(['application_invalid']);
+  });
+});
+
+describe('a migrated v1 package prints every skill', () => {
+  it('with a partial or empty skillOrder, skills outside it still appear in the CV', () => {
+    for (const order of [['sk5'], []]) {
+      const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+      const p = pkg();
+      const old = v1From(p);
+      old.cv.skillOrder = order;
+      fs.mkdirSync(path.join(dir, p.id), { recursive: true });
+      fs.writeFileSync(path.join(dir, p.id, 'package.json'), JSON.stringify(old));
+      const store = new ApplicationStore(dir, () => {});
+      store.load();
+      const html = cvHtml(store.require(p.id), null);
+      for (const name of ['JavaScript', 'WordPress', 'CSS', 'PHP', 'Git']) expect(html).toContain(name);
+      expect(html).not.toContain('<strong></strong>');
+    }
   });
 });
