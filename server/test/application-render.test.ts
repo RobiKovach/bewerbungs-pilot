@@ -137,4 +137,10 @@ describe('cvHtml — layout like the example', () => {
     expect(html).not.toContain('class="headline"');
     expect(html).toContain('HTML5, CSS3');
   });
+  it('a CV longer than one page: the left colour is a fixed strip (repeated on every printed page), the columns repeat their padding on page 2', () => {
+    const html = cvHtml(pkgWith({}), null);
+    expect(html).toMatch(/\.cv::before\{[^}]*position:fixed;top:0;bottom:0;left:0;width:74mm;background:#2f5d62/);
+    expect(html).toMatch(/\.side,\.main\{[^}]*box-decoration-break:clone/);
+    expect(html).not.toContain('linear-gradient');
+  });
 });

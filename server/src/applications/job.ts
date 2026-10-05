@@ -64,7 +64,7 @@ function cvNeedsClaude(existing: ApplicationPackage, snapshot: PackageSnapshot):
     || translatableValues(snapshot).some((v) => !Object.hasOwn(cv.translations, v));
 }
 
-const isCancel =(err: unknown, signal: AbortSignal) => signal.aborted || (err instanceof AppError && err.code === 'LLM_CANCELLED');
+const isCancel = (err: unknown, signal: AbortSignal) => signal.aborted || (err instanceof AppError && err.code === 'LLM_CANCELLED');
 
 /** One package job at a time, in the background; the page polls GET /api/applications/job (spec, section 5). */
 export class ApplicationJob {

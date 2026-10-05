@@ -10,7 +10,12 @@ const TRAINING_KINDS = new Set(['course', 'certificate']);
 
 // Two columns like the example: the left column (photo, name, headline, contacts, skills, languages) comes first in the
 // HTML, because that is its reading order for text extraction (ATS); the grid places it on the left.
-const CSS = `.cv{width:210mm;min-height:297mm;display:grid;grid-template-columns:74mm 1fr;grid-template-areas:"side main";background:linear-gradient(to right,#2f5d62 0,#2f5d62 74mm,#fff 74mm);font-size:10pt;line-height:1.4;color:#222}
+// The column colour is a fixed strip: the browser repeats fixed elements on every printed page, so the colour reaches
+// the bottom of each page however long the CV is. "clone" repeats the columns' top/bottom padding on every page, so
+// page 2 does not start flush at the paper's edge.
+const CSS = `.cv{width:210mm;min-height:297mm;display:grid;grid-template-columns:74mm 1fr;grid-template-areas:"side main";font-size:10pt;line-height:1.4;color:#222}
+.cv::before{content:'';position:fixed;top:0;bottom:0;left:0;width:74mm;background:#2f5d62;z-index:-1}
+.side,.main{-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .side{grid-area:side;color:#fff;padding:14mm 10mm 12mm}
 .photo{display:block;width:36mm;height:36mm;border-radius:50%;object-fit:cover;object-position:center 30%;margin:0 auto 8mm;border:3px solid rgba(255,255,255,.25)}
 .side h1{font-size:20pt;font-weight:700;margin:0;line-height:1.15}

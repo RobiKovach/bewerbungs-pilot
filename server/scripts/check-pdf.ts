@@ -28,12 +28,26 @@ const sample: ApplicationPackage = {
   attachments: [],
 };
 
+// A CV long enough for two pages: the left column must stay coloured to the bottom of every page, and page 2 must
+// start with a top margin, not flush at the edge (look at the PDF, e.g. render its pages to images).
+const long: ApplicationPackage = {
+  ...sample,
+  snapshot: {
+    ...sample.snapshot,
+    experience: Array.from({ length: 9 }, (_, i) => ({
+      id: `ex${i + 1}`, jobTitle: `Webentwickler ${i + 1}`, employer: `Beispiel ${i + 1} GmbH`, city: 'Berlin', country: 'Deutschland',
+      from: `${2024 - 2 * i}-01`, to: i === 0 ? '' : `${2025 - 2 * i}-12`,
+      description: 'Entwicklung und Pflege von Kundenwebseiten mit WordPress, JavaScript und CSS. Abstimmung mit Kunden, Tests und Übergabe. '.repeat(2),
+    })),
+  },
+};
+
 const browser = findBrowser();
 console.log(`browser: ${browser ?? 'NOT FOUND'}`);
 if (!browser) process.exit(1);
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-check-pdf-'));
 const printer = new BrowserPrinter({ tmpRoot: out });
-for (const [name, html] of [['letter', letterHtml(sample, new Date())], ['cv', cvHtml(sample, null)]] as const) {
+for (const [name, html] of [['letter', letterHtml(sample, new Date())], ['cv', cvHtml(sample, null)], ['cv-long', cvHtml(long, null)]] as const) {
   const started = Date.now();
   const pdf = await printer.print(html);
   const file = path.join(out, `${name}.pdf`);
