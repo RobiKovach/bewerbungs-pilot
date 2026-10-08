@@ -70,7 +70,9 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
           <p className="muted">{t('applications.send.copyNote')}</p>
         </>
       ) : null}
-      {error ? <ErrorBanner error={error} /> : null}
+      {sentNotSaved
+        ? <p className="notice" role="alert">{t('errors.reasons.sentNotSaved')}</p>
+        : error ? <ErrorBanner error={error} /> : null}
       <div className="btn-row">
         {sentNotSaved ? null : (
           <button type="button" className="btn" disabled={!draft || !valid || sending} onClick={() => void send()}>

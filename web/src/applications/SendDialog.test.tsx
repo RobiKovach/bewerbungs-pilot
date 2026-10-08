@@ -101,7 +101,10 @@ describe('SendDialog', () => {
     const { user } = setup({ 'POST /api/applications/app1/send': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'sentNotSaved' } } }) });
     await screen.findByLabelText('Subject');
     await user.click(screen.getByRole('button', { name: 'Send' }));
-    expect(await screen.findByText(/The email was sent, but the app could not save it\. Do not send it again/)).toBeInTheDocument();
+    const notice = await screen.findByText(/The email was sent, but the app could not save it\. Do not send it again/);
+    expect(notice).toBeVisible();
+    expect(notice.closest('details')).toBeNull();
+    expect(screen.queryByText('This was changed in the meantime.')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();

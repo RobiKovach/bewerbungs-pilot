@@ -298,6 +298,25 @@ describe('copy as a new draft', () => {
     expect(r.json().error.reason).toBe('packageSending');
     expect((await inFlight).statusCode).toBe(200);
   });
+
+  it('undoing "submitted" is refused while a copy of it is still unsent (one editable package per vacancy); allowed once the copy is gone', async () => {
+    const { ctx, id } = await setup();
+    expect((await post(ctx, `/api/applications/${id}/submitted`, {})).statusCode).toBe(200);
+    const c = ((await copy(ctx, id)).json() as ApplicationView).application;
+    const before = (await viewOf(ctx, id)).application;
+    const r = await post(ctx, `/api/applications/${id}/status/undo`, {});
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error).toMatchObject({ code: 'CONFLICT', reason: 'draftExists', params: { id: c.id } });
+    expect((await viewOf(ctx, id)).application).toEqual(before);
+    // An undo that keeps the package frozen is not affected.
+    expect((await post(ctx, `/api/applications/${id}/status`, { status: 'interview', date: '2026-10-01' })).statusCode).toBe(200);
+    expect((await post(ctx, `/api/applications/${id}/status/undo`, {})).statusCode).toBe(200);
+    // Without the copy the package can go back to approved.
+    await ctx.app.inject({ method: 'DELETE', url: `/api/applications/${c.id}`, headers: H });
+    const ok = await post(ctx, `/api/applications/${id}/status/undo`, {});
+    expect(ok.statusCode).toBe(200);
+    expect((ok.json() as ApplicationView).application.status).toBe('approved');
+  });
 });
 
 describe('send-draft', () => {

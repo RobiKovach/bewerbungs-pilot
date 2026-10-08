@@ -316,7 +316,10 @@ describe('ApplicationEditor — sending and the frozen package', () => {
       'POST /api/applications/app1/copy': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'draftExists', params: { id: 'app2' } } } }),
     }, sentView());
     await user.click(await screen.findByRole('button', { name: 'Copy as a new draft' }));
-    expect(await screen.findByText(/already has a package that was not sent yet/)).toBeInTheDocument();
+    const notice = await screen.findByText(/already has a package that was not sent yet/);
+    expect(notice).toBeVisible();
+    expect(notice.closest('details')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/app2');
     expect(window.location.hash).toBe('#/applications/app1');
   });
 });
@@ -366,6 +369,19 @@ describe('ApplicationEditor — statuses', () => {
     await user.click(screen.getByRole('button', { name: 'Yes, undo' }));
     await waitFor(() => expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/status/undo' && init?.method === 'POST')).toBe(true));
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo last change' })).not.toBeInTheDocument());
+  });
+
+  it('an undo refused because a copy is still unsent shows why, visibly, with a link to that package', async () => {
+    const { user } = setup({
+      ...mail,
+      'POST /api/applications/app1/status/undo': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'draftExists', params: { id: 'app2' } } } }),
+    }, sent({ canUndo: true }));
+    await user.click(await screen.findByRole('button', { name: 'Undo last change' }));
+    await user.click(screen.getByRole('button', { name: 'Yes, undo' }));
+    const notice = await screen.findByText(/already has a package that was not sent yet/);
+    expect(notice).toBeVisible();
+    expect(notice.closest('details')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/app2');
   });
 });
 

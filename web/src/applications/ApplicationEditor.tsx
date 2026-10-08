@@ -74,6 +74,9 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   // A failed reload (after a job or a refused approve) leaves a stale view: editing stays off until a reload succeeds.
   const locked = jobOnThis || error !== null || frozen;
   const failed = job.state?.applicationId === id ? jobError(job.state) : null;
+  // Copy or undo refused because this offer already has an unsent package: say so plainly and link to it.
+  const draftExistsId = actionError instanceof ApiError && actionError.reason === 'draftExists' && actionError.params?.id
+    ? String(actionError.params.id) : null;
   const act = async (fn: () => Promise<ApplicationView>) => {
     setActionError(null);
     try {
@@ -217,7 +220,11 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
           </div>
         </div>
       ) : null}
-      {actionError ? <ErrorBanner error={actionError} /> : null}
+      {draftExistsId ? (
+        <p className="notice" role="alert">
+          {t('errors.reasons.draftExists')} <a href={`#/applications/${draftExistsId}`}>{t('applications.open')}</a>
+        </p>
+      ) : actionError ? <ErrorBanner error={actionError} /> : null}
     </section>
   );
 }

@@ -256,7 +256,13 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   app.post('/api/applications/:id/status/undo', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
     notBusy(id);
-    if (!canUndo(d.store.require(id))) throw new AppError('CONFLICT', 'nothing to undo');
+    const current = d.store.require(id);
+    if (!canUndo(current)) throw new AppError('CONFLICT', 'nothing to undo');
+    // Undoing "submitted" makes the package editable again: only one editable package per vacancy (a copy may exist).
+    const probe = structuredClone(current);
+    undoLast(probe, now().toISOString());
+    const other = isFrozen(probe) ? undefined : d.store.editableByVacancy(current.vacancyId);
+    if (other && other.id !== id) throw new AppError('CONFLICT', 'the vacancy already has a package that was not sent', 'draftExists', { id: other.id });
     d.store.update(id, (p) => undoLast(p, now().toISOString()));
     return view(id);
   });
