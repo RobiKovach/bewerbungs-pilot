@@ -1,8 +1,14 @@
 import type {
   ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, PackageReadiness,
-  CvResult, CvSectionId, ErrorReason, Language, LlmCheck, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
+  CvResult, CvSectionId, ErrorReason, Language, LlmCheck, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
+
+/** Password is optional: left out = keep the saved one. Language = the interface language of the test email. */
+export interface MailSaveBody {
+  address: string; senderName: string; host: string; port: number; security: MailSecurity;
+  user: string; password?: string; language: Language;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -58,6 +64,10 @@ export const api = {
   patchSettings: (patch: SettingsPatch) => request<Settings>('PATCH', '/api/settings', patch),
   checkLlm: (refresh = false) => request<LlmCheck>('GET', `/api/llm/check${refresh ? '?refresh=1' : ''}`),
   testLlm: (language: Language, signal?: AbortSignal) => request<{ greeting: string }>('POST', '/api/llm/test', { language }, signal),
+  getMail: () => request<MailSettingsView>('GET', '/api/mail/settings'),
+  mailProviders: () => request<MailProvider[]>('GET', '/api/mail/providers'),
+  saveMail: (body: MailSaveBody) => request<MailSettingsView>('PUT', '/api/mail/settings', body),
+  disconnectMail: () => request<MailSettingsView>('DELETE', '/api/mail/settings'),
   openLogin: () => request<{ ok: true }>('POST', '/api/llm/open-login', {}),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
 

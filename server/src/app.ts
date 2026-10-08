@@ -14,6 +14,9 @@ import type { ApplicationJob } from './applications/job.js';
 import type { PdfPrinter } from './applications/pdf.js';
 import { registerApplicationRoutes } from './applications/routes.js';
 import type { ApplicationStore } from './applications/store.js';
+import type { Mailer } from './mail/mailer.js';
+import { registerMailRoutes } from './mail/routes.js';
+import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
@@ -37,6 +40,8 @@ export interface AppDeps {
   applicationStore: ApplicationStore;
   applicationJob: ApplicationJob;
   printer: PdfPrinter;
+  mailer: Mailer;
+  secrets: SecretStore;
 }
 
 const settingsPatchSchema = {
@@ -168,6 +173,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     store: deps.applicationStore, job: deps.applicationJob, printer: deps.printer, vacancies: deps.vacancyStore,
     files: deps.profileFiles, profile: () => deps.profileStore.get(), logger: deps.logger,
   });
+
+  await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });

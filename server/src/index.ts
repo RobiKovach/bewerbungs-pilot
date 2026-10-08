@@ -14,6 +14,8 @@ import { FakeProvider } from './llm/fake.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
+import { SmtpMailer } from './mail/mailer.js';
+import { DpapiSecretStore } from './mail/secret.js';
 import { ProfileFiles } from './profile/files.js';
 import { ProfileStore } from './profile/store.js';
 import { openBrowser } from './runtime/browser.js';
@@ -90,6 +92,7 @@ async function main(): Promise<void> {
     onShutdown: () => void shutdown(),
     profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
     applicationStore, applicationJob, printer,
+    mailer: new SmtpMailer(), secrets: new DpapiSecretStore(paths.mailSecret),
   });
 
   const shutdown = createShutdown({

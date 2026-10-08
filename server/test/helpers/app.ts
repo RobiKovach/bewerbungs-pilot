@@ -8,17 +8,19 @@ import { buildApp } from '../../src/app.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
 import { LlmQueue } from '../../src/llm/queue.js';
-import { nullLogger } from '../../src/log.js';
+import { nullLogger, type Logger } from '../../src/log.js';
+import { MemorySecretStore } from '../../src/mail/secret.js';
 import { ProfileFiles } from '../../src/profile/files.js';
 import { ProfileStore } from '../../src/profile/store.js';
 import { SearchJob } from '../../src/vacancies/search-job.js';
 import { VacancyStore } from '../../src/vacancies/store.js';
 import { FakePrinter } from './applications.js';
+import { FakeMailer } from './mail.js';
 import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
 
-export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -50,13 +52,16 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
     stateFile: path.join(dir, 'applications', 'job-state.json'),
   });
   applicationJob.init();
+  const logger = opts.logger ?? nullLogger;
+  const mailer = new FakeMailer();
+  const secrets = new MemorySecretStore();
   const app = await buildApp({
-    settings, provider, queue, logger: nullLogger, version: '0.1.0',
+    settings, provider, queue, logger, version: '0.1.0',
     webDist: opts.webDist ?? null,
     allowedHosts: opts.allowedHosts ?? (() => ['localhost:80']),
     onShutdown: () => { shutdownCalls++; },
     profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
-    applicationStore, applicationJob, printer,
+    applicationStore, applicationJob, printer, mailer, secrets,
   });
-  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer };
+  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets };
 }
