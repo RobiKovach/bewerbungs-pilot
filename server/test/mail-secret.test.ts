@@ -17,9 +17,9 @@ describe('secret stores', () => {
   it.runIf(process.platform === 'win32')('DPAPI round-trip; the file does not contain the secret; a broken file loads as null', async () => {
     const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp secret Дані-')), 'mail-secret.bin');
     const s = new DpapiSecretStore(file);
-    await s.save('abcd efgh ijkl mnop');
+    await s.save('abcd Pässwort-Ünï-Ж');
     expect(fs.readFileSync(file, 'utf8')).not.toContain('abcd');
-    expect(await s.load()).toBe('abcd efgh ijkl mnop');
+    expect(await s.load()).toBe('abcd Pässwort-Ünï-Ж');
     fs.writeFileSync(file, 'bm90IGRwYXBp');
     expect(await s.load()).toBeNull();
     await s.remove();

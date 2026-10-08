@@ -15,8 +15,8 @@ export class MemorySecretStore implements SecretStore {
   async remove(): Promise<void> { this.value = null; }
 }
 
-const ENCRYPT = "$s=[Console]::In.ReadToEnd(); Add-Type -AssemblyName System.Security; $b=[Text.Encoding]::UTF8.GetBytes($s); [Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b,$null,'CurrentUser'))";
-const DECRYPT = "try { $s=[Console]::In.ReadToEnd().Trim(); Add-Type -AssemblyName System.Security; $b=[Convert]::FromBase64String($s); $p=[Security.Cryptography.ProtectedData]::Unprotect($b,$null,'CurrentUser'); $o=[Console]::OpenStandardOutput(); $o.Write($p,0,$p.Length); $o.Flush() } catch { exit 1 }";
+const ENCRYPT = "$s=(New-Object IO.StreamReader([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)).ReadToEnd(); Add-Type -AssemblyName System.Security; $b=[Text.Encoding]::UTF8.GetBytes($s); [Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b,$null,'CurrentUser'))";
+const DECRYPT = "try { $s=(New-Object IO.StreamReader([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)).ReadToEnd().Trim(); Add-Type -AssemblyName System.Security; $b=[Convert]::FromBase64String($s); $p=[Security.Cryptography.ProtectedData]::Unprotect($b,$null,'CurrentUser'); $o=[Console]::OpenStandardOutput(); $o.Write($p,0,$p.Length); $o.Flush() } catch { exit 1 }";
 const TIMEOUT_MS = 15_000;
 
 // Runs a fixed PowerShell script; the input goes through stdin only (never the command line).
