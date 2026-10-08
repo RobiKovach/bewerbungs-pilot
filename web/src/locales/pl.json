@@ -40,7 +40,7 @@
       "error": { "title": "Claude nie odpowiedział", "hint": "Sprawdź połączenie z internetem i kliknij „Sprawdź ponownie”." }
     },
     "profile": { "title": "Twój profil", "body": "Prześlij swoje CV lub wypełnij dane samodzielnie, a następnie odpowiedz na kilka krótkich pytań. Możesz to zrobić też później w sekcji „Profil”." },
-    "email": { "title": "Twój e-mail", "body": "Połącz swój e-mail, aby BewerbungsPilot mógł wysyłać zatwierdzone przez Ciebie aplikacje. To zajmie około 5 minut — albo pomiń i zrób to później w Ustawieniach." },
+    "email": { "title": "Twój e-mail", "body": "Połącz swój e-mail, aby BewerbungsPilot mógł wysyłać zatwierdzone przez Ciebie aplikacje. Możesz to też pominąć i zrobić później w Ustawieniach." },
     "done": { "title": "Gotowe", "body": "Podstawy są gotowe. Otwórz przewodnik w dowolnym momencie, aby zobaczyć, co dalej.", "finish": "Zakończ" }
   },
   "guide": {
@@ -104,11 +104,11 @@
     "disconnectConfirm": "Odłączyć Twój e-mail? Zapisane hasło zostanie usunięte.",
     "disconnectYes": "Tak, odłącz",
     "help": {
-      "gmail": "Otwórz przez link poniżej stronę zabezpieczeń konta Google i sprawdź, czy weryfikacja dwuetapowa jest włączona.\nOtwórz stronę „Hasła aplikacji” i wpisz dowolną nazwę, na przykład BewerbungsPilot.\nGoogle pokaże hasło z 16 liter. Skopiuj je.\nWklej je poniżej. Spacje nie mają znaczenia.",
-      "gmx": "Zaloguj się w przeglądarce do swojej skrzynki GMX i otwórz jej ustawienia.\nSprawdź, czy wysyłanie z innych programów pocztowych jest dozwolone (POP3/IMAP).\nJeśli używasz logowania dwuetapowego, utwórz hasło aplikacji w ustawieniach bezpieczeństwa. W przeciwnym razie wystarczy Twoje zwykłe hasło GMX.\nWpisz hasło poniżej.",
-      "webde": "Zaloguj się w przeglądarce do swojej skrzynki WEB.DE i otwórz jej ustawienia.\nSprawdź, czy wysyłanie z innych programów pocztowych jest dozwolone (POP3/IMAP).\nJeśli używasz logowania dwuetapowego, utwórz hasło aplikacji w ustawieniach bezpieczeństwa. W przeciwnym razie wystarczy Twoje zwykłe hasło WEB.DE.\nWpisz hasło poniżej.",
+      "gmail": "Otwórz przez link poniżej stronę „Hasła aplikacji”. Jeśli Google o to poprosi, zaloguj się — na Twoim koncie musi być włączona weryfikacja dwuetapowa.\nWpisz dowolną nazwę hasła, na przykład BewerbungsPilot.\nGoogle pokaże hasło z 16 liter. Skopiuj je.\nWklej je poniżej. Spacje nie mają znaczenia.",
+      "gmx": "Zaloguj się w przeglądarce do swojej skrzynki GMX i otwórz jej ustawienia.\nSprawdź, czy dostęp z programów pocztowych jest dozwolony.\nJeśli używasz logowania dwuetapowego, utwórz hasło aplikacji w ustawieniach bezpieczeństwa. W przeciwnym razie wystarczy Twoje zwykłe hasło GMX.\nWpisz hasło poniżej.",
+      "webde": "Zaloguj się w przeglądarce do swojej skrzynki WEB.DE i otwórz jej ustawienia.\nSprawdź, czy dostęp z programów pocztowych jest dozwolony.\nJeśli używasz logowania dwuetapowego, utwórz hasło aplikacji w ustawieniach bezpieczeństwa. W przeciwnym razie wystarczy Twoje zwykłe hasło WEB.DE.\nWpisz hasło poniżej.",
       "tonline": "Otwórz przez link poniżej stronę pomocy Telekom i zaloguj się na swoje konto klienta.\nUstaw osobne hasło pocztowe dla programów zewnętrznych (to nie jest Twoje zwykłe hasło Telekom).\nSkopiuj to hasło.\nWklej je poniżej.",
-      "yahoo": "Otwórz przez link poniżej stronę zabezpieczeń konta Yahoo.\nUtwórz hasło aplikacji i wpisz dowolną nazwę, na przykład BewerbungsPilot.\nSkopiuj hasło, które pokaże Yahoo.\nWklej je poniżej.",
+      "yahoo": "Otwórz przez link poniżej artykuł pomocy Yahoo. Pokazuje on, jak utworzyć hasło aplikacji.\nUtwórz hasło aplikacji i wpisz dowolną nazwę, na przykład BewerbungsPilot.\nSkopiuj hasło, które pokaże Yahoo.\nWklej je poniżej.",
       "icloud": "Otwórz przez link poniżej stronę pomocy Apple. Pokazuje ona, jak utworzyć hasło dla jednej aplikacji (Twoje konto Apple wymaga uwierzytelniania dwuskładnikowego).\nWpisz dowolną nazwę, na przykład BewerbungsPilot.\nSkopiuj hasło, które pokaże Apple.\nWklej je poniżej.",
       "custom": "Poszukaj w pomocy swojego dostawcy poczty hasła „serwer SMTP” — potrzebujesz nazwy serwera i portu.\nWpisz je w poprzednim kroku.\nJeśli dostawca oferuje hasła aplikacji, utwórz takie hasło. W przeciwnym razie wystarczy Twoje zwykłe hasło.\nWpisz hasło poniżej."
     }
@@ -391,7 +391,7 @@
     "BAD_REQUEST": { "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nie jest uruchomiony.", "hint": "Uruchom go ponownie za pomocą skrótu na pulpicie." },
-    "MAIL_NOT_CONFIGURED": { "message": "Twoja poczta nie jest jeszcze połączona.", "hint": "Otwórz Ustawienia → Poczta i połącz swoją skrzynkę (zajmie to około 5 minut)." },
+    "MAIL_NOT_CONFIGURED": { "message": "Twoja poczta nie jest jeszcze połączona.", "hint": "Otwórz Ustawienia → Poczta i połącz swoją skrzynkę." },
     "MAIL_AUTH": { "message": "Dostawca poczty nie przyjął hasła.", "hint": "Użyj hasła aplikacji, a nie zwykłego hasła — w ustawieniach poczty jest pokazane, jak je utworzyć." },
     "MAIL_CONNECT": { "message": "Nie udało się połączyć z Twoim serwerem poczty.", "hint": "Sprawdź połączenie z internetem. Jeśli problem się powtarza, sprawdź serwer i port w ustawieniach poczty." },
     "MAIL_REJECTED": { "message": "Twój serwer poczty odrzucił tę wiadomość.", "hint": "Sprawdź adres odbiorcy. Jeśli załączniki są duże, pomiń jeden z nich i spróbuj ponownie." },

@@ -40,7 +40,7 @@
       "error": { "title": "Claude hat nicht geantwortet", "hint": "Prüfen Sie Ihre Internetverbindung und klicken Sie auf „Erneut prüfen“." }
     },
     "profile": { "title": "Ihr Profil", "body": "Laden Sie Ihren Lebenslauf hoch oder füllen Sie Ihre Daten selbst aus, und beantworten Sie dann ein paar kurze Fragen. Sie können dies auch später unter „Profil“ erledigen." },
-    "email": { "title": "Ihre E-Mail", "body": "Verbinden Sie Ihre E-Mail, damit BewerbungsPilot die von Ihnen freigegebenen Bewerbungen versenden kann. Das dauert etwa 5 Minuten — oder überspringen Sie es und erledigen Sie es später in den Einstellungen." },
+    "email": { "title": "Ihre E-Mail", "body": "Verbinden Sie Ihre E-Mail, damit BewerbungsPilot die von Ihnen freigegebenen Bewerbungen versenden kann. Sie können das auch überspringen und später in den Einstellungen erledigen." },
     "done": { "title": "Fertig", "body": "Die Grundlagen sind bereit. Öffnen Sie die Anleitung jederzeit, um zu sehen, was als Nächstes kommt.", "finish": "Fertigstellen" }
   },
   "guide": {
@@ -104,11 +104,11 @@
     "disconnectConfirm": "Ihre E-Mail trennen? Das gespeicherte Passwort wird gelöscht.",
     "disconnectYes": "Ja, trennen",
     "help": {
-      "gmail": "Öffnen Sie mit dem Link unten die Sicherheitsseite Ihres Google-Kontos und prüfen Sie, dass die Bestätigung in zwei Schritten eingeschaltet ist.\nÖffnen Sie die Seite „App-Passwörter“ und geben Sie einen beliebigen Namen ein, zum Beispiel BewerbungsPilot.\nGoogle zeigt ein Passwort mit 16 Buchstaben. Kopieren Sie es.\nFügen Sie es unten ein. Die Leerzeichen spielen keine Rolle.",
-      "gmx": "Melden Sie sich im Browser bei Ihrem GMX-Postfach an und öffnen Sie die Einstellungen.\nPrüfen Sie, dass der Versand über andere E-Mail-Programme erlaubt ist (POP3/IMAP).\nWenn Sie die Anmeldung in zwei Schritten nutzen, erstellen Sie in den Sicherheitseinstellungen ein App-Passwort. Sonst genügt Ihr normales GMX-Passwort.\nGeben Sie das Passwort unten ein.",
-      "webde": "Melden Sie sich im Browser bei Ihrem WEB.DE-Postfach an und öffnen Sie die Einstellungen.\nPrüfen Sie, dass der Versand über andere E-Mail-Programme erlaubt ist (POP3/IMAP).\nWenn Sie die Anmeldung in zwei Schritten nutzen, erstellen Sie in den Sicherheitseinstellungen ein App-Passwort. Sonst genügt Ihr normales WEB.DE-Passwort.\nGeben Sie das Passwort unten ein.",
+      "gmail": "Öffnen Sie mit dem Link unten die Seite „App-Passwörter“. Melden Sie sich an, falls Google danach fragt — für Ihr Konto muss die Bestätigung in zwei Schritten eingeschaltet sein.\nGeben Sie dem Passwort einen beliebigen Namen, zum Beispiel BewerbungsPilot.\nGoogle zeigt ein Passwort mit 16 Buchstaben. Kopieren Sie es.\nFügen Sie es unten ein. Die Leerzeichen spielen keine Rolle.",
+      "gmx": "Melden Sie sich im Browser bei Ihrem GMX-Postfach an und öffnen Sie die Einstellungen.\nPrüfen Sie, dass der Zugriff über E-Mail-Programme erlaubt ist.\nWenn Sie die Anmeldung in zwei Schritten nutzen, erstellen Sie in den Sicherheitseinstellungen ein App-Passwort. Sonst genügt Ihr normales GMX-Passwort.\nGeben Sie das Passwort unten ein.",
+      "webde": "Melden Sie sich im Browser bei Ihrem WEB.DE-Postfach an und öffnen Sie die Einstellungen.\nPrüfen Sie, dass der Zugriff über E-Mail-Programme erlaubt ist.\nWenn Sie die Anmeldung in zwei Schritten nutzen, erstellen Sie in den Sicherheitseinstellungen ein App-Passwort. Sonst genügt Ihr normales WEB.DE-Passwort.\nGeben Sie das Passwort unten ein.",
       "tonline": "Öffnen Sie mit dem Link unten die Hilfeseite der Telekom und melden Sie sich in Ihrem Kundenkonto an.\nVergeben Sie ein eigenes E-Mail-Passwort für externe Programme (es ist nicht Ihr normales Telekom-Passwort).\nKopieren Sie dieses Passwort.\nFügen Sie es unten ein.",
-      "yahoo": "Öffnen Sie mit dem Link unten die Sicherheitsseite Ihres Yahoo-Kontos.\nErstellen Sie ein App-Passwort und geben Sie einen beliebigen Namen ein, zum Beispiel BewerbungsPilot.\nKopieren Sie das Passwort, das Yahoo anzeigt.\nFügen Sie es unten ein.",
+      "yahoo": "Öffnen Sie mit dem Link unten den Hilfeartikel von Yahoo. Er zeigt, wie Sie ein App-Passwort erstellen.\nErstellen Sie das App-Passwort und geben Sie einen beliebigen Namen ein, zum Beispiel BewerbungsPilot.\nKopieren Sie das Passwort, das Yahoo anzeigt.\nFügen Sie es unten ein.",
       "icloud": "Öffnen Sie mit dem Link unten die Apple-Hilfeseite. Sie zeigt, wie Sie ein app-spezifisches Passwort erstellen (Ihre Apple-ID braucht die Zwei-Faktor-Authentifizierung).\nGeben Sie einen beliebigen Namen ein, zum Beispiel BewerbungsPilot.\nKopieren Sie das Passwort, das Apple anzeigt.\nFügen Sie es unten ein.",
       "custom": "Suchen Sie in der Hilfe Ihres E-Mail-Anbieters nach „SMTP-Server“ — Sie brauchen den Servernamen und den Port.\nGeben Sie beides im vorherigen Schritt ein.\nWenn Ihr Anbieter App-Passwörter anbietet, erstellen Sie eines. Sonst genügt Ihr normales Passwort.\nGeben Sie das Passwort unten ein."
     }
@@ -391,7 +391,7 @@
     "BAD_REQUEST": { "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
     "NOT_FOUND": { "message": "Diese Seite gibt es nicht.", "hint": "Gehen Sie zurück zur Startseite." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot läuft nicht.", "hint": "Starten Sie es erneut über die Verknüpfung auf Ihrem Desktop." },
-    "MAIL_NOT_CONFIGURED": { "message": "Ihre E-Mail ist noch nicht verbunden.", "hint": "Öffnen Sie Einstellungen → E-Mail und verbinden Sie Ihr Postfach (das dauert etwa 5 Minuten)." },
+    "MAIL_NOT_CONFIGURED": { "message": "Ihre E-Mail ist noch nicht verbunden.", "hint": "Öffnen Sie Einstellungen → E-Mail und verbinden Sie Ihr Postfach." },
     "MAIL_AUTH": { "message": "Ihr E-Mail-Anbieter hat das Passwort nicht akzeptiert.", "hint": "Verwenden Sie ein App-Passwort, nicht Ihr normales Passwort — in den E-Mail-Einstellungen steht, wie Sie eines erstellen." },
     "MAIL_CONNECT": { "message": "Wir konnten Ihren E-Mail-Server nicht erreichen.", "hint": "Prüfen Sie Ihre Internetverbindung. Wenn es weiterhin auftritt, prüfen Sie Server und Port in den E-Mail-Einstellungen." },
     "MAIL_REJECTED": { "message": "Ihr E-Mail-Server hat diese E-Mail abgelehnt.", "hint": "Prüfen Sie die Adresse des Empfängers. Wenn die Anhänge groß sind, lassen Sie einen weg und versuchen Sie es erneut." },

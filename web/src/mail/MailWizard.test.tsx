@@ -65,9 +65,24 @@ describe('MailWizard', () => {
     expect(await screen.findByText('Done! Check your inbox for the test email.')).toBeInTheDocument();
     expect(putBodies(f)).toEqual([{
       address: 'max@gmail.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl',
-      user: 'max@gmail.com', password: 'abcd efgh', language: 'en',
+      user: 'max@gmail.com', password: 'abcdefgh', language: 'en',
     }]);
     expect(calls).toEqual([connected]);
+  });
+
+  it('sends the password verbatim (spaces kept) for an own server', async () => {
+    const f = routes({ 'PUT /api/mail/settings': () => ({ body: connected }) });
+    const user = userEvent.setup();
+    render(<MailWizard initial={none} onSaved={() => {}} />);
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@example.com');
+    await user.type(screen.getByLabelText(/^Your name as the sender/), 'Max');
+    await user.type(await screen.findByLabelText('Outgoing mail server (SMTP)'), 'mail.example.com');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.type(screen.getByLabelText('Password'), 'ab cd');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Send a test email and save' }));
+    await screen.findByText('Done! Check your inbox for the test email.');
+    expect(putBodies(f)[0]).toMatchObject({ host: 'mail.example.com', password: 'ab cd' });
   });
 
   it('a failed test shows the error and keeps the entered values', async () => {

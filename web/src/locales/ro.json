@@ -40,7 +40,7 @@
       "error": { "title": "Claude nu a răspuns", "hint": "Verificați conexiunea la internet și faceți clic pe „Verificați din nou”." }
     },
     "profile": { "title": "Profilul dumneavoastră", "body": "Încărcați CV-ul dumneavoastră sau completați datele singur/singură, apoi răspundeți la câteva întrebări scurte. Puteți face acest lucru și mai târziu, la secțiunea „Profil”." },
-    "email": { "title": "E-mailul dumneavoastră", "body": "Conectați e-mailul dumneavoastră, astfel încât BewerbungsPilot să poată trimite cererile aprobate de dumneavoastră. Durează aproximativ 5 minute — sau săriți peste acest pas și faceți-l mai târziu în Setări." },
+    "email": { "title": "E-mailul dumneavoastră", "body": "Conectați e-mailul dumneavoastră, astfel încât BewerbungsPilot să poată trimite cererile aprobate de dumneavoastră. Puteți și să săriți peste acest pas și să-l faceți mai târziu în Setări." },
     "done": { "title": "Totul este pregătit", "body": "Elementele de bază sunt gata. Deschideți ghidul oricând pentru a vedea ce urmează.", "finish": "Finalizare" }
   },
   "guide": {
@@ -104,11 +104,11 @@
     "disconnectConfirm": "Deconectați e-mailul dumneavoastră? Parola salvată este ștearsă.",
     "disconnectYes": "Da, deconectați",
     "help": {
-      "gmail": "Deschideți cu linkul de mai jos pagina de securitate a contului Google și verificați dacă verificarea în doi pași este activată.\nDeschideți pagina „Parole pentru aplicații” și scrieți un nume oarecare, de exemplu BewerbungsPilot.\nGoogle afișează o parolă de 16 litere. Copiați-o.\nLipiți-o mai jos. Spațiile nu contează.",
-      "gmx": "Autentificați-vă în browser în căsuța dumneavoastră GMX și deschideți setările.\nVerificați dacă trimiterea din alte programe de e-mail este permisă (POP3/IMAP).\nDacă folosiți autentificarea în doi pași, creați o parolă de aplicație în setările de securitate. Altfel, parola dumneavoastră obișnuită GMX este suficientă.\nIntroduceți parola mai jos.",
-      "webde": "Autentificați-vă în browser în căsuța dumneavoastră WEB.DE și deschideți setările.\nVerificați dacă trimiterea din alte programe de e-mail este permisă (POP3/IMAP).\nDacă folosiți autentificarea în doi pași, creați o parolă de aplicație în setările de securitate. Altfel, parola dumneavoastră obișnuită WEB.DE este suficientă.\nIntroduceți parola mai jos.",
+      "gmail": "Deschideți cu linkul de mai jos pagina „Parole pentru aplicații”. Dacă Google vă cere, autentificați-vă — pentru contul dumneavoastră trebuie activată verificarea în doi pași.\nScrieți un nume oarecare pentru parolă, de exemplu BewerbungsPilot.\nGoogle afișează o parolă de 16 litere. Copiați-o.\nLipiți-o mai jos. Spațiile nu contează.",
+      "gmx": "Autentificați-vă în browser în căsuța dumneavoastră GMX și deschideți setările.\nVerificați dacă accesul din programele de e-mail este permis.\nDacă folosiți autentificarea în doi pași, creați o parolă de aplicație în setările de securitate. Altfel, parola dumneavoastră obișnuită GMX este suficientă.\nIntroduceți parola mai jos.",
+      "webde": "Autentificați-vă în browser în căsuța dumneavoastră WEB.DE și deschideți setările.\nVerificați dacă accesul din programele de e-mail este permis.\nDacă folosiți autentificarea în doi pași, creați o parolă de aplicație în setările de securitate. Altfel, parola dumneavoastră obișnuită WEB.DE este suficientă.\nIntroduceți parola mai jos.",
       "tonline": "Deschideți cu linkul de mai jos pagina de ajutor Telekom și autentificați-vă în contul de client.\nSetați o parolă de e-mail separată pentru programele externe (nu este parola dumneavoastră obișnuită Telekom).\nCopiați această parolă.\nLipiți-o mai jos.",
-      "yahoo": "Deschideți cu linkul de mai jos pagina de securitate a contului Yahoo.\nCreați o parolă de aplicație și scrieți un nume oarecare, de exemplu BewerbungsPilot.\nCopiați parola afișată de Yahoo.\nLipiți-o mai jos.",
+      "yahoo": "Deschideți cu linkul de mai jos articolul de ajutor Yahoo. El arată cum creați o parolă de aplicație.\nCreați parola de aplicație și scrieți un nume oarecare, de exemplu BewerbungsPilot.\nCopiați parola afișată de Yahoo.\nLipiți-o mai jos.",
       "icloud": "Deschideți cu linkul de mai jos pagina de ajutor Apple. Ea arată cum creați o parolă pentru o singură aplicație (contul dumneavoastră Apple necesită autentificare în doi factori).\nScrieți un nume oarecare, de exemplu BewerbungsPilot.\nCopiați parola afișată de Apple.\nLipiți-o mai jos.",
       "custom": "Căutați în ajutorul furnizorului dumneavoastră de e-mail „server SMTP” — aveți nevoie de numele serverului și de port.\nIntroduceți-le la pasul anterior.\nDacă furnizorul oferă parole de aplicație, creați una. Altfel, parola dumneavoastră obișnuită este suficientă.\nIntroduceți parola mai jos."
     }
@@ -391,7 +391,7 @@
     "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
     "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nu rulează.", "hint": "Porniți-l din nou cu ajutorul comenzii rapide de pe desktop." },
-    "MAIL_NOT_CONFIGURED": { "message": "Poșta dvs. nu este încă conectată.", "hint": "Deschideți Setări → E-mail și conectați-vă căsuța poștală (durează aproximativ 5 minute)." },
+    "MAIL_NOT_CONFIGURED": { "message": "Poșta dvs. nu este încă conectată.", "hint": "Deschideți Setări → E-mail și conectați-vă căsuța poștală." },
     "MAIL_AUTH": { "message": "Furnizorul dvs. de e-mail nu a acceptat parola.", "hint": "Folosiți o parolă de aplicație, nu parola obișnuită — setările de e-mail arată cum se creează una." },
     "MAIL_CONNECT": { "message": "Nu am putut contacta serverul dvs. de e-mail.", "hint": "Verificați conexiunea la internet. Dacă problema persistă, verificați serverul și portul din setările de e-mail." },
     "MAIL_REJECTED": { "message": "Serverul dvs. de e-mail a refuzat acest mesaj.", "hint": "Verificați adresa destinatarului. Dacă atașamentele sunt mari, renunțați la unul și încercați din nou." },

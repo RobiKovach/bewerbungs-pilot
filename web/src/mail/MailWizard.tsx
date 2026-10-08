@@ -72,7 +72,8 @@ export function MailWizard({ initial, onSaved, onCancel }: Props) {
         port: provider ? provider.port : portNumber,
         security: provider ? provider.security : security,
         user: effectiveUser,
-        ...(password ? { password } : {}),
+        // Known provider: app passwords are shown with spaces (Google), so strip them. Own server: send as typed.
+        ...(password ?{ password: provider ? password.replace(/\s+/g, '') : password } : {}),
         language: i18n.language as Language,
       });
       setDone(true);

@@ -40,7 +40,7 @@
       "error": { "title": "Claude did not answer", "hint": "Check your internet connection and click \"Check again\"." }
     },
     "profile": { "title": "Your profile", "body": "Upload your CV or fill in your details, then answer a few short questions. You can also do this later under \"Profile\"." },
-    "email": { "title": "Your email", "body": "Connect your email so BewerbungsPilot can send the applications you approved. It takes about 5 minutes — or skip it and do it later in Settings." },
+    "email": { "title": "Your email", "body": "Connect your email so BewerbungsPilot can send the applications you approved. You can also skip this and do it later in Settings." },
     "done": { "title": "All set", "body": "The basics are ready. Open the guide at any time to see what comes next.", "finish": "Finish" }
   },
   "guide": {
@@ -104,11 +104,11 @@
     "disconnectConfirm": "Disconnect your email? The saved password is deleted.",
     "disconnectYes": "Yes, disconnect",
     "help": {
-      "gmail": "Open your Google account security page with the link below and make sure 2-step verification is switched on.\nOpen the \"App passwords\" page and type any name, for example BewerbungsPilot.\nGoogle shows a password of 16 letters. Copy it.\nPaste it below. The spaces do not matter.",
-      "gmx": "Log in to your GMX mailbox in the browser and open its settings.\nMake sure sending from other email programs is allowed (POP3/IMAP).\nIf you use 2-step login, create an app password in the security settings. Otherwise your normal GMX password works.\nEnter the password below.",
-      "webde": "Log in to your WEB.DE mailbox in the browser and open its settings.\nMake sure sending from other email programs is allowed (POP3/IMAP).\nIf you use 2-step login, create an app password in the security settings. Otherwise your normal WEB.DE password works.\nEnter the password below.",
+      "gmail": "Open the \"App passwords\" page with the link below. If Google asks, sign in — 2-step verification must be switched on for your account.\nType any name for the password, for example BewerbungsPilot.\nGoogle shows a password of 16 letters. Copy it.\nPaste it below. The spaces do not matter.",
+      "gmx": "Log in to your GMX mailbox in the browser and open its settings.\nMake sure access from email programs is allowed.\nIf you use 2-step login, create an app password in the security settings. Otherwise your normal GMX password works.\nEnter the password below.",
+      "webde": "Log in to your WEB.DE mailbox in the browser and open its settings.\nMake sure access from email programs is allowed.\nIf you use 2-step login, create an app password in the security settings. Otherwise your normal WEB.DE password works.\nEnter the password below.",
       "tonline": "Open the Telekom help page with the link below and sign in to your customer account.\nSet a separate email password for external programs (it is not your normal Telekom password).\nCopy this password.\nPaste it below.",
-      "yahoo": "Open your Yahoo account security page with the link below.\nCreate an app password and type any name, for example BewerbungsPilot.\nCopy the password Yahoo shows.\nPaste it below.",
+      "yahoo": "Open the Yahoo help article with the link below. It shows how to create an app password.\nCreate the app password and type any name, for example BewerbungsPilot.\nCopy the password Yahoo shows.\nPaste it below.",
       "icloud": "Open the Apple help page with the link below. It shows how to create an app-specific password (your Apple account needs two-factor authentication).\nType any name, for example BewerbungsPilot.\nCopy the password Apple shows.\nPaste it below.",
       "custom": "Look in your email provider's help for \"SMTP server\" — you need the server name and the port.\nEnter them on the previous step.\nIf your provider offers app passwords, create one. Otherwise your normal password works.\nEnter the password below."
     }
@@ -391,7 +391,7 @@
     "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
     "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
-    "MAIL_NOT_CONFIGURED": { "message": "Your email is not connected yet.", "hint": "Open Settings → Email and connect your mailbox (it takes about 5 minutes)." },
+    "MAIL_NOT_CONFIGURED": { "message": "Your email is not connected yet.", "hint": "Open Settings → Email and connect your mailbox." },
     "MAIL_AUTH": { "message": "Your email provider did not accept the password.", "hint": "Use an app password, not your normal password — the email settings show how to create one." },
     "MAIL_CONNECT": { "message": "We could not reach your email server.", "hint": "Check your internet connection. If it keeps happening, check the server and port in the email settings." },
     "MAIL_REJECTED": { "message": "Your email server refused this email.", "hint": "Check the recipient's address. If the attachments are large, leave one out and try again." },
