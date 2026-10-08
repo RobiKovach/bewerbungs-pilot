@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Language, PublishedWithinDays, Settings, SettingsPatch } from '@bp/shared';
+import type { Language, MailSettings, PublishedWithinDays, Settings, SettingsPatch } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { CorruptJsonError, readJson, writeJsonAtomic } from './atomic.js';
 
@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboarding: { currentStep: null, completed: false },
   llm: { timeoutSec: 180 },
   vacancies: { publishedWithinDays: 14 },
+  mail: null,
 };
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
@@ -58,6 +59,26 @@ export class SettingsStore {
     this.current = next;
     return this.get();
   }
+
+  setMail(mail: MailSettings | null): Settings {
+    const next: Settings = { ...this.current, mail: mail ? { ...mail } : null };
+    try {
+      writeJsonAtomic(this.file, next);
+    } catch (err) {
+      throw new AppError('DATA_WRITE_FAILED', String(err));
+    }
+    this.current = next;
+    return this.get();
+  }
+}
+
+function normalizeMail(raw: unknown): MailSettings | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const { address, senderName, host, port, security, user, provider } = raw as Record<string, unknown>;
+  if (typeof address !== 'string' || typeof senderName !== 'string' || typeof host !== 'string' || typeof user !== 'string' || typeof provider !== 'string') return null;
+  if (typeof port !== 'number' || !Number.isInteger(port) || port < 1 || port > 65535) return null;
+  if (security !== 'ssl' && security !== 'starttls') return null;
+  return { address, senderName, host, port, security, user, provider };
 }
 
 function normalize(raw: unknown): Settings {
@@ -68,6 +89,7 @@ function normalize(raw: unknown): Settings {
     onboarding?: { currentStep?: unknown; completed?: unknown };
     llm?: { timeoutSec?: unknown };
     vacancies?: { publishedWithinDays?: unknown };
+    mail?: unknown;
   };
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
@@ -82,5 +104,6 @@ function normalize(raw: unknown): Settings {
     vacancies: {
       publishedWithinDays: PUBLISHED_WITHIN_DAYS.find((n) => n === r.vacancies?.publishedWithinDays) ?? d.vacancies.publishedWithinDays,
     },
+    mail: normalizeMail(r.mail),
   };
 }

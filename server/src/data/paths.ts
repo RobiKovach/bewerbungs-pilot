@@ -6,7 +6,7 @@ export interface DataPaths {
   root: string; settings: string; server: string; lock: string; logs: string; tmp: string;
   profile: string; profileFile: string; profileFiles: string;
   vacancies: string; vacanciesFile: string; vacancyTexts: string; searchState: string;
-  applications: string;
+  applications: string; mailSecret: string;
 }
 
 export function resolveDataRoot(env: NodeJS.ProcessEnv = process.env): string {
@@ -31,6 +31,7 @@ export function dataPaths(root: string): DataPaths {
     vacancyTexts: path.join(root, 'vacancies', 'texts'),
     searchState: path.join(root, 'vacancies', 'search-state.json'),
     applications: path.join(root, 'applications'),
+    mailSecret: path.join(root, 'mail-secret.bin'),
   };
 }
 

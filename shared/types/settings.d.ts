@@ -2,12 +2,18 @@ import type { PublishedWithinDays } from './vacancy.js';
 
 export type Language = 'uk' | 'en' | 'de' | 'ru' | 'pl' | 'ro';
 
+export type MailSecurity = 'ssl' | 'starttls';
+export interface MailSettings { address: string; senderName: string; host: string; port: number; security: MailSecurity; user: string; provider: string }
+export interface MailProvider { id: string; label: string; domains: string[]; host: string; port: number; security: MailSecurity; helpUrl: string }
+export interface MailSettingsView { mail: MailSettings | null; passwordSaved: boolean }
+
 export interface Settings {
   schemaVersion: 1;
   language: Language | null;
   onboarding: { currentStep: string | null; completed: boolean };
   llm: { timeoutSec: number };
   vacancies: { publishedWithinDays: PublishedWithinDays };
+  mail: MailSettings | null;
 }
 
 export interface SettingsPatch {

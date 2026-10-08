@@ -116,3 +116,30 @@ describe('settings: vacancies.publishedWithinDays', () => {
     expect(s.patch({ vacancies: { publishedWithinDays: 30 } })).toMatchObject({ language: 'uk', vacancies: { publishedWithinDays: 30 } });
   });
 });
+
+describe('settings: mail', () => {
+  const fresh = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp-settings-')), 'settings.json');
+  const mail = { address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 587, security: 'starttls' as const, user: 'max@example.com', provider: 'gmx' };
+  it('loads with mail null when settings.json has no mail', () => {
+    const file = fresh();
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, language: 'de' }));
+    expect(new SettingsStore(file).load().mail).toBeNull();
+  });
+  it('treats an invalid mail block as null', () => {
+    const file = fresh();
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: { ...mail, port: 'x' } }));
+    expect(new SettingsStore(file).load().mail).toBeNull();
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: { ...mail, security: 'none' } }));
+    expect(new SettingsStore(file).load().mail).toBeNull();
+  });
+  it('setMail writes, reloads and clears; patch keeps it', () => {
+    const file = fresh();
+    const s = new SettingsStore(file);
+    s.load();
+    expect(s.setMail(mail).mail).toEqual(mail);
+    s.patch({ language: 'uk' });
+    expect(new SettingsStore(file).load().mail).toEqual(mail);
+    expect(s.setMail(null).mail).toBeNull();
+    expect(new SettingsStore(file).load().mail).toBeNull();
+  });
+});
