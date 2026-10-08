@@ -346,6 +346,10 @@
     "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
     "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
+    "MAIL_NOT_CONFIGURED": { "message": "Your email is not connected yet.", "hint": "Open Settings → Email and connect your mailbox (it takes about 5 minutes)." },
+    "MAIL_AUTH": { "message": "Your email provider did not accept the password.", "hint": "Use an app password, not your normal password — the email settings show how to create one." },
+    "MAIL_CONNECT": { "message": "We could not reach your email server.", "hint": "Check your internet connection. If it keeps happening, check the server and port in the email settings." },
+    "MAIL_REJECTED": { "message": "Your email server refused this email.", "hint": "Check the recipient's address. If the attachments are large, leave one out and try again." },
     "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." },
     "reasons": {
       "cvTooLittleText": "The file contains almost no text ({{chars}} characters). It is probably empty, or the text is inside a picture.",

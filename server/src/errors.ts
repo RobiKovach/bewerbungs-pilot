@@ -41,7 +41,11 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'BROWSER_MISSING': return 503;
     case 'LETTER_TOO_LONG':
     case 'PACKAGE_EXISTS': return 409;
-    case 'PACKAGE_RULES_BROKEN': return 502;
+    case 'PACKAGE_RULES_BROKEN':
+    case 'MAIL_AUTH':
+    case 'MAIL_REJECTED': return 502;
+    case 'MAIL_NOT_CONFIGURED': return 409;
+    case 'MAIL_CONNECT': return 503;
     default: return 500;
   }
 }

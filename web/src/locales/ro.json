@@ -346,6 +346,10 @@
     "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
     "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nu rulează.", "hint": "Porniți-l din nou cu ajutorul comenzii rapide de pe desktop." },
+    "MAIL_NOT_CONFIGURED": { "message": "Poșta dvs. nu este încă conectată.", "hint": "Deschideți Setări → E-mail și conectați-vă căsuța poștală (durează aproximativ 5 minute)." },
+    "MAIL_AUTH": { "message": "Furnizorul dvs. de e-mail nu a acceptat parola.", "hint": "Folosiți o parolă de aplicație, nu parola obișnuită — setările de e-mail arată cum se creează una." },
+    "MAIL_CONNECT": { "message": "Nu am putut contacta serverul dvs. de e-mail.", "hint": "Verificați conexiunea la internet. Dacă problema persistă, verificați serverul și portul din setările de e-mail." },
+    "MAIL_REJECTED": { "message": "Serverul dvs. de e-mail a refuzat acest mesaj.", "hint": "Verificați adresa destinatarului. Dacă atașamentele sunt mari, renunțați la unul și încercați din nou." },
     "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
     "reasons": {
       "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",

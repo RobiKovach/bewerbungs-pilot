@@ -346,6 +346,10 @@
     "BAD_REQUEST": { "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
     "NOT_FOUND": { "message": "Diese Seite gibt es nicht.", "hint": "Gehen Sie zurück zur Startseite." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot läuft nicht.", "hint": "Starten Sie es erneut über die Verknüpfung auf Ihrem Desktop." },
+    "MAIL_NOT_CONFIGURED": { "message": "Ihre E-Mail ist noch nicht verbunden.", "hint": "Öffnen Sie Einstellungen → E-Mail und verbinden Sie Ihr Postfach (das dauert etwa 5 Minuten)." },
+    "MAIL_AUTH": { "message": "Ihr E-Mail-Anbieter hat das Passwort nicht akzeptiert.", "hint": "Verwenden Sie ein App-Passwort, nicht Ihr normales Passwort — in den E-Mail-Einstellungen steht, wie Sie eines erstellen." },
+    "MAIL_CONNECT": { "message": "Wir konnten Ihren E-Mail-Server nicht erreichen.", "hint": "Prüfen Sie Ihre Internetverbindung. Wenn es weiterhin auftritt, prüfen Sie Server und Port in den E-Mail-Einstellungen." },
+    "MAIL_REJECTED": { "message": "Ihr E-Mail-Server hat diese E-Mail abgelehnt.", "hint": "Prüfen Sie die Adresse des Empfängers. Wenn die Anhänge groß sind, lassen Sie einen weg und versuchen Sie es erneut." },
     "UNKNOWN": { "message": "Etwas ist schiefgelaufen.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
     "reasons": {
       "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",

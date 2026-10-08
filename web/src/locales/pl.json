@@ -346,6 +346,10 @@
     "BAD_REQUEST": { "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nie jest uruchomiony.", "hint": "Uruchom go ponownie za pomocą skrótu na pulpicie." },
+    "MAIL_NOT_CONFIGURED": { "message": "Twoja poczta nie jest jeszcze połączona.", "hint": "Otwórz Ustawienia → Poczta i połącz swoją skrzynkę (zajmie to około 5 minut)." },
+    "MAIL_AUTH": { "message": "Dostawca poczty nie przyjął hasła.", "hint": "Użyj hasła aplikacji, a nie zwykłego hasła — w ustawieniach poczty jest pokazane, jak je utworzyć." },
+    "MAIL_CONNECT": { "message": "Nie udało się połączyć z Twoim serwerem poczty.", "hint": "Sprawdź połączenie z internetem. Jeśli problem się powtarza, sprawdź serwer i port w ustawieniach poczty." },
+    "MAIL_REJECTED": { "message": "Twój serwer poczty odrzucił tę wiadomość.", "hint": "Sprawdź adres odbiorcy. Jeśli załączniki są duże, pomiń jeden z nich i spróbuj ponownie." },
     "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." },
     "reasons": {
       "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
