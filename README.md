@@ -4,10 +4,10 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.5 — foundation, profile, job offers and application packages.** The app installs, runs, speaks six
-languages, walks you through the first steps, talks to Claude, builds your profile from your CV and your own stories,
-finds job offers that fit your profile and writes an application package (cover letter + tailored CV) for the offers
-you choose. Sending applications from your own email is being built next.
+**Status: v0.6 — foundation, profile, job offers, application packages, sending and statuses.** The app installs, runs,
+speaks six languages, walks you through the first steps, talks to Claude, builds your profile from your CV and your own
+stories, finds job offers that fit your profile, writes an application package (cover letter + tailored CV) for the
+offers you choose, sends it from your own email and keeps track of the status of every application.
 
 ## Requirements
 
@@ -73,6 +73,15 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
   approve the package. Any change after approving makes it a draft again.
 - Download the letter, the CV and your attachments one by one, or everything as one PDF. PDFs are made with
   Microsoft Edge or Google Chrome installed on your computer.
+
+## Email and sending
+
+- Connect your mailbox in Settings with an app password (a separate password for apps) and send a test email. Gmail,
+  GMX, WEB.DE, T-Online, Yahoo and iCloud are filled in automatically; other providers (e.g. Outlook.com) are entered by hand.
+- Send an approved package from the app: you see and can edit the email first, and a copy goes to your own mailbox.
+- Applied on a company website instead? Mark the application as submitted.
+- Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
+  A package that was sent can no longer be changed.
 
 ## Development
 
