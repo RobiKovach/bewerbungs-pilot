@@ -367,7 +367,9 @@
       "noStory": "Nie masz jeszcze żadnej sprawdzonej historii, którą można opowiadać pracodawcom. Dodaj jedną w profilu w sekcji „Historie do listów motywacyjnych”.",
       "attachmentUnreadable": "Załącznika „{{name}}” nie można odczytać (uszkodzony lub chroniony hasłem). Usuń go z tego pakietu lub zastąp w profilu.",
       "packageBusy": "Claude pracuje teraz nad tym pakietem. Poczekaj, aż skończy.",
-      "packageSent": "Ta aplikacja została już wysłana lub złożona — nie można jej już zmienić."
+      "packageSent": "Ta aplikacja została już wysłana lub złożona — nie można jej już zmienić.",
+      "packageSending": "Ta aplikacja jest właśnie wysyłana. Poczekaj chwilę.",
+      "packageChanged": "Aplikację zmieniono podczas przygotowania wysyłki. Nic nie wysłano — sprawdź ją i spróbuj ponownie."
     }
   },
   "vacancies": {

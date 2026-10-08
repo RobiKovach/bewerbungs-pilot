@@ -52,4 +52,6 @@ export type ErrorReason =
   | 'noStory'
   | 'attachmentUnreadable'
   | 'packageBusy'
-  | 'packageSent';
+  | 'packageSent'
+  | 'packageSending'
+  | 'packageChanged';

@@ -367,7 +367,9 @@
       "noStory": "Nu aveți încă nicio poveste verificată care poate fi spusă angajatorilor. Adăugați una în profil, la secțiunea „Povești pentru scrisorile de intenție”.",
       "attachmentUnreadable": "Atașamentul „{{name}}” nu poate fi citit (deteriorat sau protejat cu parolă). Eliminați-l din acest pachet sau înlocuiți-l în profil.",
       "packageBusy": "Claude lucrează chiar acum la acest pachet. Vă rugăm să așteptați până termină.",
-      "packageSent": "Această candidatură a fost deja trimisă sau depusă – nu mai poate fi modificată."
+      "packageSent": "Această candidatură a fost deja trimisă sau depusă – nu mai poate fi modificată.",
+      "packageSending": "Această candidatură se trimite chiar acum. Vă rugăm să așteptați un moment.",
+      "packageChanged": "Candidatura a fost modificată în timp ce se pregătea trimiterea. Nu s-a trimis nimic – verificați-o și încercați din nou."
     }
   },
   "vacancies": {

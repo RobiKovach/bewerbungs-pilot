@@ -1,9 +1,10 @@
+import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import type { ApplicationView } from '@bp/shared';
 import { AppError } from '../src/errors.js';
 import type { Logger } from '../src/log.js';
 import { H, makeApp } from './helpers/app.js';
-import { packageClaude, readyPackageProfile } from './helpers/applications.js';
+import { makePdf, packageClaude, readyPackageProfile } from './helpers/applications.js';
 import { vacancy } from './helpers/vacancies.js';
 
 const OFFER = 'Wir suchen einen Webentwickler (m/w/d) für unser Team in Hamburg. '.repeat(12);
@@ -15,9 +16,14 @@ const post = (ctx: Ctx, url: string, payload: unknown) => ctx.app.inject({ metho
 const sendTo = (ctx: Ctx, id: string, payload: unknown = MAIL_BODY) => post(ctx, `/api/applications/${id}/send`, payload);
 const viewOf = async (ctx: Ctx, id: string) => (await ctx.app.inject({ method: 'GET', url: `/api/applications/${id}` })).json() as ApplicationView;
 
-async function setup(opts: { connected?: boolean; approve?: boolean; logger?: Logger; contact?: boolean } = {}) {
+async function setup(opts: { connected?: boolean; approve?: boolean; logger?: Logger; contact?: boolean; docs?: string[] } = {}) {
   const ctx = await makeApp({ provider: packageClaude(), logger: opts.logger });
-  ctx.profileStore.update((p) => { Object.assign(p, readyPackageProfile()); });
+  const docIds = (opts.docs ?? []).map((_, i) => `${i + 1}1111111-2222-4333-8444-555555555555`);
+  ctx.profileStore.update((p) => {
+    Object.assign(p, readyPackageProfile());
+    p.documents = (opts.docs ?? []).map((label, i) => ({ id: docIds[i], ext: '.pdf' as const, originalName: `${label}.pdf`, size: 100, uploadedAt: '2026-09-01T10:00:00.000Z', label, attachAlways: true }));
+  });
+  for (const docId of docIds) fs.writeFileSync(ctx.profileFiles.pathOf({ id: docId, ext: '.pdf' }), await makePdf(1));
   ctx.vacancyStore.add(vacancy({
     id: 'fav1', status: 'favorite', company: 'Muster GmbH', locations: ['Hamburg'],
     ...(opts.contact ? { contact: { email: 'jobs@muster.example', salutation: 'Frau', name: 'Weiler' } } : {}),
@@ -103,6 +109,54 @@ describe('send', () => {
     expect(r.statusCode).toBe(409);
     expect(r.json().error.reason).toBe('packageBusy');
     expect(ctx.mailer.sent).toHaveLength(0);
+  });
+
+  it('while the email is in flight, edits, status changes and Claude jobs are refused; the sent package keeps the emailed letter', async () => {
+    const { ctx, id } = await setup();
+    const letter = (await viewOf(ctx, id)).application.letter;
+    ctx.mailer.delayMs = 80;
+    const inFlight = sendTo(ctx, id);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const attempts = [
+      ctx.app.inject({ method: 'PATCH', url: `/api/applications/${id}/letter`, headers: H, payload: { closing: 'Ciao' } }),
+      post(ctx, `/api/applications/${id}/submitted`, {}),
+      post(ctx, `/api/applications/${id}/unapprove`, {}),
+      post(ctx, `/api/applications/${id}/revise`, { instruction: 'kürzer' }),
+      post(ctx, `/api/applications/${id}/refresh-cv`, { keepProfil: true }),
+      post(ctx, `/api/applications/${id}/recreate`, { language: 'en' }),
+    ];
+    for (const res of await Promise.all(attempts)) {
+      expect(res.statusCode).toBe(409);
+      expect(res.json().error.reason).toBe('packageSending');
+    }
+    expect((await inFlight).statusCode).toBe(200);
+    const app = (await viewOf(ctx, id)).application;
+    expect(app.status).toBe('sent');
+    expect(app.letter).toEqual(letter);
+    expect(app.sentEmail).not.toBeNull();
+    expect(app.history.map((h) => h.kind)).toEqual(['approved', 'sent']);
+  });
+
+  it('a package changed while it was printed is not sent: own reason, nothing recorded', async () => {
+    const { ctx, id } = await setup();
+    const print = ctx.printer.print.bind(ctx.printer);
+    ctx.printer.print = async (html: string) => {
+      ctx.applicationStore.update(id, (p) => { p.updatedAt = '2030-01-01T00:00:00.000Z'; });
+      return print(html);
+    };
+    const r = await sendTo(ctx, id);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('packageChanged');
+    expect(ctx.mailer.sent).toHaveLength(0);
+    expect((await viewOf(ctx, id)).application).toMatchObject({ status: 'approved', sentAt: null, sentEmail: null });
+  });
+
+  it('attachment names are unique within the email', async () => {
+    const { ctx, id } = await setup({ docs: ['Zeugnis', 'Zeugnis', 'Lebenslauf Max Mustermann'] });
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    const names = ctx.mailer.sent[0].mail.attachments.map((a) => a.filename);
+    expect(names).toEqual(['Anschreiben_Max_Mustermann_Muster_GmbH.pdf', 'Lebenslauf_Max_Mustermann.pdf', 'Zeugnis.pdf', 'Zeugnis_2.pdf', 'Lebenslauf_Max_Mustermann_2.pdf']);
+    expect((await viewOf(ctx, id)).application.sentEmail?.attachments).toEqual(names);
   });
 
   it('the log has no recipient, subject or body', async () => {

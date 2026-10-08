@@ -83,7 +83,10 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   const now = d.now ?? (() => new Date());
   const view = (id: string) => toView(d.store.require(id), d.profile());
   const editable = (id: string) => assertEditable(d.store.require(id));
+  /** Packages with an email in flight: nothing may change them until SMTP answers. */
+  const sending = new Set<string>();
   const notBusy = (id: string) => {
+    if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageSending');
     if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
   };
   const pagesOf = async (id: string) => countPages(await d.printer.print(letterHtml(d.store.require(id), now())));
@@ -175,18 +178,21 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   app.post('/api/applications/:id/revise', { schema: { params: idParams, body: reviseBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const { instruction } = req.body as { instruction: string };
+    notBusy(id);
     return reply.code(202).send(d.job.start({ kind: 'revise', applicationId: id, instruction: instruction.trim() }));
   });
 
   app.post('/api/applications/:id/refresh-cv', { schema: { params: idParams, body: refreshBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const { keepProfil, keepHeadline } = req.body as { keepProfil: boolean; keepHeadline?: boolean };
+    notBusy(id);
     return reply.code(202).send(d.job.start({ kind: 'refreshCv', applicationId: id, keepProfil, keepHeadline: keepHeadline ?? false }));
   });
 
   app.post('/api/applications/:id/recreate', { schema: { params: idParams, body: languageBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const { language } = req.body as { language: DocLanguage };
+    notBusy(id);
     return reply.code(202).send(d.job.start({ kind: 'recreate', applicationId: id, language }));
   });
 
@@ -306,17 +312,26 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   });
 
   // ---- Sending by email ----
-  const sending = new Set<string>();
   const docFileName = (doc: { label: string; originalName: string }) => `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`;
+  /** Makes names unique within one email: a repeat gets _2, _3 … before the extension (case-insensitive). */
+  const uniqueNames = <T extends { filename: string }>(files: T[]): T[] => {
+    const used = new Set<string>();
+    return files.map((f) => {
+      let name = f.filename;
+      for (let n = 2; used.has(name.toLowerCase()); n++) name = `${f.filename.replace(/\.pdf$/i, '')}_${n}.pdf`;
+      used.add(name.toLowerCase());
+      return { ...f, filename: name };
+    });
+  };
   /** The PDFs that would go into the email, freshly printed, with their file names. */
   const mailAttachments = async (id: string) => {
     const p = d.store.require(id);
     const n = fileNames(p.snapshot.personal.fullName, p.vacancy.company, p.language);
-    return [
+    return uniqueNames([
       { filename: n.letter, content: await d.printer.print(letterHtml(p, now())) },
       { filename: n.cv, content: await d.printer.print(cvHtml(p, photoOf(id))) },
       ...chosenDocs(id).map((doc) => ({ filename: docFileName(doc), content: fs.readFileSync(d.files.pathOf(doc)) })),
-    ];
+    ]);
   };
 
   app.get('/api/applications/:id/send-draft', { schema: { params: idParams } }, async (req) => {
@@ -340,7 +355,6 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const start = d.store.require(id);
     assertEditable(start);
     if (start.status !== 'approved') throw new AppError('CONFLICT', 'only an approved package can be sent');
-    if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageBusy');
     const config = d.settings.get().mail;
     if (!config) throw new AppError('MAIL_NOT_CONFIGURED', 'no mailbox connected');
     sending.add(id);
@@ -349,15 +363,15 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       if (password === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no password saved');
       const attachments = await mailAttachments(id);
       // Nothing may have changed the package while it was printed (no await between this check and the send call).
-      notBusy(id);
+      if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
       const current = d.store.require(id);
-      if (current.status !== 'approved' || current.updatedAt !== start.updatedAt) throw new AppError('CONFLICT', 'the package changed while it was being sent', 'packageBusy');
+      if (current.status !== 'approved' || current.updatedAt !== start.updatedAt) throw new AppError('CONFLICT', 'the package changed while it was being prepared', 'packageChanged');
       const { messageId } = await d.mailer.send(config, password, {
         from: { name: config.senderName, address: config.address }, to, bcc: config.address, subject, text: body, attachments,
       });
       const at = now().toISOString();
       d.store.update(id, (p) => {
-        if (isFrozen(p)) throw new AppError('CONFLICT', 'package was sent', 'packageSent');
+        if (p.status !== 'approved') throw new AppError('CONFLICT', 'package is no longer approved', 'packageChanged');
         addStatus(p, 'sent', at, { to, messageId });
         p.sentAt = at;
         p.sentEmail = { to, subject, body, attachments: attachments.map((a) => a.filename) };

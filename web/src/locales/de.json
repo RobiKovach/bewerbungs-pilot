@@ -367,7 +367,9 @@
       "noStory": "Sie haben noch keine geprüfte Geschichte, die Arbeitgebern erzählt werden darf. Fügen Sie in Ihrem Profil unter „Geschichten für Anschreiben“ eine hinzu.",
       "attachmentUnreadable": "Der Anhang „{{name}}“ kann nicht gelesen werden (beschädigt oder passwortgeschützt). Entfernen Sie ihn aus diesem Paket oder ersetzen Sie ihn in Ihrem Profil.",
       "packageBusy": "Claude arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist.",
-      "packageSent": "Diese Bewerbung wurde bereits versendet oder eingereicht – sie kann nicht mehr geändert werden."
+      "packageSent": "Diese Bewerbung wurde bereits versendet oder eingereicht – sie kann nicht mehr geändert werden.",
+      "packageSending": "Diese Bewerbung wird gerade versendet. Bitte warten Sie einen Moment.",
+      "packageChanged": "Die Bewerbung wurde während der Vorbereitung des Versands geändert. Es wurde nichts gesendet – bitte prüfen Sie sie und versuchen Sie es erneut."
     }
   },
   "vacancies": {
