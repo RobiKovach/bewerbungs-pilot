@@ -134,6 +134,7 @@ export const api = {
   markSubmitted: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/submitted`, {}),
   setStatus: (id: string, body: { status: OutcomeStatus; date: string; note?: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/status`, body),
   undoStatus: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/status/undo`, {}),
+  copyApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/copy`, {}),
   deleteApplication: (id: string) => request<{ ok: true }>('DELETE', `/api/applications/${encodeURIComponent(id)}`),
   sendDraft: (id: string) => request<SendDraft>('GET', `/api/applications/${encodeURIComponent(id)}/send-draft`),
   sendApplication: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/send`, mail),

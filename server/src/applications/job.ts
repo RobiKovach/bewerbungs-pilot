@@ -109,7 +109,8 @@ export class ApplicationJob {
     if (req.kind === 'create') {
       const v = this.d.vacancies.require(req.vacancyId);
       if (v.status !== 'favorite') throw new AppError('CONFLICT', `vacancy is ${v.status}, not favorite`);
-      const existing = this.d.store.byVacancy(v.id);
+      // Sent packages stay as they are; only one package per vacancy may still be edited.
+      const existing = this.d.store.editableByVacancy(v.id);
       if (existing) throw new AppError('PACKAGE_EXISTS', existing.id, undefined, { id: existing.id });
       assertPackageReady(profile);
       this.assertBrowser();

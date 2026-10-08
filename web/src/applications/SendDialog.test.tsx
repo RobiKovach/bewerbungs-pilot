@@ -79,4 +79,31 @@ describe('SendDialog', () => {
     await user.type(screen.getByLabelText(/^To/), 'a@b.de');
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
   });
+
+  it('a mistyped address shows its own message and switches Send off; the text stays', async () => {
+    const { f, user } = setup({}, draft({ to: '' }));
+    const to = await screen.findByLabelText(/^To/);
+    for (const bad of ['bewerbung@firma', 'a@b.de; c@d.de', 'max mustermann@example.com']) {
+      await user.clear(to);
+      await user.type(to, bad);
+      expect(screen.getByText('Please check the address — it should look like name@company.de (one address only).')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    }
+    expect(screen.getByLabelText('Message')).toHaveValue(draft().body);
+    await user.clear(to);
+    await user.type(to, 'jobs@muster.example');
+    expect(screen.queryByText(/Please check the address/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
+    expect(f.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
+  });
+
+  it('sent but not saved: a clear message and no "Try again"', async () => {
+    const { user } = setup({ 'POST /api/applications/app1/send': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'sentNotSaved' } } }) });
+    await screen.findByLabelText('Subject');
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText(/The email was sent, but the app could not save it\. Do not send it again/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+  });
 });

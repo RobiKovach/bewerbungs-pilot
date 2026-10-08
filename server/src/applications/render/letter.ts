@@ -1,4 +1,5 @@
 import type { ApplicationPackage } from '@bp/shared';
+import { isFrozen } from '../status.js';
 import { escapeHtml as e, formatDate, page } from './html.js';
 
 // DIN 5008 form B: 25 mm left / 20 mm right margin, address field from 45 mm, date right-aligned above the subject.
@@ -12,6 +13,14 @@ const CSS = `.letter{width:210mm;min-height:297mm;padding:27mm 20mm 20mm 25mm;fo
 .closing{margin:6mm 0 0}
 .signature{margin:0}`;
 
+/** The letter's date: a sent or submitted package keeps the day it went out; draft/approved = the day it is printed. */
+export function letterDate(p: ApplicationPackage, now: Date): Date {
+  if (!isFrozen(p)) return now;
+  const out = p.history.find((h) => h.kind === 'sent' || h.kind === 'submitted')?.at ?? p.sentAt;
+  const d = out ? new Date(out) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : now;
+}
+
 export function letterHtml(p: ApplicationPackage, now: Date): string {
   const s = p.snapshot.personal;
   const L = p.letter;
@@ -20,7 +29,7 @@ export function letterHtml(p: ApplicationPackage, now: Date): string {
   const body = `<div class="letter">
 <div class="sender">${sender.map(e).join('<br>')}</div>
 <div class="recipient">${L.recipient.map(e).join('<br>')}</div>
-<div class="place-date">${e([city, formatDate(now, p.language)].filter(Boolean).join(', '))}</div>
+<div class="place-date">${e([city, formatDate(letterDate(p, now), p.language)].filter(Boolean).join(', '))}</div>
 <p class="subject">${e(L.subject)}</p>
 <p class="salutation">${e(L.salutation)}</p>
 ${L.paragraphs.map((par) => `<p class="par">${e(par)}</p>`).join('\n')}

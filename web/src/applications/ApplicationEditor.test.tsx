@@ -277,6 +277,48 @@ describe('ApplicationEditor — sending and the frozen package', () => {
     await user.click(await screen.findByRole('button', { name: 'Back to draft' }));
     expect(await screen.findByText('This was changed in the meantime.')).toBeInTheDocument();
   });
+
+  it('connected but the password must be entered again: Send is off and says so', async () => {
+    setup({ 'GET /api/mail/settings': () => ({ body: { ...mail['GET /api/mail/settings']().body, passwordSaved: false } }) }, approved());
+    expect(await screen.findByText('Your email password needs to be entered again before you can send.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Enter the password again' })).toHaveAttribute('href', '#/settings');
+    expect(screen.queryByText('To send applications, please connect your email first.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+  });
+
+  it('the send window closes when the package goes back to draft behind it', async () => {
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [], totalSize: 1000, mailReady: true } }),
+      'POST /api/applications/app1/unapprove': () => ({ body: appView({}, { updatedAt: '2026-09-29T14:00:00.000Z' }) }),
+    }, approved());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Back to draft' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(await screen.findByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
+  it('"Copy as a new draft" on a sent package opens the new draft', async () => {
+    const { f, user } = setup({
+      ...mail,
+      'POST /api/applications/app1/copy': () => ({ body: appView({}, { id: 'app2' }) }),
+    }, sentView());
+    await user.click(await screen.findByRole('button', { name: 'Copy as a new draft' }));
+    await waitFor(() => expect(window.location.hash).toBe('#/applications/app2'));
+    expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/copy' && init?.method === 'POST')).toBe(true);
+  });
+
+  it('a refused copy shows why (another package of this offer is not sent yet)', async () => {
+    const { user } = setup({
+      ...mail,
+      'POST /api/applications/app1/copy': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'draftExists', params: { id: 'app2' } } } }),
+    }, sentView());
+    await user.click(await screen.findByRole('button', { name: 'Copy as a new draft' }));
+    expect(await screen.findByText(/already has a package that was not sent yet/)).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/applications/app1');
+  });
 });
 
 describe('ApplicationEditor — statuses', () => {

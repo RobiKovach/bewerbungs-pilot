@@ -5,6 +5,22 @@ const FROZEN = new Set(['sent', 'submitted', 'interview', 'rejected', 'offer', '
 /** Same six statuses as the server: once a package is sent it is never edited again. */
 export const isFrozen = (status: string) => FROZEN.has(status);
 
+/**
+ * The package each vacancy links to. A vacancy can have several (sent ones stay, a new one may follow): the one still
+ * being edited wins, else the newest. `editable` = not sent yet (then no new package can be created for it).
+ */
+export function packageLinks(list: readonly { id: string; vacancyId: string; status: string; createdAt: string }[]): Map<string, { id: string; editable: boolean }> {
+  const best = new Map<string, { id: string; status: string; createdAt: string }>();
+  for (const a of list) {
+    const cur = best.get(a.vacancyId);
+    const better = !cur
+      || (isFrozen(cur.status) && !isFrozen(a.status))
+      || (isFrozen(cur.status) === isFrozen(a.status) && a.createdAt > cur.createdAt);
+    if (better) best.set(a.vacancyId, a);
+  }
+  return new Map([...best].map(([v, a]) => [v, { id: a.id, editable: !isFrozen(a.status) }]));
+}
+
 const pad = (n: number) => String(n).padStart(2, '0');
 /** Local calendar day as YYYY-MM-DD, `offsetDays` from today (for the status date field). */
 export const localDay = (offsetDays = 0) => {

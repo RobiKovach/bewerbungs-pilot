@@ -98,6 +98,7 @@
     "notConnected": "Ihre E-Mail ist noch nicht verbunden. Ohne sie kann BewerbungsPilot keine Bewerbungen versenden.",
     "connect": "E-Mail verbinden",
     "connectedAs": "Verbunden: {{address}}",
+    "passwordAgain": "Ihr Passwort muss erneut eingegeben werden (zum Beispiel nach dem Wechsel auf einen anderen Computer oder ein anderes Windows-Konto). Klicken Sie auf „Ändern“.",
     "providerLine": "Anbieter: {{provider}}",
     "change": "Ändern",
     "disconnect": "Trennen",
@@ -276,7 +277,7 @@
     "toVacancies": "Zu den Stellenangeboten",
     "status": { "draft": "Entwurf", "approved": "Freigegeben", "sent": "Gesendet", "submitted": "Über die Website eingereicht", "interview": "Vorstellungsgespräch", "rejected": "Absage", "offer": "Angebot", "withdrawn": "Zurückgezogen" },
     "frozen": "Diese Bewerbung wurde gesendet — sie kann nicht mehr geändert werden. Herunterladen ist weiterhin möglich.",
-    "send": { "button": "Senden", "needMail": "Um Bewerbungen zu senden, verbinden Sie bitte zuerst Ihre E-Mail.", "needMailLink": "E-Mail verbinden", "title": "Bewerbung senden", "to": "An (E-Mail-Adresse des Arbeitgebers)", "subject": "Betreff", "body": "Nachricht", "attachments": "Anhänge", "total": "Zusammen: {{size}}", "copyNote": "Eine Kopie der E-Mail kommt auch in Ihr eigenes Postfach.", "sending": "Wird gesendet…", "submit": "Senden", "retry": "Erneut versuchen", "sentNotice": "Gesendet an {{to}} — eine Kopie liegt in Ihrem Postfach." },
+    "send": { "button": "Senden", "needMail": "Um Bewerbungen zu senden, verbinden Sie bitte zuerst Ihre E-Mail.", "needMailLink": "E-Mail verbinden", "needPassword": "Ihr E-Mail-Passwort muss erneut eingegeben werden, bevor Sie senden können.", "needPasswordLink": "Passwort erneut eingeben", "badAddress": "Bitte prüfen Sie die Adresse — sie sollte wie name@firma.de aussehen (nur eine Adresse).", "title": "Bewerbung senden", "to": "An (E-Mail-Adresse des Arbeitgebers)", "subject": "Betreff", "body": "Nachricht", "attachments": "Anhänge", "total": "Zusammen: {{size}}", "copyNote": "Eine Kopie der E-Mail kommt auch in Ihr eigenes Postfach.", "sending": "Wird gesendet…", "submit": "Senden", "retry": "Erneut versuchen", "sentNotice": "Gesendet an {{to}} — eine Kopie liegt in Ihrem Postfach." },
     "sentInfo": { "title": "Was gesendet wurde", "to": "An", "subject": "Betreff", "body": "Nachricht", "attachments": "Anhänge" },
     "submitted": { "button": "Ich habe mich selbst auf der Firmenwebsite beworben", "confirm": "Als eingereicht markieren? Das Paket kann danach nicht mehr geändert werden.", "yes": "Ja, als eingereicht markieren" },
     "statusChange": { "button": "Status ändern", "title": "Status ändern", "what": "Was ist passiert", "date": "Datum", "note": "Notiz (optional)", "counter": "{{n}} / {{max}}", "saving": "Wird gespeichert…", "save": "Speichern", "interview": "Einladung zum Gespräch", "rejected": "Absage", "offer": "Angebot", "withdrawn": "Ich habe zurückgezogen" },
@@ -325,6 +326,7 @@
     "approve": "Freigeben",
     "unapprove": "Zurück zum Entwurf",
     "recreate": "Neu erstellen",
+    "copyDraft": "Als neuen Entwurf kopieren",
     "recreateConfirm": "Claude schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben und am Profil-Text des Lebenslaufs gehen verloren.",
     "recreateYes": "Ja, neu erstellen",
     "delete": "Paket löschen",
@@ -421,7 +423,10 @@
       "packageBusy": "Claude arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist.",
       "packageSent": "Diese Bewerbung wurde bereits versendet oder eingereicht – sie kann nicht mehr geändert werden.",
       "packageSending": "Diese Bewerbung wird gerade versendet. Bitte warten Sie einen Moment.",
-      "packageChanged": "Die Bewerbung wurde während der Vorbereitung des Versands geändert. Es wurde nichts gesendet – bitte prüfen Sie sie und versuchen Sie es erneut."
+      "packageChanged": "Die Bewerbung wurde während der Vorbereitung des Versands geändert. Es wurde nichts gesendet – bitte prüfen Sie sie und versuchen Sie es erneut.",
+      "sentNotSaved": "Die E-Mail wurde gesendet, aber die App konnte das nicht speichern. Senden Sie sie nicht noch einmal — klicken Sie stattdessen auf „Ich habe mich selbst auf der Firmenwebsite beworben“, um es festzuhalten.",
+      "historyFull": "In diesem Paket sind zu viele Änderungen gespeichert, um es zu senden. Es wurde nichts gesendet. Klicken Sie auf „Neu erstellen“, um es neu anzulegen.",
+      "draftExists": "Für dieses Angebot gibt es schon ein Paket, das noch nicht gesendet wurde. Bitte öffnen Sie dieses — pro Angebot kann nur ein Paket bearbeitet werden."
     }
   },
   "vacancies": {

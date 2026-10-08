@@ -72,8 +72,9 @@ export function MailWizard({ initial, onSaved, onCancel }: Props) {
         port: provider ? provider.port : portNumber,
         security: provider ? provider.security : security,
         user: effectiveUser,
-        // Known provider: app passwords are shown with spaces (Google), so strip them. Own server: send as typed.
-        ...(password ?{ password: provider ? password.replace(/\s+/g, '') : password } : {}),
+        // Google shows app passwords in groups of four: strip the spaces for Gmail only. Everyone else: send as typed
+        // (other providers may take the normal password, which can contain spaces).
+        ...(password ? { password: provider?.id === 'gmail' ? password.replace(/\s+/g, '') : password } : {}),
         language: i18n.language as Language,
       });
       setDone(true);

@@ -98,6 +98,7 @@
     "notConnected": "Your email is not connected yet. Without it, BewerbungsPilot cannot send applications.",
     "connect": "Connect your email",
     "connectedAs": "Connected: {{address}}",
+    "passwordAgain": "Your password needs to be entered again (for example after moving to another computer or Windows account). Click \"Change\".",
     "providerLine": "Provider: {{provider}}",
     "change": "Change",
     "disconnect": "Disconnect",
@@ -276,7 +277,7 @@
     "toVacancies": "Go to job offers",
     "status": { "draft": "Draft", "approved": "Approved", "sent": "Sent", "submitted": "Submitted on the website", "interview": "Interview", "rejected": "Rejected", "offer": "Offer", "withdrawn": "Withdrawn" },
     "frozen": "This application was sent — it can no longer be changed. Downloads still work.",
-    "send": { "button": "Send", "needMail": "To send applications, please connect your email first.", "needMailLink": "Connect your email", "title": "Send application", "to": "To (the employer's email address)", "subject": "Subject", "body": "Message", "attachments": "Attachments", "total": "Together: {{size}}", "copyNote": "A copy of the email also arrives in your own mailbox.", "sending": "Sending…", "submit": "Send", "retry": "Try again", "sentNotice": "Sent to {{to}} — a copy is in your mailbox." },
+    "send": { "button": "Send", "needMail": "To send applications, please connect your email first.", "needMailLink": "Connect your email", "needPassword": "Your email password needs to be entered again before you can send.", "needPasswordLink": "Enter the password again", "badAddress": "Please check the address — it should look like name@company.de (one address only).", "title": "Send application", "to": "To (the employer's email address)", "subject": "Subject", "body": "Message", "attachments": "Attachments", "total": "Together: {{size}}", "copyNote": "A copy of the email also arrives in your own mailbox.", "sending": "Sending…", "submit": "Send", "retry": "Try again", "sentNotice": "Sent to {{to}} — a copy is in your mailbox." },
     "sentInfo": { "title": "What was sent", "to": "To", "subject": "Subject", "body": "Message", "attachments": "Attachments" },
     "submitted": { "button": "I applied myself on the company's website", "confirm": "Mark as submitted? The package can then no longer be changed.", "yes": "Yes, mark as submitted" },
     "statusChange": { "button": "Change status", "title": "Change status", "what": "What happened", "date": "Date", "note": "Note (optional)", "counter": "{{n}} / {{max}}", "saving": "Saving…", "save": "Save", "interview": "Interview", "rejected": "Rejection", "offer": "Offer", "withdrawn": "I withdrew" },
@@ -325,6 +326,7 @@
     "approve": "Approve",
     "unapprove": "Back to draft",
     "recreate": "Create again",
+    "copyDraft": "Copy as a new draft",
     "recreateConfirm": "Claude writes the letter and the CV parts again. Your changes to the letter and to the CV profile text will be lost.",
     "recreateYes": "Yes, create again",
     "delete": "Delete package",
@@ -421,7 +423,10 @@
       "packageBusy": "Claude is working on this package right now. Please wait until it is finished.",
       "packageSent": "This application was already sent or submitted — it can no longer be changed.",
       "packageSending": "This application is being sent right now. Please wait a moment.",
-      "packageChanged": "The application was changed while it was being prepared for sending. Nothing was sent — please check it and try again."
+      "packageChanged": "The application was changed while it was being prepared for sending. Nothing was sent — please check it and try again.",
+      "sentNotSaved": "The email was sent, but the app could not save it. Do not send it again — click \"I applied myself on the company's website\" to record it instead.",
+      "historyFull": "This package has too many recorded changes to be sent. Nothing was sent. Use \"Create again\" to start it fresh.",
+      "draftExists": "This job offer already has a package that was not sent yet. Please open that one — only one package per job offer can be edited."
     }
   },
   "vacancies": {

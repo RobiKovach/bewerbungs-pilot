@@ -98,6 +98,7 @@
     "notConnected": "Twój e-mail nie jest jeszcze połączony. Bez niego BewerbungsPilot nie może wysyłać aplikacji.",
     "connect": "Połącz e-mail",
     "connectedAs": "Połączono: {{address}}",
+    "passwordAgain": "Hasło trzeba wpisać ponownie (na przykład po przejściu na inny komputer lub konto Windows). Kliknij „Zmień”.",
     "providerLine": "Dostawca: {{provider}}",
     "change": "Zmień",
     "disconnect": "Odłącz",
@@ -276,7 +277,7 @@
     "toVacancies": "Przejdź do ofert pracy",
     "status": { "draft": "Wersja robocza", "approved": "Zatwierdzona", "sent": "Wysłana", "submitted": "Złożona przez stronę", "interview": "Rozmowa kwalifikacyjna", "rejected": "Odmowa", "offer": "Oferta", "withdrawn": "Wycofana" },
     "frozen": "Ta aplikacja została wysłana — nie można jej już zmienić. Pobieranie plików nadal działa.",
-    "send": { "button": "Wyślij", "needMail": "Aby wysyłać aplikacje, najpierw połącz swoją pocztę.", "needMailLink": "Połącz pocztę", "title": "Wyślij aplikację", "to": "Do (adres e-mail pracodawcy)", "subject": "Temat", "body": "Treść wiadomości", "attachments": "Załączniki", "total": "Razem: {{size}}", "copyNote": "Kopia wiadomości trafi też do Twojej skrzynki.", "sending": "Wysyłanie…", "submit": "Wyślij", "retry": "Spróbuj ponownie", "sentNotice": "Wysłano do {{to}} — kopia jest w Twojej skrzynce." },
+    "send": { "button": "Wyślij", "needMail": "Aby wysyłać aplikacje, najpierw połącz swoją pocztę.", "needMailLink": "Połącz pocztę", "needPassword": "Przed wysłaniem trzeba ponownie wpisać hasło do poczty.", "needPasswordLink": "Wpisz hasło ponownie", "badAddress": "Sprawdź adres — powinien wyglądać jak name@firma.de (tylko jeden adres).", "title": "Wyślij aplikację", "to": "Do (adres e-mail pracodawcy)", "subject": "Temat", "body": "Treść wiadomości", "attachments": "Załączniki", "total": "Razem: {{size}}", "copyNote": "Kopia wiadomości trafi też do Twojej skrzynki.", "sending": "Wysyłanie…", "submit": "Wyślij", "retry": "Spróbuj ponownie", "sentNotice": "Wysłano do {{to}} — kopia jest w Twojej skrzynce." },
     "sentInfo": { "title": "Co zostało wysłane", "to": "Do", "subject": "Temat", "body": "Treść wiadomości", "attachments": "Załączniki" },
     "submitted": { "button": "Złożyłem(-am) aplikację sam(-a) na stronie firmy", "confirm": "Oznaczyć jako złożoną? Pakietu nie będzie już można zmieniać.", "yes": "Tak, oznacz" },
     "statusChange": { "button": "Zmień status", "title": "Zmień status", "what": "Co się stało", "date": "Data", "note": "Notatka (opcjonalnie)", "counter": "{{n}} / {{max}}", "saving": "Zapisywanie…", "save": "Zapisz", "interview": "Zaproszenie na rozmowę", "rejected": "Odmowa", "offer": "Oferta pracy", "withdrawn": "Wycofałem(-am) aplikację" },
@@ -325,6 +326,7 @@
     "approve": "Zatwierdź",
     "unapprove": "Wróć do wersji roboczej",
     "recreate": "Utwórz ponownie",
+    "copyDraft": "Skopiuj jako nową wersję roboczą",
     "recreateConfirm": "Claude napisze list i części CV od nowa. Twoje zmiany w liście oraz w tekście „Profil” w CV zostaną utracone.",
     "recreateYes": "Tak, utwórz ponownie",
     "delete": "Usuń pakiet",
@@ -421,7 +423,10 @@
       "packageBusy": "Claude pracuje teraz nad tym pakietem. Poczekaj, aż skończy.",
       "packageSent": "Ta aplikacja została już wysłana lub złożona — nie można jej już zmienić.",
       "packageSending": "Ta aplikacja jest właśnie wysyłana. Poczekaj chwilę.",
-      "packageChanged": "Aplikację zmieniono podczas przygotowania wysyłki. Nic nie wysłano — sprawdź ją i spróbuj ponownie."
+      "packageChanged": "Aplikację zmieniono podczas przygotowania wysyłki. Nic nie wysłano — sprawdź ją i spróbuj ponownie.",
+      "sentNotSaved": "E-mail został wysłany, ale aplikacja nie mogła tego zapisać. Nie wysyłaj go ponownie — zamiast tego kliknij „Złożyłem(-am) aplikację sam(-a) na stronie firmy”, aby to zapisać.",
+      "historyFull": "W tym pakiecie zapisano zbyt wiele zmian, aby go wysłać. Nic nie zostało wysłane. Kliknij „Utwórz ponownie”, aby zacząć od nowa.",
+      "draftExists": "Dla tej oferty istnieje już pakiet, który nie został jeszcze wysłany. Otwórz go — dla jednej oferty można edytować tylko jeden pakiet."
     }
   },
   "vacancies": {

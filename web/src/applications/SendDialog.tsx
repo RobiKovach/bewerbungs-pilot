@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, type SendDraft } from '../api';
+import { api, ApiError, type SendDraft } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { TextField } from '../profile/fields';
 import type { ApplicationView } from '../types';
 import { ATTACHMENTS_WARN_BYTES, mb } from './AttachmentsTab';
+
+/** Same rule as the server: one address, no spaces or list separators, a dot in the domain. */
+const ADDRESS = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
+const addressOk = (s: string) => s.length <= 254 && ADDRESS.test(s);
 
 /** The send window: the email is prefilled from the package; what the person changes is what goes out. */
 export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view: ApplicationView, to: string) => void; onClose: () => void }) {
@@ -41,7 +45,10 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
     }
   };
 
-  const valid = to.trim() !== '' && subject.trim() !== '' && body.trim() !== '';
+  const badAddress = to.trim() !== '' && !addressOk(to.trim());
+  const valid = to.trim() !== '' && !badAddress && subject.trim() !== '' && body.trim() !== '';
+  // The email went out but could not be recorded: never offer to send it again.
+  const sentNotSaved = error instanceof ApiError && error.reason === 'sentNotSaved';
   return (
     <div className="card notice send-dialog" role="dialog" aria-label={t('applications.send.title')}>
       <h2>{t('applications.send.title')}</h2>
@@ -50,7 +57,7 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
       {draft ? (
         <>
           <fieldset disabled={sending} className="plain">
-            <TextField type="email" label={t('applications.send.to')} value={to} onChange={setTo} maxLength={254} />
+            <TextField type="email" label={t('applications.send.to')} value={to} onChange={setTo} maxLength={254} error={badAddress ? t('applications.send.badAddress') : undefined} />
             <TextField label={t('applications.send.subject')} value={subject} onChange={setSubject} maxLength={200} />
             <TextField multiline label={t('applications.send.body')} value={body} onChange={setBody} maxLength={5000} />
           </fieldset>
@@ -65,9 +72,11 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
       ) : null}
       {error ? <ErrorBanner error={error} /> : null}
       <div className="btn-row">
-        <button type="button" className="btn" disabled={!draft || !valid || sending} onClick={() => void send()}>
-          {sending ? t('applications.send.sending') : error ? t('applications.send.retry') : t('applications.send.submit')}
-        </button>
+        {sentNotSaved ? null : (
+          <button type="button" className="btn" disabled={!draft || !valid || sending} onClick={() => void send()}>
+            {sending ? t('applications.send.sending') : error ? t('applications.send.retry') : t('applications.send.submit')}
+          </button>
+        )}
         <button type="button" className="btn ghost" disabled={sending} onClick={onClose}>{t('common.cancel')}</button>
       </div>
     </div>

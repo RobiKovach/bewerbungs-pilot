@@ -38,7 +38,7 @@ export const PACKAGE_LIMITS = {
   paragraphsMin: 1, paragraphsMax: 6, paragraph: 2000,
   closing: 100, signature: Math.max(200, LIMITS.name), hint: 300, profil: 800, description: 5000, instruction: 1000, attachments: 20,
   headline: 80, groupName: 40, translation: 100, groupsMax: 5,
-  emailSubject: 200, emailBody: 5000, note: 300, address: 254,
+  emailSubject: 200, emailBody: 5000, note: 300, address: 254, history: 200, fileName: 200, messageId: 300,
 } as const;
 
 const L = PACKAGE_LIMITS;
@@ -90,11 +90,11 @@ const PACKAGE = obj({
   }),
   attachments: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } },
   history: {
-    type: 'array', maxItems: 200,
-    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: STATUS, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(300) } },
+    type: 'array', maxItems: L.history,
+    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: STATUS, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(L.messageId) } },
   },
   sentAt: nullable(TIMESTAMP),
-  sentEmail: nullable(obj({ to: str(L.address), subject: str(L.emailSubject), body: str(L.emailBody), attachments: { type: 'array', maxItems: 30, items: str(200) } })),
+  sentEmail: nullable(obj({ to: str(L.address), subject: str(L.emailSubject), body: str(L.emailBody), attachments: { type: 'array', maxItems: 30, items: str(L.fileName) } })),
 });
 
 const LIST = obj({ schemaVersion: { const: APPLICATIONS_SCHEMA_VERSION }, applications: { type: 'array', items: SUMMARY } });

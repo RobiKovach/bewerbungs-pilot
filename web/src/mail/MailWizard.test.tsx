@@ -9,6 +9,7 @@ import type { MailProvider, MailSettingsView } from '../types';
 
 const providers: MailProvider[] = [
   { id: 'gmail', label: 'Gmail', domains: ['gmail.com'], host: 'smtp.gmail.com', port: 465, security: 'ssl', helpUrl: 'https://myaccount.google.com/apppasswords' },
+  { id: 'gmx', label: 'GMX', domains: ['gmx.de'], host: 'mail.gmx.net', port: 587, security: 'starttls', helpUrl: 'https://hilfe.gmx.net/' },
 ];
 const none: MailSettingsView = { mail: null, passwordSaved: false };
 const connected: MailSettingsView = {
@@ -85,6 +86,21 @@ describe('MailWizard', () => {
     expect(putBodies(f)[0]).toMatchObject({ host: 'mail.example.com', password: 'ab cd' });
   });
 
+  it('a known provider other than Gmail (GMX) also gets the password verbatim', async () => {
+    const f = routes({ 'PUT /api/mail/settings': () => ({ body: connected }) });
+    const user = userEvent.setup();
+    render(<MailWizard initial={none} onSaved={() => {}} />);
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmx.de');
+    expect(await screen.findByText('GMX detected')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(/^Your name as the sender/)).toHaveValue('Max Mustermann'));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.type(screen.getByLabelText('Password'), 'mein Passwort 1');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Send a test email and save' }));
+    await screen.findByText('Done! Check your inbox for the test email.');
+    expect(putBodies(f)[0]).toMatchObject({ host: 'mail.gmx.net', password: 'mein Passwort 1' });
+  });
+
   it('a failed test shows the error and keeps the entered values', async () => {
     routes({ 'PUT /api/mail/settings': () => ({ status: 401, body: { error: { code: 'MAIL_AUTH', detailsForLog: '' } } }) });
     const user = userEvent.setup();
@@ -144,6 +160,16 @@ describe('MailSettingsBlock', () => {
     await user.click(screen.getByRole('button', { name: 'Yes, disconnect' }));
     expect(await screen.findByRole('button', { name: 'Connect your email' })).toBeInTheDocument();
     expect(called).toBe(1);
+  });
+
+  it('connected but the password cannot be read here: asks to enter it again, "Change" opens the wizard', async () => {
+    routes({ 'GET /api/mail/settings': () => ({ body: { ...connected, passwordSaved: false } }) });
+    const user = userEvent.setup();
+    render(<MailSettingsBlock />);
+    expect(await screen.findByText(/Your password needs to be entered again/)).toBeInTheDocument();
+    expect(screen.queryByText('Connected: max@gmail.com')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Change' }));
+    expect(await screen.findByLabelText(/^Your email address/)).toHaveValue('max@gmail.com');
   });
 
   it('cancelling the confirmation keeps the email connected', async () => {

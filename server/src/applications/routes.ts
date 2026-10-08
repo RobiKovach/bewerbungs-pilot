@@ -1,6 +1,7 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import type { DocLanguage, LetterPatch, OutcomeStatus, Profile } from '@bp/shared';
+import type { ApplicationPackage, DocLanguage, LetterPatch, OutcomeStatus, Profile } from '@bp/shared';
 import type { SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
@@ -18,13 +19,13 @@ import { packageReadiness } from './readiness.js';
 import { cvHtml } from './render/cv.js';
 import { asciiName, fileNames } from './render/html.js';
 import { letterHtml } from './render/letter.js';
-import { APPLICATION_ID, PACKAGE_LIMITS as L } from './schema.js';
+import { APPLICATION_ID, PACKAGE_LIMITS as L, validatePackage } from './schema.js';
 import type { ApplicationStore } from './store.js';
 import { toListView, toView } from './views.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
-  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; now?: () => Date;
+  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; now?: () => Date; newId?: () => string;
 }
 
 /** Offer texts shorter than this are stubs (the full text is on a partner site): the dialog warns. */
@@ -85,6 +86,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   const editable = (id: string) => assertEditable(d.store.require(id));
   /** Packages with an email in flight: nothing may change them until SMTP answers. */
   const sending = new Set<string>();
+  /** Packages whose email went out but could not be recorded: they are never sent again (until the app restarts). */
+  const sentUnsaved = new Set<string>();
   const notBusy = (id: string) => {
     if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageSending');
     if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
@@ -102,7 +105,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       suggestedLanguage: detectLanguage(`${v.title}\n${text}`),
       englishBelowB2: englishBelowB2(profile.sections.languages.data.items),
       shortText: text.trim().length < SHORT_TEXT,
-      existingId: d.store.byVacancy(v.id)?.id ?? null,
+      // Only a package that is not sent yet blocks a new one (sent ones stay as a record).
+      existingId: d.store.editableByVacancy(v.id)?.id ?? null,
       readiness: packageReadiness(profile),
     };
   });
@@ -257,6 +261,28 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     return view(id);
   });
 
+  // "Copy as a new draft": a sent package stays untouched; the copy (same letter, CV, attachments, language) can be
+  // edited and sent again. Only one package per vacancy may be edited at a time.
+  app.post('/api/applications/:id/copy', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    notBusy(id);
+    const source = d.store.require(id);
+    if (!isFrozen(source)) throw new AppError('CONFLICT', 'only a sent package can be copied');
+    const job = d.job.state();
+    if (job.state === 'running' && job.vacancyId === source.vacancyId) throw new AppError('CONFLICT', 'a job is working on this vacancy', 'packageBusy');
+    const open = d.store.editableByVacancy(source.vacancyId);
+    if (open) throw new AppError('CONFLICT', 'the vacancy already has a package that was not sent', 'draftExists', { id: open.id });
+    const at = now().toISOString();
+    const copy: ApplicationPackage = {
+      ...structuredClone(source),
+      id: d.newId?.() ?? crypto.randomUUID(),
+      status: 'draft', createdAt: at, updatedAt: at, approvedAt: null, history: [], sentAt: null, sentEmail: null,
+    };
+    const saved = d.store.save(copy, { vacancyText: d.store.readVacancyText(source.id), photo: photoOf(source.id) });
+    d.logger.info('application_copied', { id, copyId: saved.id });
+    return view(saved.id);
+  });
+
   app.delete('/api/applications/:id', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
     notBusy(id);
@@ -313,15 +339,27 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   // ---- Sending by email ----
   const docFileName = (doc: { label: string; originalName: string }) => `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`;
-  /** Makes names unique within one email: a repeat gets _2, _3 … before the extension (case-insensitive). */
+  /**
+   * Makes names unique within one email (a repeat gets _2, _3 … before the extension, case-insensitive) and keeps every
+   * name within the stored limit: the base is shortened, the extension and the _n suffix stay.
+   */
   const uniqueNames = <T extends { filename: string }>(files: T[]): T[] => {
     const used = new Set<string>();
     return files.map((f) => {
-      let name = f.filename;
-      for (let n = 2; used.has(name.toLowerCase()); n++) name = `${f.filename.replace(/\.pdf$/i, '')}_${n}.pdf`;
+      const ext = /\.[A-Za-z0-9]{1,8}$/.exec(f.filename)?.[0] ?? '';
+      const base = f.filename.slice(0, f.filename.length - ext.length);
+      const fit = (suffix: string) => `${base.slice(0, L.fileName - suffix.length - ext.length).replace(/_+$/, '')}${suffix}${ext}`;
+      let name = fit('');
+      for (let n = 2; used.has(name.toLowerCase()); n++) name = fit(`_${n}`);
       used.add(name.toLowerCase());
       return { ...f, filename: name };
     });
+  };
+  /** What a successful send records on the package (also run on a copy before sending, to refuse what could not be saved). */
+  const markSent = (p: ApplicationPackage, at: string, email: { to: string; subject: string; body: string; messageId: string; attachments: string[] }) => {
+    addStatus(p, 'sent', at, { to: email.to, messageId: email.messageId.slice(0, L.messageId) });
+    p.sentAt = at;
+    p.sentEmail = { to: email.to, subject: email.subject, body: email.body, attachments: email.attachments };
   };
   /** The PDFs that would go into the email, freshly printed, with their file names. */
   const mailAttachments = async (id: string) => {
@@ -352,6 +390,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { to, subject, body } = req.body as { to: string; subject: string; body: string };
     // Every check and the lock come before the first await: two quick requests can never both pass.
     notBusy(id);
+    if (sentUnsaved.has(id)) throw new AppError('CONFLICT', 'this package was already sent (not saved)', 'sentNotSaved');
     const start = d.store.require(id);
     assertEditable(start);
     if (start.status !== 'approved') throw new AppError('CONFLICT', 'only an approved package can be sent');
@@ -366,20 +405,34 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
       const current = d.store.require(id);
       if (current.status !== 'approved' || current.updatedAt !== start.updatedAt) throw new AppError('CONFLICT', 'the package changed while it was being prepared', 'packageChanged');
+      const email = { to, subject, body, attachments: attachments.map((a) => a.filename) };
+      // Refuse before sending whatever could not be saved afterwards (a full history, a field over its limit).
+      const probe = structuredClone(current);
+      markSent(probe, now().toISOString(), { ...email, messageId: '' });
+      if (validatePackage(probe) !== null) {
+        throw new AppError('CONFLICT', 'the sent email could not be recorded on this package', current.history.length >= L.history ? 'historyFull' : undefined);
+      }
       const { messageId } = await d.mailer.send(config, password, {
         from: { name: config.senderName, address: config.address }, to, bcc: config.address, subject, text: body, attachments,
       });
       const at = now().toISOString();
-      d.store.update(id, (p) => {
-        if (p.status !== 'approved') throw new AppError('CONFLICT', 'package is no longer approved', 'packageChanged');
-        addStatus(p, 'sent', at, { to, messageId });
-        p.sentAt = at;
-        p.sentEmail = { to, subject, body, attachments: attachments.map((a) => a.filename) };
-      });
+      try {
+        d.store.update(id, (p) => {
+          if (p.status !== 'approved') throw new AppError('CONFLICT', 'package is no longer approved', 'packageChanged');
+          markSent(p, at, { ...email, messageId });
+        });
+      } catch (err) {
+        // The email went out: it must never go out a second time, even though the package could not record it.
+        sentUnsaved.add(id);
+        d.logger.error('application_sent_unsaved', { id, code: err instanceof AppError ? err.code : 'UNKNOWN' });
+        throw new AppError('CONFLICT', 'the email was sent but the package could not be saved', 'sentNotSaved');
+      }
       d.logger.info('application_sent', { id });
       return view(id);
     } catch (err) {
-      d.logger.warn('application_send_failed', { id, code: err instanceof AppError ? err.code : 'UNKNOWN' });
+      if (!(err instanceof AppError && err.reason === 'sentNotSaved')) {
+        d.logger.warn('application_send_failed', { id, code: err instanceof AppError ? err.code : 'UNKNOWN' });
+      }
       throw err;
     } finally {
       sending.delete(id);

@@ -49,6 +49,18 @@ describe('letterHtml', () => {
     expect(html).toContain('Berlin, 29 September 2026');
     expect(html).toContain('<html lang="en">');
   });
+  it('a sent or submitted package keeps the date it went out; draft and approved use the printing day', () => {
+    const sent = pkg({ status: 'interview', sentAt: '2026-09-01T09:00:00.000Z', history: [
+      { kind: 'approved', at: '2026-08-31T09:00:00.000Z' }, { kind: 'sent', at: '2026-09-01T09:00:00.000Z' }, { kind: 'interview', at: '2026-09-10T12:00:00.000Z' },
+    ] });
+    expect(letterHtml(sent, NOW)).toContain('Berlin, 01.09.2026');
+    const submitted = pkg({ status: 'submitted', history: [{ kind: 'submitted', at: '2026-09-05T09:00:00.000Z' }] });
+    expect(letterHtml(submitted, NOW)).toContain('Berlin, 05.09.2026');
+    const onlySentAt = pkg({ status: 'sent', sentAt: '2026-09-03T09:00:00.000Z', history: [] });
+    expect(letterHtml(onlySentAt, NOW)).toContain('Berlin, 03.09.2026');
+    const approved = pkg({ status: 'approved', approvedAt: '2026-08-31T09:00:00.000Z', history: [{ kind: 'approved', at: '2026-08-31T09:00:00.000Z' }] });
+    expect(letterHtml(approved, NOW)).toContain('Berlin, 29.09.2026');
+  });
 });
 
 describe('cvHtml', () => {

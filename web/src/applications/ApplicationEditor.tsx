@@ -29,7 +29,9 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [cvDirty, setCvDirty] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [language, setLanguage] = useState<DocLanguage>('de');
-  const [mailReady, setMailReady] = useState(false);
+  // 'noPassword' = connected, but the saved password is missing or cannot be read here (other PC or Windows account).
+  const [mailState, setMailState] = useState<'none' | 'noPassword' | 'ready'>('none');
+  const mailReady = mailState === 'ready';
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
@@ -49,9 +51,15 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     let alive = true;
-    api.getMail().then((m) => { if (alive) setMailReady(m.mail !== null && m.passwordSaved); }, () => { if (alive) setMailReady(false); });
+    api.getMail().then(
+      (m) => { if (alive) setMailState(m.mail === null ? 'none' : m.passwordSaved ? 'ready' : 'noPassword'); },
+      () => { if (alive) setMailState('none'); },
+    );
     return () => { alive = false; };
   }, []);
+  // The send window belongs to an approved package: it closes when the package changes (e.g. "Back to draft" behind it).
+  const status = view?.application.status;
+  useEffect(() => { if (status !== 'approved') setSending(false); }, [status]);
   const job = useApplicationJob({ pollMs, onFinished: (s) => { if (s.applicationId === id) void load(); } });
 
   if (error && !view) return <ErrorBanner error={error} onRetry={() => void load()} />;
@@ -80,6 +88,15 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
     setDownloading(true);
     setActionError(null);
     try { await download(url, name); } catch (err) { setActionError(err); } finally { setDownloading(false); }
+  };
+  const copyAsDraft = async () => {
+    setActionError(null);
+    try {
+      const v = await api.copyApplication(id);
+      window.location.hash = `#/applications/${v.application.id}`;
+    } catch (err) {
+      setActionError(err);
+    }
   };
   const remove = async () => {
     setActionError(null);
@@ -148,11 +165,16 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         {a.status === 'approved' ? <button type="button" className="btn" disabled={!mailReady || dirty || busy || locked || sending} onClick={() => { setSentTo(null); setSending(true); }}>{t('applications.send.button')}</button> : null}
         {a.status === 'approved' ? <button type="button" className="btn ghost" disabled={busy || locked || dirty || sending} onClick={() => { setStatusOpen(false); setConfirm('submitted'); }}>{t('applications.submitted.button')}</button> : null}
         {frozen ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => { setConfirm(null); setStatusOpen(true); }}>{t('applications.statusChange.button')}</button> : null}
-        {frozen ? null : <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>}
+        {frozen
+          ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => void copyAsDraft()}>{t('applications.copyDraft')}</button>
+          : <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>}
         <button type="button" className="btn ghost" disabled={jobOnThis || error !== null} onClick={() => setConfirm('delete')}>{t('applications.delete')}</button>
       </div>
-      {a.status === 'approved' && !mailReady ? (
+      {a.status === 'approved' && mailState === 'none' ? (
         <p className="muted">{t('applications.send.needMail')} <a href="#/settings">{t('applications.send.needMailLink')}</a></p>
+      ) : null}
+      {a.status === 'approved' && mailState === 'noPassword' ? (
+        <p className="muted">{t('applications.send.needPassword')} <a href="#/settings">{t('applications.send.needPasswordLink')}</a></p>
       ) : null}
       <HistoryBlock history={a.history} canUndo={view.canUndo} busy={busy || error !== null} onUndo={() => void act(() => api.undoStatus(id))} />
       {statusOpen ? (
@@ -168,7 +190,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         </div>
       ) : null}
       {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
-      {sending ? (
+      {sending && a.status === 'approved' ? (
         <SendDialog id={id} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
       ) : null}
       {confirm === 'recreate' ? (

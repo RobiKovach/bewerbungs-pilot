@@ -80,6 +80,31 @@ describe('Create package', () => {
     expect(await screen.findByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/app3');
   });
 
+  it('several packages for one favourite: the one not sent yet is opened, and no new one can be created', async () => {
+    const { user } = setup({ 'GET /api/applications/job': () => ({ body: jobState() }) }, [
+      appSummary({ id: 'appNew', vacancyId: 'v1', status: 'draft', createdAt: '2026-09-20T10:00:00.000Z' }),
+      appSummary({ id: 'appOld', vacancyId: 'v1', status: 'sent', createdAt: '2026-09-01T10:00:00.000Z', updatedAt: '2026-10-01T10:00:00.000Z' }),
+    ]);
+    await favourites(user);
+    expect(await screen.findByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/appNew');
+    expect(screen.queryByRole('button', { name: 'Create package' })).toBeNull();
+  });
+
+  it('all packages of a favourite were sent: "Open package" opens the newest, and a new package can be created', async () => {
+    const { user } = setup({
+      'GET /api/applications/job': () => ({ body: jobState() }),
+      'GET /api/applications/new?vacancyId=v1': () => ({ body: INFO }),
+    }, [
+      appSummary({ id: 'appA', vacancyId: 'v1', status: 'rejected', createdAt: '2026-09-01T10:00:00.000Z', updatedAt: '2026-10-02T10:00:00.000Z' }),
+      appSummary({ id: 'appB', vacancyId: 'v1', status: 'sent', createdAt: '2026-09-15T10:00:00.000Z', updatedAt: '2026-09-15T10:00:00.000Z' }),
+    ]);
+    await favourites(user);
+    expect(await screen.findByRole('link', { name: 'Open package' })).toHaveAttribute('href', '#/applications/appB');
+    await user.click(screen.getByRole('button', { name: 'Create package' }));
+    const dialog = await screen.findByRole('region', { name: 'Create an application package' });
+    expect(within(dialog).getByRole('button', { name: 'Create' })).toBeEnabled();
+  });
+
   it('two favourites: one readiness request and one explanation block', async () => {
     const { f, user } = setup({
       'GET /api/applications/readiness': () => ({ body: { ready: false, missingSections: ['skills'], noStory: false } }),

@@ -53,7 +53,9 @@ export function MailSettingsBlock() {
       {justSaved ? <p className="ok" role="status">{t('mail.done')}</p> : null}
       {mail ? (
         <>
-          <p>{t('mail.connectedAs', { address: mail.address })}</p>
+          {view.passwordSaved
+            ? <p>{t('mail.connectedAs', { address: mail.address })}</p>
+            : <p className="notice" role="status">{t('mail.passwordAgain')}</p>}
           <p className="muted">{t('mail.providerLine', { provider: labels[mail.provider] ?? t('mail.otherEmail') })}</p>
           <div className="btn-row">
             <button type="button" className="btn" onClick={() => { setJustSaved(false); setEditing(true); }}>{t('mail.change')}</button>

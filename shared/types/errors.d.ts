@@ -54,4 +54,7 @@ export type ErrorReason =
   | 'packageBusy'
   | 'packageSent'
   | 'packageSending'
-  | 'packageChanged';
+  | 'packageChanged'
+  | 'sentNotSaved'
+  | 'historyFull'
+  | 'draftExists';

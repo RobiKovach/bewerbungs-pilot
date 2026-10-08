@@ -159,6 +159,60 @@ describe('send', () => {
     expect((await viewOf(ctx, id)).application.sentEmail?.attachments).toEqual(names);
   });
 
+  it('very long company and document names: every attachment name fits the stored limit, and the send is recorded', async () => {
+    const long = 'Dokument '.repeat(28).trim();
+    const { ctx, id } = await setup({ docs: [long, long] });
+    ctx.applicationStore.update(id, (p) => { p.vacancy.company = `Muster ${'Holding '.repeat(36)}GmbH`.slice(0, 300); });
+    const r = await sendTo(ctx, id);
+    expect(r.statusCode).toBe(200);
+    const names = ctx.mailer.sent[0].mail.attachments.map((a) => a.filename);
+    expect(names).toHaveLength(4);
+    for (const n of names) { expect(n.length).toBeLessThanOrEqual(200); expect(n).toMatch(/\.pdf$/); }
+    expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(4);
+    expect(names[3]).toMatch(/_2\.pdf$/);
+    expect((await viewOf(ctx, id)).application).toMatchObject({ status: 'sent', sentEmail: { attachments: names } });
+  });
+
+  it('a full history is refused before anything is sent', async () => {
+    const { ctx, id } = await setup();
+    ctx.applicationStore.update(id, (p) => {
+      p.history = Array.from({ length: 200 }, (_, i) => ({ kind: i % 2 === 0 ? 'draft' as const : 'approved' as const, at: '2026-09-01T10:00:00.000Z' }));
+    });
+    const r = await sendTo(ctx, id);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('historyFull');
+    expect(ctx.mailer.sent).toHaveLength(0);
+  });
+
+  it('a save that fails after the email went out: own reason, logged without data, never sent a second time', async () => {
+    const lines: string[] = [];
+    const logger: Logger = { info: (e, d) => lines.push(JSON.stringify({ e, d })), warn: (e, d) => lines.push(JSON.stringify({ e, d })), error: (e, d) => lines.push(JSON.stringify({ e, d })) };
+    const { ctx, id } = await setup({ logger });
+    const realUpdate = ctx.applicationStore.update.bind(ctx.applicationStore);
+    ctx.applicationStore.update = () => { throw new AppError('DATA_WRITE_FAILED', 'disk full'); };
+    const r = await sendTo(ctx, id);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('sentNotSaved');
+    ctx.applicationStore.update = realUpdate;
+    const again = await sendTo(ctx, id);
+    expect(again.statusCode).toBe(409);
+    expect(again.json().error.reason).toBe('sentNotSaved');
+    expect(ctx.mailer.sent).toHaveLength(1);
+    // "I applied myself" still records it.
+    expect((await post(ctx, `/api/applications/${id}/submitted`, {})).statusCode).toBe(200);
+    const log = lines.join('\n');
+    expect(log).toContain('application_sent_unsaved');
+    for (const secret of ['jobs@muster', 'Bewerbung als', 'geheim123']) expect(log).not.toContain(secret);
+  });
+
+  it('downloads of a sent package keep the date the email went out', async () => {
+    const { ctx, id } = await setup();
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    ctx.applicationStore.update(id, (p) => { p.sentAt = '2026-01-15T10:00:00.000Z'; p.history = p.history.map((h) => (h.kind === 'sent' ? { ...h, at: '2026-01-15T10:00:00.000Z' } : h)); });
+    const html = (await ctx.app.inject({ method: 'GET', url: `/api/applications/${id}/preview/letter` })).body;
+    expect(html).toContain('15.01.2026');
+  });
+
   it('the log has no recipient, subject or body', async () => {
     const lines: string[] = [];
     const logger: Logger = { info: (e, d) => lines.push(JSON.stringify({ e, d })), warn: (e, d) => lines.push(JSON.stringify({ e, d })), error: (e, d) => lines.push(JSON.stringify({ e, d })) };
@@ -171,6 +225,78 @@ describe('send', () => {
     expect(log).toContain('application_send_failed');
     expect(log).toContain('application_sent');
     for (const secret of ['jobs@muster', 'Bewerbung als', 'anbei meine', 'geheim123', 'Anschreiben_']) expect(log).not.toContain(secret);
+  });
+});
+
+describe('copy as a new draft', () => {
+  const copy = (ctx: Ctx, id: string) => post(ctx, `/api/applications/${id}/copy`, {});
+  const newInfo = async (ctx: Ctx) => (await ctx.app.inject({ method: 'GET', url: '/api/applications/new?vacancyId=fav1' })).json() as { existingId: string | null };
+
+  it('copies a sent package into a new draft (letter with hand edits, CV, attachments, language); the original keeps its history', async () => {
+    const { ctx, id } = await setup({ docs: ['Zeugnis'] });
+    await ctx.app.inject({ method: 'POST', url: `/api/applications/${id}/unapprove`, headers: H });
+    await ctx.app.inject({ method: 'PATCH', url: `/api/applications/${id}/letter`, headers: H, payload: { closing: 'Beste Grüße' } });
+    await post(ctx, `/api/applications/${id}/approve`, {});
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    const original = (await viewOf(ctx, id)).application;
+    const r = await copy(ctx, id);
+    expect(r.statusCode).toBe(200);
+    const c = (r.json() as ApplicationView).application;
+    expect(c.id).not.toBe(id);
+    expect(c).toMatchObject({ vacancyId: 'fav1', status: 'draft', history: [], sentAt: null, sentEmail: null, approvedAt: null, language: original.language });
+    expect(c.letter).toEqual(original.letter);
+    expect(c.letter.closing).toBe('Beste Grüße');
+    expect(c.cv).toEqual(original.cv);
+    expect(c.attachments).toEqual(original.attachments);
+    expect(c.attachments).toHaveLength(1);
+    expect((await viewOf(ctx, id)).application).toEqual(original);
+    // The copy can be edited, approved and sent; the vacancy links to it while it is not sent.
+    expect((await ctx.app.inject({ method: 'PATCH', url: `/api/applications/${c.id}/letter`, headers: H, payload: { closing: 'Viele Grüße' } })).statusCode).toBe(200);
+    expect(ctx.applicationStore.byVacancy('fav1')?.id).toBe(c.id);
+    expect((await newInfo(ctx)).existingId).toBe(c.id);
+    expect((await post(ctx, `/api/applications/${c.id}/approve`, {})).statusCode).toBe(200);
+    expect((await sendTo(ctx, c.id)).statusCode).toBe(200);
+    expect(ctx.mailer.sent).toHaveLength(2);
+    expect(ctx.applicationStore.list().filter((s) => s.vacancyId === 'fav1')).toHaveLength(2);
+  });
+
+  it('refuses: a package not sent yet, and a second editable package for the same vacancy', async () => {
+    const { ctx, id } = await setup();
+    expect((await copy(ctx, id)).statusCode).toBe(409);
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    const first = (await copy(ctx, id)).json() as ApplicationView;
+    const again = await copy(ctx, id);
+    expect(again.statusCode).toBe(409);
+    expect(again.json().error).toMatchObject({ code: 'CONFLICT', reason: 'draftExists' });
+    // Creating from the vacancy is refused too while the copy is not sent.
+    const create = await post(ctx, '/api/applications', { vacancyId: 'fav1', language: 'de' });
+    expect(create.statusCode).toBe(409);
+    expect(create.json().error).toMatchObject({ code: 'PACKAGE_EXISTS', params: { id: first.application.id } });
+  });
+
+  it('creating from a vacancy is allowed when all its packages are sent; the vacancy then links to the newest', async () => {
+    const { ctx, id } = await setup();
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    expect((await newInfo(ctx)).existingId).toBeNull();
+    expect(ctx.applicationStore.byVacancy('fav1')?.id).toBe(id);
+    const r = await post(ctx, '/api/applications', { vacancyId: 'fav1', language: 'en' });
+    expect(r.statusCode).toBe(202);
+    await ctx.applicationJob.whenIdle();
+    const created = ctx.applicationJob.state().applicationId!;
+    expect(created).not.toBe(id);
+    expect(ctx.applicationStore.byVacancy('fav1')?.id).toBe(created);
+    expect((await viewOf(ctx, id)).application.status).toBe('sent');
+  });
+
+  it('is refused while the package is being sent', async () => {
+    const { ctx, id } = await setup();
+    ctx.mailer.delayMs = 60;
+    const inFlight = sendTo(ctx, id);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const r = await copy(ctx, id);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('packageSending');
+    expect((await inFlight).statusCode).toBe(200);
   });
 });
 

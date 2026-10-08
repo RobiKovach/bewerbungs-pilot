@@ -4,6 +4,7 @@ import type { ApplicationPackage, ApplicationSummary } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import { migrate, MigrationError } from '../data/migrate.js';
+import { FROZEN } from './status.js';
 import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validateList, validatePackage } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
@@ -65,8 +66,15 @@ export class ApplicationStore {
     return p;
   }
 
+  /** The package a vacancy links to: the one still being edited if any, else the newest (sent ones stay, a copy may follow). */
   byVacancy(vacancyId: string): ApplicationSummary | undefined {
-    return this.list().find((s) => s.vacancyId === vacancyId);
+    const all = this.list().filter((s) => s.vacancyId === vacancyId);
+    return all.find((s) => !FROZEN.has(s.status)) ?? all.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0))[0];
+  }
+
+  /** The one package of a vacancy that is not sent yet (only one may be edited at a time). */
+  editableByVacancy(vacancyId: string): ApplicationSummary | undefined {
+    return this.list().find((s) => s.vacancyId === vacancyId && !FROZEN.has(s.status));
   }
 
   save(pkg: ApplicationPackage, files: { vacancyText?: string; photo?: PhotoFile | null }): ApplicationPackage {
