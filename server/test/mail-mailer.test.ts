@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { mailErrorFrom, transportOptions } from '../src/mail/mailer.js';
+import { describe, expect, it, vi } from 'vitest';
+
+const sendMail = vi.hoisted(() => vi.fn());
+vi.mock('nodemailer', () => ({ default: { createTransport: () => ({ sendMail, close: () => undefined }) } }));
+
+import { mailErrorFrom, SmtpMailer, transportOptions } from '../src/mail/mailer.js';
 import { httpStatusFor } from '../src/errors.js';
 import type { MailSettings } from '@bp/shared';
 
@@ -36,6 +40,14 @@ describe('mailErrorFrom', () => {
     expect(e.detailsForLog).toContain('a'.repeat(200));
     expect(e.detailsForLog).not.toContain('a'.repeat(201));
   });
+  it('maps 530 (authentication required) to MAIL_AUTH', () => {
+    expect(mailErrorFrom({ responseCode: 530, message: '530 Authentication required' }).code).toBe('MAIL_AUTH');
+  });
+  it('masks secrets case-insensitively', () => {
+    const e = mailErrorFrom({ code: 'EENVELOPE', responseCode: 550, message: '550 <JOBS@MUSTER.EXAMPLE> no such user' }, { secrets: ['jobs@muster.example'] });
+    expect(e.code).toBe('MAIL_REJECTED');
+    expect(e.detailsForLog.toLowerCase()).not.toContain('jobs@muster.example');
+  });
   it('has HTTP statuses', () => {
     expect(httpStatusFor('MAIL_NOT_CONFIGURED')).toBe(409);
     expect(httpStatusFor('MAIL_AUTH')).toBe(502);
@@ -52,5 +64,16 @@ describe('transportOptions', () => {
   it('requires STARTTLS on 587', () => {
     const o = transportOptions({ ...base, port: 587, security: 'starttls' }, 'pw');
     expect(o).toMatchObject({ port: 587, secure: false, requireTLS: true });
+  });
+});
+
+describe('SmtpMailer.send', () => {
+  it('masks recipient, BCC and sender address in the error log detail', async () => {
+    sendMail.mockRejectedValueOnce(Object.assign(new Error('550 jobs@muster.example / max@example.com rejected'), { code: 'EENVELOPE', responseCode: 550 }));
+    const mail = { from: { name: 'Max Mustermann', address: 'max@example.com' }, to: 'jobs@muster.example', bcc: 'me@example.com', subject: 's', text: 't', attachments: [] };
+    const err = await new SmtpMailer().send(base, 'geheim123', mail).catch((e: unknown) => e) as { code: string; detailsForLog: string };
+    expect(err.code).toBe('MAIL_REJECTED');
+    expect(err.detailsForLog).not.toContain('jobs@muster.example');
+    expect(err.detailsForLog).not.toContain('max@example.com');
   });
 });

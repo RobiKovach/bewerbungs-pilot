@@ -41,11 +41,11 @@ export function mailErrorFrom(err: unknown, opts: { secrets?: string[] } = {}): 
   let message = typeof e.message === 'string' ? e.message : typeof err === 'string' ? err : '';
   // Mask on the full text first, then cut, so a secret can never survive by being split at the cut.
   for (const secret of opts.secrets ?? []) {
-    if (secret) message = message.split(secret).join('***');
+    if (secret) message = message.replace(new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '***');
   }
   const detail = `${code} ${responseCode || ''} ${message.slice(0, 200)}`.replace(/\s+/g, ' ').trim();
   let mapped: 'MAIL_AUTH' | 'MAIL_CONNECT' | 'MAIL_REJECTED';
-  if (code === 'EAUTH' || responseCode === 534 || responseCode === 535) mapped = 'MAIL_AUTH';
+  if (code === 'EAUTH' || responseCode === 530 || responseCode === 534 || responseCode === 535) mapped = 'MAIL_AUTH';
   else if (CONNECT_CODES.has(code)) mapped = 'MAIL_CONNECT';
   else if (responseCode >= 500 || code === 'EENVELOPE' || code === 'EMESSAGE') mapped = 'MAIL_REJECTED';
   else mapped = 'MAIL_CONNECT';
@@ -67,7 +67,7 @@ export class SmtpMailer implements Mailer {
       });
       return { messageId: String(info.messageId) };
     } catch (err) {
-      throw mailErrorFrom(err, { secrets: [password, config.user] });
+      throw mailErrorFrom(err, { secrets: [password, config.user, mail.to, mail.bcc ?? '', mail.from.address] });
     } finally {
       transport.close();
     }
