@@ -17,6 +17,8 @@ function setup(currentStep: string | null, availability: Availability = { ok: tr
     'GET /api/llm/check?refresh=1': check,
     'POST /api/llm/open-login': () => ({ body: { ok: true } }),
     'GET /api/profile': () => ({ body: viewOf(emptyProfile()) }),
+    'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }),
+    'GET /api/mail/providers': () => ({ body: [] }),
   });
   render(<SettingsProvider><OnboardingWizard /></SettingsProvider>);
   return { server, f, user: userEvent.setup() };
@@ -34,7 +36,14 @@ describe('OnboardingWizard', () => {
   it('resumes where the user left off', async () => {
     setup('email');
     expect(await screen.findByText('Step 4 of 5')).toBeInTheDocument();
-    expect(screen.getByText('Coming soon')).toBeInTheDocument();
+    expect(await screen.findByLabelText(/^Your email address/)).toBeInTheDocument();
+  });
+
+  it('lets the user skip the email step', async () => {
+    const { server, user } = setup('email');
+    await user.click(await screen.findByRole('button', { name: 'Skip for now' }));
+    expect(await screen.findByText('Step 5 of 5')).toBeInTheDocument();
+    expect(server.current().onboarding.currentStep).toBe('done');
   });
 
   it('shows the profile wizard on the profile step and can skip it', async () => {

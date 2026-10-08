@@ -13,7 +13,7 @@ describe('GuidePage', () => {
   });
   it('marks not-yet-available stages as coming soon', () => {
     render(<GuidePage />);
-    expect(screen.getAllByText('Coming soon')).toHaveLength(3);
+    expect(screen.getAllByText('Coming soon')).toHaveLength(2);
     expect(within(screen.getAllByRole('listitem')[1]).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '#/profile');
   });
   it('the job search stage opens the vacancies page', () => {

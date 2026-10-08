@@ -185,3 +185,12 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .links-field .link-row { display: grid; grid-template-columns: 10rem 1fr auto; gap: .5rem; align-items: center; margin-bottom: .4rem; }
 .links-field .link-row .field-error { grid-column: 1 / -1; margin: 0; }
 @media (max-width: 640px) { .links-field .link-row { grid-template-columns: 1fr; } .links-field .link-row .btn { justify-self: start; } }
+
+/* Email connection wizard */
+.mail-wizard h3 { margin: 0.4rem 0 0.8rem; }
+.mail-wizard h4 { margin: 1rem 0 0.6rem; }
+.mail-help { padding-left: 1.3rem; line-height: 1.5; }
+.mail-help li { margin-bottom: 0.3rem; }
+.mail-password { display: flex; gap: 0.5rem; align-items: center; }
+.mail-password input { flex: 1; min-width: 0; }
+.mail-wizard .checkbox-group legend { padding: 0; }

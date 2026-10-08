@@ -4,6 +4,7 @@ import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { InfoTip } from '../components/InfoTip';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { MailSettingsBlock } from '../mail/MailSettingsBlock';
 import { useSettings } from '../settings';
 import type { Language } from '../types';
 
@@ -59,6 +60,11 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
         )}
         {test.kind === 'ok' ? <p className="ok">{t('settings.claudeResult', { greeting: test.greeting })}</p> : null}
         {test.kind === 'failed' ? <ErrorBanner error={test.error} /> : null}
+      </div>
+
+      <div className="card settings-section">
+        <h2>{t('settings.mailTitle')}</h2>
+        <MailSettingsBlock />
       </div>
 
       <div className="card settings-section">

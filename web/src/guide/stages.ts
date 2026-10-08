@@ -10,7 +10,7 @@ export interface GuideStage {
 export const GUIDE_STAGES: GuideStage[] = [
   { id: 'install', icon: '💻', action: 'none' },
   { id: 'profile', icon: '👤', action: { href: '#/profile' } },
-  { id: 'email', icon: '✉️', action: 'coming-soon' },
+  { id: 'email', icon: '✉️', action: { href: '#/settings' } },
   { id: 'search', icon: '🔎', action: { href: '#/vacancies' } },
   { id: 'review', icon: '📝', action: { href: '#/applications' } },
   { id: 'send', icon: '📤', action: 'coming-soon' },
