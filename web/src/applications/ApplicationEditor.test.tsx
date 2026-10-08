@@ -195,3 +195,86 @@ describe('ApplicationEditor — letter', () => {
     expect(await screen.findByText('The letter is longer than one page (2 pages). Please shorten it.')).toBeInTheDocument();
   });
 });
+
+describe('ApplicationEditor — sending and the frozen package', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: { provider: 'gmail', address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl' }, passwordSaved: true } }) };
+  const approved = () => appView({}, { status: 'approved', approvedAt: '2026-09-29T12:00:00.000Z' });
+  const sentView = () => appView({}, {
+    status: 'sent', sentAt: '2026-09-30T08:00:00.000Z',
+    sentEmail: { to: 'jobs@muster.example', subject: 'Mein Betreff', body: 'Gesendeter Text', attachments: ['Anschreiben_Max_Mustermann.pdf'] },
+  });
+
+  it('Send is off with a reason when the email is not connected', async () => {
+    setup({ 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) }, approved());
+    expect(await screen.findByText('To send applications, please connect your email first.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Connect your email' })).toHaveAttribute('href', '#/settings');
+  });
+
+  it('a draft has no Send button', async () => {
+    setup(mail);
+    await screen.findByRole('button', { name: 'Approve' });
+    expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
+  });
+
+  it('Send opens the dialog; after sending the package is read-only with a green notice', async () => {
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [], totalSize: 1000, mailReady: true } }),
+      'POST /api/applications/app1/send': () => ({ body: sentView() }),
+    }, approved());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Sent to jobs@muster.example — a copy is in your mailbox.')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByText('Sent', { selector: '.badge' })).toBeInTheDocument();
+  });
+
+  it('unsaved edits switch Send off', async () => {
+    const { user } = setup(mail, approved());
+    await user.type(await screen.findByLabelText('Subject'), 'X');
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+  });
+
+  it('a sent package is read-only: no Approve, no Ask Claude, no Update CV; downloads work', async () => {
+    const { f, user } = setup(mail, appView({ profileChanged: true }, sentView().application));
+    expect(await screen.findByText('This application was sent — it can no longer be changed. Downloads still work.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Subject')).toBeDisabled();
+    for (const name of ['Approve', 'Back to draft', 'Create again', 'Ask Claude', 'Save changes', 'Send']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+    }
+    expect(screen.getByRole('button', { name: 'Delete package' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Cover letter (PDF)' })).toBeEnabled();
+    await user.click(screen.getByRole('tab', { name: 'CV' }));
+    expect(screen.queryByRole('button', { name: 'Update CV' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Job title under your name')).toBeDisabled();
+    expect(f.mock.calls.some(([url]) => String(url).endsWith('/recount'))).toBe(false);
+  });
+
+  it('does not recount the pages of a sent package', async () => {
+    const { f } = setup(mail, appView({}, { ...sentView().application, letter: { ...appView().application.letter, pages: 0 } }));
+    await screen.findByText(/no longer be changed/);
+    expect(f.mock.calls.some(([url]) => String(url).endsWith('/recount'))).toBe(false);
+  });
+
+  it('"What was sent" shows the stored email', async () => {
+    const { user } = setup(mail, sentView());
+    await user.click(await screen.findByText('What was sent'));
+    expect(screen.getByText('jobs@muster.example')).toBeInTheDocument();
+    expect(screen.getByText('Mein Betreff')).toBeInTheDocument();
+    expect(screen.getByText('Gesendeter Text')).toBeInTheDocument();
+    expect(screen.getByText('Anschreiben_Max_Mustermann.pdf')).toBeInTheDocument();
+  });
+
+  it('a 409 without a reason (a status route) still shows a sensible message', async () => {
+    const { user } = setup({
+      ...mail,
+      'POST /api/applications/app1/unapprove': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x' } } }),
+    }, approved());
+    await user.click(await screen.findByRole('button', { name: 'Back to draft' }));
+    expect(await screen.findByText('This was changed in the meantime.')).toBeInTheDocument();
+  });
+});

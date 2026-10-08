@@ -7,7 +7,9 @@ import type { ApplicationView, DocLanguage } from '../types';
 import { AttachmentsTab } from './AttachmentsTab';
 import { CvTab } from './CvTab';
 import { download } from './download';
+import { isFrozen } from './format';
 import { LetterTab } from './LetterTab';
+import { SendDialog } from './SendDialog';
 import { jobError, useApplicationJob } from './useApplicationJob';
 
 const TABS = ['letter', 'cv', 'attachments'] as const;
@@ -24,12 +26,15 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [cvDirty, setCvDirty] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [language, setLanguage] = useState<DocLanguage>('de');
+  const [mailReady, setMailReady] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
       let v = await api.getApplication(id);
       // A stored page count other than 1 may be stale (counted with an older layout, or 0 = not counted): count again.
-      if (v.application.letter.pages !== 1) {
+      if (!isFrozen(v.application.status) && v.application.letter.pages !== 1) {
         try { v = await api.recountPages(id); } catch { /* no browser or busy: keep the stored number */ }
       }
       setView(v);
@@ -39,18 +44,24 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
     }
   }, [id]);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    let alive = true;
+    api.getMail().then((m) => { if (alive) setMailReady(m.mail !== null && m.passwordSaved); }, () => { if (alive) setMailReady(false); });
+    return () => { alive = false; };
+  }, []);
   const job = useApplicationJob({ pollMs, onFinished: (s) => { if (s.applicationId === id) void load(); } });
 
   if (error && !view) return <ErrorBanner error={error} onRetry={() => void load()} />;
   if (!view) return <p className="muted">{t('common.loading')}</p>;
   const a = view.application;
+  const frozen = isFrozen(a.status);
   // Unsaved text in the letter or the CV Profil: Approve, Back to draft and tab switches wait until it is saved or discarded.
   const dirty = letterDirty || cvDirty;
   // One job at a time: any running job switches the Claude buttons off; editing is off only for the package it works on.
   const busy = job.state?.state === 'running';
   const jobOnThis = busy && job.state?.applicationId === id;
   // A failed reload (after a job or a refused approve) leaves a stale view: editing stays off until a reload succeeds.
-  const locked = jobOnThis || error !== null;
+  const locked = jobOnThis || error !== null || frozen;
   const failed = job.state?.applicationId === id ? jobError(job.state) : null;
   const act = async (fn: () => Promise<ApplicationView>) => {
     setActionError(null);
@@ -84,11 +95,13 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       <p className="app-row__meta">
         <span className={`badge status-${a.status}`}>{t(`applications.status.${a.status}`)}</span>
         <span className="badge">{a.language.toUpperCase()}</span>
-        {view.profileChanged ? <span className="badge warn">{t('applications.profileChanged')}</span> : null}
+        {view.profileChanged && !frozen ? <span className="badge warn">{t('applications.profileChanged')}</span> : null}
       </p>
       {jobOnThis && job.state?.kind
         ? <ClaudeWorking textKey={`applications.working.${job.state.kind}`} onCancel={() => void job.cancel()} />
         : busy ? <p className="muted" role="status">{t('applications.busy')}</p> : null}
+      {frozen ? <p className="notice" role="status">{t('applications.frozen')}</p> : null}
+      {sentTo ? <p className="notice notice-ok" role="status">{t('applications.send.sentNotice', { to: sentTo })}</p> : null}
       {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
       {failed ? <ErrorBanner error={failed} /> : null}
       {job.error ? <ErrorBanner error={job.error} /> : null}
@@ -99,9 +112,9 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         ))}
       </div>
       {tab === 'letter' ? (
-        <LetterTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setLetterDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
+        <LetterTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setLetterDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
       ) : null}
-      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} busy={busy} onView={setView} onDirty={setCvDirty} onRefresh={(keepProfil, keepHeadline) => void job.start(() => api.refreshCv(id, keepProfil, keepHeadline))} /> : null}
+      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setCvDirty} onRefresh={(keepProfil, keepHeadline) => void job.start(() => api.refreshCv(id, keepProfil, keepHeadline))} /> : null}
       {tab === 'attachments' ? <AttachmentsTab view={view} locked={locked} onView={setView} /> : null}
 
       <div className="btn-row downloads" role="group" aria-label={t('applications.download.title')}>
@@ -113,14 +126,33 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         <button type="button" className="btn" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}>{t('applications.download.bundle')}</button>
       </div>
 
+      {a.sentEmail ? (
+        <details className="sent-info">
+          <summary>{t('applications.sentInfo.title')}</summary>
+          <dl>
+            <dt>{t('applications.sentInfo.to')}</dt><dd>{a.sentEmail.to}</dd>
+            <dt>{t('applications.sentInfo.subject')}</dt><dd>{a.sentEmail.subject}</dd>
+            <dt>{t('applications.sentInfo.body')}</dt><dd className="sent-info__body">{a.sentEmail.body}</dd>
+            <dt>{t('applications.sentInfo.attachments')}</dt><dd>{a.sentEmail.attachments.join(', ')}</dd>
+          </dl>
+        </details>
+      ) : null}
+
       <div className="btn-row app-actions">
-        {a.status === 'draft'
+        {frozen ? null : a.status === 'draft'
           ? <button type="button" className="btn" disabled={locked || dirty || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>
           : <button type="button" className="btn ghost" disabled={locked || dirty} onClick={() => void act(() => api.unapproveApplication(id))}>{t('applications.unapprove')}</button>}
-        <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>
-        <button type="button" className="btn ghost" disabled={locked} onClick={() => setConfirm('delete')}>{t('applications.delete')}</button>
+        {a.status === 'approved' ? <button type="button" className="btn" disabled={!mailReady || dirty || busy || locked || sending} onClick={() => { setSentTo(null); setSending(true); }}>{t('applications.send.button')}</button> : null}
+        {frozen ? null : <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>}
+        <button type="button" className="btn ghost" disabled={jobOnThis || error !== null} onClick={() => setConfirm('delete')}>{t('applications.delete')}</button>
       </div>
+      {a.status === 'approved' && !mailReady ? (
+        <p className="muted">{t('applications.send.needMail')} <a href="#/settings">{t('applications.send.needMailLink')}</a></p>
+      ) : null}
       {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
+      {sending ? (
+        <SendDialog id={id} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
+      ) : null}
       {confirm === 'recreate' ? (
         <div className="card notice" role="alertdialog" aria-label={t('applications.recreate')}>
           <p>{t('applications.recreateConfirm')}</p>
