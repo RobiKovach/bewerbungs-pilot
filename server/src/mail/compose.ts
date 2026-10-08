@@ -1,4 +1,4 @@
-import type { Language } from '@bp/shared';
+import type { ApplicationPackage, DocLanguage, Language } from '@bp/shared';
 
 const TEST_MAIL: Record<Language, { subject: string; text: string }> = {
   en: {
@@ -29,4 +29,19 @@ const TEST_MAIL: Record<Language, { subject: string; text: string }> = {
 
 export function testMail(language: Language): { subject: string; text: string } {
   return TEST_MAIL[language];
+}
+
+const APPLICATION_BODY: Record<DocLanguage, (title: string) => string> = {
+  de: (title) => `anbei sende ich Ihnen meine Bewerbung als ${title} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
+  en: (title) => `please find attached my application for the position of ${title}, with my cover letter and CV. I look forward to hearing from you.`,
+};
+const CLOSING: Record<DocLanguage, string> = { de: 'Mit freundlichen Grüßen', en: 'Kind regards' };
+
+/** The suggested email to the employer; the person can edit it in the send dialog. */
+export function applicationEmail(p: ApplicationPackage): { subject: string; text: string } {
+  const lang = p.language;
+  const { fullName, phone, email } = p.snapshot.personal;
+  const signature = [fullName, phone, email].filter((l) => l !== '');
+  const text = [p.letter.salutation, '', APPLICATION_BODY[lang](p.vacancy.title), '', CLOSING[lang], ...signature].join('\n');
+  return { subject: p.letter.subject, text };
 }

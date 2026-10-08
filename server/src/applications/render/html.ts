@@ -31,10 +31,12 @@ export function asciiName(s: string): string {
     .replace(/[^A-Za-z0-9-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 }
 
-export function fileNames(fullName: string, company: string): { letter: string; cv: string; bundle: string } {
+/** Download and email attachment names, in the document's language (DE Anschreiben/Lebenslauf, EN Cover_Letter/CV). */
+export function fileNames(fullName: string, company: string, language: DocLanguage): { letter: string; cv: string; bundle: string } {
   const name = asciiName(fullName);
   const firm = asciiName(company);
   const join = (...parts: string[]) => `${parts.filter(Boolean).join('_')}.pdf`;
+  if (language === 'en') return { letter: join('Cover_Letter', name, firm), cv: join('CV', name), bundle: join('Application', name, firm) };
   return { letter: join('Anschreiben', name, firm), cv: join('Lebenslauf', name), bundle: join('Bewerbung', name, firm) };
 }
 

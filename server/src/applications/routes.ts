@@ -1,8 +1,12 @@
 import fs from 'node:fs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { DocLanguage, LetterPatch, OutcomeStatus, Profile } from '@bp/shared';
+import type { SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
+import { applicationEmail } from '../mail/compose.js';
+import type { Mailer } from '../mail/mailer.js';
+import type { SecretStore } from '../mail/secret.js';
 import type { ProfileFiles } from '../profile/files.js';
 import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
@@ -20,7 +24,7 @@ import { toListView, toView } from './views.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
-  profile: () => Profile; logger: Logger; now?: () => Date;
+  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; now?: () => Date;
 }
 
 /** Offer texts shorter than this are stubs (the full text is on a partner site): the dialog warns. */
@@ -64,6 +68,14 @@ const headlineBody = { type: 'object', additionalProperties: false, required: ['
 const statusBody = {
   type: 'object', additionalProperties: false, required: ['status', 'date'],
   properties: { status: { enum: ['interview', 'rejected', 'offer', 'withdrawn'] }, date: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' }, note: { type: 'string', maxLength: L.note } },
+};
+const sendBody = {
+  type: 'object', additionalProperties: false, required: ['to', 'subject', 'body'],
+  properties: {
+    to: { type: 'string', maxLength: L.address, pattern: '^[^\\s@<>,;"]+@[^\\s@<>,;"]+\\.[^\\s@<>,;"]+$' },
+    subject: { type: 'string', minLength: 1, maxLength: L.emailSubject, pattern: '^[^\\r\\n]*\\S[^\\r\\n]*$' },
+    body: { type: 'string', minLength: 1, maxLength: L.emailBody, pattern: '\\S' },
+  },
 };
 const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
 
@@ -250,7 +262,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const file = d.store.photoPath(id);
     return file ? { data: fs.readFileSync(file), ext: file.endsWith('.png') ? '.png' as const : '.jpg' as const } : null;
   };
-  const names = (id: string) => { const p = d.store.require(id); return fileNames(p.snapshot.personal.fullName, p.vacancy.company); };
+  const names = (id: string) => { const p = d.store.require(id); return fileNames(p.snapshot.personal.fullName, p.vacancy.company, p.language); };
   /** Chosen attachments that still exist in the profile, with their files (spec, section 5: deleted ones are left out). */
   const chosenDocs = (id: string) => {
     const p = d.store.require(id);
@@ -291,5 +303,72 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       ...chosenDocs(id).map((doc) => ({ name: doc.label || doc.originalName, data: fs.readFileSync(d.files.pathOf(doc)) })),
     ];
     return sendPdf(reply, await bundlePdfs(parts), names(id).bundle);
+  });
+
+  // ---- Sending by email ----
+  const sending = new Set<string>();
+  const docFileName = (doc: { label: string; originalName: string }) => `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`;
+  /** The PDFs that would go into the email, freshly printed, with their file names. */
+  const mailAttachments = async (id: string) => {
+    const p = d.store.require(id);
+    const n = fileNames(p.snapshot.personal.fullName, p.vacancy.company, p.language);
+    return [
+      { filename: n.letter, content: await d.printer.print(letterHtml(p, now())) },
+      { filename: n.cv, content: await d.printer.print(cvHtml(p, photoOf(id))) },
+      ...chosenDocs(id).map((doc) => ({ filename: docFileName(doc), content: fs.readFileSync(d.files.pathOf(doc)) })),
+    ];
+  };
+
+  app.get('/api/applications/:id/send-draft', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    const p = d.store.require(id);
+    assertEditable(p);
+    const email = applicationEmail(p);
+    const attachments = (await mailAttachments(id)).map((a) => ({ name: a.filename, size: a.content.length }));
+    return {
+      to: p.vacancy.contact?.email ?? '', subject: email.subject, body: email.text, attachments,
+      totalSize: attachments.reduce((sum, a) => sum + a.size, 0),
+      mailReady: d.settings.get().mail !== null && (await d.secrets.load()) !== null,
+    };
+  });
+
+  app.post('/api/applications/:id/send', { schema: { params: idParams, body: sendBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    const { to, subject, body } = req.body as { to: string; subject: string; body: string };
+    // Every check and the lock come before the first await: two quick requests can never both pass.
+    notBusy(id);
+    const start = d.store.require(id);
+    assertEditable(start);
+    if (start.status !== 'approved') throw new AppError('CONFLICT', 'only an approved package can be sent');
+    if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageBusy');
+    const config = d.settings.get().mail;
+    if (!config) throw new AppError('MAIL_NOT_CONFIGURED', 'no mailbox connected');
+    sending.add(id);
+    try {
+      const password = await d.secrets.load();
+      if (password === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no password saved');
+      const attachments = await mailAttachments(id);
+      // Nothing may have changed the package while it was printed (no await between this check and the send call).
+      notBusy(id);
+      const current = d.store.require(id);
+      if (current.status !== 'approved' || current.updatedAt !== start.updatedAt) throw new AppError('CONFLICT', 'the package changed while it was being sent', 'packageBusy');
+      const { messageId } = await d.mailer.send(config, password, {
+        from: { name: config.senderName, address: config.address }, to, bcc: config.address, subject, text: body, attachments,
+      });
+      const at = now().toISOString();
+      d.store.update(id, (p) => {
+        if (isFrozen(p)) throw new AppError('CONFLICT', 'package was sent', 'packageSent');
+        addStatus(p, 'sent', at, { to, messageId });
+        p.sentAt = at;
+        p.sentEmail = { to, subject, body, attachments: attachments.map((a) => a.filename) };
+      });
+      d.logger.info('application_sent', { id });
+      return view(id);
+    } catch (err) {
+      d.logger.warn('application_send_failed', { id, code: err instanceof AppError ? err.code : 'UNKNOWN' });
+      throw err;
+    } finally {
+      sending.delete(id);
+    }
   });
 }

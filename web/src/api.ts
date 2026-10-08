@@ -10,6 +10,11 @@ export interface MailSaveBody {
   user: string; password?: string; language: Language;
 }
 
+/** What the send dialog starts with (GET send-draft). */
+export interface SendDraft {
+  to: string; subject: string; body: string; attachments: { name: string; size: number }[]; totalSize: number; mailReady: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     public readonly code: string,
@@ -127,6 +132,8 @@ export const api = {
   recountPages: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/recount`, {}),
   unapproveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/unapprove`, {}),
   deleteApplication: (id: string) => request<{ ok: true }>('DELETE', `/api/applications/${encodeURIComponent(id)}`),
+  sendDraft: (id: string) => request<SendDraft>('GET', `/api/applications/${encodeURIComponent(id)}/send-draft`),
+  sendApplication: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/send`, mail),
   previewUrl: (id: string, kind: 'letter' | 'cv', version: string) => `/api/applications/${encodeURIComponent(id)}/preview/${kind}?v=${encodeURIComponent(version)}`,
   pdfUrl: (id: string, part: 'letter' | 'cv' | 'bundle') => `/api/applications/${encodeURIComponent(id)}/pdf/${part}`,
   attachmentUrl: (id: string, fileId: string) => `/api/applications/${encodeURIComponent(id)}/pdf/attachment/${encodeURIComponent(fileId)}`,

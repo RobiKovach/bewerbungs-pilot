@@ -24,10 +24,10 @@ describe('html helpers', () => {
     expect(asciiName('Zoë Łukasz-Nowak')).toBe('Zoe_Lukasz-Nowak');
     expect(asciiName('Straße')).toBe('Strasse');
     expect(asciiName('ООО «Ромашка»')).toBe('');
-    expect(fileNames('Max Mustermann', 'Muster GmbH')).toEqual({
+    expect(fileNames('Max Mustermann', 'Muster GmbH', 'de')).toEqual({
       letter: 'Anschreiben_Max_Mustermann_Muster_GmbH.pdf', cv: 'Lebenslauf_Max_Mustermann.pdf', bundle: 'Bewerbung_Max_Mustermann_Muster_GmbH.pdf',
     });
-    expect(fileNames('', 'ООО')).toEqual({ letter: 'Anschreiben.pdf', cv: 'Lebenslauf.pdf', bundle: 'Bewerbung.pdf' });
+    expect(fileNames('', 'ООО', 'de')).toEqual({ letter: 'Anschreiben.pdf', cv: 'Lebenslauf.pdf', bundle: 'Bewerbung.pdf' });
   });
 });
 
