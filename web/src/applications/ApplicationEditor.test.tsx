@@ -326,3 +326,29 @@ describe('ApplicationEditor — statuses', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo last change' })).not.toBeInTheDocument());
   });
 });
+
+describe('ApplicationEditor — status dialog safety', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) };
+  const sentV = () => appView({}, { status: 'sent', sentAt: '2026-09-30T08:00:00.000Z', history: [{ kind: 'sent', at: '2026-09-30T08:00:00.000Z' }], sentEmail: { to: 'a@b.de', subject: 'S', body: 'B', attachments: [] } });
+
+  it('a refused save keeps the dialog open with the typed note and shows the error', async () => {
+    const { user } = setup({ ...mail, 'POST /api/applications/app1/status': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x' } } }) }, sentV());
+    await user.click(await screen.findByRole('button', { name: 'Change status' }));
+    const dialog = screen.getByRole('dialog', { name: 'Change status' });
+    await user.type(within(dialog).getByLabelText('Note (optional)'), 'Meine Notiz');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(within(dialog).getByRole('alert')).toBeInTheDocument());
+    expect(screen.getByRole('dialog', { name: 'Change status' })).toBeInTheDocument();
+    expect(within(dialog).getByLabelText('Note (optional)')).toHaveValue('Meine Notiz');
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeEnabled();
+  });
+
+  it('a date more than a year ahead switches Save off; the note stops at 300 characters', async () => {
+    const { user } = setup(mail, sentV());
+    await user.click(await screen.findByRole('button', { name: 'Change status' }));
+    const dialog = screen.getByRole('dialog', { name: 'Change status' });
+    fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2099-01-01' } });
+    expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(within(dialog).getByLabelText('Note (optional)')).toHaveAttribute('maxlength', '300');
+  });
+});

@@ -202,7 +202,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .sent-info dd { margin: 0; }
 .sent-info__body { white-space: pre-wrap; }
 .filter-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
-.chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.75rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 0.875rem; }
+.chip { position: relative; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.75rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 0.875rem; }
 .chip input { position: absolute; opacity: 0; pointer-events: none; }
 .chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
 .chip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }

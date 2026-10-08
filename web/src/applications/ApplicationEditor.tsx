@@ -146,17 +146,17 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
           ? <button type="button" className="btn" disabled={locked || dirty || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>
           : <button type="button" className="btn ghost" disabled={locked || dirty} onClick={() => void act(() => api.unapproveApplication(id))}>{t('applications.unapprove')}</button>}
         {a.status === 'approved' ? <button type="button" className="btn" disabled={!mailReady || dirty || busy || locked || sending} onClick={() => { setSentTo(null); setSending(true); }}>{t('applications.send.button')}</button> : null}
-        {a.status === 'approved' ? <button type="button" className="btn ghost" disabled={busy || locked || dirty || sending} onClick={() => setConfirm('submitted')}>{t('applications.submitted.button')}</button> : null}
-        {frozen ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => setStatusOpen(true)}>{t('applications.statusChange.button')}</button> : null}
+        {a.status === 'approved' ? <button type="button" className="btn ghost" disabled={busy || locked || dirty || sending} onClick={() => { setStatusOpen(false); setConfirm('submitted'); }}>{t('applications.submitted.button')}</button> : null}
+        {frozen ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => { setConfirm(null); setStatusOpen(true); }}>{t('applications.statusChange.button')}</button> : null}
         {frozen ? null : <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>}
         <button type="button" className="btn ghost" disabled={jobOnThis || error !== null} onClick={() => setConfirm('delete')}>{t('applications.delete')}</button>
       </div>
       {a.status === 'approved' && !mailReady ? (
         <p className="muted">{t('applications.send.needMail')} <a href="#/settings">{t('applications.send.needMailLink')}</a></p>
       ) : null}
-      <HistoryBlock history={a.history} canUndo={view.canUndo} busy={error !== null} onUndo={() => void act(() => api.undoStatus(id))} />
+      <HistoryBlock history={a.history} canUndo={view.canUndo} busy={busy || error !== null} onUndo={() => void act(() => api.undoStatus(id))} />
       {statusOpen ? (
-        <StatusDialog onClose={() => setStatusOpen(false)} onSave={(body) => { setStatusOpen(false); void act(() => api.setStatus(id, body)); }} />
+        <StatusDialog onClose={() => setStatusOpen(false)} onSave={async (body) => { const v = await api.setStatus(id, body); setView(v); setActionError(null); setStatusOpen(false); }} />
       ) : null}
       {confirm === 'submitted' ? (
         <div className="card notice" role="alertdialog" aria-label={t('applications.submitted.button')}>
