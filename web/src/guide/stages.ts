@@ -13,6 +13,6 @@ export const GUIDE_STAGES: GuideStage[] = [
   { id: 'email', icon: '✉️', action: { href: '#/settings' } },
   { id: 'search', icon: '🔎', action: { href: '#/vacancies' } },
   { id: 'review', icon: '📝', action: { href: '#/applications' } },
-  { id: 'send', icon: '📤', action: 'coming-soon' },
-  { id: 'statuses', icon: '📊', action: 'coming-soon' },
+  { id: 'send', icon: '📤', action: { href: '#/applications' } },
+  { id: 'statuses', icon: '📊', action: { href: '#/applications' } },
 ];

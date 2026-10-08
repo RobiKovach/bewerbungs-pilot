@@ -201,3 +201,23 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .sent-info dt { font-weight: 600; margin-top: 0.5rem; }
 .sent-info dd { margin: 0; }
 .sent-info__body { white-space: pre-wrap; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
+.chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.75rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 0.875rem; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.chip:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.history { margin-top: 1.25rem; }
+.history__list { list-style: none; padding: 0; display: grid; gap: 0.4rem; }
+.history__list li { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.history__date { font-variant-numeric: tabular-nums; color: var(--muted); }
+.status-options { border: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.badge.status-sent, .badge.status-submitted { background: #dbe7ff; color: #1c3f9e; }
+.badge.status-interview { background: #dff3e4; color: #1e6b35; }
+.badge.status-offer { background: #c8ecd2; color: #14522a; font-weight: 800; }
+.badge.status-rejected, .badge.status-withdrawn { background: #e6e8ee; color: #4a5567; }
+@media (prefers-color-scheme: dark) {
+  .badge.status-sent, .badge.status-submitted { background: #1f2f5c; color: #b4c8ff; }
+  .badge.status-interview { background: #1d3a27; color: #a6e0b6; }
+  .badge.status-offer { background: #1f4a2e; color: #c4f0d0; font-weight: 800; }
+  .badge.status-rejected, .badge.status-withdrawn { background: #2a3444; color: #b5bfd0; }
+}

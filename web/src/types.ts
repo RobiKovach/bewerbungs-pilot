@@ -1,6 +1,6 @@
 export type {
   ApplicationJobKind, ApplicationJobRunState, ApplicationJobState, ApplicationListView, ApplicationPackage, ApplicationStatus,
-  ApplicationSummary, ApplicationView, AttachmentInfo, Availability, DocLanguage, LetterPatch, NewPackageInfo, PackageCv,
+  ApplicationSummary, ApplicationView, HistoryEntry, OutcomeStatus, AttachmentInfo, Availability, DocLanguage, LetterPatch, NewPackageInfo, PackageCv,
   PackageLetter, PackageReadiness, PackageSnapshot, PackageVacancy, CvProposals, CvResult, CvSectionId, EducationEntry, EducationKind, EmploymentType, ErrorCode, ErrorReason,
   ExperienceEntry, FilterReason, FollowUpQuestion, Language, LanguageItem, LanguageLevel, LlmCheck, MailProvider, MailSecurity, MailSettings, MailSettingsView, ManualEdit, ManualInput,
   PersonalData, Profile, ProfileDocument, ProfileLink, ProfileView, PublishedWithinDays, Readiness, RemoteKind, RemotePreference, Salutation,

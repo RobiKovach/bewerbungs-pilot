@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { mockFetch } from '../test/fetchMock';
 import { appSummary } from '../test/applicationFixtures';
 import { ApplicationsPage, applicationIdFromHash } from './ApplicationsPage';
@@ -30,5 +31,30 @@ describe('ApplicationsPage — list', () => {
     expect(applicationIdFromHash('#/applications/app_1-x')).toBe('app_1-x');
     expect(applicationIdFromHash('#/applications')).toBeNull();
     expect(applicationIdFromHash('#/applications/../x')).toBeNull();
+  });
+});
+
+describe('ApplicationsPage — status filter', () => {
+  it('the list filter shows only matching applications and counts them', async () => {
+    mockFetch({ 'GET /api/applications': () => ({ body: { applications: [
+      appSummary({ id: 'a1', company: 'Alpha GmbH', status: 'sent' }),
+      appSummary({ id: 'a2', company: 'Beta GmbH', status: 'submitted' }),
+      appSummary({ id: 'a3', company: 'Gamma GmbH', status: 'interview' }),
+      appSummary({ id: 'a4', company: 'Delta GmbH', status: 'draft' }),
+    ] } }) });
+    const user = userEvent.setup();
+    render(<ApplicationsPage />);
+    const group = await screen.findByRole('radiogroup', { name: 'Filter by status' });
+    expect(within(group).getByRole('radio', { name: 'All (4)' })).toBeChecked();
+    expect(within(group).getByRole('radio', { name: 'Sent (2)' })).toBeInTheDocument();
+    expect(within(group).getByRole('radio', { name: 'Offers (0)' })).toBeInTheDocument();
+    await user.click(within(group).getByRole('radio', { name: 'Sent (2)' }));
+    const rows = screen.getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0]!).getByRole('link', { name: /Alpha GmbH/ })).toBeInTheDocument();
+    expect(within(rows[1]!).getByRole('link', { name: /Beta GmbH/ })).toBeInTheDocument();
+    await user.click(within(group).getByRole('radio', { name: 'Offers (0)' }));
+    expect(screen.getByText('No applications with this status.')).toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
   });
 });

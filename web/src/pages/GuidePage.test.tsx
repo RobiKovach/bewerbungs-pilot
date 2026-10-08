@@ -11,9 +11,9 @@ describe('GuidePage', () => {
     expect(within(items[6]).getByRole('heading')).toHaveTextContent('Track your applications');
     expect(within(items[1]).getByText(/Upload your CV/)).toBeInTheDocument();
   });
-  it('marks not-yet-available stages as coming soon', () => {
+  it('every stage is available now: none is marked coming soon, the profile stage links on', () => {
     render(<GuidePage />);
-    expect(screen.getAllByText('Coming soon')).toHaveLength(2);
+    expect(screen.queryAllByText('Coming soon')).toHaveLength(0);
     expect(within(screen.getAllByRole('listitem')[1]).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '#/profile');
   });
   it('the job search stage opens the vacancies page', () => {
@@ -26,5 +26,12 @@ describe('GuidePage', () => {
     render(<GuidePage />);
     const stage = screen.getByRole('heading', { name: /Review and approve/ }).closest('li') as HTMLElement;
     expect(within(stage).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '#/applications');
+  });
+  it('the sending and tracking stages open the applications page', () => {
+    render(<GuidePage />);
+    for (const name of [/Sending/, /Track your applications/]) {
+      const stage = screen.getByRole('heading', { name }).closest('li') as HTMLElement;
+      expect(within(stage).getByRole('link', { name: 'Open' })).toHaveAttribute('href', '#/applications');
+    }
   });
 });

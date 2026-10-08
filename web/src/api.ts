@@ -1,5 +1,5 @@
 import type {
-  ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, PackageReadiness,
+  ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness,
   CvResult, CvSectionId, ErrorReason, Language, LlmCheck, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
@@ -131,6 +131,9 @@ export const api = {
   approveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/approve`, {}),
   recountPages: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/recount`, {}),
   unapproveApplication: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/unapprove`, {}),
+  markSubmitted: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/submitted`, {}),
+  setStatus: (id: string, body: { status: OutcomeStatus; date: string; note?: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/status`, body),
+  undoStatus: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/status/undo`, {}),
   deleteApplication: (id: string) => request<{ ok: true }>('DELETE', `/api/applications/${encodeURIComponent(id)}`),
   sendDraft: (id: string) => request<SendDraft>('GET', `/api/applications/${encodeURIComponent(id)}/send-draft`),
   sendApplication: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/send`, mail),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
 import { appView, jobState } from '../test/applicationFixtures';
@@ -276,5 +276,53 @@ describe('ApplicationEditor — sending and the frozen package', () => {
     }, approved());
     await user.click(await screen.findByRole('button', { name: 'Back to draft' }));
     expect(await screen.findByText('This was changed in the meantime.')).toBeInTheDocument();
+  });
+});
+
+describe('ApplicationEditor — statuses', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) };
+  const approved = () => appView({}, { status: 'approved', approvedAt: '2026-09-29T12:00:00.000Z' });
+  const sent = (over: Partial<ApplicationView> = {}) => appView(over, {
+    status: 'sent', sentAt: '2026-09-30T08:00:00.000Z', history: [{ kind: 'sent', at: '2026-09-30T08:00:00.000Z', to: 'jobs@muster.example' }],
+    sentEmail: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [] },
+  });
+
+  it('"I applied myself" asks first and marks the package submitted', async () => {
+    const { f, user } = setup({
+      ...mail,
+      'POST /api/applications/app1/submitted': () => ({ body: appView({}, { status: 'submitted', history: [{ kind: 'submitted', at: '2026-10-08T08:00:00.000Z' }] }) }),
+    }, approved());
+    await user.click(await screen.findByRole('button', { name: "I applied myself on the company's website" }));
+    expect(screen.getByText('Mark as submitted? The package can then no longer be changed.')).toBeInTheDocument();
+    expect(f.mock.calls.some(([url]) => url === '/api/applications/app1/submitted')).toBe(false);
+    await user.click(screen.getByRole('button', { name: 'Yes, mark as submitted' }));
+    expect(await screen.findByText('Submitted on the website', { selector: '.app-row__meta .badge.status-submitted' })).toBeInTheDocument();
+    expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/submitted' && init?.method === 'POST')).toBe(true);
+    expect(screen.queryByRole('button', { name: "I applied myself on the company's website" })).not.toBeInTheDocument();
+  });
+
+  it('change status sends status, date and note', async () => {
+    const after = appView({ canUndo: true }, { status: 'interview', history: [{ kind: 'sent', at: '2026-09-30T08:00:00.000Z' }, { kind: 'interview', at: '2026-10-08T00:00:00.000Z', note: 'Montag' }] });
+    const { f, user } = setup({ ...mail, 'POST /api/applications/app1/status': () => ({ body: after }) }, sent());
+    await user.click(await screen.findByRole('button', { name: 'Change status' }));
+    const dialog = screen.getByRole('dialog', { name: 'Change status' });
+    await user.click(within(dialog).getByRole('radio', { name: 'Offer' }));
+    fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2026-10-08' } });
+    await user.type(within(dialog).getByLabelText('Note (optional)'), 'Montag');
+    expect(within(dialog).getByText('6 / 300')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const post = f.mock.calls.find(([url]) => url === '/api/applications/app1/status');
+    expect(JSON.parse(String(post![1]!.body))).toEqual({ status: 'offer', date: '2026-10-08', note: 'Montag' });
+    expect(await screen.findByRole('button', { name: 'Undo last change' })).toBeInTheDocument();
+  });
+
+  it('undo asks first, then calls the server', async () => {
+    const { f, user } = setup({ ...mail, 'POST /api/applications/app1/status/undo': () => ({ body: sent() }) }, sent({ canUndo: true }));
+    await user.click(await screen.findByRole('button', { name: 'Undo last change' }));
+    expect(f.mock.calls.some(([url]) => url === '/api/applications/app1/status/undo')).toBe(false);
+    await user.click(screen.getByRole('button', { name: 'Yes, undo' }));
+    await waitFor(() => expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/status/undo' && init?.method === 'POST')).toBe(true));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo last change' })).not.toBeInTheDocument());
   });
 });

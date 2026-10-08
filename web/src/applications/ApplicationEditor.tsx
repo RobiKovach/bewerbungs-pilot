@@ -8,8 +8,10 @@ import { AttachmentsTab } from './AttachmentsTab';
 import { CvTab } from './CvTab';
 import { download } from './download';
 import { isFrozen } from './format';
+import { HistoryBlock } from './HistoryBlock';
 import { LetterTab } from './LetterTab';
 import { SendDialog } from './SendDialog';
+import { StatusDialog } from './StatusDialog';
 import { jobError, useApplicationJob } from './useApplicationJob';
 
 const TABS = ['letter', 'cv', 'attachments'] as const;
@@ -21,7 +23,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [error, setError] = useState<unknown>(null);
   const [actionError, setActionError] = useState<unknown>(null);
   const [tab, setTab] = useState<Tab>('letter');
-  const [confirm, setConfirm] = useState<null | 'recreate' | 'delete'>(null);
+  const [confirm, setConfirm] = useState<null | 'recreate' | 'delete' | 'submitted'>(null);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [letterDirty, setLetterDirty] = useState(false);
   const [cvDirty, setCvDirty] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -143,11 +146,26 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
           ? <button type="button" className="btn" disabled={locked || dirty || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>
           : <button type="button" className="btn ghost" disabled={locked || dirty} onClick={() => void act(() => api.unapproveApplication(id))}>{t('applications.unapprove')}</button>}
         {a.status === 'approved' ? <button type="button" className="btn" disabled={!mailReady || dirty || busy || locked || sending} onClick={() => { setSentTo(null); setSending(true); }}>{t('applications.send.button')}</button> : null}
+        {a.status === 'approved' ? <button type="button" className="btn ghost" disabled={busy || locked || dirty || sending} onClick={() => setConfirm('submitted')}>{t('applications.submitted.button')}</button> : null}
+        {frozen ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => setStatusOpen(true)}>{t('applications.statusChange.button')}</button> : null}
         {frozen ? null : <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>}
         <button type="button" className="btn ghost" disabled={jobOnThis || error !== null} onClick={() => setConfirm('delete')}>{t('applications.delete')}</button>
       </div>
       {a.status === 'approved' && !mailReady ? (
         <p className="muted">{t('applications.send.needMail')} <a href="#/settings">{t('applications.send.needMailLink')}</a></p>
+      ) : null}
+      <HistoryBlock history={a.history} canUndo={view.canUndo} busy={error !== null} onUndo={() => void act(() => api.undoStatus(id))} />
+      {statusOpen ? (
+        <StatusDialog onClose={() => setStatusOpen(false)} onSave={(body) => { setStatusOpen(false); void act(() => api.setStatus(id, body)); }} />
+      ) : null}
+      {confirm === 'submitted' ? (
+        <div className="card notice" role="alertdialog" aria-label={t('applications.submitted.button')}>
+          <p>{t('applications.submitted.confirm')}</p>
+          <div className="btn-row">
+            <button type="button" className="btn" onClick={() => { setConfirm(null); void act(() => api.markSubmitted(id)); }}>{t('applications.submitted.yes')}</button>
+            <button type="button" className="btn ghost" onClick={() => setConfirm(null)}>{t('common.cancel')}</button>
+          </div>
+        </div>
       ) : null}
       {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
       {sending ? (
