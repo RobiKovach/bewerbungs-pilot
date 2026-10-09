@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applicationEmail } from '../src/mail/compose.js';
+import { applicationEmail, followUpEmail, rejectionReply } from '../src/mail/compose.js';
 import { fileNames } from '../src/applications/render/html.js';
 import { pkg } from './helpers/applications.js';
 
@@ -24,5 +24,29 @@ describe('applicationEmail', () => {
     p.snapshot.personal.phone = '';
     p.snapshot.personal.email = '';
     expect(applicationEmail(p).text.endsWith('Mit freundlichen Grüßen\nMax Mustermann')).toBe(true);
+  });
+});
+
+describe('reminder and rejection reply', () => {
+  it('reminder: same salutation, Re: subject, the position and the day it was sent (DE and EN)', () => {
+    const de = pkg({ status: 'sent', language: 'de', sentEmail: { to: 'jobs@muster.example', subject: 'Bewerbung als Webentwickler', body: 'x', attachments: [] },
+      history: [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z' }] });
+    const m = followUpEmail(de);
+    expect(m.subject).toBe('Re: Bewerbung als Webentwickler');
+    expect(m.text.startsWith(de.letter.salutation)).toBe(true);
+    expect(m.text).toContain(`meiner Bewerbung als ${de.vacancy.title} vom 05.10.2026`);
+    expect(m.text).toContain('Mit freundlichen Grüßen\nMax Mustermann');
+    const en = followUpEmail({ ...de, language: 'en' });
+    expect(en.text).toContain('5 October 2026');
+    expect(en.text).toContain('Kind regards');
+  });
+
+  it('rejection reply: thanks, interest in the company, ≤ 100 words, no Claude', () => {
+    for (const language of ['de', 'en'] as const) {
+      const p = pkg({ status: 'rejected', language, history: [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z' }, { kind: 'rejected', at: '2026-10-08T10:00:00.000Z' }] });
+      const r = rejectionReply(p);
+      expect(r.text).toContain(p.vacancy.company);
+      expect(r.text.split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(100);
+    }
   });
 });

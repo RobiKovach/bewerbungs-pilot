@@ -45,3 +45,42 @@ export function applicationEmail(p: ApplicationPackage): { subject: string; text
   const text = [p.letter.salutation, '', APPLICATION_BODY[lang](p.vacancy.title), '', CLOSING[lang], ...signature].join('\n');
   return { subject: p.letter.subject, text };
 }
+
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** The day the application went out (first sent/submitted entry), local time; DE "05.10.2026", EN "5 October 2026". */
+export function sentDay(p: ApplicationPackage): string {
+  const entry = p.history.find((h) => h.kind === 'sent' || h.kind === 'submitted');
+  const d = new Date(entry ? entry.at : p.updatedAt);
+  if (p.language === 'en') return `${d.getDate()} ${MONTHS_EN[d.getMonth()]} ${d.getFullYear()}`;
+  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+}
+
+export function replySubject(p: ApplicationPackage): string {
+  return `Re: ${p.sentEmail?.subject ?? p.letter.subject}`.slice(0, 200);
+}
+
+const FOLLOW_UP_BODY: Record<DocLanguage, (title: string, day: string) => string> = {
+  de: (title, day) => `ich wollte mich nach dem Stand meiner Bewerbung als ${title} vom ${day} erkundigen. Ich bin weiterhin sehr an der Stelle interessiert und würde mich über eine kurze Rückmeldung freuen.`,
+  en: (title, day) => `I would like to ask about the status of my application for the position of ${title}, sent on ${day}. I am still very interested in the position and would appreciate a short update.`,
+};
+const REJECTION_BODY: Record<DocLanguage, (title: string, company: string) => string> = {
+  de: (title, company) => `vielen Dank für Ihre Rückmeldung und die Zeit, die Sie sich für meine Bewerbung als ${title} genommen haben. Auch wenn es diesmal nicht geklappt hat, bin ich weiterhin an ${company} interessiert und würde mich freuen, wenn Sie mich bei passenden Stellen berücksichtigen. Falls Sie mir kurz sagen können, was den Ausschlag gegeben hat, wäre ich Ihnen sehr dankbar.`,
+  en: (title, company) => `thank you for your reply and for the time you spent on my application for the position of ${title}. Although it did not work out this time, I am still interested in ${company} and would be glad if you kept me in mind for suitable positions. If you could briefly tell me what made the difference, I would be very grateful.`,
+};
+
+function replyLayout(p: ApplicationPackage, body: string): string {
+  const { fullName, phone, email } = p.snapshot.personal;
+  const signature = [fullName, phone, email].filter((l) => l !== '');
+  return [p.letter.salutation, '', body, '', CLOSING[p.language], ...signature].join('\n');
+}
+
+/** The reminder ("write again"): same salutation as the application, no Claude. */
+export function followUpEmail(p: ApplicationPackage): { subject: string; text: string } {
+  return { subject: replySubject(p), text: replyLayout(p, FOLLOW_UP_BODY[p.language](p.vacancy.title, sentDay(p))) };
+}
+
+/** A polite answer to a rejection (template, no Claude). */
+export function rejectionReply(p: ApplicationPackage): { subject: string; text: string } {
+  return { subject: replySubject(p), text: replyLayout(p, REJECTION_BODY[p.language](p.vacancy.title, p.vacancy.company)) };
+}

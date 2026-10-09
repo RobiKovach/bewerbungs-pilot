@@ -5,14 +5,15 @@ import type { ApplicationPackage, DocLanguage, LetterPatch, OutcomeStatus, Profi
 import type { SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
-import { applicationEmail } from '../mail/compose.js';
+import { applicationEmail, followUpEmail, rejectionReply, replySubject } from '../mail/compose.js';
 import type { Mailer } from '../mail/mailer.js';
 import type { SecretStore } from '../mail/secret.js';
 import type { ProfileFiles } from '../profile/files.js';
 import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { touchDraft, type ApplicationJob } from './job.js';
-import { addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from './status.js';
+import { addEvent, addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from './status.js';
+import { followUpOpen } from './follow-up.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
@@ -377,6 +378,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     ]);
   };
 
+  const mailReady = async () => d.settings.get().mail !== null && (await d.secrets.load()) !== null;
+
   app.get('/api/applications/:id/send-draft', { schema: { params: idParams } }, async (req) => {
     const { id } = req.params as { id: string };
     const p = d.store.require(id);
@@ -386,7 +389,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     return {
       to: p.vacancy.contact?.email ?? '', subject: email.subject, body: email.text, attachments,
       totalSize: attachments.reduce((sum, a) => sum + a.size, 0),
-      mailReady: d.settings.get().mail !== null && (await d.secrets.load()) !== null,
+      mailReady: await mailReady(),
     };
   });
 
@@ -442,5 +445,87 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     } finally {
       sending.delete(id);
     }
+  });
+
+  // ---- Reminders ("write again") and replies to a rejection / an offer ----
+  const replyAllowed = (p: ApplicationPackage) => p.status === 'rejected' || p.status === 'offer';
+  const draftTo = (p: ApplicationPackage) => p.sentEmail?.to ?? p.vacancy.contact?.email ?? '';
+  const followUpDone = () => new AppError('CONFLICT', 'a reminder was already sent, marked or dismissed', 'followUpDone');
+
+  /** A reminder or a reply: no attachments, same lock / "sent but not saved" rules as the application email. */
+  const sendExtra = async (id: string, kind: 'followUp' | 'reply', allowed: (p: ApplicationPackage) => boolean, mail: { to: string; subject: string; body: string }) => {
+    notBusy(id);
+    const key = `${id}:${kind}`;
+    if (d.sentUnsaved.has(key)) throw new AppError('CONFLICT', 'this email was already sent (not saved)', 'sentNotSaved');
+    const start = d.store.require(id);
+    if (!allowed(start)) throw new AppError('CONFLICT', `${kind} not possible now`, kind === 'followUp' ? 'followUpDone' : undefined);
+    const config = d.settings.get().mail;
+    if (!config) throw new AppError('MAIL_NOT_CONFIGURED', 'no mailbox connected');
+    sending.add(id);
+    try {
+      const secret = await d.secrets.load();
+      if (secret === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no secret saved');
+      const probe = structuredClone(start);
+      addEvent(probe, kind, now().toISOString(), { to: mail.to, messageId: '' });
+      if (validatePackage(probe) !== null) throw new AppError('CONFLICT', 'the email could not be recorded on this package', start.history.length >= L.history ? 'historyFull' : undefined);
+      const original = start.history.find((h) => h.kind === 'sent')?.messageId;
+      const { messageId } = await d.mailer.send(config, secret, {
+        from: { name: config.senderName, address: config.address }, to: mail.to, bcc: config.address, subject: mail.subject, text: mail.body, attachments: [],
+        ...(original && /^<[^<>\s]+@[^<>\s]+>$/.test(original) ? { inReplyTo: original } : {}),
+      });
+      try {
+        d.store.update(id, (p) => {
+          if (!allowed(p)) throw new AppError('CONFLICT', 'package changed', 'packageChanged');
+          addEvent(p, kind, now().toISOString(), { to: mail.to, messageId: messageId.slice(0, L.messageId) });
+        });
+      } catch {
+        d.sentUnsaved.add(key);
+        d.logger.error('application_extra_sent_unsaved', { id, kind });
+        throw new AppError('CONFLICT', 'the email was sent but the package could not be saved', 'sentNotSaved');
+      }
+      d.logger.info('application_extra_sent', { id, kind });
+      return view(id);
+    } catch (err) {
+      if (!(err instanceof AppError && err.reason === 'sentNotSaved')) d.logger.warn('application_extra_send_failed', { id, kind, code: err instanceof AppError ? err.code : 'UNKNOWN' });
+      throw err;
+    } finally {
+      sending.delete(id);
+    }
+  };
+
+  app.get('/api/applications/:id/follow-up-draft', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    const p = d.store.require(id);
+    if (!followUpOpen(p)) throw followUpDone();
+    const email = followUpEmail(p);
+    return { to: draftTo(p), subject: email.subject, body: email.text, mailReady: await mailReady() };
+  });
+
+  app.post('/api/applications/:id/follow-up/send', { schema: { params: idParams, body: sendBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    return sendExtra(id, 'followUp', followUpOpen, req.body as { to: string; subject: string; body: string });
+  });
+
+  for (const [path, kind] of [['mark', 'followUp'], ['dismiss', 'followUpDismissed']] as const) {
+    app.post(`/api/applications/:id/follow-up/${path}`, { schema: { params: idParams } }, async (req) => {
+      const { id } = req.params as { id: string };
+      notBusy(id);
+      if (!followUpOpen(d.store.require(id))) throw followUpDone();
+      d.store.update(id, (p) => addEvent(p, kind, now().toISOString()));
+      return view(id);
+    });
+  }
+
+  app.get('/api/applications/:id/reply-draft', { schema: { params: idParams } }, async (req) => {
+    const { id } = req.params as { id: string };
+    const p = d.store.require(id);
+    if (!replyAllowed(p)) throw new AppError('CONFLICT', 'there is nothing to reply to');
+    const mail = p.status === 'rejected' ? rejectionReply(p) : { subject: replySubject(p), text: p.offerReply?.body ?? '' };
+    return { to: draftTo(p), subject: mail.subject, body: mail.text, mailReady: await mailReady() };
+  });
+
+  app.post('/api/applications/:id/reply/send', { schema: { params: idParams, body: sendBody } }, async (req) => {
+    const { id } = req.params as { id: string };
+    return sendExtra(id, 'reply', replyAllowed, req.body as { to: string; subject: string; body: string });
   });
 }
