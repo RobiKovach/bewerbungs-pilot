@@ -65,6 +65,15 @@ describe('SentUnsavedLog', () => {
     expect(log.has('a1')).toBe(false);
     expect(warns).toHaveLength(1);
   });
+  it('a file that cannot be read at all (a folder in its place) is a warning, not a crash', () => {
+    const file = tmp();
+    fs.mkdirSync(file);
+    const warns: string[] = [];
+    const log = new SentUnsavedLog(file, (event) => warns.push(event));
+    expect(() => log.load()).not.toThrow();
+    expect(log.has('a1')).toBe(false);
+    expect(warns).toEqual(['sent_unsaved_unreadable']);
+  });
   it('a missing file is simply empty', () => {
     const warns: string[] = [];
     const log = new SentUnsavedLog(tmp(), (event) => warns.push(event));

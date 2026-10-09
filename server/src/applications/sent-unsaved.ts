@@ -22,8 +22,9 @@ export class SentUnsavedLog {
       }
       for (const k of keys) this.keys.add(k as string);
     } catch (err) {
-      if (!(err instanceof CorruptJsonError)) throw err;
-      this.warn('sent_unsaved_unreadable', {});
+      // Any read problem (bad JSON, locked file, a folder in the way) starts empty: startup must not crash.
+      const code = err instanceof CorruptJsonError ? 'CORRUPT_JSON' : (err as NodeJS.ErrnoException).code ?? 'UNKNOWN';
+      this.warn('sent_unsaved_unreadable', { code });
     }
   }
 
