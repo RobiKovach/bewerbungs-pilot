@@ -54,16 +54,18 @@ export function MailSettingsBlock() {
       {mail ? (
         <>
           {view.passwordSaved
-            ? <p>{t('mail.connectedAs', { address: mail.address })}</p>
-            : <p className="notice" role="status">{t('mail.passwordAgain')}</p>}
-          <p className="muted">{t('mail.providerLine', { provider: labels[mail.provider] ?? t('mail.otherEmail') })}</p>
+            ? <p>{t(mail.kind === 'google' ? 'mail.google.connectedWith' : 'mail.connectedAs', { address: mail.address })}</p>
+            : <p className="notice" role="status">{t(mail.kind === 'google' ? 'mail.google.again' : 'mail.passwordAgain')}</p>}
+          {mail.kind === 'smtp'
+            ? <p className="muted">{t('mail.providerLine', { provider: labels[mail.provider] ?? t('mail.otherEmail') })}</p>
+            : null}
           <div className="btn-row">
             <button type="button" className="btn" onClick={() => { setJustSaved(false); setEditing(true); }}>{t('mail.change')}</button>
             <button type="button" className="btn ghost" onClick={() => setConfirming(true)}>{t('mail.disconnect')}</button>
           </div>
           {confirming ? (
             <div className="card notice" role="alertdialog" aria-label={t('mail.disconnect')}>
-              <p>{t('mail.disconnectConfirm')}</p>
+              <p>{t(mail.kind === 'google' ? 'mail.google.disconnectConfirm' : 'mail.disconnectConfirm')}</p>
               <div className="btn-row">
                 <button type="button" className="btn" onClick={() => void disconnect()}>{t('mail.disconnectYes')}</button>
                 <button type="button" className="btn ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</button>

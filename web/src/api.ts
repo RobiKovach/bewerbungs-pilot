@@ -1,6 +1,6 @@
 import type {
   ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness,
-  CvResult, CvSectionId, ErrorReason, Language, LlmCheck, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
+  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, Language, LlmCheck, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
@@ -73,6 +73,9 @@ export const api = {
   mailProviders: () => request<MailProvider[]>('GET', '/api/mail/providers'),
   saveMail: (body: MailSaveBody) => request<MailSettingsView>('PUT', '/api/mail/settings', body),
   disconnectMail: () => request<MailSettingsView>('DELETE', '/api/mail/settings'),
+  googleStart: (address: string) => request<{ url: string }>('POST', '/api/mail/google/start', { address }),
+  googleStatus: () => request<GoogleSignInStatus>('GET', '/api/mail/google/status'),
+  googleSave: (body: { senderName: string; language: Language }) => request<MailSettingsView>('POST', '/api/mail/google/save', body),
   openLogin: () => request<{ ok: true }>('POST', '/api/llm/open-login', {}),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
 

@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MailWizard } from './MailWizard';
 import { MailSettingsBlock } from './MailSettingsBlock';
 import { mockFetch } from '../test/fetchMock';
 import { profileWith, viewOf } from '../test/profileFixtures';
-import type { MailProvider, MailSettingsView } from '../types';
+import type { GoogleSignInStatus, MailProvider, MailSettingsView } from '../types';
 
 const providers: MailProvider[] = [
   { id: 'gmail', label: 'Gmail', domains: ['gmail.com'], host: 'smtp.gmail.com', port: 465, security: 'ssl', helpUrl: 'https://myaccount.google.com/apppasswords' },
@@ -14,6 +14,14 @@ const providers: MailProvider[] = [
 const none: MailSettingsView = { mail: null, passwordSaved: false };
 const connected: MailSettingsView = {
   mail: { kind: 'smtp', address: 'max@gmail.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl', user: 'max@gmail.com', provider: 'gmail' },
+  passwordSaved: true,
+};
+const connectedGmx: MailSettingsView = {
+  mail: { kind: 'smtp', address: 'max@gmx.de', senderName: 'Max Mustermann', host: 'mail.gmx.net', port: 587, security: 'starttls', user: 'max@gmx.de', provider: 'gmx' },
+  passwordSaved: true,
+};
+const connectedGoogle: MailSettingsView = {
+  mail: { kind: 'google', address: 'max@gmail.com', senderName: 'Max Mustermann', provider: 'gmail' },
   passwordSaved: true,
 };
 
@@ -30,18 +38,18 @@ const putBodies = (f: ReturnType<typeof mockFetch>) =>
     .map((x) => JSON.parse(String((x[1] as RequestInit).body)) as Record<string, unknown>);
 
 describe('MailWizard', () => {
-  it('detects Gmail and shows the Gmail instruction; unknown domain shows server fields', async () => {
+  it('detects a provider and shows its instruction; unknown domain shows server fields', async () => {
     routes();
     const user = userEvent.setup();
     render(<MailWizard initial={none} onSaved={() => {}} />);
     const address = await screen.findByLabelText(/^Your email address/);
-    await user.type(address, 'max@gmail.com');
-    expect(await screen.findByText('Gmail detected')).toBeInTheDocument();
+    await user.type(address, 'max@gmx.de');
+    expect(await screen.findByText('GMX detected')).toBeInTheDocument();
     expect(screen.queryByLabelText('Outgoing mail server (SMTP)')).toBeNull();
     await waitFor(() => expect(screen.getByLabelText(/^Your name as the sender/)).toHaveValue('Max Mustermann'));
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText(/Open the "App passwords" page/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open Gmail settings' })).toHaveAttribute('href', 'https://myaccount.google.com/apppasswords');
+    expect(screen.getByText(/Log in to your GMX mailbox/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open GMX settings' })).toHaveAttribute('href', 'https://hilfe.gmx.net/');
     await user.click(screen.getByRole('button', { name: 'Back' }));
     const again = screen.getByLabelText(/^Your email address/);
     await user.clear(again);
@@ -56,7 +64,7 @@ describe('MailWizard', () => {
     const user = userEvent.setup();
     const calls: MailSettingsView[] = [];
     render(<MailWizard initial={none} onSaved={(v) => calls.push(v)} />);
-    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmail.com');
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmx.de');
     await waitFor(() => expect(screen.getByLabelText(/^Your name as the sender/)).toHaveValue('Max Mustermann'));
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.type(screen.getByLabelText('Password'), 'abcd efgh');
@@ -65,8 +73,8 @@ describe('MailWizard', () => {
     await user.click(screen.getByRole('button', { name: 'Send a test email and save' }));
     expect(await screen.findByText('Done! Check your inbox for the test email.')).toBeInTheDocument();
     expect(putBodies(f)).toEqual([{
-      address: 'max@gmail.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl',
-      user: 'max@gmail.com', password: 'abcdefgh', language: 'en',
+      address: 'max@gmx.de', senderName: 'Max Mustermann', host: 'mail.gmx.net', port: 587, security: 'starttls',
+      user: 'max@gmx.de', password: 'abcd efgh', language: 'en',
     }]);
     expect(calls).toEqual([connected]);
   });
@@ -105,7 +113,7 @@ describe('MailWizard', () => {
     routes({ 'PUT /api/mail/settings': () => ({ status: 401, body: { error: { code: 'MAIL_AUTH', detailsForLog: '' } } }) });
     const user = userEvent.setup();
     render(<MailWizard initial={none} onSaved={() => {}} />);
-    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmail.com');
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmx.de');
     await user.type(screen.getByLabelText(/^Your name as the sender/), 'Max');
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.type(screen.getByLabelText('Password'), 'secret');
@@ -120,7 +128,7 @@ describe('MailWizard', () => {
   it('editing with a saved password: empty password field sends no password', async () => {
     const f = routes({ 'PUT /api/mail/settings': () => ({ body: connected }) });
     const user = userEvent.setup();
-    render(<MailWizard initial={connected} onSaved={() => {}} />);
+    render(<MailWizard initial={connectedGmx} onSaved={() => {}} />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled());
     await user.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByPlaceholderText('Saved — leave empty to keep it')).toHaveValue('');
@@ -133,7 +141,7 @@ describe('MailWizard', () => {
   it('disables the send button while the test email is being sent', async () => {
     routes({}, { pending: ['PUT /api/mail/settings'] });
     const user = userEvent.setup();
-    render(<MailWizard initial={connected} onSaved={() => {}} />);
+    render(<MailWizard initial={connectedGmx} onSaved={() => {}} />);
     await waitFor(() => expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled());
     await user.click(screen.getByRole('button', { name: 'Next' }));
     await user.click(screen.getByRole('button', { name: 'Next' }));
@@ -184,5 +192,153 @@ describe('MailSettingsBlock', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('alertdialog')).toBeNull();
     expect(called).toBe(0);
+  });
+});
+
+describe('MailWizard with Google', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const URL = 'https://accounts.google.com/o/oauth2/v2/auth?x=1';
+
+  /** Scripted status answers; the last one repeats. */
+  function google(statuses: GoogleSignInStatus[], save: () => { status?: number; body: unknown } = () => ({ body: connectedGoogle })) {
+    let n = 0;
+    const calls = { start: [] as unknown[], save: [] as unknown[], status: 0 };
+    routes({
+      'POST /api/mail/google/start': (init) => { calls.start.push(JSON.parse(String(init?.body))); return { body: { url: URL } }; },
+      'GET /api/mail/google/status': () => { calls.status++; return { body: statuses[Math.min(n++, statuses.length - 1)] }; },
+      'POST /api/mail/google/save': (init) => { calls.save.push(JSON.parse(String(init?.body))); return save(); },
+    });
+    return { calls };
+  }
+
+  async function toStep2(onSaved: (v: MailSettingsView) => void = () => {}) {
+    const user = userEvent.setup();
+    render(<MailWizard initial={none} onSaved={onSaved} pollMs={10} />);
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmail.com');
+    await waitFor(() => expect(screen.getByLabelText(/^Your name as the sender/)).toHaveValue('Max Mustermann'));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    return user;
+  }
+
+  it('Gmail: step 2 of 2 explains send-only access and the unverified-app screen; no password field', async () => {
+    google([{ state: 'idle' }]);
+    await toStep2();
+    expect(screen.getByText('Step 2 of 2')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sign in with Google' })).toBeInTheDocument();
+    expect(screen.getByText(/only gets permission to send emails/)).toBeInTheDocument();
+    expect(screen.getByText(/"Advanced", then "Go to BewerbungsPilot"/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Password')).toBeNull();
+  });
+
+  it('starts sign-in, opens the page, then saves once Google says ready', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'pending' }, { state: 'ready', email: 'max@gmail.com' }]);
+    const saved: MailSettingsView[] = [];
+    const user = await toStep2((v) => saved.push(v));
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('Your email is connected.')).toBeInTheDocument();
+    expect(calls.start).toEqual([{ address: 'max@gmail.com' }]);
+    expect(open).toHaveBeenCalledWith(URL, '_blank', 'noopener,noreferrer');
+    expect(calls.save).toEqual([{ senderName: 'Max Mustermann', language: 'en' }]);
+    expect(saved).toEqual([connectedGoogle]);
+    expect(screen.queryByText(/You signed in as/)).toBeNull();
+  });
+
+  it('shows a fallback link while waiting', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    google([{ state: 'pending' }]);
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByRole('link', { name: 'Open the Google sign-in page' })).toHaveAttribute('href', URL);
+    expect(screen.getByText(/Waiting for you to finish/)).toBeInTheDocument();
+  });
+
+  it('notes a different Google address and still saves', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'ready', email: 'other@gmail.com' }]);
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('You signed in as other@gmail.com — the app will send from this address.')).toBeInTheDocument();
+    await waitFor(() => expect(calls.save).toHaveLength(1));
+  });
+
+  it('cancelled: says so and "Try again" starts again', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'cancelled' }]);
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('Sign-in with Google was cancelled.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(calls.start).toHaveLength(2));
+  });
+
+  it('failed (MAIL_CONNECT): shows the translated banner and "Try again" starts again', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'failed', code: 'MAIL_CONNECT' }]);
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('We could not reach your email server.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(calls.start).toHaveLength(2));
+  });
+
+  it('save fails with MAIL_REAUTH: banner, "Try again" saves again without a new sign-in', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    let n = 0;
+    const { calls } = google([{ state: 'ready', email: 'max@gmail.com' }], () => (
+      n++ === 0 ? { status: 401, body: { error: { code: 'MAIL_REAUTH', detailsForLog: '' } } } : { body: connectedGoogle }
+    ));
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('Google no longer lets BewerbungsPilot send emails for you.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Your email is connected.')).toBeInTheDocument();
+    expect(calls.save).toHaveLength(2);
+    expect(calls.start).toHaveLength(1);
+  });
+
+  it('stops polling after unmount', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'pending' }]);
+    const user = userEvent.setup();
+    const { unmount } = render(<MailWizard initial={none} onSaved={() => {}} pollMs={10} />);
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmail.com');
+    await user.type(screen.getByLabelText(/^Your name as the sender/), 'Max');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    await waitFor(() => expect(calls.status).toBeGreaterThan(1));
+    unmount();
+    const after = calls.status;
+    await new Promise((r) => setTimeout(r, 60));
+    expect(calls.status).toBe(after);
+  });
+
+  it('a non-Gmail address keeps the password path (3 steps)', async () => {
+    google([{ state: 'idle' }]);
+    const user = userEvent.setup();
+    render(<MailWizard initial={none} onSaved={() => {}} />);
+    await user.type(await screen.findByLabelText(/^Your email address/), 'max@gmx.de');
+    await user.type(screen.getByLabelText(/^Your name as the sender/), 'Max');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('Step 2 of 3')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+  });
+});
+
+describe('MailSettingsBlock with Google', () => {
+  it('shows "Connected with Google" when connected', async () => {
+    routes({ 'GET /api/mail/settings': () => ({ body: connectedGoogle }) });
+    render(<MailSettingsBlock />);
+    expect(await screen.findByText('Connected with Google: max@gmail.com')).toBeInTheDocument();
+  });
+
+  it('asks to sign in again when the key is not readable; "Change" opens the wizard', async () => {
+    routes({ 'GET /api/mail/settings': () => ({ body: { ...connectedGoogle, passwordSaved: false } }) });
+    const user = userEvent.setup();
+    render(<MailSettingsBlock />);
+    expect(await screen.findByText('Sign in with Google again to send emails.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Change' }));
+    expect(await screen.findByLabelText(/^Your email address/)).toHaveValue('max@gmail.com');
   });
 });

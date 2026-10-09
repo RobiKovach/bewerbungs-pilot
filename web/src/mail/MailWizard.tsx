@@ -2,16 +2,17 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { GoogleSignInStep } from './GoogleSignInStep';
 import type { Language, MailProvider, MailSecurity, MailSettingsView } from '../types';
 
-interface Props { initial: MailSettingsView; onSaved: (v: MailSettingsView) => void; onCancel?: () => void }
+interface Props { initial: MailSettingsView; onSaved: (v: MailSettingsView) => void; onCancel?: () => void; pollMs?: number }
 
 const domainOf = (address: string): string => {
   const at = address.lastIndexOf('@');
   return at < 0 ? '' : address.slice(at + 1).trim().toLowerCase();
 };
 
-export function MailWizard({ initial, onSaved, onCancel }: Props) {
+export function MailWizard({ initial, onSaved, onCancel, pollMs }: Props) {
   const { t, i18n } = useTranslation();
   const saved = initial.mail;
   const smtp = initial.mail?.kind === 'smtp' ? initial.mail : null;
@@ -49,6 +50,8 @@ export function MailWizard({ initial, onSaved, onCancel }: Props) {
 
   const domain = domainOf(address);
   const provider = domain ? providers?.find((p) => p.domains.includes(domain)) ?? null : null;
+  // Gmail uses only "Sign in with Google" (no app password); every other provider keeps the password path.
+  const google = provider?.id === 'gmail';
   const effectiveUser = provider || !userTouched ? address.trim() : user.trim();
   const portNumber = Number(port);
   const addressOk = /^[^@\s]+@[^@\s]+$/.test(address.trim());
@@ -91,7 +94,7 @@ export function MailWizard({ initial, onSaved, onCancel }: Props) {
 
   return (
     <div className="mail-wizard">
-      <p className="muted">{t('common.stepOf', { current: step, total: 3 })}</p>
+      <p className="muted">{t('common.stepOf', { current: step, total: google ? 2 : 3 })}</p>
 
       {step === 1 ? (
         <>
@@ -145,7 +148,13 @@ export function MailWizard({ initial, onSaved, onCancel }: Props) {
         </>
       ) : null}
 
-      {step === 2 ? (
+      {step === 2 && google ? (
+        <GoogleSignInStep
+          address={address} senderName={senderName} onSaved={onSaved} onBack={() => setStep(1)} pollMs={pollMs}
+        />
+      ) : null}
+
+      {step === 2 && !google ? (
         <>
           <h3>{t('mail.step2Title')}</h3>
           <p>{t('mail.appPasswordWhy')}</p>
