@@ -229,3 +229,15 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
   .app-row--due { border-left-color: #b88a1d; }
   .badge.event { background: #2a3444; color: #c4cbd8; }
 }
+.stats-block { margin: 1rem 0; }
+.stats-block h2 { margin-top: 0; }
+.stats-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.75rem; margin: 0 0 1rem; }
+.stats-number dt { color: var(--muted); font-size: 0.9rem; }
+.stats-number dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem; }
+.stats-number strong { font-size: 1.6rem; }
+.stats-rate { font-size: 0.85rem; }
+.stats-chart { display: block; width: 100%; max-width: 32rem; height: auto; }
+.stats-bar { fill: var(--accent); }
+.stats-axis { stroke: var(--border); stroke-width: 1; }
+.stats-label { fill: var(--muted); font-size: 9px; }
+.stats-value { fill: var(--text); }

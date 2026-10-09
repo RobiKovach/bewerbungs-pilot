@@ -1,5 +1,5 @@
 import type {
-  ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness,
+  ApplicationJobState, ApplicationListView, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness,
   CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
@@ -118,6 +118,7 @@ export const api = {
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
   stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),
   listApplications: () => request<ApplicationListView>('GET', '/api/applications'),
+  applicationStats: () => request<ApplicationStats>('GET', '/api/applications/stats'),
   newPackageInfo: (vacancyId: string) => request<NewPackageInfo>('GET', `/api/applications/new?vacancyId=${encodeURIComponent(vacancyId)}`),
   packageReadiness: () => request<PackageReadiness>('GET', '/api/applications/readiness'),
   applicationJob: () => request<ApplicationJobState>('GET', '/api/applications/job'),

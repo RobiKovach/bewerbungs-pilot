@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ApplicationEditor } from '../applications/ApplicationEditor';
 import { formatDay } from '../applications/format';
+import { StatsBlock } from '../applications/StatsBlock';
 import { ErrorBanner } from '../components/ErrorBanner';
-import type { ApplicationListView, ApplicationStatus } from '../types';
+import type { ApplicationListView, ApplicationStats, ApplicationStatus } from '../types';
 
 type Row = ApplicationListView['applications'][number];
 const byStatus = (...statuses: ApplicationStatus[]) => (a: Row) => statuses.includes(a.status);
@@ -29,12 +30,16 @@ export function applicationIdFromHash(hash: string): string | null {
 function ApplicationList() {
   const { t } = useTranslation();
   const [list, setList] = useState<ApplicationListView['applications'] | null>(null);
+  const [stats, setStats] = useState<ApplicationStats | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [filter, setFilter] = useState<FilterId>('all');
   const load = useCallback(async () => {
+    // The statistics are a bonus: if they fail, only the block is missing.
+    const statsRequest = api.applicationStats().catch(() => null);
     try {
       setList((await api.listApplications()).applications);
       setError(null);
+      setStats(await statsRequest);
     } catch (err) {
       setError(err);
     }
@@ -56,6 +61,7 @@ function ApplicationList() {
         </div>
       ) : (
         <>
+        {stats ? <StatsBlock stats={stats} /> : null}
         <div role="radiogroup" aria-label={t('applications.filter.label')} className="filter-chips">
           {FILTERS.map((f) => (
             <label key={f.id} className={filter === f.id ? 'chip active' : 'chip'}>

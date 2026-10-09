@@ -77,3 +77,33 @@ describe('ApplicationsPage — status filter', () => {
     expect(within(shown[0]!).getByRole('link', { name: /Alpha GmbH/ })).toBeInTheDocument();
   });
 });
+
+describe('ApplicationsPage — statistics', () => {
+  const stats = { sent: 1, replies: 0, interviews: 0, offers: 0, rates: { reply: 0, interview: 0, offer: 0 }, weeks: [{ start: '2026-10-05', count: 1 }] };
+  it('shows the statistics block above the filter when the list is not empty', async () => {
+    mockFetch({
+      'GET /api/applications': () => ({ body: { applications: [appSummary()] } }),
+      'GET /api/applications/stats': () => ({ body: stats }),
+    });
+    render(<ApplicationsPage />);
+    expect(await screen.findByRole('region', { name: 'Your applications in numbers' })).toBeInTheDocument();
+  });
+  it('a failing statistics request hides only the block — the list still shows', async () => {
+    mockFetch({
+      'GET /api/applications': () => ({ body: { applications: [appSummary()] } }),
+      'GET /api/applications/stats': () => ({ status: 500, body: { error: { code: 'INTERNAL' } } }),
+    });
+    render(<ApplicationsPage />);
+    expect(await screen.findAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Your applications in numbers' })).toBeNull();
+  });
+  it('no statistics block for an empty list', async () => {
+    mockFetch({
+      'GET /api/applications': () => ({ body: { applications: [] } }),
+      'GET /api/applications/stats': () => ({ body: stats }),
+    });
+    render(<ApplicationsPage />);
+    await screen.findByText(/No application packages yet/);
+    expect(screen.queryByRole('region', { name: 'Your applications in numbers' })).toBeNull();
+  });
+});
