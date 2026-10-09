@@ -6,8 +6,17 @@ export type DocLanguage = 'de' | 'en';
 export type ApplicationStatus = 'draft' | 'approved' | 'sent' | 'submitted' | 'interview' | 'rejected' | 'offer' | 'withdrawn';
 export type OutcomeStatus = 'interview' | 'rejected' | 'offer' | 'withdrawn';
 
-/** One step in a package's life. 0.7.0 adds non-status kinds; code treats entries whose kind is an ApplicationStatus as status entries. */
-export interface HistoryEntry { kind: ApplicationStatus; at: string; note?: string; to?: string; messageId?: string }
+/** Entries that record something happened but never change the package's status. */
+export type HistoryEventKind = 'followUp' | 'followUpDismissed' | 'reply';
+export type HistoryKind = ApplicationStatus | HistoryEventKind;
+/** One step in a package's life. Entries whose kind is an ApplicationStatus are status entries. */
+export interface HistoryEntry { kind: HistoryKind; at: string; note?: string; to?: string; messageId?: string }
+
+/** The person's answer to a job offer, written by Claude and editable (spec, section 9). */
+export interface OfferReply { offered: string; wanted: string; body: string; createdAt: string; updatedAt: string }
+
+/** What a reminder/reply dialog starts with. */
+export interface MailDraft { to: string; subject: string; body: string; mailReady: boolean }
 
 /** The email as it was sent (kept so the person can read it later). */
 export interface SentEmail { to: string; subject: string; body: string; attachments: string[] }
@@ -66,7 +75,7 @@ export interface PackageVacancy {
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 3;
+  schemaVersion: 4;
   id: string;
   vacancyId: string;
   language: DocLanguage;
@@ -86,6 +95,8 @@ export interface ApplicationPackage {
   /** When the email was sent; null = not sent by the app. */
   sentAt: string | null;
   sentEmail: SentEmail | null;
+  /** The answer to a job offer; null = none written yet. */
+  offerReply: OfferReply | null;
 }
 
 export interface ApplicationSummary {
@@ -100,7 +111,7 @@ export interface ApplicationSummary {
   approvedAt: string | null;
 }
 
-export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean })[] }
+export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean; followUpDue: boolean })[] }
 
 export interface AttachmentInfo {
   id: string;
@@ -111,7 +122,7 @@ export interface AttachmentInfo {
   missing: boolean;
 }
 
-export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean }
+export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean; followUpDue: boolean }
 
 export interface PackageReadiness { ready: boolean; missingSections: CvSectionId[]; noStory: boolean }
 

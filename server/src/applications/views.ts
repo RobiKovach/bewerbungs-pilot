@@ -1,25 +1,29 @@
 import fs from 'node:fs';
 import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
+import { followUpDue } from './follow-up.js';
 import { profileFingerprint } from './snapshot.js';
 import { canUndo, isFrozen } from './status.js';
 import type { ApplicationStore, PhotoFile } from './store.js';
 
-export function toView(p: ApplicationPackage, profile: Profile): ApplicationView {
+export function toView(p: ApplicationPackage, profile: Profile, now: Date): ApplicationView {
   const known = new Set(profile.documents.map((d) => d.id));
   const attachments: AttachmentInfo[] = [
     ...profile.documents.map((d) => ({ id: d.id, label: d.label || d.originalName, size: d.size, selected: p.attachments.includes(d.id), missing: false })),
     ...p.attachments.filter((id) => !known.has(id)).map((id) => ({ id, label: '', size: 0, selected: true, missing: true })),
   ];
-  return { application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p) };
+  return { application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p), followUpDue: followUpDue(p, now) };
 }
 
 const changed = (p: ApplicationPackage | undefined, current: string) => !p || (!isFrozen(p) && p.profileFingerprint !== current);
 
-export function toListView(store: ApplicationStore, profile: Profile): ApplicationListView {
+export function toListView(store: ApplicationStore, profile: Profile, now: Date): ApplicationListView {
   const current = profileFingerprint(profile);
   return {
-    applications: store.list().map((s) => ({ ...s, profileChanged: changed(store.get(s.id), current) })),
+    applications: store.list().map((s) => {
+      const p = store.get(s.id);
+      return { ...s, profileChanged: changed(p, current), followUpDue: p ? followUpDue(p, now) : false };
+    }),
   };
 }
 

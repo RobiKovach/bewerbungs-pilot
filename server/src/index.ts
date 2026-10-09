@@ -15,6 +15,7 @@ import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
 import { SmtpMailer } from './mail/mailer.js';
+import { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { DpapiSecretStore } from './mail/secret.js';
 import { ProfileFiles } from './profile/files.js';
 import { ProfileStore } from './profile/store.js';
@@ -78,6 +79,8 @@ async function main(): Promise<void> {
   searchJob.init();
   const applicationStore = new ApplicationStore(paths.applications, (event, data) => logger.warn(event, data));
   applicationStore.load();
+  const sentUnsaved = new SentUnsavedLog(path.join(paths.applications, 'sent-unsaved.json'), (event, data) => logger.warn(event, data));
+  sentUnsaved.load();
   const printer = new BrowserPrinter({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data) });
   const applicationJob = new ApplicationJob({
     store: applicationStore, vacancies: vacancyStore, queue, printer, logger,
@@ -92,7 +95,7 @@ async function main(): Promise<void> {
     onShutdown: () => void shutdown(),
     profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
     applicationStore, applicationJob, printer,
-    mailer: new SmtpMailer(), secrets: new DpapiSecretStore(paths.mailSecret),
+    mailer: new SmtpMailer(), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
   });
 
   const shutdown = createShutdown({

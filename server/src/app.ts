@@ -15,6 +15,7 @@ import type { PdfPrinter } from './applications/pdf.js';
 import { registerApplicationRoutes } from './applications/routes.js';
 import type { ApplicationStore } from './applications/store.js';
 import type { Mailer } from './mail/mailer.js';
+import type { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { registerMailRoutes } from './mail/routes.js';
 import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
@@ -42,6 +43,8 @@ export interface AppDeps {
   printer: PdfPrinter;
   mailer: Mailer;
   secrets: SecretStore;
+  /** Emails that went out but were not recorded (never sent again). */
+  sentUnsaved: SentUnsavedLog;
 }
 
 const settingsPatchSchema = {
@@ -172,7 +175,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await registerApplicationRoutes(app, {
     store: deps.applicationStore, job: deps.applicationJob, printer: deps.printer, vacancies: deps.vacancyStore,
     files: deps.profileFiles, profile: () => deps.profileStore.get(), logger: deps.logger,
-    settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets,
+    settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, sentUnsaved: deps.sentUnsaved,
   });
 
   await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger });

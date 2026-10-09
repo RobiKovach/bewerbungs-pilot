@@ -57,4 +57,5 @@ export type ErrorReason =
   | 'packageChanged'
   | 'sentNotSaved'
   | 'historyFull'
-  | 'draftExists';
+  | 'draftExists'
+  | 'followUpDone';

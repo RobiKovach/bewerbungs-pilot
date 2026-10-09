@@ -56,10 +56,11 @@ describe('create', () => {
     const id = await created(ctx);
     const calls = ctx.provider.calls.length;
     const list = (await get(ctx, '/api/applications')).json();
-    expect(list.applications).toEqual([expect.objectContaining({ id, vacancyId: 'fav1', company: 'Muster GmbH', status: 'draft', profileChanged: false })]);
+    expect(list.applications).toEqual([expect.objectContaining({ id, vacancyId: 'fav1', company: 'Muster GmbH', status: 'draft', profileChanged: false, followUpDue: false })]);
     const view = (await get(ctx, `/api/applications/${id}`)).json() as ApplicationView;
     expect(view.application.letter.paragraphs).toEqual(GOOD_LETTER.paragraphs);
     expect(view.profileChanged).toBe(false);
+    expect(view.followUpDue).toBe(false);
     expect(ctx.provider.calls.length).toBe(calls);
     expect((await get(ctx, '/api/applications/new?vacancyId=fav1')).json().existingId).toBe(id);
   });
@@ -162,6 +163,15 @@ describe('editing a package', () => {
     ctx.profileStore.update((p) => { p.documents = []; });
     view = (await get(ctx, `/api/applications/${id}`)).json() as ApplicationView;
     expect(view.attachments).toEqual([{ id: DOC_ID, label: '', size: 0, selected: true, missing: true }]);
+  });
+  it('followUpDue is true for a package sent 15 days ago, in the view and in the list', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const old = new Date(Date.now() - 15 * 86_400_000).toISOString();
+    ctx.applicationStore.update(id, (p) => { p.status = 'sent'; p.history = [{ kind: 'approved', at: old }, { kind: 'sent', at: old }]; });
+    expect(((await get(ctx, `/api/applications/${id}`)).json() as ApplicationView).followUpDue).toBe(true);
+    const list = (await get(ctx, '/api/applications')).json() as { applications: { id: string; followUpDue: boolean }[] };
+    expect(list.applications.find((a) => a.id === id)?.followUpDue).toBe(true);
   });
   it('profileChanged turns true when a description changes, and back to false after refresh-cv', async () => {
     const ctx = await setup();

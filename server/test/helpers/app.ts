@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { ApplicationJob } from '../../src/applications/job.js';
 import { ApplicationStore } from '../../src/applications/store.js';
+import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
 import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
 import { SettingsStore } from '../../src/data/settings.js';
@@ -55,13 +56,15 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
   const logger = opts.logger ?? nullLogger;
   const mailer = new FakeMailer();
   const secrets = new MemorySecretStore();
+  const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
+  sentUnsaved.load();
   const app = await buildApp({
     settings, provider, queue, logger, version: '0.1.0',
     webDist: opts.webDist ?? null,
     allowedHosts: opts.allowedHosts ?? (() => ['localhost:80']),
     onShutdown: () => { shutdownCalls++; },
     profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
-    applicationStore, applicationJob, printer, mailer, secrets,
+    applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
   });
-  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets };
+  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
 }

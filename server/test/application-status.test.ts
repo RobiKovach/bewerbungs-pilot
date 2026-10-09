@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { HistoryEntry } from '@bp/shared';
-import { addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from '../src/applications/status.js';
+import { addEvent, addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from '../src/applications/status.js';
 import { AppError } from '../src/errors.js';
 import { pkg } from './helpers/applications.js';
 
@@ -52,5 +52,28 @@ describe('undo and dates', () => {
     expect(() => dateToIso('2027-10-06', now)).toThrow(AppError);
     expect(dateToIso('2027-10-04', now)).toBe('2027-10-04T12:00:00.000Z');
     try { dateToIso('2030-01-01', now); expect.fail('should throw'); } catch (e) { expect((e as AppError).code).toBe('BAD_REQUEST'); }
+  });
+});
+
+describe('history events', () => {
+  const ev = (kind: HistoryEntry['kind'], extra: Partial<HistoryEntry> = {}): HistoryEntry => ({ kind, at: '2026-10-02T10:00:00.000Z', ...extra });
+  it('addEvent appends the entry, leaves the status, sets updatedAt', () => {
+    const p = pkg({ status: 'sent', history: [ev('approved'), ev('sent')] });
+    addEvent(p, 'followUp', '2026-10-20T10:00:00.000Z', { to: 'jobs@muster.example', messageId: '<m2@x>' });
+    expect(p.history.at(-1)).toEqual({ kind: 'followUp', at: '2026-10-20T10:00:00.000Z', to: 'jobs@muster.example', messageId: '<m2@x>' });
+    expect(p.status).toBe('sent');
+    expect(p.updatedAt).toBe('2026-10-20T10:00:00.000Z');
+  });
+  it('canUndo: an event with a real email cannot be taken back, others can', () => {
+    expect(canUndo(pkg({ status: 'sent', history: [ev('approved'), ev('sent'), ev('followUp', { messageId: '<m@x>' })] }))).toBe(false);
+    expect(canUndo(pkg({ status: 'rejected', history: [ev('sent'), ev('rejected'), ev('reply', { messageId: '<m@x>' })] }))).toBe(false);
+    expect(canUndo(pkg({ status: 'sent', history: [ev('approved'), ev('sent'), ev('followUpDismissed')] }))).toBe(true);
+    expect(canUndo(pkg({ status: 'sent', history: [ev('approved'), ev('sent'), ev('followUp')] }))).toBe(true);
+  });
+  it('undoLast on a dismissed reminder keeps the status', () => {
+    const p = pkg({ status: 'sent', history: [ev('approved'), ev('sent'), ev('followUpDismissed')] });
+    undoLast(p, '2026-10-21T10:00:00.000Z');
+    expect(p.status).toBe('sent');
+    expect(p.history.map((h) => h.kind)).toEqual(['approved', 'sent']);
   });
 });

@@ -28,7 +28,7 @@ describe('package v1 → v2', () => {
     store.load();
     const got = store.require(p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(3);
+    expect(got.schemaVersion).toBe(4);
     expect(got.cv).toMatchObject({ headline: '', headlineEditedByHand: false, translations: {}, skillGroups: [{ name: '', skillIds: old.cv.skillOrder }] });
     expect(got.snapshot.personal.links).toEqual([]);
     expect(validatePackage(got)).toBeNull();
@@ -67,7 +67,7 @@ describe('package v2 → v3', () => {
     const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z' });
     const { got, warnings } = loadOne(v2From(p), p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(3);
+    expect(got.schemaVersion).toBe(4);
     expect(got.history).toEqual([{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }]);
     expect(got.sentAt).toBeNull();
     expect(got.sentEmail).toBeNull();
@@ -81,7 +81,7 @@ describe('package v2 → v3', () => {
     const p = pkg();
     const { got, warnings } = loadOne(v1From(p), p.id);
     expect(warnings).toEqual([]);
-    expect(got).toMatchObject({ schemaVersion: 3, history: [], sentAt: null, sentEmail: null });
+    expect(got).toMatchObject({ schemaVersion: 4, history: [], sentAt: null, sentEmail: null });
   });
 });
 
@@ -119,5 +119,36 @@ describe('a migrated v1 package prints every skill', () => {
       for (const name of ['JavaScript', 'WordPress', 'CSS', 'PHP', 'Git']) expect(html).toContain(name);
       expect(html).not.toContain('<strong></strong>');
     }
+  });
+});
+
+describe('package v3 → v4', () => {
+  function loadOne(doc: unknown, id: string) {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+    fs.mkdirSync(path.join(dir, id), { recursive: true });
+    fs.writeFileSync(path.join(dir, id, 'package.json'), JSON.stringify(doc));
+    const warnings: string[] = [];
+    const store = new ApplicationStore(dir, (event) => warnings.push(event));
+    store.load();
+    return { got: store.require(id), warnings };
+  }
+  it('a v3 package loads as v4 with offerReply null and the same history', () => {
+    const history = [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }, { kind: 'sent', at: '2026-10-02T08:00:00.000Z', to: 'jobs@muster.example', messageId: '<m@x>' }];
+    const p = pkg({ status: 'sent', history: history as never });
+    const { offerReply: _o, ...v3 } = p;
+    void _o;
+    const { got, warnings } = loadOne({ ...v3, schemaVersion: 3 }, p.id);
+    expect(warnings).toEqual([]);
+    expect(got.schemaVersion).toBe(4);
+    expect(got.offerReply).toBeNull();
+    expect(got.history).toEqual(history);
+  });
+  it('a v2 approved package still migrates 2 → 3 → 4', () => {
+    const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z' });
+    const { history: _h, sentAt: _s, sentEmail: _e, offerReply: _o, ...rest } = p;
+    void _h; void _s; void _e; void _o;
+    const { got, warnings } = loadOne({ ...rest, schemaVersion: 2 }, p.id);
+    expect(warnings).toEqual([]);
+    expect(got).toMatchObject({ schemaVersion: 4, offerReply: null, history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
   });
 });

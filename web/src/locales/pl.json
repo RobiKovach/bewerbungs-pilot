@@ -426,7 +426,8 @@
       "packageChanged": "Aplikację zmieniono podczas przygotowania wysyłki. Nic nie wysłano — sprawdź ją i spróbuj ponownie.",
       "sentNotSaved": "E-mail został wysłany, ale aplikacja nie mogła tego zapisać. Nie wysyłaj go ponownie — zamiast tego kliknij „Złożyłem(-am) aplikację sam(-a) na stronie firmy”, aby to zapisać.",
       "historyFull": "W tym pakiecie zapisano zbyt wiele zmian, aby go wysłać. Nic nie zostało wysłane. Kliknij „Utwórz ponownie”, aby zacząć od nowa.",
-      "draftExists": "Dla tej oferty istnieje już pakiet, który nie został jeszcze wysłany. Otwórz go — dla jednej oferty można edytować tylko jeden pakiet."
+      "draftExists": "Dla tej oferty istnieje już pakiet, który nie został jeszcze wysłany. Otwórz go — dla jednej oferty można edytować tylko jeden pakiet.",
+      "followUpDone": "Przypomnienie dla tej aplikacji zostało już wysłane lub wyłączone."
     }
   },
   "vacancies": {

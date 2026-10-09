@@ -198,11 +198,21 @@ describe('send', () => {
     expect(again.statusCode).toBe(409);
     expect(again.json().error.reason).toBe('sentNotSaved');
     expect(ctx.mailer.sent).toHaveLength(1);
+    expect(ctx.sentUnsaved.has(id)).toBe(true);
     // "I applied myself" still records it.
     expect((await post(ctx, `/api/applications/${id}/submitted`, {})).statusCode).toBe(200);
     const log = lines.join('\n');
     expect(log).toContain('application_sent_unsaved');
     for (const secret of ['jobs@muster', 'Bewerbung als', 'geheim123']) expect(log).not.toContain(secret);
+  });
+
+  it('a package in the sent-but-not-saved log is refused before anything is sent', async () => {
+    const { ctx, id } = await setup();
+    ctx.sentUnsaved.add(id);
+    const r = await sendTo(ctx, id);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('sentNotSaved');
+    expect(ctx.mailer.sent).toHaveLength(0);
   });
 
   it('downloads of a sent package keep the date the email went out', async () => {

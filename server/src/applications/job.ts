@@ -168,6 +168,7 @@ export class ApplicationJob {
       history: [],
       sentAt: null,
       sentEmail: null,
+      offerReply: null,
       profileFingerprint: profileFingerprint(profile),
       snapshot: takeSnapshot(profile),
       vacancy,

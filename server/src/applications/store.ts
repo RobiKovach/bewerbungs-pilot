@@ -55,6 +55,11 @@ export class ApplicationStore {
     return [...this.packages.values()].map(summaryOf).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
   }
 
+  /** Every package (clones). */
+  all(): ApplicationPackage[] {
+    return [...this.packages.values()].map((p) => structuredClone(p));
+  }
+
   get(id: string): ApplicationPackage | undefined {
     const p = this.packages.get(id);
     return p ? structuredClone(p) : undefined;

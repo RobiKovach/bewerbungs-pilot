@@ -426,7 +426,8 @@
       "packageChanged": "Die Bewerbung wurde während der Vorbereitung des Versands geändert. Es wurde nichts gesendet – bitte prüfen Sie sie und versuchen Sie es erneut.",
       "sentNotSaved": "Die E-Mail wurde gesendet, aber die App konnte das nicht speichern. Senden Sie sie nicht noch einmal — klicken Sie stattdessen auf „Ich habe mich selbst auf der Firmenwebsite beworben“, um es festzuhalten.",
       "historyFull": "In diesem Paket sind zu viele Änderungen gespeichert, um es zu senden. Es wurde nichts gesendet. Klicken Sie auf „Neu erstellen“, um es neu anzulegen.",
-      "draftExists": "Für dieses Angebot gibt es schon ein Paket, das noch nicht gesendet wurde. Bitte öffnen Sie dieses — pro Angebot kann nur ein Paket bearbeitet werden."
+      "draftExists": "Für dieses Angebot gibt es schon ein Paket, das noch nicht gesendet wurde. Bitte öffnen Sie dieses — pro Angebot kann nur ein Paket bearbeitet werden.",
+      "followUpDone": "Für diese Bewerbung wurde bereits eine Erinnerung gesendet oder ausgeschaltet."
     }
   },
   "vacancies": {

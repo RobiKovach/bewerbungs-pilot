@@ -5,10 +5,12 @@ import { LIMITS, validateSectionData } from '../profile/schema.js';
 import { VACANCY_LIMITS } from '../vacancies/schema.js';
 
 export const APPLICATIONS_SCHEMA_VERSION = 1;
-export const PACKAGE_SCHEMA_VERSION = 3;
+export const PACKAGE_SCHEMA_VERSION = 4;
 
 /** migrations[n] turns package version n into n + 1 (applied on read; written back on the next save). */
 export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 4: the answer to a job offer; history may hold events (reminders, replies).
+  3: (doc) => ({ ...doc, offerReply: null }),
   // 3: statuses beyond approved, history, the sent email.
   2: (doc) => ({
     ...doc,
@@ -38,7 +40,7 @@ export const PACKAGE_LIMITS = {
   paragraphsMin: 1, paragraphsMax: 6, paragraph: 2000,
   closing: 100, signature: Math.max(200, LIMITS.name), hint: 300, profil: 800, description: 5000, instruction: 1000, attachments: 20,
   headline: 80, groupName: 40, translation: 100, groupsMax: 5,
-  emailSubject: 200, emailBody: 5000, note: 300, address: 254, history: 200, fileName: 200, messageId: 300,
+  emailSubject: 200, emailBody: 5000, note: 300, address: 254, history: 200, fileName: 200, messageId: 300, offerField: 50, offerBody: 3000,
 } as const;
 
 const L = PACKAGE_LIMITS;
@@ -52,6 +54,7 @@ const ID = { type: 'string', pattern: APPLICATION_ID.source };
 const TIMESTAMP = str(40);
 const LANGUAGE = { enum: ['de', 'en'] };
 const STATUS = { enum: ['draft', 'approved', 'sent', 'submitted', 'interview', 'rejected', 'offer', 'withdrawn'] };
+const HISTORY_KIND = { enum: [...STATUS.enum, 'followUp', 'followUpDismissed', 'reply'] };
 
 const SUMMARY = obj({
   id: ID, vacancyId: ID, company: str(V.company), title: str(V.title), language: LANGUAGE, status: STATUS,
@@ -91,10 +94,11 @@ const PACKAGE = obj({
   attachments: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } },
   history: {
     type: 'array', maxItems: L.history,
-    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: STATUS, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(L.messageId) } },
+    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: HISTORY_KIND, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(L.messageId) } },
   },
   sentAt: nullable(TIMESTAMP),
   sentEmail: nullable(obj({ to: str(L.address), subject: str(L.emailSubject), body: str(L.emailBody), attachments: { type: 'array', maxItems: 30, items: str(L.fileName) } })),
+  offerReply: nullable(obj({ offered: str(L.offerField), wanted: str(L.offerField), body: str(L.offerBody), createdAt: TIMESTAMP, updatedAt: TIMESTAMP })),
 });
 
 const LIST = obj({ schemaVersion: { const: APPLICATIONS_SCHEMA_VERSION }, applications: { type: 'array', items: SUMMARY } });

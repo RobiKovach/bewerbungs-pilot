@@ -1,4 +1,4 @@
-import type { ApplicationPackage, ApplicationStatus } from '@bp/shared';
+import type { ApplicationPackage, ApplicationStatus, HistoryEventKind } from '@bp/shared';
 import { AppError } from '../errors.js';
 
 /** A package in any of these statuses was sent: it is never changed or sent again. */
@@ -21,6 +21,17 @@ export function addStatus(p: ApplicationPackage, kind: ApplicationStatus, at: st
 
 const STATUSES: ReadonlySet<string> = new Set<ApplicationStatus>(['draft', 'approved', 'sent', 'submitted', 'interview', 'rejected', 'offer', 'withdrawn']);
 
+/** True for the history kinds that are statuses (not events like a reminder). */
+export function isStatusKind(kind: string): kind is ApplicationStatus {
+  return STATUSES.has(kind);
+}
+
+/** Appends an event to the history; the status stays as it is. */
+export function addEvent(p: ApplicationPackage, kind: HistoryEventKind, at: string, extra: { to?: string; messageId?: string } = {}): void {
+  p.history.push({ kind, at, ...extra });
+  p.updatedAt = at;
+}
+
 /** The last change can be taken back unless it is a real sent email (that can never be undone). */
 export function canUndo(p: ApplicationPackage): boolean {
   const last = p.history.at(-1);
@@ -30,8 +41,8 @@ export function canUndo(p: ApplicationPackage): boolean {
 /** Removes the last history entry; the status becomes the kind of the last remaining status entry ('approved' if none). */
 export function undoLast(p: ApplicationPackage, now: string): void {
   p.history.pop();
-  const lastStatus = [...p.history].reverse().find((h) => STATUSES.has(h.kind));
-  p.status = lastStatus ? lastStatus.kind : 'approved';
+  const lastStatus = [...p.history].reverse().find((h) => isStatusKind(h.kind));
+  p.status = lastStatus && isStatusKind(lastStatus.kind) ? lastStatus.kind : 'approved';
   p.updatedAt = now;
 }
 

@@ -21,11 +21,12 @@ import { asciiName, fileNames } from './render/html.js';
 import { letterHtml } from './render/letter.js';
 import { APPLICATION_ID, PACKAGE_LIMITS as L, validatePackage } from './schema.js';
 import type { ApplicationStore } from './store.js';
+import type { SentUnsavedLog } from './sent-unsaved.js';
 import { toListView, toView } from './views.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
-  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; now?: () => Date; newId?: () => string;
+  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; sentUnsaved: SentUnsavedLog; now?: () => Date; newId?: () => string;
 }
 
 /** Offer texts shorter than this are stubs (the full text is on a partner site): the dialog warns. */
@@ -82,19 +83,17 @@ const attachmentsBody = { type: 'object', additionalProperties: false, required:
 
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
   const now = d.now ?? (() => new Date());
-  const view = (id: string) => toView(d.store.require(id), d.profile());
+  const view = (id: string) => toView(d.store.require(id), d.profile(), now());
   const editable = (id: string) => assertEditable(d.store.require(id));
   /** Packages with an email in flight: nothing may change them until SMTP answers. */
   const sending = new Set<string>();
-  /** Packages whose email went out but could not be recorded: they are never sent again (until the app restarts). */
-  const sentUnsaved = new Set<string>();
   const notBusy = (id: string) => {
     if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageSending');
     if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
   };
   const pagesOf = async (id: string) => countPages(await d.printer.print(letterHtml(d.store.require(id), now())));
 
-  app.get('/api/applications', async () => toListView(d.store, d.profile()));
+  app.get('/api/applications', async () => toListView(d.store, d.profile(), now()));
 
   app.get('/api/applications/new', { schema: { querystring: newQuery } }, async (req) => {
     const { vacancyId } = req.query as { vacancyId: string };
@@ -282,7 +281,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const copy: ApplicationPackage = {
       ...structuredClone(source),
       id: d.newId?.() ?? crypto.randomUUID(),
-      status: 'draft', createdAt: at, updatedAt: at, approvedAt: null, history: [], sentAt: null, sentEmail: null,
+      status: 'draft', createdAt: at, updatedAt: at, approvedAt: null, history: [], sentAt: null, sentEmail: null, offerReply: null,
     };
     const saved = d.store.save(copy, { vacancyText: d.store.readVacancyText(source.id), photo: photoOf(source.id) });
     d.logger.info('application_copied', { id, copyId: saved.id });
@@ -396,7 +395,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { to, subject, body } = req.body as { to: string; subject: string; body: string };
     // Every check and the lock come before the first await: two quick requests can never both pass.
     notBusy(id);
-    if (sentUnsaved.has(id)) throw new AppError('CONFLICT', 'this package was already sent (not saved)', 'sentNotSaved');
+    if (d.sentUnsaved.has(id)) throw new AppError('CONFLICT', 'this package was already sent (not saved)', 'sentNotSaved');
     const start = d.store.require(id);
     assertEditable(start);
     if (start.status !== 'approved') throw new AppError('CONFLICT', 'only an approved package can be sent');
@@ -429,7 +428,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
         });
       } catch (err) {
         // The email went out: it must never go out a second time, even though the package could not record it.
-        sentUnsaved.add(id);
+        d.sentUnsaved.add(id);
         d.logger.error('application_sent_unsaved', { id, code: err instanceof AppError ? err.code : 'UNKNOWN' });
         throw new AppError('CONFLICT', 'the email was sent but the package could not be saved', 'sentNotSaved');
       }

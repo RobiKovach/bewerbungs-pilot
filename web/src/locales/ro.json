@@ -426,7 +426,8 @@
       "packageChanged": "Candidatura a fost modificată în timp ce se pregătea trimiterea. Nu s-a trimis nimic – verificați-o și încercați din nou.",
       "sentNotSaved": "E-mailul a fost trimis, dar aplicația nu a putut salva acest lucru. Nu-l trimiteți din nou — apăsați în schimb „M-am înscris singur(ă) pe site-ul companiei” pentru a-l înregistra.",
       "historyFull": "Acest pachet are prea multe modificări înregistrate pentru a fi trimis. Nu s-a trimis nimic. Apăsați „Creează din nou” pentru a-l începe de la zero.",
-      "draftExists": "Pentru această ofertă există deja un pachet care nu a fost încă trimis. Deschideți-l pe acela — pentru o ofertă se poate edita un singur pachet."
+      "draftExists": "Pentru această ofertă există deja un pachet care nu a fost încă trimis. Deschideți-l pe acela — pentru o ofertă se poate edita un singur pachet.",
+      "followUpDone": "Pentru această candidatură a fost deja trimisă o reamintire sau aceasta a fost dezactivată."
     }
   },
   "vacancies": {
