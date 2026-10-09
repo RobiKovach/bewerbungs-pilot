@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { MailDraft } from '@bp/shared';
 import { AppError } from '../src/errors.js';
+import path_ from 'node:path';
+import { SentUnsavedLog } from '../src/applications/sent-unsaved.js';
 import { H } from './helpers/app.js';
 import { type Ctx, post, sendTo, setup, viewOf } from './helpers/sending.js';
 
@@ -142,5 +144,35 @@ describe('rejection / offer reply', () => {
     const d = (await get(ctx, id, 'reply-draft')).json() as MailDraft;
     expect(d.body).toBe('');
     expect(d.subject).toBe('Re: Bewerbung als Webentwickler (m/w/d)');
+  });
+});
+
+describe('reminder / reply sent but not saved', () => {
+  const failSave = (ctx: Ctx) => {
+    const real = ctx.applicationStore.update.bind(ctx.applicationStore);
+    ctx.applicationStore.update = () => { throw new AppError('DATA_WRITE_FAILED', 'disk full'); };
+    return () => { ctx.applicationStore.update = real; };
+  };
+
+  it.each([
+    ['followUp', 'follow-up/send', async () => (await sentPackage())],
+    ['reply', 'reply/send', async () => { const r = await sentPackage(); expect((await status(r.ctx, r.id, 'rejected')).statusCode).toBe(200); return r; }],
+  ] as const)('%s: a save failure after sending blocks it for good (also after a restart); one email in total', async (kind, path, make) => {
+    const { ctx, id } = await make();
+    const before = ctx.mailer.sent.length;
+    const restore = failSave(ctx);
+    const first = await post(ctx, `/api/applications/${id}/${path}`, BODY);
+    expect(first.statusCode).toBe(409);
+    expect(first.json().error.reason).toBe('sentNotSaved');
+    expect(ctx.mailer.sent).toHaveLength(before + 1);
+    restore();
+    const second = await post(ctx, `/api/applications/${id}/${path}`, BODY);
+    expect(second.statusCode).toBe(409);
+    expect(second.json().error.reason).toBe('sentNotSaved');
+    expect(ctx.mailer.sent).toHaveLength(before + 1);
+    const restarted = new SentUnsavedLog(path_.join(ctx.dir, 'applications', 'sent-unsaved.json'));
+    restarted.load();
+    expect(restarted.has(`${id}:${kind}`)).toBe(true);
+    expect(restarted.has(id)).toBe(false);
   });
 });
