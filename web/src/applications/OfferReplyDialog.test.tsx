@@ -110,6 +110,18 @@ describe('OfferReplyDialog', () => {
     expect(JSON.parse(String(patch![1]!.body))).toEqual({ body: 'Mein Text.' });
   });
 
+  it('the server trims the text: after Save the trimmed text is shown and nothing stays blocked', async () => {
+    const saved = offerView(reply({ body: 'Mein Text.' }));
+    const { user } = setup({ [`PATCH ${URL}`]: () => ({ body: saved }) }, offerView(reply()));
+    const text = screen.getByLabelText('Your reply');
+    await user.clear(text);
+    await user.type(text, 'Mein Text.{Enter}');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(text).toHaveValue('Mein Text.'));
+    expect(screen.queryByText('Save the text first.')).not.toBeInTheDocument();
+    for (const name of ['Copy', 'Send…', 'Close']) expect(screen.getByRole('button', { name })).toBeEnabled();
+  });
+
   it('Send… hands over to the mail window, Close closes', async () => {
     const { onSend, onClose, user } = setup({}, offerView(reply()));
     await user.click(screen.getByRole('button', { name: 'Send…' }));

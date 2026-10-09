@@ -61,7 +61,10 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
     setError(null);
     try {
       const v = await api.saveOfferReply(id, body);
-      setSaved(v.application.offerReply?.body ?? body);
+      // The server trims the text: show what is stored, otherwise the text would stay "unsaved" for good.
+      const stored = v.application.offerReply?.body ?? body.trim();
+      setSaved(stored);
+      setBody(stored);
       onView(v);
     } catch (err) {
       setError(err);
