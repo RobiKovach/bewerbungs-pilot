@@ -100,6 +100,7 @@ async function main(): Promise<void> {
     profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
     applicationStore, applicationJob, printer,
     mailer: new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
+    googleAuth, origin: () => `http://${HOST}:${port}`,
   });
 
   const shutdown = createShutdown({

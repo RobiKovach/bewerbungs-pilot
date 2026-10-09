@@ -59,4 +59,5 @@ export type ErrorReason =
   | 'sentNotSaved'
   | 'historyFull'
   | 'draftExists'
-  | 'followUpDone';
+  | 'followUpDone'
+  | 'googleNotSignedIn';

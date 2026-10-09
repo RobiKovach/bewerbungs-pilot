@@ -14,6 +14,7 @@ import type { ApplicationJob } from './applications/job.js';
 import type { PdfPrinter } from './applications/pdf.js';
 import { registerApplicationRoutes } from './applications/routes.js';
 import type { ApplicationStore } from './applications/store.js';
+import type { GoogleAuth } from './mail/google-auth.js';
 import type { Mailer } from './mail/mailer.js';
 import type { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { registerMailRoutes } from './mail/routes.js';
@@ -45,6 +46,9 @@ export interface AppDeps {
   secrets: SecretStore;
   /** Emails that went out but were not recorded (never sent again). */
   sentUnsaved: SentUnsavedLog;
+  googleAuth: GoogleAuth;
+  /** The address this server is reached at, e.g. `http://127.0.0.1:4280` (the Google sign-in comes back to it). */
+  origin: () => string;
 }
 
 const settingsPatchSchema = {
@@ -178,7 +182,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, sentUnsaved: deps.sentUnsaved, queue: deps.queue,
   });
 
-  await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger });
+  await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger,
+    googleAuth: deps.googleAuth, origin: deps.origin });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });

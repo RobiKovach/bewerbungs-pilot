@@ -71,6 +71,18 @@ describe('send', () => {
     expect((await sendTo(ctx, id)).statusCode).toBe(200);
   });
 
+  it('MAIL_REAUTH (Google key no longer valid) → 409, the package stays approved, no history entry', async () => {
+    const { ctx, id } = await setup();
+    const before = (await viewOf(ctx, id)).application;
+    ctx.mailer.failWith = new AppError('MAIL_REAUTH', 'google 401');
+    const r = await sendTo(ctx, id);
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.code).toBe('MAIL_REAUTH');
+    const after = (await viewOf(ctx, id)).application;
+    expect(after.status).toBe('approved');
+    expect(after.history).toEqual(before.history);
+  });
+
   it('refuses while a job works on the package', async () => {
     const { ctx, id } = await setup();
     ctx.applicationJob.busyWith = (x: string) => x === id;

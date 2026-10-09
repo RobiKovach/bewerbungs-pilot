@@ -4,11 +4,15 @@ import { SUPPORTED_LANGUAGES, type SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
 import { testMail } from './compose.js';
+import type { GoogleAuth } from './google-auth.js';
+import { callbackPage } from './google-page.js';
+import { GoogleSignIn } from './google-signin.js';
 import type { Mailer } from './mailer.js';
 import { MAIL_PROVIDERS, providerFor } from './providers.js';
 import type { SecretStore } from './secret.js';
 
-export interface MailRouteDeps { settings: SettingsStore; mailer: Mailer; secrets: SecretStore; logger: Logger }
+export interface MailRouteDeps { settings: SettingsStore; mailer: Mailer; secrets: SecretStore; logger: Logger;
+  googleAuth: GoogleAuth; origin: () => string }
 
 /** One line of text: at least one character, no CR/LF anywhere (header injection). */
 const line = (maxLength: number) => ({ type: 'string', minLength: 1, maxLength, pattern: '^[^\r\n]+$' });
@@ -27,6 +31,19 @@ const putSchema = {
     password: line(500),
     language: { type: 'string', enum: [...SUPPORTED_LANGUAGES] },
   },
+} as const;
+
+const startSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: { address: { type: 'string', maxLength: 254, pattern: '^[^\r\n]*$' } },
+} as const;
+
+const saveSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['senderName', 'language'],
+  properties: { senderName: line(100), language: { type: 'string', enum: [...SUPPORTED_LANGUAGES] } },
 } as const;
 
 interface PutBody {
@@ -68,8 +85,58 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
   });
 
   app.delete('/api/mail/settings', async () => {
+    if (deps.settings.get().mail?.kind === 'google') {
+      const refreshToken = await deps.secrets.load();
+      if (refreshToken !== null) {
+        try {
+          await deps.googleAuth.revoke(refreshToken);
+        } catch (err) {
+          deps.logger.warn('google_revoke_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+        }
+      }
+    }
     deps.settings.setMail(null);
     await deps.secrets.remove();
+    return view();
+  });
+
+  const signIn = new GoogleSignIn(deps.googleAuth);
+
+  app.post('/api/mail/google/start', { schema: { body: startSchema } }, async (req) => {
+    const address = (req.body as { address?: string } | null)?.address;
+    const url = await signIn.start(`${deps.origin()}/oauth/google/callback`, address?.includes('@') ? address : undefined);
+    deps.logger.info('google_signin_start');
+    return { url };
+  });
+
+  app.get('/api/mail/google/status', async () => signIn.status());
+
+  app.get('/oauth/google/callback', async (req, reply) => {
+    const q = req.query as Record<string, unknown>;
+    const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
+    const result = await signIn.callback({ state: str(q.state), code: str(q.code), error: str(q.error) });
+    deps.logger.info('google_signin_result', { result });
+    return reply.type('text/html; charset=utf-8').send(callbackPage(deps.settings.get().language ?? 'en', result));
+  });
+
+  app.post('/api/mail/google/save', { schema: { body: saveSchema } }, async (req) => {
+    const b = req.body as { senderName: string; language: Language };
+    const tokens = signIn.tokens();
+    if (!tokens) throw new AppError('CONFLICT', 'google sign-in is not finished', 'googleNotSignedIn');
+    const config: MailSettings = { kind: 'google', address: tokens.email, senderName: b.senderName, provider: 'gmail' };
+    const { subject, text } = testMail(b.language);
+    try {
+      await deps.mailer.send(config, tokens.refreshToken, {
+        from: { name: b.senderName, address: tokens.email }, to: tokens.email, subject, text, attachments: [],
+      });
+    } catch (err) {
+      deps.logger.warn('mail_test', { result: err instanceof AppError ? err.code : 'UNKNOWN' });
+      throw err;
+    }
+    deps.logger.info('mail_test', { result: 'ok' });
+    await deps.secrets.save(tokens.refreshToken);
+    deps.settings.setMail(config);
+    signIn.clear();
     return view();
   });
 }

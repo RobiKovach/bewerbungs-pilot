@@ -16,7 +16,7 @@ import { ProfileStore } from '../../src/profile/store.js';
 import { SearchJob } from '../../src/vacancies/search-job.js';
 import { VacancyStore } from '../../src/vacancies/store.js';
 import { FakePrinter } from './applications.js';
-import { FakeMailer } from './mail.js';
+import { FakeGoogleAuth, FakeMailer } from './mail.js';
 import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
@@ -55,6 +55,7 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
   applicationJob.init();
   const logger = opts.logger ?? nullLogger;
   const mailer = new FakeMailer();
+  const googleAuth = new FakeGoogleAuth();
   const secrets = new MemorySecretStore();
   const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
   sentUnsaved.load();
@@ -65,6 +66,7 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
     onShutdown: () => { shutdownCalls++; },
     profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
     applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
+    googleAuth, origin: () => 'http://localhost:80',
   });
-  return { app, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
+  return { app, googleAuth, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
 }

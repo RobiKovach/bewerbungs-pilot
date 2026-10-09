@@ -428,7 +428,8 @@
       "sentNotSaved": "The email was sent, but the app could not save it. Do not send it again — click \"I applied myself on the company's website\" to record it instead.",
       "historyFull": "This package has too many recorded changes to be sent. Nothing was sent. Use \"Create again\" to start it fresh.",
       "draftExists": "This job offer already has a package that was not sent yet. Please open that one — only one package per job offer can be edited.",
-      "followUpDone": "A reminder for this application was already sent or switched off."
+      "followUpDone": "A reminder for this application was already sent or switched off.",
+      "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first."
     }
   },
   "vacancies": {
