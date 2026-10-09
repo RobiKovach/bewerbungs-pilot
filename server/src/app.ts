@@ -175,7 +175,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await registerApplicationRoutes(app, {
     store: deps.applicationStore, job: deps.applicationJob, printer: deps.printer, vacancies: deps.vacancyStore,
     files: deps.profileFiles, profile: () => deps.profileStore.get(), logger: deps.logger,
-    settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, sentUnsaved: deps.sentUnsaved,
+    settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, sentUnsaved: deps.sentUnsaved, queue: deps.queue,
   });
 
   await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger });

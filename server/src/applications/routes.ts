@@ -4,6 +4,8 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { ApplicationPackage, DocLanguage, LetterPatch, OutcomeStatus, Profile } from '@bp/shared';
 import type { SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
+import { abortOnClose } from '../http.js';
+import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import { applicationEmail, followUpEmail, rejectionReply, replySubject } from '../mail/compose.js';
 import type { Mailer } from '../mail/mailer.js';
@@ -17,6 +19,9 @@ import { followUpOpen } from './follow-up.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
+import { packageContext } from './tasks/context.js';
+import { offerReplyTask, offerReplyViolations } from './tasks/offer-reply.js';
+import { withFeedback } from './tasks/revise-letter.js';
 import { cvHtml } from './render/cv.js';
 import { asciiName, fileNames } from './render/html.js';
 import { letterHtml } from './render/letter.js';
@@ -27,7 +32,7 @@ import { toListView, toView } from './views.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
-  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; sentUnsaved: SentUnsavedLog; now?: () => Date; newId?: () => string;
+  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; sentUnsaved: SentUnsavedLog; queue: LlmQueue; now?: () => Date; newId?: () => string;
 }
 
 /** Offer texts shorter than this are stubs (the full text is on a partner site): the dialog warns. */
@@ -80,6 +85,9 @@ const sendBody = {
     body: { type: 'string', minLength: 1, maxLength: L.emailBody, pattern: '\\S' },
   },
 };
+const amountField = { type: 'string', minLength: 1, maxLength: L.offerField, pattern: '^[^\\r\\n]*\\S[^\\r\\n]*$' };
+const offerReplyBody = { type: 'object', additionalProperties: false, required: ['offered', 'wanted'], properties: { offered: amountField, wanted: amountField } };
+const offerReplyPatch = { type: 'object', additionalProperties: false, required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: L.offerBody, pattern: '\\S' } } };
 const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
 
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
@@ -527,5 +535,53 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   app.post('/api/applications/:id/reply/send', { schema: { params: idParams, body: sendBody } }, async (req) => {
     const { id } = req.params as { id: string };
     return sendExtra(id, 'reply', replyAllowed, req.body as { to: string; subject: string; body: string });
+  });
+
+  // ---- Offer reply written by Claude (a request, not a background job; the package changes only on success) ----
+  const replying = new Set<string>();
+
+  app.post('/api/applications/:id/offer-reply', { schema: { params: idParams, body: offerReplyBody } }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { offered, wanted } = req.body as { offered: string; wanted: string };
+    if (!/\d/.test(wanted)) throw new AppError('BAD_REQUEST', 'the wanted amount has no number');
+    notBusy(id);
+    if (replying.has(id)) throw new AppError('CONFLICT', 'a reply is being written', 'packageBusy');
+    const start = d.store.require(id);
+    if (start.status !== 'offer') throw new AppError('CONFLICT', 'only a package with an offer can get an offer reply');
+    replying.add(id);
+    try {
+      const ctx = packageContext(d.profile(), start.language, false);
+      const signal = abortOnClose(reply);
+      const task = offerReplyTask(ctx, start, offered, wanted);
+      let body = (await d.queue.run<{ body: string }>(task, signal)).body;
+      let violations = offerReplyViolations(body, wanted, ctx);
+      if (violations.length > 0) {
+        body = (await d.queue.run<{ body: string }>(withFeedback(task, violations), signal)).body;
+        violations = offerReplyViolations(body, wanted, ctx);
+      }
+      if (violations.length > 0) throw new AppError('LLM_BAD_OUTPUT', violations.join(' | ').slice(0, 300));
+      const at = now().toISOString();
+      d.store.update(id, (q) => {
+        if (q.status !== 'offer') throw new AppError('CONFLICT', 'status changed', 'packageChanged');
+        q.offerReply = { offered, wanted, body: body.trim(), createdAt: q.offerReply?.createdAt ?? at, updatedAt: at };
+      });
+      d.logger.info('offer_reply', { id, result: 'ok' });
+      return view(id);
+    } catch (err) {
+      d.logger.warn('offer_reply', { id, result: err instanceof AppError ? err.code : 'UNKNOWN' });
+      throw err;
+    } finally {
+      replying.delete(id);
+    }
+  });
+
+  app.patch('/api/applications/:id/offer-reply', { schema: { params: idParams, body: offerReplyPatch } }, async (req) => {
+    const { id } = req.params as { id: string };
+    const { body } = req.body as { body: string };
+    notBusy(id);
+    const p = d.store.require(id);
+    if (p.status !== 'offer' || !p.offerReply) throw new AppError('CONFLICT', 'there is no offer reply to edit');
+    d.store.update(id, (q) => { q.offerReply = { ...q.offerReply!, body: body.trim(), updatedAt: now().toISOString() }; });
+    return view(id);
   });
 }

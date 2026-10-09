@@ -5,6 +5,7 @@ import { packageContext } from '../src/applications/tasks/context.js';
 import { createPackageTask } from '../src/applications/tasks/create-package.js';
 import { refreshCvTask } from '../src/applications/tasks/refresh-cv.js';
 import { reviseLetterTask, SHORTEN_INSTRUCTION, withFeedback } from '../src/applications/tasks/revise-letter.js';
+import { amountPresent, offerReplyTask, offerReplyViolations } from '../src/applications/tasks/offer-reply.js';
 import type { CvOutput } from '../src/applications/tasks/context.js';
 import { GOOD_CV, GOOD_LETTER, pkg, readyPackageProfile } from './helpers/applications.js';
 
@@ -164,5 +165,30 @@ describe('checkCv', () => {
   it('mergeChecks keeps the first fatal and all violations (no duplicates)', () => {
     expect(mergeChecks({ fatal: null, violations: ['a'] }, { fatal: 'x', violations: ['a', 'b'] }, { fatal: 'y', violations: [] }))
       .toEqual({ fatal: 'x', violations: ['a', 'b'] });
+  });
+});
+
+describe('offer reply checks', () => {
+  it('finds the wanted amount however it is written', () => {
+    expect(amountPresent('Ich stelle mir 55.000 € brutto vor.', '55000')).toBe(true);
+    expect(amountPresent('around 55 000 EUR', '55.000 €')).toBe(true);
+    expect(amountPresent('around 55,000 EUR', '55 000')).toBe(true);
+    expect(amountPresent('Ich stelle mir 52.000 € vor.', '55.000')).toBe(false);
+    expect(amountPresent('zwischen 3.500 und 3.800 €', '3500-3800')).toBe(true);
+    expect(amountPresent('3.500 €', '3500-3800')).toBe(false);
+    expect(amountPresent('155.000 €', '55.000')).toBe(false); // digit boundary
+  });
+  it('flags length, missing amount and "never mention"', () => {
+    const c = packageContext(readyPackageProfile(), 'de', false);
+    expect(offerReplyViolations('Danke. 55.000 €.', '55000', c)).toEqual([]);
+    expect(offerReplyViolations(`${'Wort '.repeat(201)}55.000`, '55000', c)).toHaveLength(1);
+    expect(offerReplyViolations('Danke für das Angebot.', '55000', c)[0]).toMatch(/55000/);
+    expect(offerReplyViolations('Wie bei Kunde X: 55.000 €', '55000', c)[0]).toMatch(/Kunde X/);
+  });
+  it('the prompt fences the person’s amounts and asks for the document language', () => {
+    const t = offerReplyTask(packageContext(readyPackageProfile(), 'de', false), pkg({ status: 'offer' }), '48.000 €', '55.000 €');
+    expect(t.prompt).toMatch(/UNTRUSTED_AMOUNTS_/);
+    expect(t.prompt).toContain('German');
+    expect(t.schema).toMatchObject({ required: ['body'] });
   });
 });

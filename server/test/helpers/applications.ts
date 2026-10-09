@@ -88,13 +88,14 @@ const resolve = async <T>(a: Answer<T>, task: LlmTask, signal: AbortSignal) =>
 
 /** Answers create / revise / refresh-cv tasks by the shape of their output schema. */
 export function packageClaude(opts: {
-  create?: Answer<CreateOutput>; revise?: Answer<LetterOutput>; refresh?: Answer<CvOutput>;
+  create?: Answer<CreateOutput>; revise?: Answer<LetterOutput>; refresh?: Answer<CvOutput>; offer?: Answer<{ body: string }>;
   before?: (task: LlmTask, signal: AbortSignal) => unknown;
 } = {}): FakeProvider {
   return new FakeProvider({ ok: true }, async (task, signal) => {
     await opts.before?.(task, signal);
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled', 'cancelledByUser');
     const required = (task.schema as { required?: string[] }).required ?? [];
+    if (required.length === 1 && required[0] === 'body') return resolve(opts.offer ?? { body: 'Sehr geehrte Damen und Herren, 55.000 € wären passend. Max Mustermann' }, task, signal);
     if (required.includes('paragraphs') && required.includes('profil')) return resolve(opts.create ?? { ...GOOD_LETTER, ...goodCvFor(task) }, task, signal);
     if (required.includes('paragraphs')) return resolve(opts.revise ?? GOOD_LETTER, task, signal);
     if (required.includes('profil')) return resolve(opts.refresh ?? goodCvFor(task), task, signal);
