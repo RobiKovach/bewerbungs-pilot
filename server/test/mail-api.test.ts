@@ -72,6 +72,19 @@ describe('mail settings API', () => {
     expect(t.settings.get().mail).toMatchObject({ host: 'smtp.other.example' });
   });
 
+  it('PUT without password never reuses a saved Google refresh token as an SMTP password', async () => {
+    t.settings.setMail({ kind: 'google', address: 'max@gmail.com', senderName: 'Max Mustermann', provider: 'gmail' });
+    await t.secrets.save('1//refresh-secret');
+    const noPass: Record<string, unknown> = body();
+    delete noPass.password;
+    const res = await put(t, noPass);
+    expect(res.statusCode).toBe(409);
+    expect((res.json() as { error: { code: string } }).error.code).toBe('MAIL_NOT_CONFIGURED');
+    expect(t.mailer.sent).toHaveLength(0);
+    expect(t.settings.get().mail).toMatchObject({ kind: 'google' });
+    expect(await t.secrets.load()).toBe('1//refresh-secret');
+  });
+
   it('CR/LF in any field, or an empty address/user/host -> 400 and no email', async () => {
     const bads: Record<string, unknown>[] = [
       { senderName: 'Max\r\nBcc: x@y.de' }, { address: 'a@b.de\nBcc: x@y.de' }, { host: 'smtp.example.com\r\n' },

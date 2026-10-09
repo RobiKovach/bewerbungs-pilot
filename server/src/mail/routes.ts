@@ -63,7 +63,8 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
   app.put('/api/mail/settings', { schema: { body: putSchema } }, async (req) => {
     const b = req.body as PutBody;
     if (!/^[^@\s]+@[^@\s]+$/.test(b.address)) throw new AppError('BAD_REQUEST', 'address is not an email address');
-    const password = b.password ?? (await deps.secrets.load());
+    // A saved secret is reusable only when it is an SMTP password: a Google refresh token must never go to an SMTP server.
+    const password = b.password ?? (deps.settings.get().mail?.kind === 'smtp' ? await deps.secrets.load() : null);
     if (password === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no password saved');
     const config: MailSettings = {
       kind: 'smtp', address: b.address, senderName: b.senderName, host: b.host, port: b.port, security: b.security,

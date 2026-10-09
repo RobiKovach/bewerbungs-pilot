@@ -57,7 +57,9 @@ export function MailWizard({ initial, onSaved, onCancel, pollMs }: Props) {
   const addressOk = /^[^@\s]+@[^@\s]+$/.test(address.trim());
   const serverOk = provider !== null || (host.trim() !== '' && Number.isInteger(portNumber) && portNumber > 0 && effectiveUser !== '');
   const step1Ok = providers !== null && addressOk && senderName.trim() !== '' && serverOk;
-  const step2Ok = password !== '' || initial.passwordSaved;
+  // A saved Google key is not an app password: only a saved SMTP password can be kept.
+  const keepSaved = initial.passwordSaved && initial.mail?.kind === 'smtp';
+  const step2Ok = password !== '' || keepSaved;
 
   const changeSecurity = (s: MailSecurity) => {
     setSecurity(s);
@@ -169,7 +171,7 @@ export function MailWizard({ initial, onSaved, onCancel, pollMs }: Props) {
             <span className="mail-password">
               <input
                 type={showPassword ? 'text' : 'password'} value={password} autoComplete="off"
-                placeholder={initial.passwordSaved ? t('mail.passwordSaved') : ''}
+                placeholder={keepSaved ? t('mail.passwordSaved') : ''}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <button type="button" className="btn ghost" onClick={() => setShowPassword((v) => !v)}>

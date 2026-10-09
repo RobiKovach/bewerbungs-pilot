@@ -324,6 +324,21 @@ describe('MailWizard with Google', () => {
     expect(screen.getByText('Step 2 of 3')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
+
+  it('changing from Google to a non-Gmail address needs a new password (the Google key is not offered as one)', async () => {
+    google([{ state: 'idle' }]);
+    const user = userEvent.setup();
+    render(<MailWizard initial={connectedGoogle} onSaved={() => {}} />);
+    const address = await screen.findByLabelText(/^Your email address/);
+    await user.clear(address);
+    await user.type(address, 'max@gmx.de');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    const pw = screen.getByLabelText('Password');
+    expect(pw).not.toHaveAttribute('placeholder', 'Saved — leave empty to keep it');
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await user.type(pw, 'geheim');
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
 });
 
 describe('MailSettingsBlock with Google', () => {
