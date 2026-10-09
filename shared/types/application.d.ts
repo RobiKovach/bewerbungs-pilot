@@ -124,6 +124,14 @@ export interface AttachmentInfo {
 
 export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean; followUpDue: boolean }
 
+export interface ApplicationStats {
+  sent: number; replies: number; interviews: number; offers: number;
+  /** Fractions 0..1 of `sent`; null when nothing was sent yet. */
+  rates: { reply: number; interview: number; offer: number } | null;
+  /** 8 weeks, oldest first, the current week last; start = local Monday, YYYY-MM-DD. */
+  weeks: { start: string; count: number }[];
+}
+
 export interface PackageReadiness { ready: boolean; missingSections: CvSectionId[]; noStory: boolean }
 
 /** GET /api/applications/new?vacancyId=… — what the "Create package" dialog needs. */

@@ -19,6 +19,7 @@ import { followUpOpen } from './follow-up.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
+import { applicationStats } from './stats.js';
 import { packageContext } from './tasks/context.js';
 import { offerReplyTask, offerReplyViolations } from './tasks/offer-reply.js';
 import { withFeedback } from './tasks/revise-letter.js';
@@ -118,6 +119,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       readiness: packageReadiness(profile),
     };
   });
+
+  app.get('/api/applications/stats', async () => applicationStats(d.store.all(), now()));
 
   app.get('/api/applications/readiness', async () => packageReadiness(d.profile()));
 
