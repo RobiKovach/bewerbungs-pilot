@@ -76,8 +76,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 
 ## Email and sending
 
-- Connect your mailbox in Settings with an app password (a separate password for apps) and send a test email. Gmail,
-  GMX, WEB.DE, T-Online, Yahoo and iCloud are filled in automatically; other providers (e.g. Outlook.com) are entered by hand.
+- Connect your mailbox in Settings and send a test email. Gmail addresses use "Sign in with Google" (see What's new in 0.7.0 below).
+  For other providers you use an app password (a separate password for apps): GMX, WEB.DE, T-Online, Yahoo and iCloud are filled in
+  automatically; others (e.g. Outlook.com) are entered by hand.
 - Send an approved package from the app: you see and can edit the email first, and a copy goes to your own mailbox.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
