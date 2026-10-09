@@ -4,10 +4,10 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.6 — foundation, profile, job offers, application packages, sending and statuses.** The app installs, runs,
+**Status: v0.7 — foundation, profile, job offers, application packages, sending, statuses, reminders and statistics.** The app installs, runs,
 speaks six languages, walks you through the first steps, talks to Claude, builds your profile from your CV and your own
 stories, finds job offers that fit your profile, writes an application package (cover letter + tailored CV) for the
-offers you choose, sends it from your own email and keeps track of the status of every application.
+offers you choose, sends it from your own email, keeps track of the status of every application, reminds you to follow up and helps you answer.
 
 ## Requirements
 
@@ -82,6 +82,19 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## What's new in 0.7.0
+
+- **Sign in with Google.** For a Gmail mailbox you now sign in with Google instead of an app password. It sends over a normal
+  secure web connection, so it also works on networks that block mail ports. While the Google app is still in testing mode,
+  Google shows "Google hasn't verified this app": click **Advanced → Go to BewerbungsPilot**. You must be added as a test
+  user first, and in testing mode the sign-in has to be renewed every 7 days.
+- **Reminder after 14 days.** An application that was sent or submitted and has had no answer for 14 days gets a reminder:
+  you see the text, can edit it and send it (or copy it, or dismiss it). One reminder per application.
+- **Reply drafts.** For a rejection, a short polite thank-you reply from a template. For an offer, Claude writes a reply with
+  the amount you enter. You check and edit it before anything is sent.
+- **Statistics.** How many applications you sent and how many answers, interviews and offers came back, with a weekly chart
+  of the last 8 weeks.
 
 ## Development
 
