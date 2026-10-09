@@ -14,15 +14,16 @@ const domainOf = (address: string): string => {
 export function MailWizard({ initial, onSaved, onCancel }: Props) {
   const { t, i18n } = useTranslation();
   const saved = initial.mail;
+  const smtp = initial.mail?.kind === 'smtp' ? initial.mail : null;
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [providers, setProviders] = useState<MailProvider[] | null>(null);
   const [address, setAddress] = useState(saved?.address ?? '');
   const [senderName, setSenderName] = useState(saved?.senderName ?? '');
-  const [host, setHost] = useState(saved?.host ?? '');
-  const [port, setPort] = useState(saved ? String(saved.port) : '465');
-  const [security, setSecurity] = useState<MailSecurity>(saved?.security ?? 'ssl');
-  const [user, setUser] = useState(saved?.user ?? '');
-  const [userTouched, setUserTouched] = useState(Boolean(saved && saved.user !== saved.address));
+  const [host, setHost] = useState(smtp?.host ?? '');
+  const [port, setPort] = useState(smtp ? String(smtp.port) : '465');
+  const [security, setSecurity] = useState<MailSecurity>(smtp?.security ?? 'ssl');
+  const [user, setUser] = useState(smtp?.user ?? '');
+  const [userTouched, setUserTouched] = useState(Boolean(smtp && smtp.user !== smtp.address));
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [running, setRunning] = useState(false);

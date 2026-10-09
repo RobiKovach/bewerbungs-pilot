@@ -13,7 +13,7 @@ const providers: MailProvider[] = [
 ];
 const none: MailSettingsView = { mail: null, passwordSaved: false };
 const connected: MailSettingsView = {
-  mail: { address: 'max@gmail.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl', user: 'max@gmail.com', provider: 'gmail' },
+  mail: { kind: 'smtp', address: 'max@gmail.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl', user: 'max@gmail.com', provider: 'gmail' },
   passwordSaved: true,
 };
 

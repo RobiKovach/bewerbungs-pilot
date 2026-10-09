@@ -74,11 +74,16 @@ export class SettingsStore {
 
 function normalizeMail(raw: unknown): MailSettings | null {
   if (!raw || typeof raw !== 'object') return null;
-  const { address, senderName, host, port, security, user, provider } = raw as Record<string, unknown>;
+  const { kind, address, senderName, host, port, security, user, provider } = raw as Record<string, unknown>;
+  if (kind === 'google') {
+    if (typeof address !== 'string' || typeof senderName !== 'string') return null;
+    return { kind: 'google', address, senderName, provider: 'gmail' };
+  }
+  if (kind !== undefined && kind !== 'smtp') return null;
   if (typeof address !== 'string' || typeof senderName !== 'string' || typeof host !== 'string' || typeof user !== 'string' || typeof provider !== 'string') return null;
   if (typeof port !== 'number' || !Number.isInteger(port) || port < 1 || port > 65535) return null;
   if (security !== 'ssl' && security !== 'starttls') return null;
-  return { address, senderName, host, port, security, user, provider };
+  return { kind: 'smtp', address, senderName, host, port, security, user, provider };
 }
 
 function normalize(raw: unknown): Settings {

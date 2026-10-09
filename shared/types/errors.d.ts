@@ -27,6 +27,7 @@ export type ErrorCode =
   | 'MAIL_NOT_CONFIGURED'
   | 'MAIL_AUTH'
   | 'MAIL_CONNECT'
+  | 'MAIL_REAUTH'
   | 'MAIL_REJECTED'
   | 'CONFLICT'
   | 'BAD_REQUEST'

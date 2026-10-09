@@ -53,7 +53,7 @@ describe('mail settings API', () => {
     expect(sent.bcc).toBeUndefined();
     expect(sent.from).toEqual({ name: 'Max Mustermann', address: 'max@example.com' });
     expect(sent.subject).toBe('BewerbungsPilot: test email');
-    expect(t.settings.get().mail?.host).toBe('smtp.example.com');
+    expect(t.settings.get().mail).toMatchObject({ host: 'smtp.example.com' });
     expect(await t.secrets.load()).toBe('geheim123');
   });
 
@@ -69,7 +69,7 @@ describe('mail settings API', () => {
     const again = await put(t, { ...noPass, host: 'smtp.other.example' });
     expect(again.statusCode).toBe(200);
     expect(await t.secrets.load()).toBe('geheim123');
-    expect(t.settings.get().mail?.host).toBe('smtp.other.example');
+    expect(t.settings.get().mail).toMatchObject({ host: 'smtp.other.example' });
   });
 
   it('CR/LF in any field, or an empty address/user/host -> 400 and no email', async () => {

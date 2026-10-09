@@ -5,9 +5,11 @@ vi.mock('nodemailer', () => ({ default: { createTransport: () => ({ sendMail, cl
 
 import { mailErrorFrom, SmtpMailer, transportOptions } from '../src/mail/mailer.js';
 import { httpStatusFor } from '../src/errors.js';
-import type { MailSettings } from '@bp/shared';
+import { MailRouter } from '../src/mail/router.js';
+import type { Mailer, OutgoingMail } from '../src/mail/mailer.js';
+import type { SmtpMailSettings } from '@bp/shared';
 
-const base: MailSettings = { address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 465, security: 'ssl', user: 'max@example.com', provider: 'other' };
+const base: SmtpMailSettings = { kind: 'smtp', address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 465, security: 'ssl', user: 'max@example.com', provider: 'other' };
 
 describe('mailErrorFrom', () => {
   it('maps wrong credentials to MAIL_AUTH', () => {
@@ -75,5 +77,25 @@ describe('SmtpMailer.send', () => {
     expect(err.code).toBe('MAIL_REJECTED');
     expect(err.detailsForLog).not.toContain('jobs@muster.example');
     expect(err.detailsForLog).not.toContain('max@example.com');
+  });
+});
+
+describe('mail kinds', () => {
+  const google = { kind: 'google', address: 'max@gmail.com', senderName: 'Max Mustermann', provider: 'gmail' } as const;
+  const mail: OutgoingMail = { from: { name: 'Max Mustermann', address: 'max@example.com' }, to: 'jobs@muster.example', subject: 's', text: 't', attachments: [] };
+  const recorder = (id: string, log: string[]): Mailer => ({ send: async () => { log.push(id); return { messageId: id }; } });
+
+  it('SmtpMailer refuses a Google config without connecting', async () => {
+    sendMail.mockClear();
+    const err = await new SmtpMailer().send(google, 'x', mail).catch((e: unknown) => e) as { code: string };
+    expect(err.code).toBe('MAIL_NOT_CONFIGURED');
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+  it('MailRouter delegates by kind', async () => {
+    const log: string[] = [];
+    const router = new MailRouter(recorder('smtp', log), recorder('google', log));
+    await router.send(google, 'r', mail);
+    await router.send(base, 'p', mail);
+    expect(log).toEqual(['google', 'smtp']);
   });
 });

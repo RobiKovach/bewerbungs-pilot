@@ -403,6 +403,7 @@
     "MAIL_NOT_CONFIGURED": { "message": "Poșta dvs. nu este încă conectată.", "hint": "Deschideți Setări → E-mail și conectați-vă căsuța poștală." },
     "MAIL_AUTH": { "message": "Furnizorul dvs. de e-mail nu a acceptat parola.", "hint": "Folosiți o parolă de aplicație, nu parola obișnuită — setările de e-mail arată cum se creează una." },
     "MAIL_CONNECT": { "message": "Nu am putut contacta serverul dvs. de e-mail.", "hint": "Verificați conexiunea la internet. Dacă problema persistă, verificați serverul și portul din setările de e-mail." },
+    "MAIL_REAUTH": { "message": "Google nu mai permite ca BewerbungsPilot să trimită e-mailuri în numele dumneavoastră.", "hint": "Autentificați-vă din nou cu Google: Setări → E-mail → Schimbați." },
     "MAIL_REJECTED": { "message": "Serverul dvs. de e-mail a refuzat acest mesaj.", "hint": "Verificați adresa destinatarului. Dacă atașamentele sunt mari, renunțați la unul și încercați din nou." },
     "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
     "reasons": {

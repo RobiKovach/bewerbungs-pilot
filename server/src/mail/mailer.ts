@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import type { MailSettings } from '@bp/shared';
+import type { MailSettings, SmtpMailSettings } from '@bp/shared';
 import { AppError } from '../errors.js';
 
 export interface OutgoingMail {
@@ -19,7 +19,7 @@ export interface Mailer {
 const CONNECT_CODES = new Set(['ECONNECTION', 'ETIMEDOUT', 'ESOCKET', 'EDNS', 'ECONNREFUSED', 'ENOTFOUND', 'ETLS']);
 
 /** Encrypted SMTP only: 465 = implicit TLS, 587 = STARTTLS that must succeed (never plain). */
-export function transportOptions(config: MailSettings, password: string) {
+export function transportOptions(config: SmtpMailSettings, password: string) {
   return {
     host: config.host,
     port: config.port,
@@ -54,6 +54,7 @@ export function mailErrorFrom(err: unknown, opts: { secrets?: string[] } = {}): 
 
 export class SmtpMailer implements Mailer {
   async send(config: MailSettings, password: string, mail: OutgoingMail): Promise<{ messageId: string }> {
+    if (config.kind !== 'smtp') throw new AppError('MAIL_NOT_CONFIGURED', 'not an SMTP mailbox');
     const transport = nodemailer.createTransport(transportOptions(config, password));
     try {
       const info = await transport.sendMail({

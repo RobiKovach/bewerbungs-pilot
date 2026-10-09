@@ -6,7 +6,7 @@ import { makePdf, packageClaude, readyPackageProfile } from './applications.js';
 import { vacancy } from './vacancies.js';
 
 export const OFFER = 'Wir suchen einen Webentwickler (m/w/d) für unser Team in Hamburg. '.repeat(12);
-export const MAIL = { address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 465, security: 'ssl' as const, user: 'max@example.com', provider: 'other' };
+export const MAIL = { kind: 'smtp' as const, address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 465, security: 'ssl' as const, user: 'max@example.com', provider: 'other' };
 export const MAIL_BODY = { to: 'jobs@muster.example', subject: 'Bewerbung als Webentwickler (m/w/d)', body: 'Sehr geehrte Damen und Herren,\n\nanbei meine Bewerbung.\n\nMax Mustermann' };
 
 export type Ctx = Awaited<ReturnType<typeof makeApp>>;

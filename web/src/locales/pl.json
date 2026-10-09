@@ -403,6 +403,7 @@
     "MAIL_NOT_CONFIGURED": { "message": "Twoja poczta nie jest jeszcze połączona.", "hint": "Otwórz Ustawienia → Poczta i połącz swoją skrzynkę." },
     "MAIL_AUTH": { "message": "Dostawca poczty nie przyjął hasła.", "hint": "Użyj hasła aplikacji, a nie zwykłego hasła — w ustawieniach poczty jest pokazane, jak je utworzyć." },
     "MAIL_CONNECT": { "message": "Nie udało się połączyć z Twoim serwerem poczty.", "hint": "Sprawdź połączenie z internetem. Jeśli problem się powtarza, sprawdź serwer i port w ustawieniach poczty." },
+    "MAIL_REAUTH": { "message": "Google nie pozwala już BewerbungsPilot wysyłać e-maili w Twoim imieniu.", "hint": "Zaloguj się przez Google ponownie: Ustawienia → E-mail → Zmień." },
     "MAIL_REJECTED": { "message": "Twój serwer poczty odrzucił tę wiadomość.", "hint": "Sprawdź adres odbiorcy. Jeśli załączniki są duże, pomiń jeden z nich i spróbuj ponownie." },
     "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." },
     "reasons": {

@@ -3,7 +3,9 @@ import type { PublishedWithinDays } from './vacancy.js';
 export type Language = 'uk' | 'en' | 'de' | 'ru' | 'pl' | 'ro';
 
 export type MailSecurity = 'ssl' | 'starttls';
-export interface MailSettings { address: string; senderName: string; host: string; port: number; security: MailSecurity; user: string; provider: string }
+export interface SmtpMailSettings { kind: 'smtp'; address: string; senderName: string; host: string; port: number; security: MailSecurity; user: string; provider: string }
+export interface GoogleMailSettings { kind: 'google'; address: string; senderName: string; provider: 'gmail' }
+export type MailSettings = SmtpMailSettings | GoogleMailSettings;
 export interface MailProvider { id: string; label: string; domains: string[]; host: string; port: number; security: MailSecurity; helpUrl: string }
 export interface MailSettingsView { mail: MailSettings | null; passwordSaved: boolean }
 

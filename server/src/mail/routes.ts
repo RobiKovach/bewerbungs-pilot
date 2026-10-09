@@ -49,7 +49,7 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
     const password = b.password ?? (await deps.secrets.load());
     if (password === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no password saved');
     const config: MailSettings = {
-      address: b.address, senderName: b.senderName, host: b.host, port: b.port, security: b.security,
+      kind: 'smtp', address: b.address, senderName: b.senderName, host: b.host, port: b.port, security: b.security,
       user: b.user, provider: providerFor(b.address)?.id ?? 'other',
     };
     const { subject, text } = testMail(b.language);

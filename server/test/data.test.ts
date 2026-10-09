@@ -119,7 +119,7 @@ describe('settings: vacancies.publishedWithinDays', () => {
 
 describe('settings: mail', () => {
   const fresh = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp-settings-')), 'settings.json');
-  const mail = { address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 587, security: 'starttls' as const, user: 'max@example.com', provider: 'gmx' };
+  const mail = { kind: 'smtp' as const, address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.example.com', port: 587, security: 'starttls' as const, user: 'max@example.com', provider: 'gmx' };
   it('loads with mail null when settings.json has no mail', () => {
     const file = fresh();
     fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, language: 'de' }));
@@ -130,6 +130,20 @@ describe('settings: mail', () => {
     fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: { ...mail, port: 'x' } }));
     expect(new SettingsStore(file).load().mail).toBeNull();
     fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: { ...mail, security: 'none' } }));
+    expect(new SettingsStore(file).load().mail).toBeNull();
+  });
+  it('a 0.6.0 mail block without kind loads as smtp; google is kept; broken or unknown kinds are null', () => {
+    const file = fresh();
+    const old: Record<string, unknown> = { ...mail };
+    delete old.kind;
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: old }));
+    expect(new SettingsStore(file).load().mail).toEqual(mail);
+    const g = { kind: 'google', address: 'max@gmail.com', senderName: 'Max Mustermann', provider: 'gmail' };
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: g }));
+    expect(new SettingsStore(file).load().mail).toEqual(g);
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: { kind: 'google', senderName: 'x' } }));
+    expect(new SettingsStore(file).load().mail).toBeNull();
+    fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, mail: { kind: 'outlook' } }));
     expect(new SettingsStore(file).load().mail).toBeNull();
   });
   it('setMail writes, reloads and clears; patch keeps it', () => {

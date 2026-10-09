@@ -14,7 +14,10 @@ import { FakeProvider } from './llm/fake.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
+import { GmailApiMailer } from './mail/gmail-api.js';
+import { LibraryGoogleAuth } from './mail/google-auth.js';
 import { SmtpMailer } from './mail/mailer.js';
+import { MailRouter } from './mail/router.js';
 import { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { DpapiSecretStore } from './mail/secret.js';
 import { ProfileFiles } from './profile/files.js';
@@ -88,6 +91,7 @@ async function main(): Promise<void> {
     stateFile: path.join(paths.applications, 'job-state.json'),
   });
   applicationJob.init();
+  const googleAuth = new LibraryGoogleAuth();
   const app = await buildApp({
     settings, provider, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
@@ -95,7 +99,7 @@ async function main(): Promise<void> {
     onShutdown: () => void shutdown(),
     profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
     applicationStore, applicationJob, printer,
-    mailer: new SmtpMailer(), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
+    mailer: new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
   });
 
   const shutdown = createShutdown({
