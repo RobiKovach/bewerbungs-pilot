@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AppError } from '../src/errors.js';
 import { GMAIL_SEND_URL, GmailApiMailer, rawMessage } from '../src/mail/gmail-api.js';
-import { googleErrorFrom } from '../src/mail/google-auth.js';
+import { LibraryGoogleAuth, googleErrorFrom } from '../src/mail/google-auth.js';
 import type { OutgoingMail } from '../src/mail/mailer.js';
 import { FakeGoogleAuth } from './helpers/mail.js';
 
@@ -51,6 +51,17 @@ describe('Gmail API mailer', () => {
     expect((await new GmailApiMailer(auth, offline).send(GOOGLE, 'r', MAIL).then(() => null, (e: unknown) => e as AppError))?.code).toBe('MAIL_CONNECT');
     expect(googleErrorFrom({ message: 'invalid_grant', response: { status: 400, data: { error: 'invalid_grant', error_description: 'Token has been expired or revoked.' } } }).code).toBe('MAIL_REAUTH');
     expect(googleErrorFrom({ code: 'ENOTFOUND', message: 'getaddrinfo ENOTFOUND oauth2.googleapis.com' }).code).toBe('MAIL_CONNECT');
+  });
+
+  it.each([['{"threadId":"t1"}'], ['<html>proxy</html>'], ['']])('a 2xx answer without a readable id (%j) still counts as sent, so "Try again" cannot double-send', async (body) => {
+    const auth = new FakeGoogleAuth(); auth.accessTokenResult = 'ya29.x';
+    const fetchImpl = (async () => new Response(body, { status: 200 })) as unknown as typeof fetch;
+    expect(await new GmailApiMailer(auth, fetchImpl).send(GOOGLE, 'r', MAIL)).toEqual({ messageId: 'gmail:unknown' });
+  });
+
+  it('Google token calls are bounded by a 30 s timeout', () => {
+    const client = (new LibraryGoogleAuth({ id: 'id', secret: 's' }) as unknown as { oauth(): { transporter: { defaults?: { timeout?: number } } } }).oauth();
+    expect(client.transporter.defaults?.timeout).toBe(30_000);
   });
 
   it('refuses an SMTP config', async () => {

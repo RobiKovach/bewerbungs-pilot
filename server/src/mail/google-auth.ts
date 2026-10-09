@@ -35,7 +35,7 @@ export class LibraryGoogleAuth implements GoogleAuth {
   constructor(private readonly client: { id: string; secret: string } = GOOGLE_CLIENT) {}
 
   private oauth(): OAuth2Client {
-    return new OAuth2Client({ clientId: this.client.id, clientSecret: this.client.secret });
+    return new OAuth2Client({ clientId: this.client.id, clientSecret: this.client.secret, transporterOptions: { timeout: 30_000 } });
   }
 
   async newVerifier(): Promise<{ verifier: string; challenge: string }> {

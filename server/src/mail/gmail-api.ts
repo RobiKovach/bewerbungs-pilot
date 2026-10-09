@@ -62,7 +62,7 @@ export class GmailApiMailer implements Mailer {
       const reason = typeof raw === 'string' ? raw.replace(/[^A-Za-z_]/g, '').slice(0, 40) : '';
       throw gmailErrorFrom(res.status, reason);
     }
-    if (typeof data?.id !== 'string') throw new AppError('MAIL_CONNECT', 'gmail returned no message id');
-    return { messageId: data.id };
+    // Gmail accepted the message (2xx): never report a failure here, a retry would send it twice.
+    return { messageId: typeof data?.id === 'string' && data.id !== '' ? data.id : 'gmail:unknown' };
   }
 }
