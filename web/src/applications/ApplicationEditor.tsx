@@ -12,6 +12,7 @@ import { FollowUpNotice } from './FollowUpNotice';
 import { HistoryBlock } from './HistoryBlock';
 import { LetterTab } from './LetterTab';
 import { MailDraftDialog } from './MailDraftDialog';
+import { OfferReplyDialog } from './OfferReplyDialog';
 import { SendDialog } from './SendDialog';
 import { StatusDialog } from './StatusDialog';
 import { jobError, useApplicationJob } from './useApplicationJob';
@@ -37,6 +38,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [reminding, setReminding] = useState(false);
+  // The reply to a rejection (mail window), or to an offer: the text window, then the mail window for it.
+  const [replying, setReplying] = useState<null | 'rejection' | 'offerText' | 'offerMail'>(null);
 
   const load = useCallback(async () => {
     try {
@@ -63,6 +66,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   // The send window belongs to an approved package: it closes when the package changes (e.g. "Back to draft" behind it).
   const status = view?.application.status;
   useEffect(() => { if (status !== 'approved') setSending(false); }, [status]);
+  // Reply windows belong to a rejection / an offer: they close when the status changes (e.g. "Undo").
+  useEffect(() => { if (status !== 'rejected' && status !== 'offer') setReplying(null); }, [status]);
   const job = useApplicationJob({ pollMs, onFinished: (s) => { if (s.applicationId === id) void load(); } });
 
   if (error && !view) return <ErrorBanner error={error} onRetry={() => void load()} />;
@@ -174,6 +179,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         {a.status === 'approved' ? <button type="button" className="btn" disabled={!mailReady || dirty || busy || locked || sending} onClick={() => { setSentTo(null); setSending(true); }}>{t('applications.send.button')}</button> : null}
         {a.status === 'approved' ? <button type="button" className="btn ghost" disabled={busy || locked || dirty || sending} onClick={() => { setStatusOpen(false); setConfirm('submitted'); }}>{t('applications.submitted.button')}</button> : null}
         {frozen ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => { setConfirm(null); setStatusOpen(true); }}>{t('applications.statusChange.button')}</button> : null}
+        {a.status === 'rejected' ? <button type="button" className="btn" disabled={busy || error !== null || replying !== null} onClick={() => setReplying('rejection')}>{t('applications.reply.rejection')}</button> : null}
+        {a.status === 'offer' ? <button type="button" className="btn" disabled={busy || error !== null || replying !== null} onClick={() => setReplying('offerText')}>{t('applications.reply.offer')}</button> : null}
         {frozen
           ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => void copyAsDraft()}>{t('applications.copyDraft')}</button>
           : <button type="button" className="btn ghost" disabled={busy} onClick={() => { setLanguage(a.language); setConfirm('recreate'); }}>{t('applications.recreate')}</button>}
@@ -210,6 +217,18 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
           onDone={(v) => { setView(v); setReminding(false); setActionError(null); }}
           onClose={() => setReminding(false)}
           afterCopy={{ label: t('applications.followUp.markReminded'), run: () => api.markFollowUp(id) }}
+        />
+      ) : null}
+      {replying === 'offerText' && a.status === 'offer' ? (
+        <OfferReplyDialog view={view} onView={setView} onClose={() => setReplying(null)} onSend={() => setReplying('offerMail')} />
+      ) : null}
+      {(replying === 'rejection' && a.status === 'rejected') || (replying === 'offerMail' && a.status === 'offer') ? (
+        <MailDraftDialog
+          title={t(replying === 'rejection' ? 'applications.reply.rejection' : 'applications.reply.offer')}
+          load={() => api.replyDraft(id)}
+          send={(mail) => api.sendReply(id, mail)}
+          onDone={(v) => { setView(v); setReplying(null); setActionError(null); }}
+          onClose={() => setReplying(replying === 'offerMail' ? 'offerText' : null)}
         />
       ) : null}
       {confirm === 'recreate' ? (

@@ -303,6 +303,8 @@
     "updated": "Modificat {{date}}",
     "followUp": { "notice": "Ați trimis această candidatură pe {{date}} și de 14 zile nu ați primit niciun răspuns. Merită să scrieți din nou.", "write": "Scrieți un memento", "dismiss": "Nu mă mai reaminti", "badge": "Scrieți din nou", "title": "Memento", "markReminded": "Marcați ca reamintit" },
     "mailDraft": { "copy": "Copiați mesajul", "copied": "Copiat.", "copyFailed": "Copierea nu a reușit — selectați textul și copiați-l singur.", "needMail": "Conectați e-mailul pentru a trimite mesajul de aici.", "needMailLink": "Deschideți setările", "reauthLink": "Conectați-vă din nou cu Google" },
+    "reply": { "rejection": "Răspundeți la refuz", "offer": "Răspundeți la ofertă" },
+    "offerReply": { "working": "Claude scrie răspunsul…", "offered": "Ce vi s-a oferit", "wanted": "Ce doriți", "wantedHint": "Scrieți suma cu cifre, de exemplu 55.000 €.", "ask": "Cereți-i lui Claude să scrie răspunsul", "text": "Răspunsul dumneavoastră", "save": "Salvați", "discard": "Renunțați la modificări", "copy": "Copiați", "send": "Trimiteți…", "again": "Scrieți din nou", "close": "Închideți", "saveFirst": "Salvați mai întâi textul." },
     "open": "Deschide pachetul",
     "busy": "Claude lucrează acum la alt pachet. Vă rugăm să așteptați puțin.",
     "language": { "de": "Deutsch", "en": "English" },

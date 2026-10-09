@@ -303,6 +303,8 @@
     "updated": "Geändert am {{date}}",
     "followUp": { "notice": "Sie haben diese Bewerbung am {{date}} gesendet und seit 14 Tagen keine Antwort erhalten. Es lohnt sich, noch einmal zu schreiben.", "write": "Erinnerung schreiben", "dismiss": "Nicht erinnern", "badge": "Nachfassen", "title": "Erinnerung", "markReminded": "Als erinnert markieren" },
     "mailDraft": { "copy": "Nachricht kopieren", "copied": "Kopiert.", "copyFailed": "Das Kopieren hat nicht geklappt — markieren Sie den Text und kopieren Sie ihn selbst.", "needMail": "Verbinden Sie Ihre E-Mail, um die Nachricht von hier zu senden.", "needMailLink": "Einstellungen öffnen", "reauthLink": "Erneut mit Google anmelden" },
+    "reply": { "rejection": "Auf die Absage antworten", "offer": "Auf das Angebot antworten" },
+    "offerReply": { "working": "Claude schreibt die Antwort…", "offered": "Was man Ihnen angeboten hat", "wanted": "Was Sie möchten", "wantedHint": "Schreiben Sie den Betrag mit Ziffern, z. B. 55.000 €.", "ask": "Claude die Antwort schreiben lassen", "text": "Ihre Antwort", "save": "Speichern", "discard": "Änderungen verwerfen", "copy": "Kopieren", "send": "Senden…", "again": "Neu schreiben lassen", "close": "Schließen", "saveFirst": "Speichern Sie zuerst den Text." },
     "open": "Paket öffnen",
     "busy": "Claude arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
     "language": { "de": "Deutsch", "en": "English" },

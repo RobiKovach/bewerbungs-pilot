@@ -463,3 +463,49 @@ describe('ApplicationEditor — reminder after 14 days', () => {
     expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/follow-up/dismiss' && init?.method === 'POST')).toBe(true);
   });
 });
+
+describe('ApplicationEditor — replies to a rejection or an offer', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) };
+
+  it('a rejection: "Reply to the rejection" loads the template and sends it as a reply', async () => {
+    const after = appView({}, { status: 'rejected' });
+    const { f, user } = setup({
+      ...mail,
+      'GET /api/applications/app1/reply-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'Re: Bewerbung', body: 'Vielen Dank für Ihre Rückmeldung.', mailReady: true } }),
+      'POST /api/applications/app1/reply/send': () => ({ body: after }),
+    }, appView({}, { status: 'rejected' }));
+    await user.click(await screen.findByRole('button', { name: 'Reply to the rejection' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reply to the rejection' });
+    expect(await within(dialog).findByLabelText('Message')).toHaveValue('Vielen Dank für Ihre Rückmeldung.');
+    expect(within(dialog).queryByRole('button', { name: 'Mark as reminded' })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Reply to the rejection' })).not.toBeInTheDocument());
+    expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/reply/send' && init?.method === 'POST')).toBe(true);
+  });
+
+  it('no reply button for other statuses', async () => {
+    setup(mail, appView({}, { status: 'interview' }));
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByRole('button', { name: 'Reply to the rejection' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reply to the offer' })).not.toBeInTheDocument();
+  });
+
+  it('an offer: the text window, Send… opens the mail window, closing it comes back', async () => {
+    const withReply = appView({}, {
+      status: 'offer',
+      offerReply: { offered: '50.000 €', wanted: '55.000 €', body: 'Vielen Dank.', createdAt: '2026-10-09T10:00:00.000Z', updatedAt: '2026-10-09T10:00:00.000Z' },
+    });
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1/reply-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'Re: Angebot', body: 'Vielen Dank.', mailReady: true } }),
+    }, withReply);
+    await user.click(await screen.findByRole('button', { name: 'Reply to the offer' }));
+    expect(await screen.findByLabelText('Your reply')).toHaveValue('Vielen Dank.');
+    await user.click(screen.getByRole('button', { name: 'Send…' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reply to the offer' });
+    expect(await within(dialog).findByLabelText('Subject')).toHaveValue('Re: Angebot');
+    expect(screen.queryByLabelText('Your reply')).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByLabelText('Your reply')).toBeInTheDocument();
+  });
+});

@@ -147,6 +147,8 @@ export const api = {
   dismissFollowUp: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/follow-up/dismiss`, {}),
   replyDraft: (id: string) => request<MailDraft>('GET', `/api/applications/${encodeURIComponent(id)}/reply-draft`),
   sendReply: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/reply/send`, mail),
+  writeOfferReply: (id: string, body: { offered: string; wanted: string }, signal?: AbortSignal) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/offer-reply`, body, signal),
+  saveOfferReply: (id: string, body: string) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/offer-reply`, { body }),
   previewUrl: (id: string, kind: 'letter' | 'cv', version: string) => `/api/applications/${encodeURIComponent(id)}/preview/${kind}?v=${encodeURIComponent(version)}`,
   pdfUrl: (id: string, part: 'letter' | 'cv' | 'bundle') => `/api/applications/${encodeURIComponent(id)}/pdf/${part}`,
   attachmentUrl: (id: string, fileId: string) => `/api/applications/${encodeURIComponent(id)}/pdf/attachment/${encodeURIComponent(fileId)}`,

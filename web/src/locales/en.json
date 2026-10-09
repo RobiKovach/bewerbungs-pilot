@@ -303,6 +303,8 @@
     "updated": "Changed {{date}}",
     "followUp": { "notice": "You sent this application on {{date}} and have had no answer for 14 days. It is worth writing again.", "write": "Write a reminder", "dismiss": "Don't remind me", "badge": "Write again", "title": "Reminder", "markReminded": "Mark as reminded" },
     "mailDraft": { "copy": "Copy message", "copied": "Copied.", "copyFailed": "Copying did not work — select the text and copy it yourself.", "needMail": "Connect your email to send it from here.", "needMailLink": "Open settings", "reauthLink": "Sign in with Google again" },
+    "reply": { "rejection": "Reply to the rejection", "offer": "Reply to the offer" },
+    "offerReply": { "working": "Claude is writing the reply…", "offered": "What they offered", "wanted": "What you want", "wantedHint": "Write the amount with digits, e.g. 55.000 €.", "ask": "Ask Claude to write the reply", "text": "Your reply", "save": "Save", "discard": "Discard changes", "copy": "Copy", "send": "Send…", "again": "Write again", "close": "Close", "saveFirst": "Save the text first." },
     "open": "Open package",
     "busy": "Claude is working on another package. Please wait a moment.",
     "language": { "de": "Deutsch", "en": "English" },
