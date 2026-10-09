@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { HistoryEntry } from '../types';
-import { formatDay, isStatusKind } from './format';
+import { formatDay, isShownKind, isStatusKind } from './format';
 
-/** Status history, newest first. Undo asks first (in the app's own confirm card, never a browser pop-up). */
+/** Status history with the reminders and replies, newest first. Undo asks first (in the app's own confirm card, never a browser pop-up). */
 export function HistoryBlock({ history, canUndo, busy = false, onUndo }: { history: HistoryEntry[]; canUndo: boolean; busy?: boolean; onUndo: () => void }) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
-  const entries = history.filter((h) => isStatusKind(h.kind)).slice().reverse();
+  const entries = history.filter((h) => isShownKind(h.kind)).slice().reverse();
   if (entries.length === 0) return null;
   return (
     <section className="history" aria-label={t('applications.history.title')}>
@@ -16,7 +16,7 @@ export function HistoryBlock({ history, canUndo, busy = false, onUndo }: { histo
         {entries.map((h, i) => (
           <li key={`${h.at}-${h.kind}-${i}`}>
             <span className="history__date">{formatDay(h.at)}</span>
-            <span className={`badge status-${h.kind}`}>{t(`applications.history.${h.kind}`)}</span>
+            <span className={`badge ${isStatusKind(h.kind) ? `status-${h.kind}` : 'event'}`}>{t(`applications.history.${h.kind}`)}</span>
             {h.to ? <span>{t('applications.history.to', { to: h.to })}</span> : null}
             {h.note ? <span className="muted">{h.note}</span> : null}
           </li>

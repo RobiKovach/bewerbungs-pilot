@@ -8,8 +8,10 @@ import { AttachmentsTab } from './AttachmentsTab';
 import { CvTab } from './CvTab';
 import { download } from './download';
 import { isFrozen } from './format';
+import { FollowUpNotice } from './FollowUpNotice';
 import { HistoryBlock } from './HistoryBlock';
 import { LetterTab } from './LetterTab';
+import { MailDraftDialog } from './MailDraftDialog';
 import { SendDialog } from './SendDialog';
 import { StatusDialog } from './StatusDialog';
 import { jobError, useApplicationJob } from './useApplicationJob';
@@ -34,6 +36,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const mailReady = mailState === 'ready';
   const [sending, setSending] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  const [reminding, setReminding] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -125,6 +128,9 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         : busy ? <p className="muted" role="status">{t('applications.busy')}</p> : null}
       {frozen ? <p className="notice" role="status">{t('applications.frozen')}</p> : null}
       {sentTo ? <p className="notice notice-ok" role="status">{t('applications.send.sentNotice', { to: sentTo })}</p> : null}
+      {view.followUpDue && !reminding ? (
+        <FollowUpNotice history={a.history} busy={busy || error !== null} onWrite={() => { setSentTo(null); setReminding(true); }} onDismiss={() => void act(() => api.dismissFollowUp(id))} />
+      ) : null}
       {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
       {failed ? <ErrorBanner error={failed} /> : null}
       {job.error ? <ErrorBanner error={job.error} /> : null}
@@ -195,6 +201,16 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
       {sending && a.status === 'approved' ? (
         <SendDialog id={id} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
+      ) : null}
+      {reminding ? (
+        <MailDraftDialog
+          title={t('applications.followUp.title')}
+          load={() => api.followUpDraft(id)}
+          send={(mail) => api.sendFollowUp(id, mail)}
+          onDone={(v) => { setView(v); setReminding(false); setActionError(null); }}
+          onClose={() => setReminding(false)}
+          afterCopy={{ label: t('applications.followUp.markReminded'), run: () => api.markFollowUp(id) }}
+        />
       ) : null}
       {confirm === 'recreate' ? (
         <div className="card notice" role="alertdialog" aria-label={t('applications.recreate')}>

@@ -23,9 +23,26 @@ describe('HistoryBlock', () => {
     expect(within(rows[2]!).getByText('Approved')).toBeInTheDocument();
   });
 
-  it('skips entries whose kind is not a status (later versions add more kinds)', () => {
-    render(<HistoryBlock history={[...history, { kind: 'followUp', at: '2026-10-20T09:00:00.000Z' } as unknown as HistoryEntry]} canUndo={false} onUndo={() => {}} />);
+  it('skips entries of a kind this version does not know (later versions add more kinds)', () => {
+    render(<HistoryBlock history={[...history, { kind: 'somethingNew', at: '2026-10-20T09:00:00.000Z' } as unknown as HistoryEntry]} canUndo={false} onUndo={() => {}} />);
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
+  });
+
+  it('shows reminders and replies with their own labels, in order', () => {
+    const h = [
+      ...history,
+      { kind: 'followUp', at: '2026-10-16T09:00:00.000Z', to: 'jobs@muster.example', messageId: 'm2' },
+      { kind: 'followUpDismissed', at: '2026-10-17T09:00:00.000Z' },
+      { kind: 'reply', at: '2026-10-18T09:00:00.000Z', to: 'jobs@muster.example', messageId: 'm3' },
+    ] as HistoryEntry[];
+    render(<HistoryBlock history={h} canUndo={false} onUndo={() => {}} />);
+    const rows = screen.getAllByRole('listitem');
+    expect(rows).toHaveLength(6);
+    expect(within(rows[0]!).getByText('Reply sent')).toBeInTheDocument();
+    expect(within(rows[1]!).getByText('No reminder')).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('Reminder sent')).toBeInTheDocument();
+    expect(within(rows[2]!).getByText('to jobs@muster.example')).toBeInTheDocument();
+    expect(within(rows[3]!).getByText('Interview')).toBeInTheDocument();
   });
 
   it('undo is offered only when canUndo and asks first', async () => {

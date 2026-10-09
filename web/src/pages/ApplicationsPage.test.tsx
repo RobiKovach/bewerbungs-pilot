@@ -57,4 +57,23 @@ describe('ApplicationsPage — status filter', () => {
     expect(screen.getByText('No applications with this status.')).toBeInTheDocument();
     expect(screen.queryAllByRole('listitem')).toHaveLength(0);
   });
+
+  it('a row with a due reminder is marked "Write again" and has its own filter', async () => {
+    mockFetch({ 'GET /api/applications': () => ({ body: { applications: [
+      appSummary({ id: 'a1', company: 'Alpha GmbH', status: 'sent', followUpDue: true }),
+      appSummary({ id: 'a2', company: 'Beta GmbH', status: 'sent' }),
+    ] } }) });
+    const user = userEvent.setup();
+    render(<ApplicationsPage />);
+    const group = await screen.findByRole('radiogroup', { name: 'Filter by status' });
+    const rows = screen.getAllByRole('listitem');
+    expect(rows[0]).toHaveClass('app-row--due');
+    expect(within(rows[0]!).getByText('Write again')).toBeInTheDocument();
+    expect(rows[1]).not.toHaveClass('app-row--due');
+    expect(within(rows[1]!).queryByText('Write again')).not.toBeInTheDocument();
+    await user.click(within(group).getByRole('radio', { name: 'Write again (1)' }));
+    const shown = screen.getAllByRole('listitem');
+    expect(shown).toHaveLength(1);
+    expect(within(shown[0]!).getByRole('link', { name: /Alpha GmbH/ })).toBeInTheDocument();
+  });
 });

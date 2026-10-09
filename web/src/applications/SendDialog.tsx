@@ -5,10 +5,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { TextField } from '../profile/fields';
 import type { ApplicationView } from '../types';
 import { ATTACHMENTS_WARN_BYTES, mb } from './AttachmentsTab';
-
-/** Same rule as the server: one address, no spaces or list separators, a dot in the domain. */
-const ADDRESS = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
-const addressOk = (s: string) => s.length <= 254 && ADDRESS.test(s);
+import { addressOk } from './format';
 
 /** The send window: the email is prefilled from the package; what the person changes is what goes out. */
 export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view: ApplicationView, to: string) => void; onClose: () => void }) {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
@@ -408,5 +408,58 @@ describe('ApplicationEditor — status dialog safety', () => {
     fireEvent.change(within(dialog).getByLabelText('Date'), { target: { value: '2099-01-01' } });
     expect(within(dialog).getByRole('button', { name: 'Save' })).toBeDisabled();
     expect(within(dialog).getByLabelText('Note (optional)')).toHaveAttribute('maxlength', '300');
+  });
+});
+
+describe('ApplicationEditor — reminder after 14 days', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) };
+  const dueView = (over: Partial<ApplicationView> = {}) => appView({ followUpDue: true, ...over }, {
+    status: 'sent', sentAt: '2026-10-05T08:00:00.000Z', history: [{ kind: 'sent', at: '2026-10-05T08:00:00.000Z', to: 'jobs@muster.example' }],
+    sentEmail: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [] },
+  });
+  const notice = 'You sent this application on 05.10.2026 and have had no answer for 14 days. It is worth writing again.';
+
+  it('shows the notice only when a reminder is due', async () => {
+    setup(mail, dueView({ followUpDue: false }));
+    await screen.findByRole('heading', { level: 1 });
+    expect(screen.queryByText(notice)).not.toBeInTheDocument();
+  });
+
+  it('"Write a reminder" opens the dialog with the draft from the server', async () => {
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1/follow-up-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'Nachfrage', body: 'Guten Tag', mailReady: false } }),
+    }, dueView());
+    expect(await screen.findByText(notice)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Write a reminder' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Reminder' });
+    expect(await within(dialog).findByLabelText('Subject')).toHaveValue('Nachfrage');
+    expect(within(dialog).getByLabelText('Message')).toHaveValue('Guten Tag');
+  });
+
+  it('copying and "Mark as reminded" records the reminder and the notice goes away', async () => {
+    const after = dueView({ followUpDue: false });
+    const { f, user } = setup({
+      ...mail,
+      'GET /api/applications/app1/follow-up-draft': () => ({ body: { to: '', subject: 'Nachfrage', body: 'Guten Tag', mailReady: false } }),
+      'POST /api/applications/app1/follow-up/mark': () => ({ body: after }),
+    }, dueView());
+    await user.click(await screen.findByRole('button', { name: 'Write a reminder' }));
+    vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+    await user.click(await screen.findByRole('button', { name: 'Copy message' }));
+    await user.click(await screen.findByRole('button', { name: 'Mark as reminded' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Reminder' })).not.toBeInTheDocument());
+    expect(screen.queryByText(notice)).not.toBeInTheDocument();
+    expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/follow-up/mark' && init?.method === 'POST')).toBe(true);
+  });
+
+  it('"Don\'t remind me" switches the reminder off', async () => {
+    const { f, user } = setup({
+      ...mail,
+      'POST /api/applications/app1/follow-up/dismiss': () => ({ body: dueView({ followUpDue: false }) }),
+    }, dueView());
+    await user.click(await screen.findByRole('button', { name: "Don't remind me" }));
+    await waitFor(() => expect(screen.queryByText(notice)).not.toBeInTheDocument());
+    expect(f.mock.calls.some(([url, init]) => url === '/api/applications/app1/follow-up/dismiss' && init?.method === 'POST')).toBe(true);
   });
 });

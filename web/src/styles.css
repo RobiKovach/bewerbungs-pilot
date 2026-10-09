@@ -221,3 +221,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
   .badge.status-offer { background: #1f4a2e; color: #c4f0d0; font-weight: 800; }
   .badge.status-rejected, .badge.status-withdrawn { background: #2a3444; color: #b5bfd0; }
 }
+
+.app-row--due { border-left: 4px solid #d9a21b; }
+.badge.event { background: #eef1f6; color: #3b4658; }
+.follow-up { margin-top: 1rem; }
+@media (prefers-color-scheme: dark) {
+  .app-row--due { border-left-color: #b88a1d; }
+  .badge.event { background: #2a3444; color: #c4cbd8; }
+}

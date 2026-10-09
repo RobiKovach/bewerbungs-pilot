@@ -1,6 +1,6 @@
 import type {
   ApplicationJobState, ApplicationListView, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness,
-  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, Language, LlmCheck, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
+  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
@@ -141,6 +141,12 @@ export const api = {
   deleteApplication: (id: string) => request<{ ok: true }>('DELETE', `/api/applications/${encodeURIComponent(id)}`),
   sendDraft: (id: string) => request<SendDraft>('GET', `/api/applications/${encodeURIComponent(id)}/send-draft`),
   sendApplication: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/send`, mail),
+  followUpDraft: (id: string) => request<MailDraft>('GET', `/api/applications/${encodeURIComponent(id)}/follow-up-draft`),
+  sendFollowUp: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/follow-up/send`, mail),
+  markFollowUp: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/follow-up/mark`, {}),
+  dismissFollowUp: (id: string) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/follow-up/dismiss`, {}),
+  replyDraft: (id: string) => request<MailDraft>('GET', `/api/applications/${encodeURIComponent(id)}/reply-draft`),
+  sendReply: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/reply/send`, mail),
   previewUrl: (id: string, kind: 'letter' | 'cv', version: string) => `/api/applications/${encodeURIComponent(id)}/preview/${kind}?v=${encodeURIComponent(version)}`,
   pdfUrl: (id: string, part: 'letter' | 'cv' | 'bundle') => `/api/applications/${encodeURIComponent(id)}/pdf/${part}`,
   attachmentUrl: (id: string, fileId: string) => `/api/applications/${encodeURIComponent(id)}/pdf/attachment/${encodeURIComponent(fileId)}`,

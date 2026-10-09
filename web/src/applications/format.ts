@@ -33,3 +33,13 @@ export const STATUSES = ['draft', 'approved', 'sent', 'submitted', 'interview', 
 const KNOWN = new Set<string>(STATUSES);
 /** 0.7.0 adds history kinds that are not statuses: only known statuses are shown here. */
 export const isStatusKind = (kind: string) => KNOWN.has(kind);
+
+/** Same rule as the server: one address, no spaces or list separators, a dot in the domain. */
+const ADDRESS = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
+export const addressOk = (s: string) => s.length <= 254 && ADDRESS.test(s);
+
+/** History entries that record something happened without changing the status. */
+export const EVENT_KINDS = ['followUp', 'followUpDismissed', 'reply'] as const;
+const EVENTS = new Set<string>(EVENT_KINDS);
+/** Kinds the history list can show: the statuses and the events. */
+export const isShownKind = (kind: string) => KNOWN.has(kind) || EVENTS.has(kind);
