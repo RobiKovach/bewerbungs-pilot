@@ -49,6 +49,8 @@ export interface AppDeps {
   googleAuth: GoogleAuth;
   /** The address this server is reached at, e.g. `http://127.0.0.1:4280` (the Google sign-in comes back to it). */
   origin: () => string;
+  /** How long "Disconnect" waits for Google to revoke the key (default 10 s). */
+  revokeTimeoutMs?: number;
 }
 
 const settingsPatchSchema = {
@@ -183,7 +185,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger,
-    googleAuth: deps.googleAuth, origin: deps.origin });
+    googleAuth: deps.googleAuth, origin: deps.origin, revokeTimeoutMs: deps.revokeTimeoutMs });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });

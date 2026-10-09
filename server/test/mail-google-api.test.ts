@@ -8,11 +8,11 @@ import { FakeGoogleAuth } from './helpers/mail.js';
 
 type Ctx = Awaited<ReturnType<typeof makeApp>>;
 
-async function setup() {
+async function setup(revokeTimeoutMs?: number) {
   const logs: string[] = [];
   const push = (e: string, d?: unknown) => logs.push(JSON.stringify({ e, d }));
   const logger: Logger = { info: push, warn: push, error: push };
-  const ctx = await makeApp({ logger });
+  const ctx = await makeApp({ logger, revokeTimeoutMs });
   return { ctx, logs };
 }
 
@@ -148,6 +148,19 @@ describe('Google sign-in routes', () => {
     expect(ctx.settings.get().mail).toBeNull();
     expect(await ctx.secrets.load()).toBeNull();
     expect(ctx.googleAuth.revoked).toEqual(['1//refresh-secret']);
+    expect(logs.join('\n')).toContain('google_revoke_failed');
+    expect(JSON.stringify(logs)).not.toMatch(/refresh-secret|max@gmail/);
+  });
+
+  it('disconnect does not wait for a revoke that never answers: logs it and removes the key anyway', async () => {
+    const { ctx, logs } = await setup(50);
+    ctx.settings.setMail({ kind: 'google', address: 'max@gmail.com', senderName: 'Max', provider: 'gmail' });
+    await ctx.secrets.save('1//refresh-secret');
+    ctx.googleAuth.revoke = () => new Promise<void>(() => {});
+    const r = await ctx.app.inject({ method: 'DELETE', url: '/api/mail/settings', headers: H });
+    expect(r.statusCode).toBe(200);
+    expect(ctx.settings.get().mail).toBeNull();
+    expect(await ctx.secrets.load()).toBeNull();
     expect(logs.join('\n')).toContain('google_revoke_failed');
     expect(JSON.stringify(logs)).not.toMatch(/refresh-secret|max@gmail/);
   });

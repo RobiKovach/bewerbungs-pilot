@@ -21,7 +21,7 @@ import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
 
-export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -66,7 +66,7 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
     onShutdown: () => { shutdownCalls++; },
     profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
     applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
-    googleAuth, origin: () => 'http://localhost:80',
+    googleAuth, origin: () => 'http://localhost:80', revokeTimeoutMs: opts.revokeTimeoutMs,
   });
   return { app, googleAuth, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
 }

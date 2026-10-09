@@ -12,7 +12,7 @@ import { MAIL_PROVIDERS, providerFor } from './providers.js';
 import type { SecretStore } from './secret.js';
 
 export interface MailRouteDeps { settings: SettingsStore; mailer: Mailer; secrets: SecretStore; logger: Logger;
-  googleAuth: GoogleAuth; origin: () => string }
+  googleAuth: GoogleAuth; origin: () => string; revokeTimeoutMs?: number }
 
 /** One line of text: at least one character, no CR/LF anywhere (header injection). */
 const line = (maxLength: number) => ({ type: 'string', minLength: 1, maxLength, pattern: '^[^\r\n]+$' });
@@ -88,10 +88,19 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
     if (deps.settings.get().mail?.kind === 'google') {
       const refreshToken = await deps.secrets.load();
       if (refreshToken !== null) {
+        // Bounded: on a network that silently drops packets the request never ends, and the key would stay.
+        let timer: NodeJS.Timeout | undefined;
         try {
-          await deps.googleAuth.revoke(refreshToken);
+          await Promise.race([
+            deps.googleAuth.revoke(refreshToken),
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(() => reject(new AppError('MAIL_CONNECT', 'google revoke timed out')), deps.revokeTimeoutMs ?? 10_000);
+            }),
+          ]);
         } catch (err) {
           deps.logger.warn('google_revoke_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+        } finally {
+          clearTimeout(timer);
         }
       }
     }
