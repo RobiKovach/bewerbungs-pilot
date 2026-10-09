@@ -21,7 +21,7 @@ import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.
 import { packageReadiness } from './readiness.js';
 import { applicationStats } from './stats.js';
 import { packageContext } from './tasks/context.js';
-import { offerReplyTask, offerReplyViolations } from './tasks/offer-reply.js';
+import { offerReplyTask, offerReplyViolationKinds, offerReplyViolations } from './tasks/offer-reply.js';
 import { withFeedback } from './tasks/revise-letter.js';
 import { cvHtml } from './render/cv.js';
 import { asciiName, fileNames } from './render/html.js';
@@ -562,7 +562,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
         body = (await d.queue.run<{ body: string }>(withFeedback(task, violations), signal)).body;
         violations = offerReplyViolations(body, wanted, ctx);
       }
-      if (violations.length > 0) throw new AppError('LLM_BAD_OUTPUT', violations.join(' | ').slice(0, 300));
+      if (violations.length > 0) throw new AppError('LLM_BAD_OUTPUT', offerReplyViolationKinds(violations));
       const at = now().toISOString();
       d.store.update(id, (q) => {
         if (q.status !== 'offer') throw new AppError('CONFLICT', 'status changed', 'packageChanged');

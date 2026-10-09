@@ -50,6 +50,19 @@ describe('offer reply', () => {
     expect((await viewOf(ctx, id)).application.offerReply).toBeNull();
   });
 
+  it('a failed offer reply reports only the kinds of failed checks, never the words or amounts (response and log)', async () => {
+    const lines: string[] = [];
+    const push = (e: string, d?: unknown) => lines.push(JSON.stringify({ e, d }));
+    const r = await setup({ contact: true, logger: { info: push, warn: push, error: push } });
+    r.ctx.provider.respond = packageClaude({ offer: { body: 'Wie bei Kunde X: 99.000 €' } }).respond;
+    expect((await sendTo(r.ctx, r.id)).statusCode).toBe(200);
+    expect((await post(r.ctx, `/api/applications/${r.id}/status`, { status: 'offer', date: '2026-10-08' })).statusCode).toBe(200);
+    const res = await post(r.ctx, url(r.id), AMOUNTS);
+    expect(res.json().error.code).toBe('LLM_BAD_OUTPUT');
+    expect(res.json().error.detailsForLog).toBe('amount x1 | neverMention x1');
+    expect(res.body + lines.join('\n')).not.toMatch(/Kunde X|55[.,]?000/);
+  });
+
   it('refuses a package that is not an offer and bad amounts', async () => {
     const sent = await setup({ contact: true });
     await sendTo(sent.ctx, sent.id);

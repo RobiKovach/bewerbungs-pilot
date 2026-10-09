@@ -26,6 +26,14 @@ export function offerReplyViolations(body: string, wanted: string, ctx: PackageC
   return out;
 }
 
+/** Which kinds of checks failed, for the log and the error: never the words or amounts themselves. */
+export function offerReplyViolationKinds(violations: string[]): string {
+  const kinds = [
+    ['length', /^The letter has /], ['amount', /^Name exactly the amount /], ['neverMention', /^Do not mention /],
+  ] as const;
+  return kinds.map(([k, re]) => { const n = violations.filter((v) => re.test(v)).length; return n > 0 ? `${k} x${n}` : ''; }).filter(Boolean).join(' | ');
+}
+
 export function offerReplyTask(ctx: PackageContext, p: ApplicationPackage, offered: string, wanted: string): LlmTask {
   const facts = { position: p.vacancy.title, company: p.vacancy.company, experience: ctx.experience, education: ctx.education, skills: ctx.skills.map((s) => s.name), languages: ctx.languages, stories: ctx.stories };
   return {
