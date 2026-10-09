@@ -305,7 +305,7 @@
     "followUp": { "notice": "Wysłano tę aplikację {{date}} i od 14 dni nie ma odpowiedzi. Warto napisać ponownie.", "write": "Napisz przypomnienie", "dismiss": "Nie przypominaj", "badge": "Napisz ponownie", "title": "Przypomnienie", "markReminded": "Oznacz jako przypomniane" },
     "mailDraft": { "copy": "Kopiuj treść", "copied": "Skopiowano.", "copyFailed": "Kopiowanie się nie udało — zaznacz tekst i skopiuj go samodzielnie.", "needMail": "Połącz pocztę, aby wysłać wiadomość stąd.", "needMailLink": "Otwórz ustawienia", "reauthLink": "Zaloguj się przez Google ponownie" },
     "reply": { "rejection": "Odpowiedz na odmowę", "offer": "Odpowiedz na ofertę" },
-    "offerReply": { "working": "Claude pisze odpowiedź…", "offered": "Co Państwu zaproponowano", "wanted": "Czego Państwo chcą", "wantedHint": "Proszę wpisać kwotę cyframi, np. 55.000 €.", "ask": "Poproś Claude o napisanie odpowiedzi", "text": "Państwa odpowiedź", "save": "Zapisz", "discard": "Odrzuć zmiany", "copy": "Kopiuj", "send": "Wyślij…", "again": "Napisz ponownie", "close": "Zamknij", "saveFirst": "Najpierw zapisz tekst." },
+    "offerReply": { "working": "Claude pisze odpowiedź…", "offered": "Co Ci zaproponowano", "wanted": "Czego chcesz", "wantedHint": "Wpisz kwotę cyframi, np. 55.000 €.", "ask": "Poproś Claude o napisanie odpowiedzi", "text": "Twoja odpowiedź", "save": "Zapisz", "discard": "Odrzuć zmiany", "copy": "Kopiuj", "send": "Wyślij…", "again": "Napisz ponownie", "close": "Zamknij", "saveFirst": "Najpierw zapisz tekst." },
     "open": "Otwórz pakiet",
     "busy": "Claude pracuje teraz nad innym pakietem. Poczekaj chwilę.",
     "language": { "de": "Deutsch", "en": "English" },
