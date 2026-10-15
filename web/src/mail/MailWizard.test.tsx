@@ -320,6 +320,32 @@ describe('MailWizard with Google', () => {
     expect(calls.start).toHaveLength(1);
   });
 
+  it('one lost status answer does not end the sign-in; the next answer still saves', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    let n = 0;
+    const calls = { save: 0 };
+    routes({
+      'POST /api/mail/google/start': () => ({ body: { url: URL } }),
+      'GET /api/mail/google/status': () => (n++ === 0 ? { status: 503, body: { error: { code: 'UNKNOWN', detailsForLog: 'x' } } } : { body: { state: 'ready', email: 'max@gmail.com' } }),
+      'POST /api/mail/google/save': () => { calls.save++; return { body: connectedGoogle }; },
+    });
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('Your email is connected.')).toBeInTheDocument();
+    expect(calls.save).toBe(1);
+  });
+
+  it('status answers keep failing: after a few in a row the step shows the failure and "Try again"', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    routes({
+      'POST /api/mail/google/start': () => ({ body: { url: URL } }),
+      'GET /api/mail/google/status': () => ({ status: 503, body: { error: { code: 'MAIL_CONNECT', detailsForLog: 'x' } } }),
+    });
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByRole('button', { name: 'Try again' })).toBeInTheDocument();
+  });
+
   it('stops polling after unmount', async () => {
     vi.spyOn(window, 'open').mockReturnValue(null);
     const { calls } = google([{ state: 'pending' }]);

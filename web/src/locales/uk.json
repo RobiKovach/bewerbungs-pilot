@@ -2,6 +2,7 @@
   "app": { "name": "BewerbungsPilot", "tagline": "Ваш помічник для заявок на роботу в Німеччині" },
   "nav": { "home": "Головна", "profile": "Профіль", "vacancies": "Вакансії", "applications": "Заявки", "guide": "Як це працює", "settings": "Налаштування", "quit": "Вийти" },
   "common": {
+    "connectionLost": "Немає зв'язку з BewerbungsPilot. Можливо, програму закрито — тоді запустіть її знову ярликом на робочому столі.", "checkAgain": "Перевірити ще раз",
     "next": "Далі", "back": "Назад", "retry": "Перевірити ще раз", "cancel": "Скасувати", "details": "Деталі",
     "comingSoon": "Скоро", "moreInfo": "Докладніше", "loading": "Завантаження…",
     "continueAnyway": "Продовжити все одно", "stepOf": "Крок {{current}} з {{total}}",

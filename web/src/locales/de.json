@@ -2,6 +2,7 @@
   "app": { "name": "BewerbungsPilot", "tagline": "Ihr Assistent für Bewerbungen in Deutschland" },
   "nav": { "home": "Start", "profile": "Profil", "vacancies": "Stellenangebote", "applications": "Bewerbungen", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
   "common": {
+    "connectionLost": "BewerbungsPilot antwortet nicht. Falls das Programm geschlossen wurde, starten Sie es mit der Verknüpfung auf dem Desktop neu.", "checkAgain": "Erneut prüfen",
     "next": "Weiter", "back": "Zurück", "retry": "Erneut prüfen", "cancel": "Abbrechen", "details": "Details",
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
     "continueAnyway": "Trotzdem fortfahren", "stepOf": "Schritt {{current}} von {{total}}",

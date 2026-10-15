@@ -2,6 +2,7 @@
   "app": { "name": "BewerbungsPilot", "tagline": "Asistentul dumneavoastră pentru cererile de angajare în Germania" },
   "nav": { "home": "Acasă", "profile": "Profil", "vacancies": "Oferte de muncă", "applications": "Candidaturi", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
   "common": {
+    "connectionLost": "BewerbungsPilot nu răspunde. Dacă programul a fost închis, porniți-l din nou cu scurtătura de pe desktop.", "checkAgain": "Verificați din nou",
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
     "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}",

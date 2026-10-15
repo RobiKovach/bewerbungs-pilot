@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, ApiError } from '../api';
+import { usePollHealth } from '../pollHealth';
 import type { ApplicationJobState } from '../types';
 
 export function jobError(state: ApplicationJobState | null): ApiError | null {
@@ -12,22 +13,25 @@ export function useApplicationJob({ pollMs = 2000, onFinished }: { pollMs?: numb
   const [error, setError] = useState<unknown>(null);
   const finished = useRef(onFinished);
   finished.current = onFinished;
+  const health = usePollHealth();
+  const { ok, failed } = health;
+  const read = useCallback((first: boolean) => api.applicationJob().then((s) => { ok(); return s; }, () => { failed(first); return null; }), [ok, failed]);
 
   useEffect(() => {
     let alive = true;
-    api.applicationJob().then((s) => { if (alive) setState(s); }, () => undefined);
+    void read(true).then((s) => { if (alive && s) setState(s); });
     return () => { alive = false; };
-  }, []);
+  }, [read]);
 
   const running = state?.state === 'running';
   useEffect(() => {
     if (!running) return undefined;
     let alive = true;
     const timer = setInterval(() => {
-      api.applicationJob().then((s) => { if (alive) setState(s); }, () => undefined);
+      void read(false).then((s) => { if (alive && s) setState(s); });
     }, pollMs);
     return () => { alive = false; clearInterval(timer); };
-  }, [running, pollMs]);
+  }, [running, pollMs, read]);
 
   const wasRunning = useRef(false);
   useEffect(() => {
@@ -52,5 +56,8 @@ export function useApplicationJob({ pollMs = 2000, onFinished }: { pollMs?: numb
     }
   }, []);
 
-  return { state, error, start, cancel };
+  /** Read the job again now (the "Check again" button). */
+  const recheck = useCallback(() => { void read(false).then((s) => { if (s) setState(s); }); }, [read]);
+
+  return { state, error, start, cancel, lost: health.lost, recheck };
 }

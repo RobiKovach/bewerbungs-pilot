@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
 import { mockFetch } from '../test/fetchMock';
@@ -11,7 +11,16 @@ import { SearchProgress } from './SearchProgress';
 const renderPage = () => render(<SettingsProvider><VacanciesPage pollMs={10} /></SettingsProvider>);
 
 describe('SearchProgress (panel only)', () => {
-  const panel = (state: SearchState) => render(<SearchProgress status={{ state, startError: null, start: vi.fn(), stop: vi.fn() }} />);
+  const panel = (state: SearchState | null, extra: { lost?: boolean; recheck?: () => void } = {}) =>
+    render(<SearchProgress status={{ state, startError: null, start: vi.fn(), stop: vi.fn(), lost: false, recheck: vi.fn(), ...extra }} />);
+
+  it('the app stopped answering: says so, "Check again" reads again (also before the first answer)', async () => {
+    const recheck = vi.fn();
+    panel(null, { lost: true, recheck });
+    expect(screen.getByText(/BewerbungsPilot is not answering/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    expect(recheck).toHaveBeenCalledTimes(1);
+  });
 
   it('running: phase, counters with reasons, progress, stop', () => {
     panel(searchState({ state: 'running', phase: 'scoring', found: 64, filteredOut: { seen: 20, internship: 9, student: 5 }, afterFilter: 30, toScore: 30, scored: 12 }));

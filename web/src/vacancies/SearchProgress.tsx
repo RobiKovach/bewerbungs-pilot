@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../api';
+import { ConnectionLost } from '../components/ConnectionLost';
 import { ErrorBanner } from '../components/ErrorBanner';
 import type { FilterReason } from '../types';
 import type { SearchStatus } from './useSearchStatus';
@@ -12,7 +13,12 @@ const KNOWN_REASONS = new Set<string>(['seen', 'notRemote', 'student', 'internsh
 export function SearchProgress({ status }: { status: SearchStatus }) {
   const { t } = useTranslation();
   const s = status.state;
-  const errorBanner = status.startError ? <ErrorBanner error={status.startError} /> : null;
+  const errorBanner = (
+    <>
+      {status.lost ? <ConnectionLost onRetry={status.recheck} /> : null}
+      {status.startError ? <ErrorBanner error={status.startError} /> : null}
+    </>
+  );
   if (!s || s.state === 'idle') return errorBanner;
 
   if (s.state === 'failed') {

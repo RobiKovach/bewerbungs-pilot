@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
+import { ConnectionLost } from '../components/ConnectionLost';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useReportUnsaved } from '../profile/unsaved';
@@ -144,6 +145,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {error ? <ErrorBanner error={error} onRetry={() => void load()} /> : null}
       {failed ? <ErrorBanner error={failed} /> : null}
       {job.error ? <ErrorBanner error={job.error} /> : null}
+      {job.lost ? <ConnectionLost onRetry={job.recheck} /> : null}
 
       <div role="tablist" className="tabs">
         {TABS.map((x) => (

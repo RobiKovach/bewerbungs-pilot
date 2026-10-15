@@ -2,6 +2,7 @@
   "app": { "name": "BewerbungsPilot", "tagline": "Twój asystent w poszukiwaniu pracy w Niemczech" },
   "nav": { "home": "Start", "profile": "Profil", "vacancies": "Oferty pracy", "applications": "Aplikacje", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
   "common": {
+    "connectionLost": "BewerbungsPilot nie odpowiada. Jeśli program został zamknięty, uruchom go ponownie skrótem na pulpicie.", "checkAgain": "Sprawdź ponownie",
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
     "continueAnyway": "Mimo to kontynuuj", "stepOf": "Krok {{current}} z {{total}}",

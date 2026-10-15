@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { LOST_AFTER } from '../pollHealth';
 import type { Language, MailSettingsView } from '../types';
 
 interface Props {
@@ -74,10 +75,13 @@ export function GoogleSignInStep({ address, senderName, onSaved, onBack, pollMs 
     if (phase !== 'waiting' || !url) return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // One lost answer (a short network hiccup) must not end a sign-in the person may be finishing right now.
+    let fails = 0;
     const poll = async () => {
       try {
         const status = await api.googleStatus();
         if (stopped) return;
+        fails = 0;
         if (status.state === 'ready') {
           setSignedInAs(status.email && status.email.toLowerCase() !== address.trim().toLowerCase() ? status.email : null);
           void saveRef.current();
@@ -92,10 +96,13 @@ export function GoogleSignInStep({ address, senderName, onSaved, onBack, pollMs 
         }
       } catch (err) {
         if (stopped) return;
-        setError(err);
-        setResave(false);
-        setPhase('failed');
-        return;
+        fails += 1;
+        if (fails >= LOST_AFTER) {
+          setError(err);
+          setResave(false);
+          setPhase('failed');
+          return;
+        }
       }
       timer = setTimeout(() => void poll(), pollMs);
     };

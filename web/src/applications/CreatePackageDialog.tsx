@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
+import { ConnectionLost } from '../components/ConnectionLost';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import type { DocLanguage, NewPackageInfo, PackageReadiness, Vacancy } from '../types';
@@ -75,6 +76,7 @@ export function CreatePackageDialog({ vacancy, onClose, pollMs }: { vacancy: Vac
           </div>
         )}
         {job.error ? <ErrorBanner error={job.error} /> : null}
+        {job.lost ? <ConnectionLost onRetry={job.recheck} /> : null}
         {failed ? <ErrorBanner error={failed} /> : null}
       </>
     );

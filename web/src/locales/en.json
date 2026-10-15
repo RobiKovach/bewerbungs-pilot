@@ -2,6 +2,7 @@
   "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
   "nav": { "home": "Home", "profile": "Profile", "vacancies": "Job offers", "applications": "Applications", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
   "common": {
+    "connectionLost": "BewerbungsPilot is not answering. If the program was closed, start it again with the shortcut on your desktop.", "checkAgain": "Check again",
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
     "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}",
