@@ -62,6 +62,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
   const save = async () => {
     setSaving(true);
     setError(null);
+    setCopied(null);
     try {
       const v = await api.saveOfferReply(id, body);
       // The server trims the text: show what is stored, otherwise the text would stay "unsaved" for good.
@@ -100,7 +101,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
         </>
       ) : null}
       {mode === 'text' && !working ? (
-        <TextField multiline rows={14} label={t('applications.offerReply.text')} value={body} onChange={setBody} maxLength={BODY_MAX} />
+        <TextField multiline rows={14} label={t('applications.offerReply.text')} value={body} onChange={(v) => { setBody(v); setCopied(null); }} maxLength={BODY_MAX} />
       ) : null}
       {copied === 'ok' ? <p className="notice notice-ok" role="status">{t('applications.mailDraft.copied')}</p> : null}
       {copied === 'failed' ? <p className="notice" role="alert">{t('applications.mailDraft.copyFailed')}</p> : null}
@@ -117,7 +118,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
           {/* Two rows on purpose: working on the text, then what to do with it (no lone button wrapping). */}
           <div className="btn-row">
             <button type="button" className="btn" disabled={!dirty || empty || saving} onClick={() => void save()}>{t('applications.offerReply.save')}</button>
-            <button type="button" className="btn ghost" disabled={!dirty || saving} onClick={() => { setBody(saved ?? ''); setError(null); }}>{t('applications.offerReply.discard')}</button>
+            <button type="button" className="btn ghost" disabled={!dirty || saving} onClick={() => { setBody(saved ?? ''); setError(null); setCopied(null); }}>{t('applications.offerReply.discard')}</button>
             <button type="button" className="btn ghost" disabled={dirty} onClick={() => { setMode('form'); setError(null); setCopied(null); }}>{t('applications.offerReply.again')}</button>
           </div>
           <div className="btn-row">

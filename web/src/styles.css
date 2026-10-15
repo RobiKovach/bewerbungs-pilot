@@ -169,7 +169,8 @@ label.btn { cursor: pointer; }
 .create-package__blocked { margin-top: 0.75rem; }
 .letter-tab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 @media (max-width: 900px) { .letter-tab { grid-template-columns: 1fr; } }
-.preview-wrap { width: 100%; height: 80vh; overflow: hidden; border: 1px solid #d0d5dd; border-radius: 8px; background: #fff; }
+/* The page itself stays white (it is paper); only its frame follows the theme. */
+.preview-wrap { width: 100%; height: 80vh; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
 .preview-frame { border: 0; display: block; }
 fieldset.plain { border: 0; padding: 0; margin: 0; }
 .error-text { color: #b42318; font-weight: 600; }

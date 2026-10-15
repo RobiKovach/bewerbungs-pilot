@@ -33,6 +33,8 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy,
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [copied, setCopied] = useState<null | 'ok' | 'failed'>(null);
+  /** Only a failed SEND turns the Send button into "Try again" (not a failed "Mark as reminded"). */
+  const [sendFailed, setSendFailed] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -47,13 +49,15 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy,
     // The draft is loaded once when the dialog opens.
   }, []);
 
-  const run = async (fn: () => Promise<ApplicationView>) => {
+  const run = async (fn: () => Promise<ApplicationView>, isSend: boolean) => {
     setBusy(true);
     setError(null);
+    setSendFailed(false);
     try {
       onDone(await fn());
     } catch (err) {
       setError(err);
+      setSendFailed(isSend);
       setBusy(false);
       if (isStale(err)) onStale?.();
     }
@@ -86,7 +90,7 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy,
           <fieldset disabled={busy} className="plain">
             <TextField type="email" label={t('applications.send.to')} value={to} onChange={setTo} maxLength={254} error={badAddress ? t('applications.send.badAddress') : undefined} />
             <TextField label={t('applications.send.subject')} value={subject} onChange={setSubject} maxLength={200} />
-            <TextField multiline rows={12} label={t('applications.send.body')} value={body} onChange={setBody} maxLength={5000} />
+            <TextField multiline rows={12} label={t('applications.send.body')} value={body} onChange={(v) => { setBody(v); setCopied(null); }} maxLength={5000} />
           </fieldset>
           {!mailReady ? <p className="muted">{t('applications.mailDraft.needMail')} <a href="#/settings">{t('applications.mailDraft.needMailLink')}</a></p> : null}
           {copied === 'ok' ? <p className="notice notice-ok" role="status">{t('applications.mailDraft.copied')}</p> : null}
@@ -99,12 +103,12 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy,
       {reauth ? <p><a href="#/settings">{t('applications.mailDraft.reauthLink')}</a></p> : null}
       <div className="btn-row">
         {sentNotSaved ? null : (
-          <button type="button" className="btn" disabled={!draft || !mailReady || !valid || busy} onClick={() => void run(() => send({ to: to.trim(), subject: subject.trim(), body }))}>
-            {busy ? t('applications.send.sending') : error ? t('applications.send.retry') : t('applications.send.submit')}
+          <button type="button" className="btn" disabled={!draft || !mailReady || !valid || busy} onClick={() => void run(() => send({ to: to.trim(), subject: subject.trim(), body }), true)}>
+            {busy ? t('applications.send.sending') : sendFailed ? t('applications.send.retry') : t('applications.send.submit')}
           </button>
         )}
         {draft && !sentNotSaved ? <button type="button" className="btn ghost" disabled={busy || body.trim() === ''} onClick={() => void copy()}>{t('applications.mailDraft.copy')}</button> : null}
-        {copied === 'ok' && afterCopy ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void run(afterCopy.run)}>{afterCopy.label}</button> : null}
+        {copied === 'ok' && afterCopy ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void run(afterCopy.run, false)}>{afterCopy.label}</button> : null}
         <button type="button" className="btn ghost" disabled={busy} onClick={onClose}>{t('common.cancel')}</button>
       </div>
     </div>

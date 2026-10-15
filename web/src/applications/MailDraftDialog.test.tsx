@@ -66,6 +66,34 @@ describe('MailDraftDialog', () => {
     expect(run).toHaveBeenCalledOnce();
   });
 
+  it('editing the message after Copy hides "Copied." and the after-copy button (the copied text is no longer this one)', async () => {
+    const { user } = setup();
+    vi.spyOn(navigator.clipboard, 'writeText');
+    await screen.findByLabelText('Subject');
+    await user.click(screen.getByRole('button', { name: 'Copy message' }));
+    expect(await screen.findByText('Copied.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Message'), ' X');
+    expect(screen.queryByText('Copied.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mark as reminded' })).not.toBeInTheDocument();
+  });
+
+  it('a failed "Mark as reminded" shows the error but Send still says Send (nothing was sent)', async () => {
+    const onDone = vi.fn();
+    render(
+      <MailDraftDialog title="Reminder" load={() => Promise.resolve(draft())} send={() => Promise.resolve(appView())} onDone={onDone} onClose={() => {}}
+        afterCopy={{ label: 'Mark as reminded', run: () => Promise.reject(new ApiError('CONFLICT', 'x', 'packageBusy')) }} />,
+    );
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, 'writeText');
+    await screen.findByLabelText('Subject');
+    await user.click(screen.getByRole('button', { name: 'Copy message' }));
+    await user.click(await screen.findByRole('button', { name: 'Mark as reminded' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
   it('a failed copy says so and offers no after-copy button', async () => {
     const { user } = setup();
     vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('denied'));
