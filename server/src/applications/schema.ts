@@ -94,7 +94,7 @@ const PACKAGE = obj({
   attachments: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } },
   history: {
     type: 'array', maxItems: L.history,
-    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: HISTORY_KIND, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(L.messageId) } },
+    items: { type: 'object', additionalProperties: false, required: ['kind', 'at'], properties: { kind: HISTORY_KIND, at: TIMESTAMP, note: str(L.note), to: str(L.address), messageId: str(L.messageId), threadId: { type: 'string', pattern: '^[0-9a-f]{1,64}$' } } },
   },
   sentAt: nullable(TIMESTAMP),
   sentEmail: nullable(obj({ to: str(L.address), subject: str(L.emailSubject), body: str(L.emailBody), attachments: { type: 'array', maxItems: 30, items: str(L.fileName) } })),

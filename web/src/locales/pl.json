@@ -108,6 +108,7 @@
       "title": "Logowanie przez Google",
       "intro": "BewerbungsPilot dostaje zgodę tylko na wysyłanie e-maili z Twojego konta Gmail — nie może czytać Twoich e-maili. Hasło aplikacji nie jest potrzebne.",
       "unverified": "Google może pokazać ostrzeżenie „Google nie zweryfikowało tej aplikacji”. Dla tego programu to normalne. Kliknij „Zaawansowane”, a potem „Przejdź do BewerbungsPilot”.",
+      "tick": "Na stronie Google zaznacz „Wysyłanie e-maili w Twoim imieniu” — bez tego program nie wyśle Twoich aplikacji.",
       "button": "Zaloguj się przez Google",
       "waiting": "Czekamy, aż skończysz logowanie w drugim oknie…",
       "openLink": "Otwórz stronę logowania Google",
@@ -425,6 +426,7 @@
     "MAIL_AUTH": { "message": "Dostawca poczty nie przyjął hasła.", "hint": "Użyj hasła aplikacji, a nie zwykłego hasła — w ustawieniach poczty jest pokazane, jak je utworzyć." },
     "MAIL_CONNECT": { "message": "Nie udało się połączyć z Twoim serwerem poczty.", "hint": "Sprawdź połączenie z internetem. Jeśli problem się powtarza, sprawdź serwer i port w ustawieniach poczty. Jeśli jesteś w sieci w pracy lub na kursie, może ona blokować pocztę; dla Gmaila użyj „Logowania przez Google” — działa także tam." },
     "MAIL_REAUTH": { "message": "Google nie pozwala już BewerbungsPilot wysyłać e-maili w Twoim imieniu.", "hint": "Zaloguj się przez Google ponownie: Ustawienia → E-mail → Zmień." },
+    "MAIL_SCOPE": { "message": "BewerbungsPilot nie dostał zgody na wysyłanie e-maili.", "hint": "Kliknij „Spróbuj ponownie”, zaloguj się przez Google i zaznacz „Wysyłanie e-maili w Twoim imieniu”." },
     "MAIL_REJECTED": { "message": "Twój serwer poczty odrzucił tę wiadomość.", "hint": "Sprawdź adres odbiorcy. Jeśli załączniki są duże, pomiń jeden z nich i spróbuj ponownie." },
     "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." },
     "reasons": {

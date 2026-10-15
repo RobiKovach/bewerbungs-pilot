@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applicationEmail, followUpEmail, rejectionReply } from '../src/mail/compose.js';
+import { applicationEmail, followUpEmail, positionTitle, rejectionReply } from '../src/mail/compose.js';
 import { fileNames } from '../src/applications/render/html.js';
 import { pkg } from './helpers/applications.js';
 
@@ -24,6 +24,40 @@ describe('applicationEmail', () => {
     p.snapshot.personal.phone = '';
     p.snapshot.personal.email = '';
     expect(applicationEmail(p).text.endsWith('Mit freundlichen Grüßen\nMax Mustermann')).toBe(true);
+  });
+});
+
+describe('positionTitle (the job title in the email text)', () => {
+  const withTitle = (title: string, company = 'move elevator GmbH') => {
+    const p = pkg();
+    p.vacancy = { ...p.vacancy, title, company };
+    return p;
+  };
+
+  it.each([
+    ['move elevator GmbH: TYPO3-Frontend-Developer (w/m/d)', 'TYPO3-Frontend-Developer (w/m/d)'],
+    ['MOVE ELEVATOR GMBH - TYPO3-Entwickler', 'TYPO3-Entwickler'],
+    ['move elevator GmbH | Webentwickler', 'Webentwickler'],
+    ['move elevator GmbH – Webentwickler', 'Webentwickler'],
+    ['TYPO3-Frontend-Developer (w/m/d)', 'TYPO3-Frontend-Developer (w/m/d)'],
+    ['move elevator GmbHs Webteam sucht Entwickler', 'move elevator GmbHs Webteam sucht Entwickler'],
+    ['move elevator GmbH:', 'move elevator GmbH:'],
+  ])('%j → %j', (title, expected) => {
+    expect(positionTitle(withTitle(title))).toBe(expected);
+  });
+
+  it('an empty company name changes nothing', () => {
+    expect(positionTitle(withTitle(': Webentwickler', ''))).toBe(': Webentwickler');
+  });
+
+  it('application email, reminder and rejection reply all use it', () => {
+    const p = withTitle('move elevator GmbH: TYPO3-Frontend-Developer (w/m/d)');
+    p.status = 'rejected';
+    p.history = [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z' }, { kind: 'rejected', at: '2026-10-08T10:00:00.000Z' }];
+    for (const text of [applicationEmail(p).text, followUpEmail(p).text, rejectionReply(p).text]) {
+      expect(text).toContain('Bewerbung als TYPO3-Frontend-Developer (w/m/d)');
+      expect(text).not.toContain('als move elevator GmbH:');
+    }
   });
 });
 

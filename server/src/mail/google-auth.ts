@@ -31,6 +31,17 @@ export function googleErrorFrom(err: unknown): AppError {
   return new AppError(reauth ? 'MAIL_REAUTH' : 'MAIL_CONNECT', detail);
 }
 
+const SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
+
+/**
+ * Google lets the person untick single permissions; the token answer lists what was granted (space-separated).
+ * No list at all is not treated as a refusal — sending itself would still report a missing permission.
+ */
+export function grantsSending(scope: string | null | undefined): boolean {
+  if (typeof scope !== 'string' || scope.trim() === '') return true;
+  return scope.split(/\s+/).includes(SEND_SCOPE);
+}
+
 export class LibraryGoogleAuth implements GoogleAuth {
   constructor(private readonly client: { id: string; secret: string } = GOOGLE_CLIENT) {}
 
@@ -61,6 +72,11 @@ export class LibraryGoogleAuth implements GoogleAuth {
       const client = this.oauth();
       const { tokens } = await client.getToken({ code: o.code, codeVerifier: o.verifier, redirect_uri: o.redirectUri });
       if (!tokens.refresh_token || !tokens.id_token) throw new AppError('MAIL_CONNECT', 'google returned no refresh token');
+      if (!grantsSending(tokens.scope)) {
+        // The person left "send email" unticked on Google's page: this key cannot send, so it is not kept.
+        void client.revokeToken(tokens.refresh_token).catch(() => undefined);
+        throw new AppError('MAIL_SCOPE', 'gmail.send not granted');
+      }
       const ticket = await client.verifyIdToken({ idToken: tokens.id_token, audience: this.client.id });
       const payload = ticket.getPayload();
       if (!payload?.email || payload.email_verified === false) throw new AppError('MAIL_CONNECT', 'google returned no verified email');

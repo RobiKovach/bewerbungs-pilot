@@ -1,19 +1,21 @@
 import type { MailSettings } from '@bp/shared';
 import { AppError } from '../../src/errors.js';
 import type { GoogleAuth, GoogleTokens } from '../../src/mail/google-auth.js';
-import type { Mailer, OutgoingMail } from '../../src/mail/mailer.js';
+import type { Mailer, OutgoingMail, SentMail } from '../../src/mail/mailer.js';
 
 /** Test double: records what would be sent, never keeps the password. */
 export class FakeMailer implements Mailer {
   sent: { config: MailSettings; mail: OutgoingMail }[] = [];
   failWith: AppError | null = null;
   delayMs = 0;
+  /** Set to act like the Gmail API, which answers with a conversation id. */
+  threadId: string | undefined;
 
-  async send(config: MailSettings, _password: string, mail: OutgoingMail): Promise<{ messageId: string }> {
+  async send(config: MailSettings, _password: string, mail: OutgoingMail): Promise<SentMail> {
     if (this.delayMs > 0) await new Promise((resolve) => setTimeout(resolve, this.delayMs));
     if (this.failWith) throw this.failWith;
     this.sent.push({ config, mail });
-    return { messageId: `<fake-${this.sent.length}@example.com>` };
+    return { messageId: `<fake-${this.sent.length}@example.com>`, ...(this.threadId ? { threadId: this.threadId } : {}) };
   }
 }
 

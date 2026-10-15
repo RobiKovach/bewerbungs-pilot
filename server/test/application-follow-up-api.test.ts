@@ -41,6 +41,26 @@ describe('reminder', () => {
     expect(v.followUpDue).toBe(false);
   });
 
+  it('Google mailbox: the sent entry keeps the Gmail conversation id and the reminder joins it', async () => {
+    const { ctx, id } = await setup();
+    ctx.settings.setMail({ kind: 'google', address: 'max@gmail.com', senderName: 'Max Mustermann', provider: 'gmail' });
+    ctx.mailer.threadId = '1a13e5cfb151d3ae';
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    age(ctx, id);
+    expect((await viewOf(ctx, id)).application.history.find((h) => h.kind === 'sent')).toMatchObject({ threadId: '1a13e5cfb151d3ae' });
+    ctx.mailer.threadId = undefined;
+    expect((await post(ctx, `/api/applications/${id}/follow-up/send`, BODY)).statusCode).toBe(200);
+    expect(ctx.mailer.sent[1].mail.threadId).toBe('1a13e5cfb151d3ae');
+  });
+
+  it('SMTP mailbox: no conversation id is ever passed on (SMTP threads by In-Reply-To)', async () => {
+    const { ctx, id } = await sentPackage();
+    ctx.applicationStore.update(id, (p) => { p.history.find((h) => h.kind === 'sent')!.threadId = 'abc123'; });
+    expect((await post(ctx, `/api/applications/${id}/follow-up/send`, BODY)).statusCode).toBe(200);
+    expect(ctx.mailer.sent[1].mail.threadId).toBeUndefined();
+    expect(ctx.mailer.sent[1].mail.inReplyTo).toBe('<fake-1@example.com>');
+  });
+
   it('a second send, mark or dismiss afterwards is refused with followUpDone', async () => {
     const { ctx, id } = await sentPackage();
     await post(ctx, `/api/applications/${id}/follow-up/send`, BODY);

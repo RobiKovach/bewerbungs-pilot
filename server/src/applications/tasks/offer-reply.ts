@@ -1,5 +1,6 @@
 import type { ApplicationPackage } from '@bp/shared';
 import { fenceUntrusted } from '../../llm/fence.js';
+import { positionTitle } from '../../mail/compose.js';
 import type { LlmTask } from '../../llm/types.js';
 import type { PackageContext } from './context.js';
 
@@ -35,7 +36,7 @@ export function offerReplyViolationKinds(violations: string[]): string {
 }
 
 export function offerReplyTask(ctx: PackageContext, p: ApplicationPackage, offered: string, wanted: string): LlmTask {
-  const facts = { position: p.vacancy.title, company: p.vacancy.company, experience: ctx.experience, education: ctx.education, skills: ctx.skills.map((s) => s.name), languages: ctx.languages, stories: ctx.stories };
+  const facts = { position: positionTitle(p), company: p.vacancy.company, experience: ctx.experience, education: ctx.education, skills: ctx.skills.map((s) => s.name), languages: ctx.languages, stories: ctx.stories };
   return {
     prompt: [
       `You write a short email reply to a job offer, in ${LANGUAGE_NAME[p.language]}. Return { "body": "<the whole email text>" }.`,

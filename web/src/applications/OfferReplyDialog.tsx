@@ -96,7 +96,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
         </>
       ) : null}
       {mode === 'text' && !working ? (
-        <TextField multiline label={t('applications.offerReply.text')} value={body} onChange={setBody} maxLength={BODY_MAX} />
+        <TextField multiline rows={14} label={t('applications.offerReply.text')} value={body} onChange={setBody} maxLength={BODY_MAX} />
       ) : null}
       {copied === 'ok' ? <p className="notice notice-ok" role="status">{t('applications.mailDraft.copied')}</p> : null}
       {copied === 'failed' ? <p className="notice" role="alert">{t('applications.mailDraft.copyFailed')}</p> : null}
@@ -109,14 +109,19 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
           <button type="button" className="btn ghost" onClick={onClose}>{t('applications.offerReply.close')}</button>
         </div>
       ) : (
-        <div className="btn-row">
-          <button type="button" className="btn" disabled={!dirty || empty || saving} onClick={() => void save()}>{t('applications.offerReply.save')}</button>
-          <button type="button" className="btn ghost" disabled={!dirty || saving} onClick={() => { setBody(saved ?? ''); setError(null); }}>{t('applications.offerReply.discard')}</button>
-          <button type="button" className="btn ghost" disabled={dirty || empty} onClick={() => void copy()}>{t('applications.offerReply.copy')}</button>
-          <button type="button" className="btn" disabled={dirty || empty} onClick={onSend}>{t('applications.offerReply.send')}</button>
-          <button type="button" className="btn ghost" disabled={dirty} onClick={() => { setMode('form'); setError(null); setCopied(null); }}>{t('applications.offerReply.again')}</button>
-          <button type="button" className="btn ghost" disabled={dirty} onClick={onClose}>{t('applications.offerReply.close')}</button>
-        </div>
+        <>
+          {/* Two rows on purpose: working on the text, then what to do with it (no lone button wrapping). */}
+          <div className="btn-row">
+            <button type="button" className="btn" disabled={!dirty || empty || saving} onClick={() => void save()}>{t('applications.offerReply.save')}</button>
+            <button type="button" className="btn ghost" disabled={!dirty || saving} onClick={() => { setBody(saved ?? ''); setError(null); }}>{t('applications.offerReply.discard')}</button>
+            <button type="button" className="btn ghost" disabled={dirty} onClick={() => { setMode('form'); setError(null); setCopied(null); }}>{t('applications.offerReply.again')}</button>
+          </div>
+          <div className="btn-row">
+            <button type="button" className="btn" disabled={dirty || empty} onClick={onSend}>{t('applications.offerReply.send')}</button>
+            <button type="button" className="btn ghost" disabled={dirty || empty} onClick={() => void copy()}>{t('applications.offerReply.copy')}</button>
+            <button type="button" className="btn ghost" disabled={dirty} onClick={onClose}>{t('applications.offerReply.close')}</button>
+          </div>
+        </>
       )}
     </div>
   );

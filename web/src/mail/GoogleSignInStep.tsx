@@ -41,8 +41,9 @@ export function GoogleSignInStep({ address, senderName, onSaved, onBack, pollMs 
     } catch (err) {
       if (!alive.current) return;
       setError(err);
-      // A sign-in the server no longer holds (CONFLICT) cannot be saved again: start over instead.
-      setResave(!(err instanceof ApiError && err.code === 'CONFLICT'));
+      // A sign-in the server no longer holds (CONFLICT) or one without the "send" permission (MAIL_SCOPE) cannot be
+      // saved again: start over instead.
+      setResave(!(err instanceof ApiError && (err.code === 'CONFLICT' || err.code === 'MAIL_SCOPE')));
       setPhase('failed');
     }
   }, [senderName, i18n.language, onSaved]);
@@ -110,6 +111,7 @@ export function GoogleSignInStep({ address, senderName, onSaved, onBack, pollMs 
       <h3>{t('mail.google.title')}</h3>
       <p>{t('mail.google.intro')}</p>
       <p>{t('mail.google.unverified')}</p>
+      <p><strong>{t('mail.google.tick')}</strong></p>
       {phase === 'waiting' ? (
         <>
           <p className="muted" role="status">{t('mail.google.waiting')}</p>

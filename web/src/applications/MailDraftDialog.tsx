@@ -66,7 +66,8 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy 
   const mailReady = draft?.mailReady ?? false;
   // The email went out but could not be recorded: never offer to send it again.
   const sentNotSaved = error instanceof ApiError && error.reason === 'sentNotSaved';
-  const reauth = error instanceof ApiError && error.code === 'MAIL_REAUTH';
+  // Both are fixed by signing in with Google again (MAIL_SCOPE: that time with the "send email" box ticked).
+  const reauth = error instanceof ApiError && (error.code === 'MAIL_REAUTH' || error.code === 'MAIL_SCOPE');
   return (
     <div className="card notice send-dialog" role="dialog" aria-label={title}>
       <h2>{title}</h2>
@@ -77,7 +78,7 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy 
           <fieldset disabled={busy} className="plain">
             <TextField type="email" label={t('applications.send.to')} value={to} onChange={setTo} maxLength={254} error={badAddress ? t('applications.send.badAddress') : undefined} />
             <TextField label={t('applications.send.subject')} value={subject} onChange={setSubject} maxLength={200} />
-            <TextField multiline label={t('applications.send.body')} value={body} onChange={setBody} maxLength={5000} />
+            <TextField multiline rows={12} label={t('applications.send.body')} value={body} onChange={setBody} maxLength={5000} />
           </fieldset>
           {!mailReady ? <p className="muted">{t('applications.mailDraft.needMail')} <a href="#/settings">{t('applications.mailDraft.needMailLink')}</a></p> : null}
           {copied === 'ok' ? <p className="notice notice-ok" role="status">{t('applications.mailDraft.copied')}</p> : null}

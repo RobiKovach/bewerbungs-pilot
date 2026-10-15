@@ -31,6 +31,19 @@ export function testMail(language: Language): { subject: string; text: string } 
   return TEST_MAIL[language];
 }
 
+/**
+ * The position for the email text. Some employers put their name in front of the job title on the job board
+ * ("move elevator GmbH: TYPO3-Frontend-Developer"): "…Bewerbung als move elevator GmbH: …" reads wrong, so a leading
+ * "<company>:" / "<company> -" / "<company> |" is left out. Anything else stays exactly as the ad says.
+ */
+export function positionTitle(p: ApplicationPackage): string {
+  const { title, company } = p.vacancy;
+  const name = company.trim();
+  if (name === '' || !title.toLowerCase().startsWith(name.toLowerCase())) return title;
+  const rest = /^\s*[:|–—-]\s*(\S.*)$/s.exec(title.slice(name.length));
+  return rest ? rest[1]!.trim() : title;
+}
+
 const APPLICATION_BODY: Record<DocLanguage, (title: string) => string> = {
   de: (title) => `anbei sende ich Ihnen meine Bewerbung als ${title} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
   en: (title) => `please find attached my application for the position of ${title}, with my cover letter and CV. I look forward to hearing from you.`,
@@ -42,7 +55,7 @@ export function applicationEmail(p: ApplicationPackage): { subject: string; text
   const lang = p.language;
   const { fullName, phone, email } = p.snapshot.personal;
   const signature = [fullName, phone, email].filter((l) => l !== '');
-  const text = [p.letter.salutation, '', APPLICATION_BODY[lang](p.vacancy.title), '', CLOSING[lang], ...signature].join('\n');
+  const text = [p.letter.salutation, '', APPLICATION_BODY[lang](positionTitle(p)), '', CLOSING[lang], ...signature].join('\n');
   return { subject: p.letter.subject, text };
 }
 
@@ -77,10 +90,10 @@ function replyLayout(p: ApplicationPackage, body: string): string {
 
 /** The reminder ("write again"): same salutation as the application, no Claude. */
 export function followUpEmail(p: ApplicationPackage): { subject: string; text: string } {
-  return { subject: replySubject(p), text: replyLayout(p, FOLLOW_UP_BODY[p.language](p.vacancy.title, sentDay(p))) };
+  return { subject: replySubject(p), text: replyLayout(p, FOLLOW_UP_BODY[p.language](positionTitle(p), sentDay(p))) };
 }
 
 /** A polite answer to a rejection (template, no Claude). */
 export function rejectionReply(p: ApplicationPackage): { subject: string; text: string } {
-  return { subject: replySubject(p), text: replyLayout(p, REJECTION_BODY[p.language](p.vacancy.title, p.vacancy.company)) };
+  return { subject: replySubject(p), text: replyLayout(p, REJECTION_BODY[p.language](positionTitle(p), p.vacancy.company)) };
 }

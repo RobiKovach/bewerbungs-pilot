@@ -236,8 +236,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .stats-number dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem; }
 .stats-number strong { font-size: 1.6rem; }
 .stats-rate { font-size: 0.85rem; }
-.stats-chart { display: block; width: 100%; max-width: 32rem; height: auto; }
+.stats-chart { display: block; width: 100%; height: auto; }
 .stats-bar { fill: var(--accent); }
 .stats-axis { stroke: var(--border); stroke-width: 1; }
-.stats-label { fill: var(--muted); font-size: 9px; }
+.stats-label { fill: var(--muted); font-size: 11px; }
 .stats-value { fill: var(--text); }

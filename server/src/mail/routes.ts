@@ -141,6 +141,9 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
       });
     } catch (err) {
       deps.logger.warn('mail_test', { result: err instanceof AppError ? err.code : 'UNKNOWN' });
+      // The "send email" permission was not given: saving again with the same key cannot help — the sign-in is
+      // dropped, "Try again" starts a new one.
+      if (err instanceof AppError && err.code === 'MAIL_SCOPE') signIn.clear();
       throw err;
     }
     deps.logger.info('mail_test', { result: 'ok' });

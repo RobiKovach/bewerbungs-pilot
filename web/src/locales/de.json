@@ -108,6 +108,7 @@
       "title": "Mit Google anmelden",
       "intro": "BewerbungsPilot erhält nur die Erlaubnis, E-Mails von Ihrem Gmail-Konto zu senden – Ihre E-Mails lesen kann es nicht. Ein App-Passwort brauchen Sie nicht.",
       "unverified": "Google zeigt eventuell die Warnung „Google hat diese App nicht überprüft“. Das ist bei diesem Programm normal. Klicken Sie auf „Erweitert“ und dann auf „Weiter zu BewerbungsPilot“.",
+      "tick": "Setzen Sie auf der Google-Seite das Häkchen bei „E-Mails in Ihrem Namen senden“ — ohne dieses kann das Programm Ihre Bewerbungen nicht senden.",
       "button": "Mit Google anmelden",
       "waiting": "Wir warten, bis Sie die Anmeldung im anderen Fenster abgeschlossen haben…",
       "openLink": "Google-Anmeldeseite öffnen",
@@ -425,6 +426,7 @@
     "MAIL_AUTH": { "message": "Ihr E-Mail-Anbieter hat das Passwort nicht akzeptiert.", "hint": "Verwenden Sie ein App-Passwort, nicht Ihr normales Passwort — in den E-Mail-Einstellungen steht, wie Sie eines erstellen." },
     "MAIL_CONNECT": { "message": "Wir konnten Ihren E-Mail-Server nicht erreichen.", "hint": "Prüfen Sie Ihre Internetverbindung. Wenn es weiterhin auftritt, prüfen Sie Server und Port in den E-Mail-Einstellungen. Wenn Sie in einem Arbeits- oder Kursnetzwerk sind, kann es E-Mail blockieren; nutzen Sie für Gmail „Mit Google anmelden“ – das funktioniert auch dort." },
     "MAIL_REAUTH": { "message": "Google erlaubt BewerbungsPilot nicht mehr, E-Mails für Sie zu senden.", "hint": "Melden Sie sich erneut bei Google an: Einstellungen → E-Mail → Ändern." },
+    "MAIL_SCOPE": { "message": "Sie haben BewerbungsPilot nicht erlaubt, E-Mails zu senden.", "hint": "Klicken Sie auf „Erneut versuchen“, melden Sie sich bei Google an und setzen Sie das Häkchen bei „E-Mails in Ihrem Namen senden“." },
     "MAIL_REJECTED": { "message": "Ihr E-Mail-Server hat diese E-Mail abgelehnt.", "hint": "Prüfen Sie die Adresse des Empfängers. Wenn die Anhänge groß sind, lassen Sie einen weg und versuchen Sie es erneut." },
     "UNKNOWN": { "message": "Etwas ist schiefgelaufen.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
     "reasons": {

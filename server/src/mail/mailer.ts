@@ -10,10 +10,15 @@ export interface OutgoingMail {
   text: string;
   attachments: { filename: string; content: Buffer }[];
   inReplyTo?: string;
+  /** Gmail API only: put the message into this conversation (SMTP ignores it). */
+  threadId?: string;
 }
 
+/** `threadId` only from the Gmail API (Gmail rewrites Message-ID, so replies are threaded by conversation id). */
+export interface SentMail { messageId: string; threadId?: string }
+
 export interface Mailer {
-  send(config: MailSettings, password: string, mail: OutgoingMail): Promise<{ messageId: string }>;
+  send(config: MailSettings, password: string, mail: OutgoingMail): Promise<SentMail>;
 }
 
 const CONNECT_CODES = new Set(['ECONNECTION', 'ETIMEDOUT', 'ESOCKET', 'EDNS', 'ECONNREFUSED', 'ENOTFOUND', 'ETLS']);
@@ -53,7 +58,7 @@ export function mailErrorFrom(err: unknown, opts: { secrets?: string[] } = {}): 
 }
 
 export class SmtpMailer implements Mailer {
-  async send(config: MailSettings, password: string, mail: OutgoingMail): Promise<{ messageId: string }> {
+  async send(config: MailSettings, password: string, mail: OutgoingMail): Promise<SentMail> {
     if (config.kind !== 'smtp') throw new AppError('MAIL_NOT_CONFIGURED', 'not an SMTP mailbox');
     const transport = nodemailer.createTransport(transportOptions(config, password));
     try {

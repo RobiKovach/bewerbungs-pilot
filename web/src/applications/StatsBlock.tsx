@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { ApplicationStats } from '../types';
 
-const W = 320, H = 140, LEFT = 28, BOTTOM = 24, TOP = 14, RIGHT = 4;
+const W = 480, H = 150, LEFT = 28, BOTTOM = 24, TOP = 14, RIGHT = 4;
 const PLOT_H = H - BOTTOM - TOP;
 const dayMonth = (start: string) => { const [, m, d] = start.split('-'); return `${d}.${m}.`; };
 const percent = (x: number) => `${Math.round(x * 100)}%`;

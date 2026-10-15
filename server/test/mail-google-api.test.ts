@@ -97,6 +97,29 @@ describe('Google sign-in routes', () => {
     expect(await status(ctx)).toEqual({ state: 'failed', code: 'MAIL_CONNECT' });
   });
 
+  it('"send email" left unticked on Google\'s page: the failure says so (MAIL_SCOPE), nothing is saved', async () => {
+    const { ctx } = await setup();
+    ctx.googleAuth.exchangeResult = new AppError('MAIL_SCOPE', 'gmail.send not granted');
+    const a = await start(ctx);
+    await callback(ctx, `state=${a.state}&code=c`);
+    expect(await status(ctx)).toEqual({ state: 'failed', code: 'MAIL_SCOPE' });
+    expect(ctx.settings.get().mail).toBeNull();
+    expect(await ctx.secrets.load()).toBeNull();
+  });
+
+  it('the test email is refused for a missing permission: 409 MAIL_SCOPE and the sign-in is dropped (a new one is needed)', async () => {
+    const { ctx } = await setup();
+    const a = await start(ctx);
+    await callback(ctx, `state=${a.state}&code=c`);
+    ctx.mailer.failWith = new AppError('MAIL_SCOPE', 'gmail 403 insufficientPermissions');
+    const r = await save(ctx, { senderName: 'Max', language: 'en' });
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.code).toBe('MAIL_SCOPE');
+    expect(await status(ctx)).toEqual({ state: 'idle' });
+    expect(ctx.settings.get().mail).toBeNull();
+    expect(await ctx.secrets.load()).toBeNull();
+  });
+
   it('a callback without a code fails with BAD_REQUEST', async () => {
     const { ctx } = await setup();
     const a = await start(ctx);

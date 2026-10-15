@@ -13,7 +13,7 @@ export function assertEditable(p: ApplicationPackage): void {
 }
 
 /** Appends a history entry and makes it the package's status. */
-export function addStatus(p: ApplicationPackage, kind: ApplicationStatus, at: string, extra: { note?: string; to?: string; messageId?: string } = {}): void {
+export function addStatus(p: ApplicationPackage, kind: ApplicationStatus, at: string, extra: { note?: string; to?: string; messageId?: string; threadId?: string } = {}): void {
   p.history.push({ kind, at, ...extra });
   p.status = kind;
   p.updatedAt = at;
@@ -27,7 +27,7 @@ export function isStatusKind(kind: string): kind is ApplicationStatus {
 }
 
 /** Appends an event to the history; the status stays as it is. */
-export function addEvent(p: ApplicationPackage, kind: HistoryEventKind, at: string, extra: { to?: string; messageId?: string } = {}): void {
+export function addEvent(p: ApplicationPackage, kind: HistoryEventKind, at: string, extra: { to?: string; messageId?: string; threadId?: string } = {}): void {
   p.history.push({ kind, at, ...extra });
   p.updatedAt = at;
 }

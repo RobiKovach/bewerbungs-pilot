@@ -56,7 +56,7 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
           <fieldset disabled={sending} className="plain">
             <TextField type="email" label={t('applications.send.to')} value={to} onChange={setTo} maxLength={254} error={badAddress ? t('applications.send.badAddress') : undefined} />
             <TextField label={t('applications.send.subject')} value={subject} onChange={setSubject} maxLength={200} />
-            <TextField multiline label={t('applications.send.body')} value={body} onChange={setBody} maxLength={5000} />
+            <TextField multiline rows={12} label={t('applications.send.body')} value={body} onChange={setBody} maxLength={5000} />
           </fieldset>
           <p><strong>{t('applications.send.attachments')}</strong></p>
           <ul className="attachment-list">

@@ -228,7 +228,29 @@ describe('MailWizard with Google', () => {
     expect(screen.getByRole('heading', { name: 'Sign in with Google' })).toBeInTheDocument();
     expect(screen.getByText(/only gets permission to send emails/)).toBeInTheDocument();
     expect(screen.getByText(/"Advanced", then "Go to BewerbungsPilot"/)).toBeInTheDocument();
+    expect(screen.getByText(/tick "Send email on your behalf"/)).toBeInTheDocument();
     expect(screen.queryByLabelText('Password')).toBeNull();
+  });
+
+  it('sign-in failed with MAIL_SCOPE (box left unticked): says what to do, "Try again" signs in again', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'failed', code: 'MAIL_SCOPE' }]);
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('You did not allow BewerbungsPilot to send emails.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(calls.start).toHaveLength(2));
+  });
+
+  it('save fails with MAIL_SCOPE: "Try again" starts a new sign-in instead of saving the same key again', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { calls } = google([{ state: 'ready', email: 'max@gmail.com' }], () => ({ status: 409, body: { error: { code: 'MAIL_SCOPE', detailsForLog: '' } } }));
+    const user = await toStep2();
+    await user.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    expect(await screen.findByText('You did not allow BewerbungsPilot to send emails.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(calls.start).toHaveLength(2));
+    expect(calls.save.length).toBeGreaterThanOrEqual(1);
   });
 
   it('starts sign-in, opens the page, then saves once Google says ready', async () => {

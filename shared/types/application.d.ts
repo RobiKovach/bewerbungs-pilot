@@ -10,7 +10,8 @@ export type OutcomeStatus = 'interview' | 'rejected' | 'offer' | 'withdrawn';
 export type HistoryEventKind = 'followUp' | 'followUpDismissed' | 'reply';
 export type HistoryKind = ApplicationStatus | HistoryEventKind;
 /** One step in a package's life. Entries whose kind is an ApplicationStatus are status entries. */
-export interface HistoryEntry { kind: HistoryKind; at: string; note?: string; to?: string; messageId?: string }
+/** `threadId`: Gmail's conversation id (sent with "Sign in with Google" only) — reminders and replies join it. */
+export interface HistoryEntry { kind: HistoryKind; at: string; note?: string; to?: string; messageId?: string; threadId?: string }
 
 /** The person's answer to a job offer, written by Claude and editable (spec, section 9). */
 export interface OfferReply { offered: string; wanted: string; body: string; createdAt: string; updatedAt: string }

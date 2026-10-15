@@ -373,8 +373,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     });
   };
   /** What a successful send records on the package (also run on a copy before sending, to refuse what could not be saved). */
-  const markSent = (p: ApplicationPackage, at: string, email: { to: string; subject: string; body: string; messageId: string; attachments: string[] }) => {
-    addStatus(p, 'sent', at, { to: email.to, messageId: email.messageId.slice(0, L.messageId) });
+  const markSent = (p: ApplicationPackage, at: string, email: { to: string; subject: string; body: string; messageId: string; threadId?: string; attachments: string[] }) => {
+    addStatus(p, 'sent', at, { to: email.to, messageId: email.messageId.slice(0, L.messageId), ...(email.threadId ? { threadId: email.threadId } : {}) });
     p.sentAt = at;
     p.sentEmail = { to: email.to, subject: email.subject, body: email.body, attachments: email.attachments };
   };
@@ -431,14 +431,14 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       if (validatePackage(probe) !== null) {
         throw new AppError('CONFLICT', 'the sent email could not be recorded on this package', current.history.length >= L.history ? 'historyFull' : undefined);
       }
-      const { messageId } = await d.mailer.send(config, password, {
+      const { messageId, threadId } = await d.mailer.send(config, password, {
         from: { name: config.senderName, address: config.address }, to, bcc: config.address, subject, text: body, attachments,
       });
       const at = now().toISOString();
       try {
         d.store.update(id, (p) => {
           if (p.status !== 'approved') throw new AppError('CONFLICT', 'package is no longer approved', 'packageChanged');
-          markSent(p, at, { ...email, messageId });
+          markSent(p, at, { ...email, messageId, threadId });
         });
       } catch (err) {
         // The email went out: it must never go out a second time, even though the package could not record it.
@@ -479,15 +479,18 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       const probe = structuredClone(start);
       addEvent(probe, kind, now().toISOString(), { to: mail.to, messageId: '' });
       if (validatePackage(probe) !== null) throw new AppError('CONFLICT', 'the email could not be recorded on this package', start.history.length >= L.history ? 'historyFull' : undefined);
-      const original = start.history.find((h) => h.kind === 'sent')?.messageId;
-      const { messageId } = await d.mailer.send(config, secret, {
+      const sentEntry = start.history.find((h) => h.kind === 'sent');
+      const original = sentEntry?.messageId;
+      // SMTP: In-Reply-To with the real Message-ID. Gmail API: Gmail rewrites Message-ID, so join its conversation instead.
+      const { messageId, threadId } = await d.mailer.send(config, secret, {
         from: { name: config.senderName, address: config.address }, to: mail.to, bcc: config.address, subject: mail.subject, text: mail.body, attachments: [],
         ...(original && /^<[^<>\s]+@[^<>\s]+>$/.test(original) ? { inReplyTo: original } : {}),
+        ...(config.kind === 'google' && sentEntry?.threadId ? { threadId: sentEntry.threadId } : {}),
       });
       try {
         d.store.update(id, (p) => {
           if (!allowed(p)) throw new AppError('CONFLICT', 'package changed', 'packageChanged');
-          addEvent(p, kind, now().toISOString(), { to: mail.to, messageId: messageId.slice(0, L.messageId) });
+          addEvent(p, kind, now().toISOString(), { to: mail.to, messageId: messageId.slice(0, L.messageId), ...(threadId ? { threadId } : {}) });
         });
       } catch {
         d.sentUnsaved.add(key);

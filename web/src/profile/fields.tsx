@@ -22,17 +22,19 @@ function Shell({ id, label, ai, hint, error, children }: { id: string; label: st
 interface TextFieldProps {
   label: string; value: string; onChange: (v: string) => void;
   ai?: boolean; hint?: string; error?: string; multiline?: boolean; type?: string; placeholder?: string;
+  /** Visible lines of a multiline field (a whole email needs more than the default 4). */
+  rows?: number;
   /** Default for multiline fields: every multiline profile text (descriptions, notes, stories) is a server "text" field. */
   maxLength?: number;
 }
 
-export function TextField({ label, value, onChange, ai, hint, error, multiline = false, type = 'text', placeholder, maxLength }: TextFieldProps) {
+export function TextField({ label, value, onChange, ai, hint, error, multiline = false, type = 'text', placeholder, maxLength, rows = 4 }: TextFieldProps) {
   const id = useId();
   const max = maxLength ?? (multiline ? LIMITS.text : undefined);
   return (
     <Shell id={id} label={label} ai={ai} hint={hint} error={error}>
       {multiline
-        ? <textarea id={id} rows={4} value={value} maxLength={max} onChange={(e) => onChange(e.target.value)} />
+        ? <textarea id={id} rows={rows} value={value} maxLength={max} onChange={(e) => onChange(e.target.value)} />
         : <input id={id} type={type} value={value} placeholder={placeholder} maxLength={max} aria-invalid={error ? true : undefined} onChange={(e) => onChange(e.target.value)} />}
     </Shell>
   );

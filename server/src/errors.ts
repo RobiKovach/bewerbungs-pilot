@@ -45,7 +45,8 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'MAIL_AUTH':
     case 'MAIL_REJECTED': return 502;
     case 'MAIL_NOT_CONFIGURED':
-    case 'MAIL_REAUTH': return 409;
+    case 'MAIL_REAUTH':
+    case 'MAIL_SCOPE': return 409;
     case 'MAIL_CONNECT': return 503;
     default: return 500;
   }

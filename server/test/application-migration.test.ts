@@ -152,3 +152,16 @@ describe('package v3 → v4', () => {
     expect(got).toMatchObject({ schemaVersion: 4, offerReply: null, history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
   });
 });
+
+describe('0.7.1: Gmail conversation id on history entries', () => {
+  it('a hex threadId is valid; anything else is refused (it is sent to Google later)', () => {
+    const ok = pkg({ status: 'sent', history: [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z', messageId: '1a13e5cf', threadId: '1a13e5cfb151d3ae' }] });
+    expect(validatePackage(ok)).toBeNull();
+    const bad = pkg({ status: 'sent', history: [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z', threadId: '"},{"x":1' }] });
+    expect(validatePackage(bad)).not.toBeNull();
+  });
+
+  it('a package from 0.7.0 (no threadId) stays valid', () => {
+    expect(validatePackage(pkg({ status: 'sent', history: [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z', messageId: '1a13e5cf' }] }))).toBeNull();
+  });
+});

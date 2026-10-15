@@ -108,6 +108,7 @@
       "title": "Sign in with Google",
       "intro": "BewerbungsPilot only gets permission to send emails from your Gmail account — it cannot read your emails. You do not need an app password.",
       "unverified": "Google may show the warning \"Google hasn't verified this app\". That is normal for this program. Click \"Advanced\", then \"Go to BewerbungsPilot\".",
+      "tick": "On Google's page, tick \"Send email on your behalf\" — without it the program cannot send your applications.",
       "button": "Sign in with Google",
       "waiting": "Waiting for you to finish signing in in the other window…",
       "openLink": "Open the Google sign-in page",
@@ -425,6 +426,7 @@
     "MAIL_AUTH": { "message": "Your email provider did not accept the password.", "hint": "Use an app password, not your normal password — the email settings show how to create one." },
     "MAIL_CONNECT": { "message": "We could not reach your email server.", "hint": "Check your internet connection. If it keeps happening, check the server and port in the email settings. If you are on a work or course network, it may block email; for Gmail use \"Sign in with Google\" — it works there too." },
     "MAIL_REAUTH": { "message": "Google no longer lets BewerbungsPilot send emails for you.", "hint": "Sign in with Google again: Settings → Email → Change." },
+    "MAIL_SCOPE": { "message": "You did not allow BewerbungsPilot to send emails.", "hint": "Click \"Try again\", sign in with Google and tick \"Send email on your behalf\"." },
     "MAIL_REJECTED": { "message": "Your email server refused this email.", "hint": "Check the recipient's address. If the attachments are large, leave one out and try again." },
     "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." },
     "reasons": {

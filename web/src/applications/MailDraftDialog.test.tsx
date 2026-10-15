@@ -94,8 +94,8 @@ describe('MailDraftDialog', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled();
   });
 
-  it('MAIL_REAUTH links to Settings to sign in with Google again', async () => {
-    const { user } = setup({ send: () => Promise.reject(new ApiError('MAIL_REAUTH', 'x')) });
+  it.each(['MAIL_REAUTH', 'MAIL_SCOPE'])('%s links to Settings to sign in with Google again', async (code) => {
+    const { user } = setup({ send: () => Promise.reject(new ApiError(code, 'x')) });
     await screen.findByLabelText('Subject');
     await user.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByRole('link', { name: 'Sign in with Google again' })).toHaveAttribute('href', '#/settings');

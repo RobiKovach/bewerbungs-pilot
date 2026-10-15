@@ -28,6 +28,7 @@ export type ErrorCode =
   | 'MAIL_AUTH'
   | 'MAIL_CONNECT'
   | 'MAIL_REAUTH'
+  | 'MAIL_SCOPE'
   | 'MAIL_REJECTED'
   | 'CONFLICT'
   | 'BAD_REQUEST'
