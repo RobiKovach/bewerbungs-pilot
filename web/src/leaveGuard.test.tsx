@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { confirmLeave, installLeaveGuard, setUnsaved } from './leaveGuard';
 import { UnsavedProvider, useReportUnsaved } from './profile/unsaved';
 
@@ -17,11 +17,11 @@ function goTo(hash: string) {
 
 describe('leave guard', () => {
   let uninstall: () => void;
-  let later: ReturnType<typeof vi.fn>;
+  let later: Mock<(e: Event) => void>;
   beforeEach(() => {
     window.history.replaceState(null, '', '#/profile');
     uninstall = installLeaveGuard();
-    later = vi.fn();
+    later = vi.fn<(e: Event) => void>();
     window.addEventListener('hashchange', later); // stands for App / ApplicationsPage, registered after the guard
   });
   afterEach(() => {
