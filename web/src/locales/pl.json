@@ -20,7 +20,7 @@
     "openProfile": "Otwórz profil"
   },
   "onboarding": {
-    "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język aplikacji. Możesz go zmienić w dowolnym momencie." },
+    "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język programu. Możesz go zmienić w dowolnym momencie." },
     "claude": {
       "title": "Połącz z Claude",
       "intro": "BewerbungsPilot używa Claude Code na Twoim komputerze, aby czytać oferty pracy i pisać Twoje dokumenty.",
@@ -52,9 +52,9 @@
     "todoLabel": "Co robisz",
     "go": "Otwórz",
     "stages": {
-      "install": { "title": "Instalacja", "what": "Instalator umieszcza BewerbungsPilot i Claude Code na Twoim komputerze i tworzy skrót na pulpicie.", "todo": "Nic więcej — to już masz za sobą. Uruchamiaj aplikację za pomocą skrótu na pulpicie." },
+      "install": { "title": "Instalacja", "what": "Instalator umieszcza BewerbungsPilot i Claude Code na Twoim komputerze i tworzy skrót na pulpicie.", "todo": "Nic więcej — to już masz za sobą. Uruchamiaj program za pomocą skrótu na pulpicie." },
       "profile": { "title": "Profil", "what": "Twoje CV, umiejętności i oczekiwania — podstawa każdej aplikacji. Nic nie jest zmyślane.", "todo": "Prześlij swoje CV i odpowiedz na kilka krótkich pytań." },
-      "email": { "title": "E-mail", "what": "Aplikacje są wysyłane z Twojego własnego adresu e-mail.", "todo": "Podaj swój adres e-mail i specjalne hasło aplikacji — pokażemy Ci, jak je utworzyć w 3 krokach." },
+      "email": { "title": "E-mail", "what": "Aplikacje są wysyłane z Twojego własnego adresu e-mail.", "todo": "Podaj swój adres e-mail i specjalne hasło do aplikacji — pokażemy Ci, jak je utworzyć w 3 krokach." },
       "search": { "title": "Wyszukiwanie pracy", "what": "BewerbungsPilot przeszukuje giełdę ofert pracy Federalnej Agencji Pracy i wybiera oferty pasujące do Twojego profilu. Możesz też wkleić ofertę znalezioną samodzielnie.", "todo": "Kliknij „Szukaj teraz” — albo wklej ofertę, którą znalazłeś sam. Codzienne automatyczne wyszukiwanie pojawi się później." },
       "review": { "title": "Przegląd i zatwierdzenie", "what": "Dla każdej oferty, którą oznaczysz jako interesującą, BewerbungsPilot pisze list motywacyjny na podstawie Twoich historii oraz CV dopasowane do oferty.", "todo": "Otwórz pakiet, przeczytaj i zmień dokumenty, a następnie go zatwierdź." },
       "send": { "title": "Wysyłka", "what": "Wysyłane są tylko zatwierdzone przez Ciebie aplikacje — nic więcej.", "todo": "Kliknij „Wyślij” i gotowe." },
@@ -62,7 +62,7 @@
     }
   },
   "info": {
-    "languageSwitcher": "Zmienia język aplikacji. Dokumenty dla pracodawców są w języku oferty pracy.",
+    "languageSwitcher": "Zmienia język programu. Dokumenty dla pracodawców są w języku oferty pracy.",
     "claudeTest": "Wysyła do Claude krótkie pytanie testowe, aby sprawdzić, czy wszystko działa.",
     "restartIntro": "Pokazuje ponownie kroki powitalne. Twoje dane pozostają bez zmian.",
     "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie.",
@@ -73,7 +73,7 @@
   },
   "mail": {
     "step1Title": "Twój adres",
-    "step2Title": "Hasło aplikacji",
+    "step2Title": "Hasło do aplikacji",
     "step3Title": "Sprawdzenie",
     "address": "Twój adres e-mail",
     "senderName": "Twoje imię i nazwisko jako nadawcy",
@@ -86,7 +86,7 @@
     "securitySsl": "SSL/TLS (port 465)",
     "securityStarttls": "STARTTLS (port 587)",
     "user": "Nazwa użytkownika",
-    "appPasswordWhy": "Hasło aplikacji to osobne hasło, które Twój dostawca poczty tworzy tylko dla jednego programu. Dzięki niemu BewerbungsPilot może wysyłać wiadomości, nie znając Twojego zwykłego hasła, a Ty możesz je usunąć w każdej chwili.",
+    "appPasswordWhy": "Hasło do aplikacji to osobne hasło, które Twój dostawca poczty tworzy tylko dla jednego programu. Dzięki niemu BewerbungsPilot może wysyłać wiadomości, nie znając Twojego zwykłego hasła, a Ty możesz je usunąć w każdej chwili.",
     "openSettings": "Otwórz ustawienia {{provider}}",
     "password": "Hasło",
     "show": "Pokaż",
@@ -108,7 +108,7 @@
     "disconnectYes": "Tak, odłącz",
     "google": {
       "title": "Logowanie przez Google",
-      "intro": "BewerbungsPilot dostaje zgodę tylko na wysyłanie e-maili z Twojego konta Gmail — nie może czytać Twoich e-maili. Hasło aplikacji nie jest potrzebne.",
+      "intro": "BewerbungsPilot dostaje zgodę tylko na wysyłanie e-maili z Twojego konta Gmail — nie może czytać Twoich e-maili. Hasło do aplikacji nie jest potrzebne.",
       "unverified": "Google może pokazać ostrzeżenie „Google nie zweryfikowało tej aplikacji”. Dla tego programu to normalne. Kliknij „Zaawansowane”, a potem „Przejdź do BewerbungsPilot”.",
       "tick": "Na stronie Google zaznacz „Wysyłanie e-maili w Twoim imieniu” — bez tego program nie wyśle Twoich aplikacji.",
       "button": "Zaloguj się przez Google",
@@ -124,11 +124,11 @@
       "disconnectConfirm": "Odłączyć Twój e-mail? BewerbungsPilot straci dostęp do Twojego konta Gmail."
     },
     "help": {
-      "gmail": "Otwórz przez link poniżej stronę „Hasła aplikacji”. Jeśli Google o to poprosi, zaloguj się — na Twoim koncie musi być włączona weryfikacja dwuetapowa.\nWpisz dowolną nazwę hasła, na przykład BewerbungsPilot.\nGoogle pokaże hasło z 16 liter. Skopiuj je.\nWklej je poniżej. Spacje nie mają znaczenia.",
+      "gmail": "Otwórz przez link poniżej stronę „Hasła do aplikacji”. Jeśli Google o to poprosi, zaloguj się — na Twoim koncie musi być włączona weryfikacja dwuetapowa.\nWpisz dowolną nazwę hasła, na przykład BewerbungsPilot.\nGoogle pokaże hasło z 16 liter. Skopiuj je.\nWklej je poniżej. Spacje nie mają znaczenia.",
       "gmx": "Zaloguj się w przeglądarce do swojej skrzynki GMX i otwórz jej ustawienia.\nSprawdź, czy dostęp z programów pocztowych jest dozwolony.\nJeśli używasz logowania dwuetapowego, utwórz hasło aplikacji w ustawieniach bezpieczeństwa. W przeciwnym razie wystarczy Twoje zwykłe hasło GMX.\nWpisz hasło poniżej.",
       "webde": "Zaloguj się w przeglądarce do swojej skrzynki WEB.DE i otwórz jej ustawienia.\nSprawdź, czy dostęp z programów pocztowych jest dozwolony.\nJeśli używasz logowania dwuetapowego, utwórz hasło aplikacji w ustawieniach bezpieczeństwa. W przeciwnym razie wystarczy Twoje zwykłe hasło WEB.DE.\nWpisz hasło poniżej.",
       "tonline": "Otwórz przez link poniżej stronę pomocy Telekom i zaloguj się na swoje konto klienta.\nUstaw osobne hasło pocztowe dla programów zewnętrznych (to nie jest Twoje zwykłe hasło Telekom).\nSkopiuj to hasło.\nWklej je poniżej.",
-      "yahoo": "Otwórz przez link poniżej artykuł pomocy Yahoo. Pokazuje on, jak utworzyć hasło aplikacji.\nUtwórz hasło aplikacji i wpisz dowolną nazwę, na przykład BewerbungsPilot.\nSkopiuj hasło, które pokaże Yahoo.\nWklej je poniżej.",
+      "yahoo": "Otwórz przez link poniżej artykuł pomocy Yahoo. Pokazuje on, jak utworzyć hasło do aplikacji.\nUtwórz hasło do aplikacji i wpisz dowolną nazwę, na przykład BewerbungsPilot.\nSkopiuj hasło, które pokaże Yahoo.\nWklej je poniżej.",
       "icloud": "Otwórz przez link poniżej stronę pomocy Apple. Pokazuje ona, jak utworzyć hasło dla jednej aplikacji (Twoje konto Apple wymaga uwierzytelniania dwuskładnikowego).\nWpisz dowolną nazwę, na przykład BewerbungsPilot.\nSkopiuj hasło, które pokaże Apple.\nWklej je poniżej.",
       "custom": "Poszukaj w pomocy swojego dostawcy poczty hasła „serwer SMTP” — potrzebujesz nazwy serwera i portu.\nWpisz je w poprzednim kroku.\nJeśli dostawca oferuje hasła aplikacji, utwórz takie hasło. W przeciwnym razie wystarczy Twoje zwykłe hasło.\nWpisz hasło poniżej."
     }
@@ -143,7 +143,7 @@
     "claudeResult": "Claude odpowiada: „{{greeting}}”",
     "introTitle": "Kroki powitalne",
     "introRestart": "Pokaż ponownie kroki powitalne",
-    "quitTitle": "Zamknij aplikację",
+    "quitTitle": "Zamknij program",
     "quitButton": "Zamknij BewerbungsPilot"
   },
   "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie." },
@@ -399,7 +399,7 @@
     "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },
     "CLAUDE_NOT_LOGGED_IN": { "message": "Nie zalogowano do Claude.", "hint": "Otwórz Ustawienia i kliknij „Otwórz okno logowania”." },
     "LLM_TIMEOUT": { "message": "Claude zbyt długo nie odpowiadał.", "hint": "Spróbuj ponownie za chwilę." },
-    "LLM_BAD_OUTPUT": { "message": "Nie udało się zrozumieć odpowiedzi Claude.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." },
+    "LLM_BAD_OUTPUT": { "message": "Nie udało się zrozumieć odpowiedzi Claude.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom program ponownie." },
     "LLM_FAILED": { "message": "Claude nie zdołał wykonać zadania.", "hint": "Sprawdź połączenie z internetem i spróbuj ponownie." },
     "LLM_CANCELLED": { "message": "Zadanie zostało anulowane.", "hint": "Uruchom je ponownie, kiedy zechcesz." },
     "DATA_WRITE_FAILED": { "message": "Nie udało się zapisać zmian.", "hint": "Sprawdź, czy dysk nie jest pełny, i spróbuj ponownie." },
@@ -425,12 +425,12 @@
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nie jest uruchomiony.", "hint": "Uruchom go ponownie za pomocą skrótu na pulpicie." },
     "MAIL_NOT_CONFIGURED": { "message": "Twoja poczta nie jest jeszcze połączona.", "hint": "Otwórz Ustawienia → Poczta i połącz swoją skrzynkę." },
-    "MAIL_AUTH": { "message": "Dostawca poczty nie przyjął hasła.", "hint": "Użyj hasła aplikacji, a nie zwykłego hasła — w ustawieniach poczty jest pokazane, jak je utworzyć." },
+    "MAIL_AUTH": { "message": "Dostawca poczty nie przyjął hasła.", "hint": "Użyj hasła do aplikacji, a nie zwykłego hasła — w ustawieniach poczty jest pokazane, jak je utworzyć." },
     "MAIL_CONNECT": { "message": "Nie udało się połączyć z Twoim serwerem poczty.", "hint": "Sprawdź połączenie z internetem. Jeśli problem się powtarza, sprawdź serwer i port w ustawieniach poczty. Jeśli jesteś w sieci w pracy lub na kursie, może ona blokować pocztę; dla Gmaila użyj „Logowania przez Google” — działa także tam." },
     "MAIL_REAUTH": { "message": "Google nie pozwala już BewerbungsPilot wysyłać e-maili w Twoim imieniu.", "hint": "Zaloguj się przez Google ponownie: Ustawienia → E-mail → Zmień." },
     "MAIL_SCOPE": { "message": "BewerbungsPilot nie dostał zgody na wysyłanie e-maili.", "hint": "Kliknij „Spróbuj ponownie”, zaloguj się przez Google i zaznacz „Wysyłanie e-maili w Twoim imieniu”." },
     "MAIL_REJECTED": { "message": "Twój serwer poczty odrzucił tę wiadomość.", "hint": "Sprawdź adres odbiorcy. Jeśli załączniki są duże, pomiń jeden z nich i spróbuj ponownie." },
-    "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom aplikację ponownie." },
+    "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom program ponownie." },
     "reasons": {
       "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
       "cvNoContent": "Claude odczytał plik, ale nie znalazł niczego, co wygląda jak CV.",
@@ -450,7 +450,7 @@
       "packageSent": "Ta aplikacja została już wysłana lub złożona — nie można jej już zmienić.",
       "packageSending": "Ta aplikacja jest właśnie wysyłana. Poczekaj chwilę.",
       "packageChanged": "Aplikację zmieniono podczas przygotowania wysyłki. Nic nie wysłano — sprawdź ją i spróbuj ponownie.",
-      "sentNotSaved": "E-mail został wysłany, ale aplikacja nie mogła tego zapisać. Nie wysyłaj go ponownie — zamiast tego kliknij „Złożyłem(-am) aplikację sam(-a) na stronie firmy”, aby to zapisać.",
+      "sentNotSaved": "E-mail został wysłany, ale program nie mógł tego zapisać. Nie wysyłaj go ponownie — zamiast tego kliknij „Złożyłem(-am) aplikację sam(-a) na stronie firmy”, aby to zapisać.",
       "historyFull": "W tym pakiecie zapisano zbyt wiele zmian, aby go wysłać. Nic nie zostało wysłane. Kliknij „Utwórz ponownie”, aby zacząć od nowa.",
       "draftExists": "Dla tej oferty istnieje już pakiet, który nie został jeszcze wysłany. Otwórz go — dla jednej oferty można edytować tylko jeden pakiet.",
       "followUpDone": "Przypomnienie dla tej aplikacji zostało już wysłane lub wyłączone.",
