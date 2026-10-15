@@ -84,6 +84,15 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
 
+## What's new in 0.7.2
+
+- **Unsaved changes are no longer lost silently.** Going to another page, switching the language, quitting or closing the tab first asks whether to drop them.
+- "Never mention" now checks whole words ("Kunde X" no longer matches "Kunde Xylophon") and also the skill group names in the CV.
+- While a mail window is open, the editor behind it cannot be used; if the package was changed meanwhile, it is loaded again.
+- Switching to another Google account or to a password mailbox takes the old Google permission back.
+- When the app stops answering during a search or while Claude works, it says so (with "Check again") instead of spinning on.
+- Translation fixes (Romanian, Polish, Ukrainian, Russian) and small visual fixes.
+
 ## What's new in 0.7.1
 
 - Reminders and replies sent with **Sign in with Google** now join the conversation of the application email in your Gmail.
