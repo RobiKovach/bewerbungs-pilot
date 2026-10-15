@@ -161,6 +161,58 @@ describe('Google sign-in routes', () => {
     expect(ctx.mailer.sent).toHaveLength(0);
   });
 
+  it('signing in with ANOTHER Google account takes the old account\'s key back at Google, after the new one works', async () => {
+    const { ctx } = await setup();
+    ctx.settings.setMail({ kind: 'google', address: 'old@gmail.com', senderName: 'Max', provider: 'gmail' });
+    await ctx.secrets.save('1//old-key');
+    ctx.googleAuth.exchangeResult = { refreshToken: '1//new-key', email: 'new@gmail.com' };
+    const a = await start(ctx);
+    await callback(ctx, `state=${a.state}&code=c`);
+    expect((await save(ctx)).statusCode).toBe(200);
+    expect(ctx.googleAuth.revoked).toEqual(['1//old-key']);
+    expect(await ctx.secrets.load()).toBe('1//new-key');
+    expect(ctx.settings.get().mail).toMatchObject({ kind: 'google', address: 'new@gmail.com' });
+  });
+
+  it('signing in with the SAME Google account again never revokes (Google would cancel the new key too)', async () => {
+    const { ctx } = await setup();
+    ctx.settings.setMail({ kind: 'google', address: 'Max@gmail.com', senderName: 'Max', provider: 'gmail' });
+    await ctx.secrets.save('1//old-key');
+    ctx.googleAuth.exchangeResult = { refreshToken: '1//new-key', email: 'max@gmail.com' };
+    const a = await start(ctx);
+    await callback(ctx, `state=${a.state}&code=c`);
+    expect((await save(ctx)).statusCode).toBe(200);
+    expect(ctx.googleAuth.revoked).toEqual([]);
+    expect(await ctx.secrets.load()).toBe('1//new-key');
+  });
+
+  it('a failed test email with the new account keeps the old account and its key untouched', async () => {
+    const { ctx } = await setup();
+    ctx.settings.setMail({ kind: 'google', address: 'old@gmail.com', senderName: 'Max', provider: 'gmail' });
+    await ctx.secrets.save('1//old-key');
+    ctx.googleAuth.exchangeResult = { refreshToken: '1//new-key', email: 'new@gmail.com' };
+    const a = await start(ctx);
+    await callback(ctx, `state=${a.state}&code=c`);
+    ctx.mailer.failWith = new AppError('MAIL_CONNECT', 'x');
+    expect((await save(ctx)).statusCode).toBe(503);
+    expect(ctx.googleAuth.revoked).toEqual([]);
+    expect(await ctx.secrets.load()).toBe('1//old-key');
+  });
+
+  it('switching from Google to a password mailbox takes the Google key back once the password mailbox works', async () => {
+    const { ctx } = await setup();
+    ctx.settings.setMail({ kind: 'google', address: 'max@gmail.com', senderName: 'Max', provider: 'gmail' });
+    await ctx.secrets.save('1//old-key');
+    const r = await ctx.app.inject({
+      method: 'PUT', url: '/api/mail/settings', headers: H,
+      payload: { address: 'max@gmx.de', senderName: 'Max', host: 'mail.gmx.net', port: 465, security: 'ssl', user: 'max@gmx.de', password: 'app-pass', language: 'de' },
+    });
+    expect(r.statusCode).toBe(200);
+    expect(ctx.googleAuth.revoked).toEqual(['1//old-key']);
+    expect(await ctx.secrets.load()).toBe('app-pass');
+    expect(ctx.settings.get().mail).toMatchObject({ kind: 'smtp', address: 'max@gmx.de' });
+  });
+
   it('disconnect revokes the Google key (best effort) and removes it', async () => {
     const { ctx, logs } = await setup();
     ctx.settings.setMail({ kind: 'google', address: 'max@gmail.com', senderName: 'Max', provider: 'gmail' });

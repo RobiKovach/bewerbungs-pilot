@@ -80,31 +80,40 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
       throw err;
     }
     deps.logger.info('mail_test', { result: 'ok' });
+    // From Google to a password mailbox: the new one works, so the Google key is no longer needed — take it back.
+    await revokeSavedGoogleKey('switch');
     if (b.password !== undefined) await deps.secrets.save(b.password);
     deps.settings.setMail(config);
     return view();
   });
 
-  app.delete('/api/mail/settings', async () => {
-    if (deps.settings.get().mail?.kind === 'google') {
-      const refreshToken = await deps.secrets.load();
-      if (refreshToken !== null) {
-        // Bounded: on a network that silently drops packets the request never ends, and the key would stay.
-        let timer: NodeJS.Timeout | undefined;
-        try {
-          await Promise.race([
-            deps.googleAuth.revoke(refreshToken),
-            new Promise<never>((_, reject) => {
-              timer = setTimeout(() => reject(new AppError('MAIL_CONNECT', 'google revoke timed out')), deps.revokeTimeoutMs ?? 10_000);
-            }),
-          ]);
-        } catch (err) {
-          deps.logger.warn('google_revoke_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
-        } finally {
-          clearTimeout(timer);
-        }
-      }
+  /**
+   * Takes back the saved Google key at Google (best effort; the key is removed here anyway). Bounded: on a network that
+   * silently drops packets the request never ends. Google revokes the whole grant of that account — so this must never
+   * run for the account that was just signed in again.
+   */
+  const revokeSavedGoogleKey = async (reason: 'disconnect' | 'switch') => {
+    if (deps.settings.get().mail?.kind !== 'google') return;
+    const refreshToken = await deps.secrets.load();
+    if (refreshToken === null) return;
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      await Promise.race([
+        deps.googleAuth.revoke(refreshToken),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new AppError('MAIL_CONNECT', 'google revoke timed out')), deps.revokeTimeoutMs ?? 10_000);
+        }),
+      ]);
+      if (reason === 'switch') deps.logger.info('google_revoked', { reason });
+    } catch (err) {
+      deps.logger.warn('google_revoke_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN', reason });
+    } finally {
+      clearTimeout(timer);
     }
+  };
+
+  app.delete('/api/mail/settings', async () => {
+    await revokeSavedGoogleKey('disconnect');
     deps.settings.setMail(null);
     await deps.secrets.remove();
     return view();
@@ -147,6 +156,10 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
       throw err;
     }
     deps.logger.info('mail_test', { result: 'ok' });
+    // Another Google account than before: take the old account's key back. The same account signed in again must not
+    // be revoked — Google would cancel the new key with it.
+    const before = deps.settings.get().mail;
+    if (before?.kind === 'google' && before.address.toLowerCase() !== tokens.email.toLowerCase()) await revokeSavedGoogleKey('switch');
     await deps.secrets.save(tokens.refreshToken);
     deps.settings.setMail(config);
     signIn.clear();
