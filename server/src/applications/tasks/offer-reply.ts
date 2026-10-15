@@ -1,6 +1,7 @@
 import type { ApplicationPackage } from '@bp/shared';
 import { fenceUntrusted } from '../../llm/fence.js';
 import { positionTitle } from '../../mail/compose.js';
+import { neverMentionedIn } from '../checks.js';
 import type { LlmTask } from '../../llm/types.js';
 import type { PackageContext } from './context.js';
 
@@ -22,8 +23,7 @@ export function offerReplyViolations(body: string, wanted: string, ctx: PackageC
   const words = body.split(/\s+/).filter(Boolean).length;
   if (words > OFFER_REPLY_MAX_WORDS) out.push(`The letter has ${words} words; at most ${OFFER_REPLY_MAX_WORDS}.`);
   if (!amountPresent(body, wanted)) out.push(`Name exactly the amount ${numbersIn(wanted).join(' / ')} from "how much I want" — no other amount.`);
-  const lower = body.toLowerCase();
-  for (const m of ctx.neverMention) if (lower.includes(m.toLowerCase())) out.push(`Do not mention "${m}" anywhere.`);
+  for (const m of neverMentionedIn([body], ctx.neverMention)) out.push(`Do not mention "${m}" anywhere.`);
   return out;
 }
 

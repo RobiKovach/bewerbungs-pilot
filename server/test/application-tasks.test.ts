@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { PackageVacancy } from '@bp/shared';
-import { checkCv, checkLetter, mergeChecks, toCv } from '../src/applications/checks.js';
+import { checkCv, checkLetter, mergeChecks, neverMentionedIn, toCv } from '../src/applications/checks.js';
 import { packageContext } from '../src/applications/tasks/context.js';
 import { createPackageTask } from '../src/applications/tasks/create-package.js';
 import { refreshCvTask } from '../src/applications/tasks/refresh-cv.js';
@@ -89,6 +89,18 @@ describe('checkLetter', () => {
     expect(r.fatal).toBeNull();
     expect(r.violations).toEqual(['Do not mention "Kunde X" anywhere.']);
   });
+  it('never-mention counts whole words only: "Kunde Xylophon" is not "Kunde X"; a line break between the words still counts', () => {
+    const letter = (p: string) => checkLetter({ ...GOOD_LETTER, paragraphs: [GOOD_LETTER.paragraphs[0], p, GOOD_LETTER.paragraphs[2]] }, ctx());
+    expect(letter('Für Kunde Xylophon habe ich viel gebaut.').violations).toEqual([]);
+    expect(letter('Für die Kunde-X-Seite habe ich viel gebaut.').violations).toEqual(['Do not mention "Kunde X" anywhere.']);
+    expect(letter('Bei Kunde\nX habe ich viel gelernt.').violations).toEqual(['Do not mention "Kunde X" anywhere.']);
+    expect(letter('Bei (Kunde X) habe ich viel gelernt.').violations).toEqual(['Do not mention "Kunde X" anywhere.']);
+  });
+  it('neverMentionedIn: whole words, any case, special characters taken literally, empty items ignored', () => {
+    expect(neverMentionedIn(['Ich nutze C++ und C#.'], ['C++', 'C#', 'C', 'Java', '  '])).toEqual(['C++', 'C#', 'C']);
+    expect(neverMentionedIn(['Ich nutze JavaScript.'], ['Java'])).toEqual([]);
+    expect(neverMentionedIn(['Україна та Польща'], ['україна'])).toEqual(['україна']);
+  });
   it('a paragraph naming 4 profile skills → violation; 3 are fine; skill names count as whole words only', () => {
     const four = checkLetter({ ...GOOD_LETTER, paragraphs: ['Ich kann JavaScript, CSS, PHP und Git.', 'b', 'c'] }, ctx());
     expect(four.violations).toEqual([expect.stringContaining('Paragraph 1 lists 4 skills')]);
@@ -121,6 +133,10 @@ describe('checkCv — groups, headline, translations', () => {
   it('a valid answer passes and a never-mention word in the headline is a violation', () => {
     expect(checkCv(validCvOutput(), ctx())).toEqual({ fatal: null, violations: [] });
     expect(checkCv({ ...validCvOutput(), headline: 'Kunde X Entwickler' }, ctx()).violations).toHaveLength(1);
+  });
+  it('a never-mention word in a skill group name (printed in the CV) is a violation', () => {
+    const o = validCvOutput();
+    expect(checkCv({ ...o, skillGroups: o.skillGroups.map((g, i) => (i === 0 ? { ...g, name: 'Kunde X Tools' } : g)) }, ctx()).violations).toEqual(['Do not mention "Kunde X" anywhere.']);
   });
   it('the context lists what to translate, and the CV prompt asks for headline, groups and translations but carries no links', () => {
     const profile = readyPackageProfile((p) => { p.sections.personal.data.links = [{ label: 'GitHub', url: 'https://github.com/maxmuster' }]; });

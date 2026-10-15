@@ -9,9 +9,21 @@ const MAX_SKILLS_PER_PARAGRAPH = 3;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const wordRe = (name: string) => new RegExp(`(^|[^\\p{L}\\p{N}])${esc(name)}(?=$|[^\\p{L}\\p{N}])`, 'iu');
 
+/**
+ * The "never mention" items that appear in the texts — as whole words, so "Kunde X" is not found in "Kunde Xylophon".
+ * Spaces inside an item match any run of spaces or hyphens ("Kunde\nX", "Kunde-X-Seite" are still the same words).
+ */
+export function neverMentionedIn(texts: string[], items: string[]): string[] {
+  const all = texts.join('\n');
+  return items.filter((m) => {
+    const words = m.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return false;
+    return new RegExp(`(^|[^\\p{L}\\p{N}])${words.map(esc).join('[\\s\\-‐–]+')}(?=$|[^\\p{L}\\p{N}])`, 'iu').test(all);
+  });
+}
+
 function neverMentioned(texts: string[], ctx: PackageContext): string[] {
-  const all = texts.join('\n').toLowerCase();
-  return ctx.neverMention.filter((m) => all.includes(m.toLowerCase())).map((m) => `Do not mention "${m}" anywhere.`);
+  return neverMentionedIn(texts, ctx.neverMention).map((m) => `Do not mention "${m}" anywhere.`);
 }
 
 const bad = (fatal: string): CheckResult => ({ fatal, violations: [] });
@@ -52,7 +64,9 @@ export function checkCv(out: CvOutput, ctx: PackageContext): CheckResult {
   const given = out.descriptions.map((d) => d.id).sort();
   if (wanted.join('\n') !== given.join('\n')) return bad(`descriptions: ${given.length} given, ${wanted.length} expected`);
   if (out.descriptions.some((d) => !d.text.trim() || d.text.length > L.description)) return bad('a description is empty or too long');
-  return { fatal: null, violations: neverMentioned([out.profil, out.headline, ...out.descriptions.map((d) => d.text)], ctx) };
+  // Group names are Claude's words and printed in the CV. Translations are not checked: they are the profile's own
+  // countries/languages, which the CV prints anyway — refusing them would make the package impossible to create.
+  return { fatal: null, violations: neverMentioned([out.profil, out.headline, ...out.descriptions.map((d) => d.text), ...out.skillGroups.map((g) => g.name)], ctx) };
 }
 
 export function mergeChecks(...results: CheckResult[]): CheckResult {
