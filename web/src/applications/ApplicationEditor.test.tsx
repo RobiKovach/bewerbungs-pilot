@@ -286,18 +286,72 @@ describe('ApplicationEditor — sending and the frozen package', () => {
     expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
   });
 
-  it('the send window closes when the package goes back to draft behind it', async () => {
+  it('while the send window is open the editor behind it is out of reach (inert), and back after Cancel', async () => {
     const { user } = setup({
       ...mail,
       'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [], totalSize: 1000, mailReady: true } }),
-      'POST /api/applications/app1/unapprove': () => ({ body: appView({}, { updatedAt: '2026-09-29T14:00:00.000Z' }) }),
     }, approved());
     await waitFor(() => expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled());
+    expect(screen.getByRole('button', { name: 'Back to draft' }).closest('[inert]')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Send' }));
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Back to draft' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(screen.getByRole('button', { name: 'Back to draft' }).closest('[inert]')).not.toBeNull();
+    expect(within(dialog).getByLabelText('Subject').closest('[inert]')).toBeNull();
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Back to draft' }).closest('[inert]')).toBeNull();
+  });
+
+  it('the send window closes when the package goes back to draft (status changed elsewhere)', async () => {
+    let n = 0;
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1': () => ({ body: n++ === 0 ? approved() : appView({}, { updatedAt: '2026-09-29T14:00:00.000Z' }) }),
+      'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [], totalSize: 1000, mailReady: true } }),
+      'POST /api/applications/app1/send': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'only an approved package can be sent' } } }),
+    });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(await screen.findByRole('button', { name: 'Approve' })).toBeInTheDocument();
+  });
+
+  it('"already sent" in the send window: the package is loaded again and shows as sent (no endless "Try again")', async () => {
+    let n = 0;
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1': () => ({ body: n++ === 0 ? approved() : sentView() }),
+      'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [], totalSize: 1000, mailReady: true } }),
+      'POST /api/applications/app1/send': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'package was sent', reason: 'packageSent' } } }),
+    });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Sent', { selector: '.badge' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('"sent but not saved" does not reload the package (the warning stays visible)', async () => {
+    let gets = 0;
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1': () => { gets++; return { body: approved() }; },
+      'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'S', body: 'B', attachments: [], totalSize: 1000, mailReady: true } }),
+      'POST /api/applications/app1/send': () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'sentNotSaved' } } }),
+    });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Send' })).toBeEnabled());
+    const before = gets;
+    await user.click(within(dialog).getByRole('button', { name: 'Send' }));
+    expect(await within(dialog).findByRole('alert')).toBeInTheDocument();
+    expect(gets).toBe(before);
   });
 
   it('"Copy as a new draft" on a sent package opens the new draft', async () => {

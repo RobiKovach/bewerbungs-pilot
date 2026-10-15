@@ -5,6 +5,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { TextField } from '../profile/fields';
 import { useReportUnsaved } from '../profile/unsaved';
+import { useScrollIntoView } from './dialog';
 import type { ApplicationView } from '../types';
 
 const FIELD_MAX = 50;
@@ -23,6 +24,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
   onSend: () => void;
 }) {
   const { t } = useTranslation();
+  const ref = useScrollIntoView<HTMLDivElement>();
   const id = view.application.id;
   const first = view.application.offerReply;
   const [offered, setOffered] = useState(first?.offered ?? '');
@@ -88,7 +90,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
   useReportUnsaved(dirty);
   const empty = body.trim() === '';
   return (
-    <div className="card notice send-dialog" role="dialog" aria-label={title}>
+    <div ref={ref} className="card notice send-dialog" role="dialog" aria-label={title}>
       <h2>{title}</h2>
       {working ? <ClaudeWorking textKey="applications.offerReply.working" onCancel={() => controller.current?.abort()} /> : null}
       {mode === 'form' && !working ? (

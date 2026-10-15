@@ -6,11 +6,17 @@ import { TextField } from '../profile/fields';
 import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView } from '../types';
 import { ATTACHMENTS_WARN_BYTES, mb } from './AttachmentsTab';
+import { isStale, useScrollIntoView } from './dialog';
 import { addressOk } from './format';
 
 /** The send window: the email is prefilled from the package; what the person changes is what goes out. */
-export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view: ApplicationView, to: string) => void; onClose: () => void }) {
+export function SendDialog({ id, onSent, onClose, onStale }: {
+  id: string; onSent: (view: ApplicationView, to: string) => void; onClose: () => void;
+  /** The package changed meanwhile (already sent, edited elsewhere): the editor loads it again. */
+  onStale?: () => void;
+}) {
   const { t } = useTranslation();
+  const ref = useScrollIntoView<HTMLDivElement>();
   const [draft, setDraft] = useState<SendDraft | null>(null);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [to, setTo] = useState('');
@@ -40,6 +46,7 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
     } catch (err) {
       setError(err);
       setSending(false);
+      if (isStale(err)) onStale?.();
     }
   };
 
@@ -50,7 +57,7 @@ export function SendDialog({ id, onSent, onClose }: { id: string; onSent: (view:
   // The email went out but could not be recorded: never offer to send it again.
   const sentNotSaved = error instanceof ApiError && error.reason === 'sentNotSaved';
   return (
-    <div className="card notice send-dialog" role="dialog" aria-label={t('applications.send.title')}>
+    <div ref={ref} className="card notice send-dialog" role="dialog" aria-label={t('applications.send.title')}>
       <h2>{t('applications.send.title')}</h2>
       {loadError ? <ErrorBanner error={loadError} /> : null}
       {!draft && !loadError ? <p className="muted">{t('common.loading')}</p> : null}

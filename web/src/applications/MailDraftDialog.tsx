@@ -5,13 +5,14 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { TextField } from '../profile/fields';
 import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, MailDraft } from '../types';
+import { isStale, useScrollIntoView } from './dialog';
 import { addressOk } from './format';
 
 /**
  * A reminder or a reply: prefilled address, subject and message that the person can change, then "Send" (needs connected
  * mail) or "Copy" (the message text only; the optional `afterCopy` button records that it was done).
  */
-export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy }: {
+export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy, onStale }: {
   title: string;
   load: () => Promise<MailDraft>;
   send: (mail: { to: string; subject: string; body: string }) => Promise<ApplicationView>;
@@ -19,8 +20,11 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy 
   onClose: () => void;
   /** Shown after "Copy" (reminder: "Mark as reminded"). */
   afterCopy?: { label: string; run: () => Promise<ApplicationView> };
+  /** The package changed meanwhile (reminder already done, status changed): the editor loads it again. */
+  onStale?: () => void;
 }) {
   const { t } = useTranslation();
+  const ref = useScrollIntoView<HTMLDivElement>();
   const [draft, setDraft] = useState<MailDraft | null>(null);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [to, setTo] = useState('');
@@ -51,6 +55,7 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy 
     } catch (err) {
       setError(err);
       setBusy(false);
+      if (isStale(err)) onStale?.();
     }
   };
   const copy = async () => {
@@ -72,7 +77,7 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy 
   // Both are fixed by signing in with Google again (MAIL_SCOPE: that time with the "send email" box ticked).
   const reauth = error instanceof ApiError && (error.code === 'MAIL_REAUTH' || error.code === 'MAIL_SCOPE');
   return (
-    <div className="card notice send-dialog" role="dialog" aria-label={title}>
+    <div ref={ref} className="card notice send-dialog" role="dialog" aria-label={title}>
       <h2>{title}</h2>
       {loadError ? <ErrorBanner error={loadError} /> : null}
       {!draft && !loadError ? <p className="muted">{t('common.loading')}</p> : null}

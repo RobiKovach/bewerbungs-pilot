@@ -197,6 +197,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .notice.notice-ok { background: #dff3e4; border-color: #9fd1ac; color: #1e6b35; }
 @media (prefers-color-scheme: dark) { .notice.notice-ok { background: #1d3a27; border-color: #2f6b45; color: #a6e0b6; } }
 .send-dialog { margin-top: 1rem; }
+/* The editor behind an open mail window: visibly out of reach (it is also inert). */
+.behind-dialog { opacity: 0.5; }
 .sent-info { margin-top: 1rem; }
 .sent-info dt { font-weight: 600; margin-top: 0.5rem; }
 .sent-info dd { margin: 0; }

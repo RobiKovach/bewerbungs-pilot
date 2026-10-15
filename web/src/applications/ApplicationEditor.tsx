@@ -121,8 +121,11 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
     }
   };
 
+  // A mail window is open: everything above it is out of reach (no editing, sending or status changes behind it).
+  const mailOpen = (sending && a.status === 'approved') || reminding || replying !== null;
   return (
     <section className="app-editor">
+      <div inert={mailOpen} className={mailOpen ? 'behind-dialog' : undefined}>
       <p><a href="#/applications">{t('applications.back')}</a></p>
       <h1>{a.vacancy.company} — {a.vacancy.title}</h1>
       <p className="app-row__meta">
@@ -195,6 +198,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         <p className="muted">{t('applications.send.needPassword')} <a href="#/settings">{t('applications.send.needPasswordLink')}</a></p>
       ) : null}
       <HistoryBlock history={a.history} canUndo={view.canUndo} busy={busy || error !== null} onUndo={() => void act(() => api.undoStatus(id))} />
+      </div>
       {statusOpen ? (
         <StatusDialog onClose={() => setStatusOpen(false)} onSave={async (body) => { const v = await api.setStatus(id, body); setView(v); setActionError(null); setStatusOpen(false); }} />
       ) : null}
@@ -209,10 +213,11 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       ) : null}
       {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
       {sending && a.status === 'approved' ? (
-        <SendDialog id={id} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
+        <SendDialog id={id} onStale={() => void load()} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
       ) : null}
       {reminding ? (
         <MailDraftDialog
+          onStale={() => void load()}
           title={t('applications.followUp.title')}
           load={() => api.followUpDraft(id)}
           send={(mail) => api.sendFollowUp(id, mail)}
@@ -226,6 +231,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       ) : null}
       {(replying === 'rejection' && a.status === 'rejected') || (replying === 'offerMail' && a.status === 'offer') ? (
         <MailDraftDialog
+          onStale={() => void load()}
           title={t(replying === 'rejection' ? 'applications.reply.rejection' : 'applications.reply.offer')}
           load={() => api.replyDraft(id)}
           send={(mail) => api.sendReply(id, mail)}
