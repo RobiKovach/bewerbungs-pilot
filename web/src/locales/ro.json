@@ -9,6 +9,7 @@
     "dismiss": "Ascundeți acest mesaj"
   },
   "language": { "label": "Limbă" },
+  "unsaved": { "leave": "Unele modificări nu sunt încă salvate. Dacă plecați acum, se vor pierde. Plecați totuși?" },
   "home": {
     "title": "Bine ați venit la BewerbungsPilot",
     "intro": "BewerbungsPilot găsește oferte de angajare în Germania potrivite pentru dumneavoastră, redactează documentele de candidatură și vă ajută să urmăriți fiecare cerere.",

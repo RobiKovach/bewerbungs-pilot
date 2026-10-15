@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
 import { Layout } from './components/Layout';
+import { confirmLeave, setUnsaved } from './leaveGuard';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
+import { UnsavedProvider } from './profile/unsaved';
 import { ApplicationsPage } from './pages/ApplicationsPage';
 import { GuidePage } from './pages/GuidePage';
 import { HomePage } from './pages/HomePage';
@@ -31,6 +33,7 @@ export function App() {
 
   if (quit) return <QuitScreen />;
   const onQuit = async () => {
+    if (!confirmLeave()) return;
     await api.shutdown().catch(() => undefined);
     setQuit(true);
   };
@@ -43,8 +46,11 @@ export function App() {
   else if (route === 'vacancies') page = <VacanciesPage />;
   else if (route === 'applications') page = <ApplicationsPage />;
   return (
-    <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
-      {page}
-    </Layout>
+    // App-wide: any form with unsaved changes makes leaving it (page, language, Quit, closing the tab) ask first.
+    <UnsavedProvider onChange={setUnsaved}>
+      <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
+        {page}
+      </Layout>
+    </UnsavedProvider>
   );
 }

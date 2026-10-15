@@ -9,6 +9,7 @@
     "dismiss": "Ukryj tę wiadomość"
   },
   "language": { "label": "Język" },
+  "unsaved": { "leave": "Niektóre zmiany nie są jeszcze zapisane. Jeśli teraz wyjdziesz, przepadną. Wyjść mimo to?" },
   "home": {
     "title": "Witamy w BewerbungsPilot",
     "intro": "BewerbungsPilot znajduje oferty pracy w Niemczech, które Ci odpowiadają, przygotowuje dokumenty aplikacyjne i pomaga śledzić każdą aplikację.",

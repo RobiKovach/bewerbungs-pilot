@@ -9,6 +9,7 @@
     "dismiss": "Hide this message"
   },
   "language": { "label": "Language" },
+  "unsaved": { "leave": "Some changes are not saved yet. If you leave now, they will be lost. Leave anyway?" },
   "home": {
     "title": "Welcome to BewerbungsPilot",
     "intro": "BewerbungsPilot finds job offers in Germany that fit you, writes your application documents and helps you keep track of every application.",

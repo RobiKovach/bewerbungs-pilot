@@ -4,6 +4,7 @@ import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useCancellable } from '../profile/useCancellable';
+import { useReportUnsaved } from '../profile/unsaved';
 import type { Vacancy, VacancyStatus } from '../types';
 import { useVacancies } from './VacanciesContext';
 
@@ -20,6 +21,7 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
   const [url, setUrl] = useState('');
   const call = useCancellable();
   const trimmed = text.trim();
+  useReportUnsaved(trimmed !== '' || url.trim() !== '');
   const aaLink = AA_LINK.test(url.trim());
   const canAdd = (trimmed.length >= MIN || aaLink) && call.state.kind !== 'running';
 

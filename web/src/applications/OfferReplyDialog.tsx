@@ -4,6 +4,7 @@ import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { TextField } from '../profile/fields';
+import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView } from '../types';
 
 const FIELD_MAX = 50;
@@ -84,6 +85,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
   const title = t('applications.reply.offer');
   const fieldsOk = offered.trim() !== '' && wanted.trim() !== '' && /\d/.test(wanted);
   const dirty = mode === 'text' && body !== saved;
+  useReportUnsaved(dirty);
   const empty = body.trim() === '';
   return (
     <div className="card notice send-dialog" role="dialog" aria-label={title}>

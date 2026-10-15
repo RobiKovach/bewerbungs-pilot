@@ -9,6 +9,7 @@
     "dismiss": "Diese Meldung ausblenden"
   },
   "language": { "label": "Sprache" },
+  "unsaved": { "leave": "Einige Änderungen sind noch nicht gespeichert. Wenn Sie jetzt weitergehen, gehen sie verloren. Trotzdem weiter?" },
   "home": {
     "title": "Willkommen bei BewerbungsPilot",
     "intro": "BewerbungsPilot findet Stellenangebote in Deutschland, die zu Ihnen passen, schreibt Ihre Bewerbungsunterlagen und hilft Ihnen, den Überblick über jede Bewerbung zu behalten.",

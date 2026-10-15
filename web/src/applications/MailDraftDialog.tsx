@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { TextField } from '../profile/fields';
+import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, MailDraft } from '../types';
 import { addressOk } from './format';
 
@@ -62,6 +63,8 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy 
   };
 
   const badAddress = to.trim() !== '' && !addressOk(to.trim());
+  // Edited but not sent yet: leaving the page asks first.
+  useReportUnsaved(draft !== null && (to !== draft.to || subject !== draft.subject || body !== draft.body));
   const valid = to.trim() !== '' && !badAddress && subject.trim() !== '' && body.trim() !== '';
   const mailReady = draft?.mailReady ?? false;
   // The email went out but could not be recorded: never offer to send it again.

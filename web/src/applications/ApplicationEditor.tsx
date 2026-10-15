@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
+import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, DocLanguage } from '../types';
 import { AttachmentsTab } from './AttachmentsTab';
 import { CvTab } from './CvTab';
@@ -30,6 +31,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [statusOpen, setStatusOpen] = useState(false);
   const [letterDirty, setLetterDirty] = useState(false);
   const [cvDirty, setCvDirty] = useState(false);
+  useReportUnsaved(letterDirty || cvDirty);
   const [downloading, setDownloading] = useState(false);
   const [language, setLanguage] = useState<DocLanguage>('de');
   // 'noPassword' = connected, but the saved password is missing or cannot be read here (other PC or Windows account).

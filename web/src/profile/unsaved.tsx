@@ -7,8 +7,9 @@ const UnsavedContext = createContext<{ report: Report; hasUnsaved: boolean } | n
 /**
  * Collects "this form has unsaved changes" from the forms inside it (one wizard step), so the wizard can
  * hold Next/Back until they are saved or undone — leaving the step would throw the drafts away.
+ * Providers nest: each one also reports to the one around it, so the app-wide one (App) knows about every form.
  */
-export function UnsavedProvider({ children }: { children: ReactNode }) {
+export function UnsavedProvider({ children, onChange }: { children: ReactNode; onChange?: (hasUnsaved: boolean) => void }) {
   const [dirtyForms, setDirtyForms] = useState<ReadonlySet<string>>(new Set());
   const report = useCallback<Report>((formId, dirty) => setDirtyForms((prev) => {
     if (prev.has(formId) === dirty) return prev;
@@ -16,11 +17,14 @@ export function UnsavedProvider({ children }: { children: ReactNode }) {
     if (dirty) next.add(formId); else next.delete(formId);
     return next;
   }), []);
-  const value = useMemo(() => ({ report, hasUnsaved: dirtyForms.size > 0 }), [report, dirtyForms]);
+  const hasUnsaved = dirtyForms.size > 0;
+  useReportUnsaved(hasUnsaved); // to the surrounding provider (this runs outside our own Provider)
+  useEffect(() => { onChange?.(hasUnsaved); }, [onChange, hasUnsaved]);
+  const value = useMemo(() => ({ report, hasUnsaved }), [report, hasUnsaved]);
   return <UnsavedContext.Provider value={value}>{children}</UnsavedContext.Provider>;
 }
 
-/** A form tells the surrounding step whether it has unsaved changes. Does nothing outside the wizard. */
+/** A form tells the surrounding step (and the app) whether it has unsaved changes. Does nothing outside any provider. */
 export function useReportUnsaved(dirty: boolean): void {
   const report = useContext(UnsavedContext)?.report;
   const formId = useId();

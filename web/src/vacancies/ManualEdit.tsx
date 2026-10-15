@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { LinesField, SelectField, TextField } from '../profile/fields';
+import { useReportUnsaved } from '../profile/unsaved';
 import type { Salutation, Vacancy } from '../types';
 import { useVacancies } from './VacanciesContext';
 
@@ -23,6 +24,8 @@ export function ManualEdit({ vacancy: v, checkHint, onDone }: { vacancy: Vacancy
   const [saving, setSaving] = useState(false);
   const linkError = okLink(url) ? undefined : t('vacancies.edit.badLink');
   const [tried, setTried] = useState(false);
+  useReportUnsaved(title !== v.title || company !== v.company || JSON.stringify(locations) !== JSON.stringify(v.locations) || url !== v.url
+    || email !== (v.contact?.email ?? '') || salutation !== (v.contact?.salutation ?? '') || name !== (v.contact?.name ?? ''));
 
   const save = async () => {
     setTried(true);
