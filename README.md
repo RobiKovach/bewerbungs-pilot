@@ -84,6 +84,13 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
 
+## What's new in 0.7.1
+
+- Reminders and replies sent with **Sign in with Google** now join the conversation of the application email in your Gmail.
+- If you leave **"Send email on your behalf"** unticked on Google's page, the app now tells you exactly that and lets you sign in again.
+- The email text names the position only (some job ads put the company name in front of the job title).
+- Bigger text fields for email and reply texts, tidier buttons in the offer reply, a wider statistics chart.
+
 ## What's new in 0.7.0
 
 - **Sign in with Google.** For a Gmail mailbox you now sign in with Google instead of an app password. It sends over a normal
