@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { resolveDataRoot, dataPaths, ensureDataDirs } from '../src/data/paths.js';
 import { writeJsonAtomic, readJson, CorruptJsonError } from '../src/data/atomic.js';
-import { SettingsStore, DEFAULT_SETTINGS } from '../src/data/settings.js';
+import { SettingsStore, DEFAULT_SETTINGS, ONBOARDING_STEP_ORDER } from '../src/data/settings.js';
 import { AppError } from '../src/errors.js';
 
 // Spaces + Cyrillic on purpose: real users have folders like C:\Users\Ольга Коваль\.
@@ -172,6 +172,24 @@ describe('settings v2 — llm.provider', () => {
     const dir = tmpDir();
     write(dir, { schemaVersion: 1, onboarding: { currentStep: 'claude', completed: false } });
     expect(load(dir).llm.provider).toBeNull();
+  });
+  it('a v1 file mid-onboarding past the Claude step becomes claude; at or before it stays null', () => {
+    const dir = tmpDir();
+    for (const step of ['profile', 'email', 'done']) {
+      write(dir, { schemaVersion: 1, onboarding: { currentStep: step, completed: false } });
+      expect(load(dir).llm.provider, step).toBe('claude');
+    }
+    for (const step of ['welcome', 'claude', 'something-else']) {
+      write(dir, { schemaVersion: 1, onboarding: { currentStep: step, completed: false } });
+      expect(load(dir).llm.provider, step).toBeNull();
+    }
+    write(dir, { schemaVersion: 2, onboarding: { currentStep: 'profile', completed: false }, llm: { timeoutSec: 180, provider: null } });
+    expect(load(dir).llm.provider).toBeNull();
+  });
+  it('the server step order matches the web onboarding steps', () => {
+    const src = fs.readFileSync(new URL('../../web/src/onboarding/steps.ts', import.meta.url), 'utf8');
+    const ids = [...src.matchAll(/\{ id: '([a-z-]+)'/g)].map((m) => m[1]);
+    expect(ids).toEqual([...ONBOARDING_STEP_ORDER]);
   });
   it('a v2 file keeps null even when onboarding is completed ("continue anyway")', () => {
     const dir = tmpDir();

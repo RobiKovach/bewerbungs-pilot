@@ -12,6 +12,12 @@ export const PUBLISHED_WITHIN_DAYS = [1, 3, 7, 14, 30] as const satisfies readon
 
 export const PROVIDER_IDS = ['claude', 'chatgpt'] as const satisfies readonly ProviderId[];
 
+/** Onboarding step ids in order — the same list as web/src/onboarding/steps.ts (a server test keeps them in sync;
+ *  0.7.x used the same ids and order). */
+export const ONBOARDING_STEP_ORDER = ['welcome', 'claude', 'profile', 'email', 'done'] as const;
+/** v1 (0.7.x) people at one of these steps had already passed the Claude check — the 0.7.x installer always set up Claude. */
+const STEPS_AFTER_CLAUDE: readonly string[] = ONBOARDING_STEP_ORDER.slice(ONBOARDING_STEP_ORDER.indexOf('claude') + 1);
+
 export const DEFAULT_SETTINGS: Settings = {
   schemaVersion: 2,
   language: null,
@@ -103,8 +109,9 @@ function normalize(raw: unknown): Settings {
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
   const provider: ProviderId | null = PROVIDER_IDS.find((id) => id === r.llm?.provider)
-    // v1 files predate the choice: everyone who finished onboarding used Claude.
-    ?? (r.schemaVersion !== 2 && r.onboarding?.completed === true ? 'claude' : null);
+    // v1 files predate the choice: everyone who finished onboarding — or got past the Claude step — used Claude.
+    ?? (r.schemaVersion !== 2 && (r.onboarding?.completed === true
+      || (typeof r.onboarding?.currentStep === 'string' && STEPS_AFTER_CLAUDE.includes(r.onboarding.currentStep))) ? 'claude' : null);
   return {
     schemaVersion: 2,
     language: lang,
