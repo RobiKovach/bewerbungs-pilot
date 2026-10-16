@@ -222,3 +222,21 @@ describe('0.8.0: who wrote the package', () => {
     expect(warnings).toEqual(['applications_invalid']);
   });
 });
+
+describe('0.8.0: a malformed v1 applications.json is set aside and rebuilt, never emptied', () => {
+  it.each([['a string', 'oops'], ['an object', { a: 1 }]])('applications is %s → set aside, every package folder still loads', (_label, applications) => {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+    const warnings: string[] = [];
+    const p = pkg();
+    fs.mkdirSync(path.join(dir, p.id), { recursive: true });
+    fs.writeFileSync(path.join(dir, p.id, 'package.json'), JSON.stringify(v4From(p)));
+    const original = JSON.stringify({ schemaVersion: 1, applications });
+    fs.writeFileSync(path.join(dir, 'applications.json'), original);
+    const store = new ApplicationStore(dir, (event) => warnings.push(event));
+    expect(store.load().map((s) => s.id)).toEqual([p.id]);
+    expect(warnings).toEqual(['applications_invalid']);
+    const aside = fs.readdirSync(dir).filter((f) => f.startsWith('applications.invalid-'));
+    expect(aside).toHaveLength(1);
+    expect(fs.readFileSync(path.join(dir, aside[0]), 'utf8')).toBe(original);
+  });
+});

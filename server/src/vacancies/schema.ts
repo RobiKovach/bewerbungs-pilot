@@ -8,15 +8,18 @@ export const VACANCIES_SCHEMA_VERSION = 2;
 /** migrations[n] turns vacancies.json version n into n + 1 (applied on read; written back on the next save). */
 export const VACANCY_MIGRATIONS: Readonly<Record<number, Migration>> = {
   // 2: a score says which AI wrote it (Claude was the only AI before 0.8.0).
-  1: (doc) => ({
-    ...doc,
-    vacancies: Array.isArray(doc.vacancies)
-      ? doc.vacancies.map((v) => {
+  // A malformed file (vacancies not a list, a card not an object) is passed through unchanged, so validation fails
+  // and the store sets the file aside instead of emptying it.
+  1: (doc) => Array.isArray(doc.vacancies)
+    ? {
+      ...doc,
+      vacancies: doc.vacancies.map((v: unknown) => {
+        if (!v || typeof v !== 'object') return v;
         const x = v as Record<string, unknown>;
         return x.score && typeof x.score === 'object' ? { ...x, score: { ...(x.score as object), provider: 'claude' } } : x;
-      })
-      : [],
-  }),
+      }),
+    }
+    : doc,
 };
 export const VACANCY_LIMITS = {
   title: 300, company: 300, location: 100, locations: 20, point: 300, points: 3, salary: 200, url: 2000, email: 300, name: 200,

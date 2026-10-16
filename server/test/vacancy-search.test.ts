@@ -206,10 +206,10 @@ describe('SearchJob', () => {
 });
 
 describe('0.8.0: scores remember the AI; the AI limit stops scoring', () => {
-  it('LLM_LIMIT stops scoring further batches; found cards stay, the rest are notScored', async () => {
+  it.each(['LLM_LIMIT', 'LLM_NOT_INSTALLED', 'LLM_NOT_LOGGED_IN', 'LLM_NOT_CHOSEN'] as const)('%s stops scoring further batches; found cards stay, the rest are notScored', async (code) => {
     const hits = Array.from({ length: 25 }, () => hit());
     let call = 0;
-    const provider = scoringClaude({ id: 'chatgpt', before: () => { if (++call === 2) throw new AppError('LLM_LIMIT', 'usage limit'); } });
+    const provider = scoringClaude({ id: 'chatgpt', before: () => { if (++call === 2) throw new AppError(code, 'will not clear during this search'); } });
     const { job, store } = setup({ source: fakeSource({ search: () => hits }), provider });
     const s = await run(job);
     expect(provider.calls).toHaveLength(2);
@@ -219,7 +219,7 @@ describe('0.8.0: scores remember the AI; the AI limit stops scoring', () => {
     expect(scored).toHaveLength(10);
     expect(scored.every((v) => v.score?.provider === 'chatgpt')).toBe(true);
     expect(cards.filter((v) => v.scoreState === 'notScored')).toHaveLength(15);
-    expect(s).toMatchObject({ state: 'failed', phase: null, error: { code: 'LLM_LIMIT' } });
+    expect(s).toMatchObject({ state: 'failed', phase: null, error: { code } });
   });
 
   it('no AI helper chosen: scoring stops at the first batch, every card notScored, LLM_NOT_CHOSEN', async () => {

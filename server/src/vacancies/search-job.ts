@@ -56,7 +56,7 @@ export interface SearchJobDeps {
 }
 
 /** AI errors that end the whole scoring phase instead of failing one batch. */
-const STOPS_SCORING: ReadonlySet<ErrorCode> = new Set<ErrorCode>(['LLM_LIMIT', 'LLM_NOT_CHOSEN']);
+const STOPS_SCORING: ReadonlySet<ErrorCode> = new Set<ErrorCode>(['LLM_LIMIT', 'LLM_NOT_CHOSEN', 'LLM_NOT_INSTALLED', 'LLM_NOT_LOGGED_IN']);
 
 const isCancel = (err: unknown, signal: AbortSignal) => signal.aborted || (err instanceof AppError && err.code === 'LLM_CANCELLED');
 

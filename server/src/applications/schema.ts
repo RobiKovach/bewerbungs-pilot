@@ -37,10 +37,11 @@ export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
 /** migrations[n] turns applications.json version n into n + 1. */
 export const LIST_MIGRATIONS: Readonly<Record<number, Migration>> = {
   // 2: summaries say who wrote the package (Claude was the only AI before 0.8.0).
-  1: (doc) => ({
-    ...doc,
-    applications: Array.isArray(doc.applications) ? doc.applications.map((s) => ({ writtenBy: 'claude', ...(s as object) })) : [],
-  }),
+  // A malformed list is passed through unchanged: validation fails, the list is set aside and rebuilt from the
+  // folders. (Turning it into [] would load no package at all — the list's ids decide what is loaded.)
+  1: (doc) => Array.isArray(doc.applications)
+    ? { ...doc, applications: doc.applications.map((s: unknown) => (s && typeof s === 'object' ? { writtenBy: 'claude', ...s } : s)) }
+    : doc,
 };
 export const APPLICATION_ID = /^[A-Za-z0-9_-]{1,64}$/;
 // Letter fields that copy vacancy or profile data are never tighter than their source, so a valid vacancy/profile

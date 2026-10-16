@@ -166,3 +166,18 @@ describe('0.8.0: vacancies file v1 → v2', () => {
     }
   });
 });
+
+describe('0.8.0: a malformed v1 file is set aside, never emptied', () => {
+  it.each([['a string', 'oops'], ['an object', { a: 1 }], ['a list with a non-object card', [null]]])('vacancies is %s → set aside, store starts empty, original kept', (_label, vacancies) => {
+    const { dir, paths } = setup();
+    const original = JSON.stringify({ schemaVersion: 1, vacancies });
+    fs.writeFileSync(paths.file, original);
+    const events: string[] = [];
+    const store = new VacancyStore(paths, (e) => events.push(e));
+    expect(store.load()).toEqual([]);
+    expect(events).toEqual(['vacancies_invalid']);
+    const aside = fs.readdirSync(dir).filter((f) => f.startsWith('vacancies.invalid-'));
+    expect(aside).toHaveLength(1);
+    expect(fs.readFileSync(path.join(dir, aside[0]), 'utf8')).toBe(original);
+  });
+});
