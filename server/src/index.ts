@@ -10,7 +10,9 @@ import { writeJsonAtomic } from './data/atomic.js';
 import { dataPaths, ensureDataDirs, resolveDataRoot } from './data/paths.js';
 import { SettingsStore } from './data/settings.js';
 import { ClaudeCodeProvider } from './llm/claude-code.js';
+import { CodexCliProvider } from './llm/codex-cli.js';
 import { FakeProvider } from './llm/fake.js';
+import { ProviderRegistry } from './llm/providers.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
@@ -63,14 +65,16 @@ async function main(): Promise<void> {
   const profileStore = new ProfileStore(paths.profileFile, (event, data) => logger.warn(event, data));
   profileStore.load();
   const profileFiles = new ProfileFiles(paths.profileFiles);
-  const provider: LlmProvider = fakeLlm
-    ? new FakeProvider()
+  const claude: LlmProvider = fakeLlm ? new FakeProvider(undefined, undefined, 'claude')
     : new ClaudeCodeProvider({ tmpRoot: paths.tmp, timeoutMs: () => settings.get().llm.timeoutSec * 1000, logger });
+  const chatgpt: LlmProvider = fakeLlm ? new FakeProvider(undefined, undefined, 'chatgpt')
+    : new CodexCliProvider({ tmpRoot: paths.tmp, timeoutMs: () => settings.get().llm.timeoutSec * 1000, logger });
+  const providers = new ProviderRegistry({ claude, chatgpt }, () => settings.get().llm.provider);
   const version = (JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version;
   const webDist = fileURLToPath(new URL('../../web/dist/', import.meta.url));
 
   const port = await findFreePort(HOST, 4280, 4299);
-  const queue = new LlmQueue(provider);
+  const queue = new LlmQueue(() => providers.current());
   const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));
   vacancyStore.load();
   const vacancySource = new ArbeitsagenturSource();
@@ -93,7 +97,7 @@ async function main(): Promise<void> {
   applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
   const app = await buildApp({
-    settings, provider, queue, logger, version,
+    settings, providers, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),

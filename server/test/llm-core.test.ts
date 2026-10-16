@@ -6,6 +6,8 @@ import { FakeProvider } from '../src/llm/fake.js';
 import { helloTask } from '../src/prompts/hello.js';
 import { composePrompt } from '../src/prompts/languages.js';
 import { AppError } from '../src/errors.js';
+import { ProviderRegistry } from '../src/llm/providers.js';
+import type { ProviderId } from '../src/llm/types.js';
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 function deferred<T>() {
@@ -150,5 +152,44 @@ describe('provider ids', () => {
     expect([new FakeProvider().id, new FakeProvider().readsFiles]).toEqual(['claude', true]);
     const chatgpt = new FakeProvider(undefined, undefined, 'chatgpt');
     expect([chatgpt.id, chatgpt.readsFiles]).toEqual(['chatgpt', false]);
+  });
+});
+
+describe('LlmQueue with a provider resolver', () => {
+  it('resolves the provider at the start of each turn and tags the result', async () => {
+    const claude = new FakeProvider({ ok: true }, () => ({ v: 'c' }), 'claude');
+    const chatgpt = new FakeProvider({ ok: true }, () => ({ v: 'g' }), 'chatgpt');
+    let current: ProviderId | null = 'claude';
+    const reg = new ProviderRegistry({ claude, chatgpt }, () => current);
+    const q = new LlmQueue(() => reg.current());
+    let release!: () => void;
+    claude.respond = () => new Promise((r) => { release = () => r({ v: 'c' }); });
+    const first = q.runTagged(helloTask('en'), new AbortController().signal);
+    const second = q.runTagged(helloTask('en'), new AbortController().signal); // waits
+    await new Promise((r) => setTimeout(r, 10));
+    current = 'chatgpt';            // switched while the second one waits
+    release();
+    expect(await first).toEqual({ value: { v: 'c' }, provider: 'claude' });
+    expect(await second).toEqual({ value: { v: 'g' }, provider: 'chatgpt' });
+    expect(claude.calls).toHaveLength(1);
+    expect(chatgpt.calls).toHaveLength(1);
+  });
+  it('no provider chosen -> LLM_NOT_CHOSEN', async () => {
+    const reg = new ProviderRegistry({ claude: new FakeProvider(), chatgpt: new FakeProvider(undefined, undefined, 'chatgpt') }, () => null);
+    await expect(new LlmQueue(() => reg.current()).run(helloTask('en'), new AbortController().signal)).rejects.toMatchObject({ code: 'LLM_NOT_CHOSEN' });
+  });
+  it('a turn that cannot resolve a provider fails alone; the next turn still runs', async () => {
+    const claude = new FakeProvider({ ok: true }, () => ({ v: 'c' }), 'claude');
+    let current: ProviderId | null = null;
+    const reg = new ProviderRegistry({ claude, chatgpt: new FakeProvider(undefined, undefined, 'chatgpt') }, () => current);
+    const q = new LlmQueue(() => reg.current());
+    await expect(q.run(helloTask('en'), new AbortController().signal)).rejects.toMatchObject({ code: 'LLM_NOT_CHOSEN' });
+    expect(q.status()).toEqual({ running: false, queued: 0 });
+    current = 'claude';
+    expect(await q.run(helloTask('en'), new AbortController().signal)).toEqual({ v: 'c' });
+  });
+  it('a plain provider still works and current() names it', () => {
+    const p = new FakeProvider(undefined, undefined, 'chatgpt');
+    expect(new LlmQueue(p).current()).toBe(p);
   });
 });

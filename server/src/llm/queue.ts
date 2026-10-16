@@ -1,7 +1,8 @@
 import { AppError } from '../errors.js';
-import type { LlmProvider, LlmTask } from './types.js';
+import type { LlmProvider, LlmTask, ProviderId } from './types.js';
 
-// One Claude process at a time, first come first served.
+// One AI process at a time, first come first served. The provider is resolved when a task's turn
+// starts (not when it is queued), so switching the AI helper affects every request that has not started yet.
 export class LlmQueue {
   private tail: Promise<unknown> = Promise.resolve();
   private running = false;
@@ -9,7 +10,16 @@ export class LlmQueue {
   /** One controller per task that is queued or running; abortAll() fires them all. */
   private readonly active = new Set<AbortController>();
 
-  constructor(private readonly provider: LlmProvider) {}
+  private readonly resolve: () => LlmProvider;
+
+  constructor(provider: LlmProvider | (() => LlmProvider)) {
+    this.resolve = typeof provider === 'function' ? provider : () => provider;
+  }
+
+  /** The provider the NEXT request would use (throws LLM_NOT_CHOSEN). */
+  current(): LlmProvider {
+    return this.resolve();
+  }
 
   status(): { running: boolean; queued: number } {
     return { running: this.running, queued: this.waiting };
@@ -21,6 +31,11 @@ export class LlmQueue {
   }
 
   run<T>(task: LlmTask, signal: AbortSignal): Promise<T> {
+    return this.runTagged<T>(task, signal).then((r) => r.value);
+  }
+
+  /** Like run(), but also says which provider actually did the work. */
+  runTagged<T>(task: LlmTask, signal: AbortSignal): Promise<{ value: T; provider: ProviderId }> {
     const ctrl = new AbortController();
     const forward = () => ctrl.abort();
     if (signal.aborted) ctrl.abort();
@@ -32,9 +47,11 @@ export class LlmQueue {
       this.waiting--;
       started = true;
       if (ctrl.signal.aborted) throw new AppError('LLM_CANCELLED', 'cancelled while waiting in the queue', 'cancelledByUser');
+      // A throw here (LLM_NOT_CHOSEN) rejects this turn only; the queue keeps going.
+      const provider = this.resolve();
       this.running = true;
       try {
-        return await this.provider.run<T>(task, ctrl.signal);
+        return { value: await provider.run<T>(task, ctrl.signal), provider: provider.id };
       } finally {
         this.running = false;
       }

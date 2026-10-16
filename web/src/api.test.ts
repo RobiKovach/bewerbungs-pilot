@@ -29,8 +29,8 @@ describe('api', () => {
   });
   it('asks for a fresh Claude check only when told to', async () => {
     const f = mockFetch({
-      'GET /api/llm/check': () => ({ body: { availability: { ok: true }, queue: { running: false, queued: 0 } } }),
-      'GET /api/llm/check?refresh=1': () => ({ body: { availability: { ok: true }, queue: { running: false, queued: 0 } } }),
+      'GET /api/llm/check': () => ({ body: { provider: 'claude', availability: { ok: true }, queue: { running: false, queued: 0 } } }),
+      'GET /api/llm/check?refresh=1': () => ({ body: { provider: 'claude', availability: { ok: true }, queue: { running: false, queued: 0 } } }),
     });
     await api.checkLlm();
     await api.checkLlm(true);

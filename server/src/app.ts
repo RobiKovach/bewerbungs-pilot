@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
-import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language, type SettingsPatch, type SettingsStore } from './data/settings.js';
+import type { LlmCheck } from '@bp/shared';
+import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language, type ProviderId, type SettingsPatch, type SettingsStore } from './data/settings.js';
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
 import type { LlmQueue } from './llm/queue.js';
-import type { LlmProvider } from './llm/types.js';
+import type { ProviderRegistry } from './llm/providers.js';
 import { helloTask } from './prompts/hello.js';
 import type { ProfileFiles } from './profile/files.js';
 import { registerProfileRoutes } from './profile/routes.js';
@@ -26,7 +27,8 @@ import type { VacancyStore } from './vacancies/store.js';
 
 export interface AppDeps {
   settings: SettingsStore;
-  provider: LlmProvider;
+  /** All AI helpers; the current one is read from settings on every request. */
+  providers: ProviderRegistry;
   queue: LlmQueue;
   logger: Logger;
   version: string;
@@ -147,9 +149,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.settings.patch(req.body as SettingsPatch),
   );
 
-  app.get('/api/llm/check', async (req) => {
-    const refresh = (req.query as { refresh?: string }).refresh === '1';
-    return { availability: await deps.provider.checkAvailable({ refresh }), queue: deps.queue.status() };
+  const providerOf = (raw: unknown): ProviderId | null => PROVIDER_IDS.find((id) => id === raw) ?? null;
+
+  app.get('/api/llm/check', async (req): Promise<LlmCheck> => {
+    const q = req.query as { refresh?: string; provider?: string };
+    const id = providerOf(q.provider) ?? deps.providers.currentId();
+    // No helper chosen yet: answer (not throw) so the Settings page can still render.
+    if (!id) return { provider: null, availability: { ok: false, reason: 'error' }, queue: deps.queue.status() };
+    return { provider: id, availability: await deps.providers.get(id).checkAvailable({ refresh: q.refresh === '1' }), queue: deps.queue.status() };
   });
 
   app.post('/api/llm/test', { schema: { body: languageBodySchema } }, async (req, reply) => {
@@ -160,9 +167,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return deps.queue.run<{ greeting: string }>(helloTask(language), ctrl.signal);
   });
 
-  app.post('/api/llm/open-login', async () => {
-    if (!deps.provider.openLogin) throw new AppError('BAD_REQUEST', 'provider has no sign-in window');
-    deps.provider.openLogin();
+  app.post('/api/llm/open-login', async (req) => {
+    const id = providerOf((req.body as { provider?: string } | undefined)?.provider) ?? deps.providers.currentId();
+    if (!id) throw new AppError('LLM_NOT_CHOSEN', 'no AI helper chosen');
+    const p = deps.providers.get(id);
+    if (!p.openLogin) throw new AppError('BAD_REQUEST', 'provider has no sign-in window');
+    p.openLogin();
     return { ok: true };
   });
 

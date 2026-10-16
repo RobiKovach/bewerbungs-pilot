@@ -8,7 +8,9 @@ import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
+import { ProviderRegistry } from '../../src/llm/providers.js';
 import { LlmQueue } from '../../src/llm/queue.js';
+import type { ProviderId } from '../../src/llm/types.js';
 import { nullLogger, type Logger } from '../../src/log.js';
 import { MemorySecretStore } from '../../src/mail/secret.js';
 import { ProfileFiles } from '../../src/profile/files.js';
@@ -21,11 +23,13 @@ import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
 
-export async function makeApp(opts: { provider?: FakeProvider; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
   settings.load();
+  // Test apps have Claude chosen unless a test asks otherwise; `chosen: null` = "Continue anyway" person.
+  if (opts.chosen !== null) settings.patch({ llm: { provider: opts.chosen ?? 'claude' } });
   const profileFile = path.join(dir, 'profile', 'profile.json');
   const filesDir = path.join(dir, 'profile', 'files');
   fs.mkdirSync(filesDir, { recursive: true });
@@ -33,8 +37,10 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
   profileStore.load();
   const profileFiles = new ProfileFiles(filesDir);
   const provider = opts.provider ?? new FakeProvider();
+  const chatgpt = opts.chatgpt ?? new FakeProvider(undefined, undefined, 'chatgpt');
+  const providers = new ProviderRegistry({ claude: provider, chatgpt }, () => settings.get().llm.provider);
   let shutdownCalls = 0;
-  const queue = new LlmQueue(provider);
+  const queue = new LlmQueue(() => providers.current());
   const vacancyStore = new VacancyStore({ file: path.join(dir, 'vacancies', 'vacancies.json'), textsDir: path.join(dir, 'vacancies', 'texts') });
   vacancyStore.load();
   const source = opts.source ?? fakeSource();
@@ -60,7 +66,7 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
   const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
   sentUnsaved.load();
   const app = await buildApp({
-    settings, provider, queue, logger, version: '0.1.0',
+    settings, providers, queue, logger, version: '0.1.0',
     webDist: opts.webDist ?? null,
     allowedHosts: opts.allowedHosts ?? (() => ['localhost:80']),
     onShutdown: () => { shutdownCalls++; },
@@ -68,5 +74,5 @@ export async function makeApp(opts: { provider?: FakeProvider; webDist?: string 
     applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
     googleAuth, origin: () => 'http://localhost:80', revokeTimeoutMs: opts.revokeTimeoutMs,
   });
-  return { app, googleAuth, provider, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
+  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
 }

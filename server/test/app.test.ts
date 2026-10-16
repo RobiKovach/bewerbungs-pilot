@@ -55,7 +55,7 @@ describe('api', () => {
   it('checks Claude and shows the queue', async () => {
     const { app } = await makeApp({ provider: new FakeProvider({ ok: false, reason: 'not-logged-in' }) });
     expect((await app.inject({ method: 'GET', url: '/api/llm/check?refresh=1' })).json()).toEqual({
-      availability: { ok: false, reason: 'not-logged-in' }, queue: { running: false, queued: 0 },
+      provider: 'claude', availability: { ok: false, reason: 'not-logged-in' }, queue: { running: false, queued: 0 },
     });
   });
   it('runs the test task in the requested language', async () => {
@@ -80,6 +80,50 @@ describe('api', () => {
     const { app, provider } = await makeApp();
     expect((await app.inject({ method: 'POST', url: '/api/llm/open-login', headers: H, payload: {} })).json()).toEqual({ ok: true });
     expect(provider.loginOpened).toBe(1);
+  });
+  it('GET /api/llm/check?provider=chatgpt checks that provider and names it', async () => {
+    const { app, chatgpt } = await makeApp();
+    chatgpt.availability = { ok: false, reason: 'not-installed' };
+    const r = await app.inject({ method: 'GET', url: '/api/llm/check?provider=chatgpt', headers: H });
+    expect(r.json()).toMatchObject({ provider: 'chatgpt', availability: { ok: false, reason: 'not-installed' } });
+  });
+  it('GET /api/llm/check without a param uses the current provider (claude in test apps)', async () => {
+    const { app } = await makeApp();
+    expect((await app.inject({ method: 'GET', url: '/api/llm/check', headers: H })).json()).toMatchObject({ provider: 'claude' });
+  });
+  it('GET /api/llm/check with no provider chosen answers provider null without throwing', async () => {
+    const { app } = await makeApp({ chosen: null });
+    const r = await app.inject({ method: 'GET', url: '/api/llm/check', headers: H });
+    expect(r.statusCode).toBe(200);
+    expect(r.json()).toEqual({ provider: null, availability: { ok: false, reason: 'error' }, queue: { running: false, queued: 0 } });
+  });
+  it('POST /api/llm/open-login {provider: chatgpt} opens ChatGPT', async () => {
+    const { app, chatgpt, provider } = await makeApp();
+    await app.inject({ method: 'POST', url: '/api/llm/open-login', headers: H, payload: { provider: 'chatgpt' } });
+    expect(chatgpt.loginOpened).toBe(1);
+    expect(provider.loginOpened).toBe(0);
+  });
+  it('POST /api/llm/open-login with no provider chosen and none named -> LLM_NOT_CHOSEN', async () => {
+    const { app } = await makeApp({ chosen: null });
+    const r = await app.inject({ method: 'POST', url: '/api/llm/open-login', headers: H, payload: {} });
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.code).toBe('LLM_NOT_CHOSEN');
+  });
+  it('AI routes answer LLM_NOT_CHOSEN when no provider is chosen', async () => {
+    const { app, provider, chatgpt, settings } = await makeApp({ chosen: null });
+    expect(settings.get().llm.provider).toBeNull();
+    const r = await app.inject({ method: 'POST', url: '/api/llm/test', headers: H, payload: { language: 'en' } });
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.code).toBe('LLM_NOT_CHOSEN');
+    expect(provider.calls).toHaveLength(0);
+    expect(chatgpt.calls).toHaveLength(0);
+  });
+  it('PATCH /api/settings switches the provider for the next request', async () => {
+    const { app, chatgpt, provider } = await makeApp();
+    await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { llm: { provider: 'chatgpt' } } });
+    await app.inject({ method: 'POST', url: '/api/llm/test', headers: H, payload: { language: 'en' } });
+    expect(chatgpt.calls).toHaveLength(1);
+    expect(provider.calls).toHaveLength(0);
   });
   it('answers shutdown first, then shuts down', async () => {
     const { app, shutdownCalls } = await makeApp();
