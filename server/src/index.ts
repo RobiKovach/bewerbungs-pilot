@@ -12,6 +12,7 @@ import { SettingsStore } from './data/settings.js';
 import { ClaudeCodeProvider } from './llm/claude-code.js';
 import { CodexCliProvider } from './llm/codex-cli.js';
 import { FakeProvider } from './llm/fake.js';
+import { InstallJob } from './llm/install.js';
 import { ProviderRegistry } from './llm/providers.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
@@ -74,6 +75,8 @@ async function main(): Promise<void> {
   const webDist = fileURLToPath(new URL('../../web/dist/', import.meta.url));
 
   const port = await findFreePort(HOST, 4280, 4299);
+  // After a successful install the provider must be re-probed, not served from its availability cache.
+  const install = new InstallJob({ logger, onDone: (id) => void providers.get(id).checkAvailable({ refresh: true }).catch(() => undefined) });
   const queue = new LlmQueue(() => providers.current());
   const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));
   vacancyStore.load();
@@ -97,7 +100,7 @@ async function main(): Promise<void> {
   applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
   const app = await buildApp({
-    settings, providers, queue, logger, version,
+    settings, providers, install, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),

@@ -6,6 +6,7 @@ import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
 import type { LlmQueue } from './llm/queue.js';
+import type { InstallJob } from './llm/install.js';
 import type { ProviderRegistry } from './llm/providers.js';
 import { helloTask } from './prompts/hello.js';
 import type { ProfileFiles } from './profile/files.js';
@@ -29,6 +30,7 @@ export interface AppDeps {
   settings: SettingsStore;
   /** All AI helpers; the current one is read from settings on every request. */
   providers: ProviderRegistry;
+  install: InstallJob;
   queue: LlmQueue;
   logger: Logger;
   version: string;
@@ -166,6 +168,16 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     reply.raw.on('close', () => { if (!reply.raw.writableFinished) ctrl.abort(); });
     return deps.queue.run<{ greeting: string }>(helloTask(language), ctrl.signal);
   });
+
+  app.get('/api/llm/install', async () => deps.install.status());
+  app.post('/api/llm/install', {
+    // Fastify's Ajv strips unknown keys by default; here an extra key (e.g. a package name) must be refused, not ignored.
+    preValidation: async (req) => {
+      const b = req.body;
+      if (b && typeof b === 'object' && Object.keys(b).some((k) => k !== 'provider')) throw new AppError('BAD_REQUEST', 'only { provider } is accepted');
+    },
+    schema: { body: { type: 'object', additionalProperties: false, required: ['provider'], properties: { provider: { type: 'string', enum: [...PROVIDER_IDS] } } } },
+  }, async (req, reply) => reply.code(202).send(deps.install.start((req.body as { provider: ProviderId }).provider)));
 
   app.post('/api/llm/open-login', async (req) => {
     const id = providerOf((req.body as { provider?: string } | undefined)?.provider) ?? deps.providers.currentId();

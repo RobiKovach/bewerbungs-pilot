@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ApplicationJob } from '../../src/applications/job.js';
 import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
@@ -8,6 +9,7 @@ import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
+import { InstallJob } from '../../src/llm/install.js';
 import { ProviderRegistry } from '../../src/llm/providers.js';
 import { LlmQueue } from '../../src/llm/queue.js';
 import type { ProviderId } from '../../src/llm/types.js';
@@ -23,7 +25,7 @@ import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
 
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -67,8 +69,12 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const secrets = new MemorySecretStore();
   const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
   sentUnsaved.load();
+  // Never the real installers: the fake one only prints / fails / hangs.
+  const fakeInstall = fileURLToPath(new URL('../fixtures/fake-install.mjs', import.meta.url));
+  const fakeCmd = () => ({ file: process.execPath, args: [fakeInstall, opts.installMode ?? 'ok'] });
+  const install = new InstallJob({ commands: { claude: fakeCmd, chatgpt: fakeCmd }, timeoutMs: 1500 });
   const app = await buildApp({
-    settings, providers, queue, logger, version: '0.1.0',
+    settings, providers, install, queue, logger, version: '0.1.0',
     webDist: opts.webDist ?? null,
     allowedHosts: opts.allowedHosts ?? (() => ['localhost:80']),
     onShutdown: () => { shutdownCalls++; },

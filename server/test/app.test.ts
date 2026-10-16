@@ -139,6 +139,19 @@ describe('api', () => {
     expect(provider.calls).toHaveLength(0);
     expect(chatgpt.calls).toHaveLength(0);
   });
+  it('POST /api/llm/install accepts only a provider id', async () => {
+    const { app } = await makeApp();
+    expect((await app.inject({ method: 'POST', url: '/api/llm/install', headers: H, payload: { provider: 'chatgpt', package: 'evil' } })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'POST', url: '/api/llm/install', headers: H, payload: { provider: 'x' } })).statusCode).toBe(400);
+  });
+  it('POST /api/llm/install starts the (fake) installer with 202, GET reports it, a second POST is 409', async () => {
+    const { app } = await makeApp({ installMode: 'hang' });
+    const r = await app.inject({ method: 'POST', url: '/api/llm/install', headers: H, payload: { provider: 'chatgpt' } });
+    expect(r.statusCode).toBe(202);
+    expect(r.json()).toMatchObject({ state: 'running', provider: 'chatgpt' });
+    expect((await app.inject({ method: 'GET', url: '/api/llm/install', headers: H })).json()).toMatchObject({ state: 'running', provider: 'chatgpt' });
+    expect((await app.inject({ method: 'POST', url: '/api/llm/install', headers: H, payload: { provider: 'claude' } })).statusCode).toBe(409);
+  });
   it('PATCH /api/settings switches the provider for the next request', async () => {
     const { app, chatgpt, provider } = await makeApp();
     await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { llm: { provider: 'chatgpt' } } });
