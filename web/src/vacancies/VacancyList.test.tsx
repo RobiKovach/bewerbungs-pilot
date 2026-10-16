@@ -30,6 +30,7 @@ describe('VacancyList', () => {
     ]);
     const strong = (await findCard('Stark'));
     expect(within(strong).getByText('86')).toHaveClass('score--good');
+    expect(within(strong).getByText('Written by: Claude')).toBeInTheDocument();
     expect(within(strong).getByText('React passt')).toBeInTheDocument();
     expect(within(strong).getByText('Deutsch C1')).toBeInTheDocument();
     expect(within(strong).getByText(/Dresden · Partly remote · published 22\.09\.2026/)).toBeInTheDocument();

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { WrittenBy } from '../components/WrittenBy';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useCancellable } from '../profile/useCancellable';
 import type { Vacancy } from '../types';
@@ -80,7 +81,7 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }
       <p className="muted vacancy__scoreline">
         <span>
           {v.scoreState === 'pending' ? t('vacancies.card.pending') : null}
-          {v.scoreState === 'scored' && v.score ? t('vacancies.card.scoredAt', { date: date(v.score.scoredAt) }) : null}
+          {v.scoreState === 'scored' && v.score ? <>{t('vacancies.card.scoredAt', { date: date(v.score.scoredAt) })} <WrittenBy provider={v.score.provider} kind="score" /></> : null}
           {v.scoreState === 'notScored' ? t('vacancies.card.notScored') : null}
           {v.scoreState === 'failed' ? t('vacancies.card.failed') : null}
         </span>

@@ -5,6 +5,7 @@ import { ApplicationEditor } from '../applications/ApplicationEditor';
 import { formatDay } from '../applications/format';
 import { StatsBlock } from '../applications/StatsBlock';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { WrittenBy } from '../components/WrittenBy';
 import type { ApplicationListView, ApplicationStats, ApplicationStatus } from '../types';
 
 type Row = ApplicationListView['applications'][number];
@@ -78,6 +79,7 @@ function ApplicationList() {
               <span className="app-row__meta">
                 <span className={`badge status-${a.status}`}>{t(`applications.status.${a.status}`)}</span>
                 <span className="badge">{a.language.toUpperCase()}</span>
+                <WrittenBy provider={a.writtenBy} kind="package" />
                 {a.followUpDue ? <span className="badge warn">{t('applications.followUp.badge')}</span> : null}
                 {a.profileChanged ? <span className="badge warn">{t('applications.profileChanged')}</span> : null}
                 <span className="muted">{t('applications.updated', { date: formatDay(a.updatedAt) })}</span>

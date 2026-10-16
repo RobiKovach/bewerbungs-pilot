@@ -21,6 +21,11 @@ describe('ApplicationsPage — list', () => {
     expect(within(rows[1]).getByText('Profile changed')).toBeInTheDocument();
     expect(within(rows[1]).getByText('Changed 30.09.2026')).toBeInTheDocument();
   });
+  it('shows who wrote each package', async () => {
+    mockFetch({ 'GET /api/applications': () => ({ body: { applications: [appSummary({ writtenBy: 'chatgpt' })] } }) });
+    render(<ApplicationsPage />);
+    expect(await screen.findByText('Written by: ChatGPT')).toBeInTheDocument();
+  });
   it('empty: explains how to start and links to the job offers', async () => {
     mockFetch({ 'GET /api/applications': () => ({ body: { applications: [] } }) });
     render(<ApplicationsPage />);

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { ConnectionLost } from '../components/ConnectionLost';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { WrittenBy } from '../components/WrittenBy';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, DocLanguage } from '../types';
@@ -132,6 +133,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       <p className="app-row__meta">
         <span className={`badge status-${a.status}`}>{t(`applications.status.${a.status}`)}</span>
         <span className="badge">{a.language.toUpperCase()}</span>
+        <WrittenBy provider={a.writtenBy} kind="package" />
         {view.profileChanged && !frozen ? <span className="badge warn">{t('applications.profileChanged')}</span> : null}
       </p>
       {jobOnThis && job.state?.kind
