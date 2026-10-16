@@ -34,7 +34,7 @@ function run(label, prompt, check, env = {}) {
   const r = spawnSync(process.execPath, [entry, ...ARGS], { cwd: work, input: prompt, encoding: 'utf8', timeout: 240_000, windowsHide: true, env: { ...process.env, ...env } });
   const events = (r.stdout ?? '').split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return { raw: l }; } });
   const message = events.filter((e) => e.type === 'item.completed' && e.item?.type === 'agent_message').at(-1)?.item?.text ?? '';
-  let ok = false;
+  let ok;
   try { ok = check(message, events); } catch { ok = false; }
   if (!ok) failed = true;
   console.log(`\n=== ${ok ? 'PASS' : 'FAIL'} ${label}  exit=${r.status}  ${Math.round((Date.now() - t0) / 1000)}s`);
