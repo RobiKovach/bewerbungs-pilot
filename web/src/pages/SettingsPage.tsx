@@ -55,7 +55,7 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
         ) : (
           <div className="btn-row">
             <button type="button" className="btn" onClick={() => void runTest()}>{t('settings.claudeTest')}</button>
-            <button type="button" className="btn ghost" onClick={() => void guarded(() => api.openLogin())}>{t('onboarding.claude.openLogin')}</button>
+            <button type="button" className="btn ghost" onClick={() => void guarded(() => api.openLogin())}>{t('onboarding.ai.openLogin')}</button>
           </div>
         )}
         {test.kind === 'ok' ? <p className="ok">{t('settings.claudeResult', { greeting: test.greeting })}</p> : null}

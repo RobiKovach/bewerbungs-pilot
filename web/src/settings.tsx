@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import i18n from 'i18next';
 import { api } from './api';
 import { ErrorBanner } from './components/ErrorBanner';
-import { detectLanguage } from './i18n';
+import { detectLanguage, setAiProvider } from './i18n';
 import type { Settings, SettingsPatch } from './types';
 
 interface SettingsCtx {
@@ -13,7 +13,12 @@ interface SettingsCtx {
 const Ctx = createContext<SettingsCtx | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettingsState] = useState<Settings | null>(null);
+  // {{ai}} in all texts follows the saved AI helper.
+  const setSettings = useCallback((next: Settings) => {
+    setAiProvider(next.llm.provider);
+    setSettingsState(next);
+  }, []);
   const [error, setError] = useState<unknown>(null);
 
   const load = useCallback(async () => {
@@ -29,14 +34,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       setError(err);
     }
-  }, []);
+  }, [setSettings]);
 
   useEffect(() => { void load(); }, [load]);
 
   const update = useCallback(async (patch: SettingsPatch) => {
     if (patch.language) await i18n.changeLanguage(patch.language);
     setSettings(await api.patchSettings(patch));
-  }, []);
+  }, [setSettings]);
 
   if (error) return <div className="boot"><ErrorBanner error={error} onRetry={() => void load()} /></div>;
   if (!settings) return <div className="boot">{i18n.t('common.loading')}</div>;

@@ -7,7 +7,8 @@
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
     "continueAnyway": "Trotzdem fortfahren", "stepOf": "Schritt {{current}} von {{total}}",
     "technicalDetails": "Technischer Text für den Support",
-    "dismiss": "Diese Meldung ausblenden"
+    "dismiss": "Diese Meldung ausblenden",
+    "aiHelper": "KI-Assistent"
   },
   "language": { "label": "Sprache" },
   "unsaved": { "leave": "Einige Änderungen sind noch nicht gespeichert. Wenn Sie jetzt weitergehen, gehen sie verloren. Trotzdem weiter?" },
@@ -21,25 +22,29 @@
   },
   "onboarding": {
     "welcome": { "title": "Willkommen", "body": "Nur wenige kurze Schritte, und BewerbungsPilot ist bereit für Sie. Wählen Sie zuerst die Sprache der App. Sie können sie jederzeit ändern." },
-    "claude": {
-      "title": "Claude verbinden",
-      "intro": "BewerbungsPilot nutzt Claude Code auf Ihrem Computer, um Stellenangebote zu lesen und Ihre Dokumente zu schreiben.",
-      "checking": "Verbindung zu Claude wird geprüft…",
-      "ok": "Claude ist bereit.",
+    "ai": {
+      "title": "Ihr KI-Assistent",
+      "intro": "BewerbungsPilot nutzt einen KI-Assistenten auf Ihrem Computer, um Stellenangebote zu lesen und Ihre Dokumente zu schreiben. Wählen Sie einen aus.",
+      "choose": "Auswählen",
+      "chosen": "Ausgewählt",
+      "install": "Installieren",
+      "installing": "Wird installiert… Das kann einige Minuten dauern.",
+      "installFailed": "Die Installation ist fehlgeschlagen.",
+      "supportLine": "Für den Support:",
       "openLogin": "Anmeldefenster öffnen",
-      "notInstalled": {
-        "title": "Claude Code ist noch nicht installiert",
-        "step1": "Schließen Sie BewerbungsPilot.",
-        "step2": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie.",
-        "step3": "Starten Sie BewerbungsPilot über die Verknüpfung auf dem Desktop und kehren Sie zu diesem Schritt zurück."
-      },
-      "notLoggedIn": {
-        "title": "Bitte melden Sie sich bei Claude an",
-        "step1": "Klicken Sie auf „Anmeldefenster öffnen“.",
-        "step2": "Melden Sie sich im sich öffnenden Fenster mit Ihrem Claude-Konto an (es kann sich auch eine Browserseite öffnen).",
-        "step3": "Wenn Sie angemeldet sind, schließen Sie das Fenster und klicken Sie auf „Erneut prüfen“."
-      },
-      "error": { "title": "Claude hat nicht geantwortet", "hint": "Prüfen Sie Ihre Internetverbindung und klicken Sie auf „Erneut prüfen“." }
+      "checkAgain": "Erneut prüfen",
+      "checking": "Wird geprüft…",
+      "ready": "{{ai}} ist bereit.",
+      "notInstalled": "Noch nicht installiert.",
+      "notLoggedIn": "Installiert, aber noch nicht angemeldet.",
+      "error": "{{ai}} hat nicht geantwortet. Prüfen Sie Ihre Internetverbindung und klicken Sie auf „Erneut prüfen“.",
+      "noneChosen": "Noch kein KI-Assistent ausgewählt.",
+      "claude": { "name": "Claude", "price": "Benötigt ein kostenpflichtiges Claude-Abo (Pro oder Max).", "limit": "Limit: hängt von Ihrem Tarif ab.", "cost": "Ein Bewerbungspaket ≈ 1–3 Anfragen, eine Suche ≈ bis zu 5." },
+      "chatgpt": {
+        "name": "ChatGPT", "price": "Kostenlos mit einem ChatGPT-Konto; bezahlte Tarife bieten mehr.", "limit": "Limit: hängt von Ihrem ChatGPT-Tarif ab (für den kostenlosen Tarif nennt OpenAI keine genauen Zahlen).", "cost": "Ein Bewerbungspaket ≈ 1–3 Anfragen, eine Suche ≈ bis zu 5.",
+        "privacy": "Das kostenlose ChatGPT darf Ihre Texte (Lebenslauf, Geschichten) nutzen, um die Modelle von OpenAI zu verbessern. Sie können das in ChatGPT abschalten: Einstellungen → Datenkontrollen (Settings → Data controls).",
+        "privacyLink": "So schalten Sie das ab"
+      }
     },
     "profile": { "title": "Ihr Profil", "body": "Laden Sie Ihren Lebenslauf hoch oder füllen Sie Ihre Daten selbst aus, und beantworten Sie dann ein paar kurze Fragen. Sie können dies auch später unter „Profil“ erledigen." },
     "email": { "title": "Ihre E-Mail", "body": "Verbinden Sie Ihre E-Mail, damit BewerbungsPilot die von Ihnen freigegebenen Bewerbungen versenden kann. Sie können das auch überspringen und später in den Einstellungen erledigen." },
@@ -52,7 +57,7 @@
     "todoLabel": "Was Sie tun",
     "go": "Öffnen",
     "stages": {
-      "install": { "title": "Installation", "what": "Der Installer bringt BewerbungsPilot und Claude Code auf Ihren Computer und erstellt eine Verknüpfung auf dem Desktop.", "todo": "Nichts weiter — das haben Sie bereits erledigt. Starten Sie die App über die Verknüpfung auf dem Desktop." },
+      "install": { "title": "Installation", "what": "Der Installer bringt BewerbungsPilot auf Ihren Computer und erstellt eine Verknüpfung auf dem Desktop. Ihren KI-Assistenten wählen und verbinden Sie in der App.", "todo": "Nichts weiter — das haben Sie bereits erledigt. Starten Sie die App über die Verknüpfung auf dem Desktop." },
       "profile": { "title": "Profil", "what": "Ihr Lebenslauf, Ihre Fähigkeiten und Wünsche — die Grundlage jeder Bewerbung. Es wird nie etwas erfunden.", "todo": "Laden Sie Ihren Lebenslauf hoch und beantworten Sie einige kurze Fragen." },
       "email": { "title": "E-Mail", "what": "Bewerbungen werden von Ihrer eigenen E-Mail-Adresse aus versendet.", "todo": "Geben Sie Ihre E-Mail-Adresse und ein spezielles App-Passwort ein — wir zeigen Ihnen in 3 Schritten, wie Sie eines erstellen." },
       "search": { "title": "Jobsuche", "what": "BewerbungsPilot durchsucht die Jobbörse der Bundesagentur für Arbeit und wählt Angebote aus, die zu Ihrem Profil passen. Sie können auch ein selbst gefundenes Angebot einfügen.", "todo": "Klicken Sie auf „Jetzt suchen“ — oder fügen Sie ein selbst gefundenes Angebot ein. Eine tägliche automatische Suche kommt später." },
@@ -63,12 +68,12 @@
   },
   "info": {
     "languageSwitcher": "Ändert die Sprache der App. Dokumente für Arbeitgeber verwenden die Sprache des Stellenangebots.",
-    "claudeTest": "Sendet eine kurze Testfrage an Claude, um zu prüfen, dass alles funktioniert.",
+    "claudeTest": "Sendet eine kurze Testfrage an {{ai}}, um zu prüfen, dass alles funktioniert.",
     "restartIntro": "Zeigt die Willkommensschritte erneut. Ihre Daten bleiben unverändert.",
     "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop.",
     "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet.",
-    "profileCv": "Ihr Lebenslauf bleibt auf diesem Computer. Claude liest ihn nur, um Ihr Profil auszufüllen. Nichts wird erfunden.",
-    "profileAsk": "Claude fragt nur — es erfindet nie etwas. Aus Ihren Antworten werden Geschichten, die Sie prüfen und ändern können.",
+    "profileCv": "Ihr Lebenslauf bleibt auf diesem Computer. {{ai}} liest ihn nur, um Ihr Profil auszufüllen. Nichts wird erfunden.",
+    "profileAsk": "{{ai}} fragt nur und erfindet nie etwas. Aus Ihren Antworten werden Geschichten, die Sie prüfen und ändern können.",
     "profileDocs": "PDF-Dateien bis 10 MB pro Datei, höchstens 20. Angehakte Dokumente werden automatisch jeder Bewerbung beigefügt."
   },
   "mail": {
@@ -137,10 +142,10 @@
     "title": "Einstellungen",
     "languageTitle": "Sprache",
     "mailTitle": "E-Mail zum Versenden",
-    "claudeTitle": "Verbindung zu Claude",
+    "claudeTitle": "KI-Assistent",
     "claudeTest": "Verbindung testen",
-    "claudeRunning": "Warten auf Claude…",
-    "claudeResult": "Claude sagt: „{{greeting}}“",
+    "claudeRunning": "Warten auf {{ai}}…",
+    "claudeResult": "{{ai}} sagt: „{{greeting}}“",
     "introTitle": "Willkommensschritte",
     "introRestart": "Willkommensschritte erneut anzeigen",
     "quitTitle": "App beenden",
@@ -169,7 +174,7 @@
       "changed": "Bitte prüfen Sie diese Abschnitte erneut: {{sections}}",
       "proposed": "Diese Abschnitte hatten Sie schon geprüft oder bearbeitet, deshalb wurde dort nichts geändert. Der neue Lebenslauf hat eine andere Fassung – bitte wählen Sie, welche bleiben soll: {{sections}}",
       "unchanged": "Der neue Lebenslauf hat nichts an Ihrem Profil geändert.",
-      "reading": "Claude liest Ihren Lebenslauf … Das kann bis zu 3 Minuten dauern."
+      "reading": "{{ai}} liest Ihren Lebenslauf … Das kann bis zu 3 Minuten dauern."
     },
     "proposal": {
       "title": "Der neue Lebenslauf hat eine andere Fassung dieses Abschnitts",
@@ -183,14 +188,14 @@
     "start": {
       "intro": "Ihr Profil ist die Grundlage jeder Bewerbung. Es bleibt auf diesem Computer.",
       "withCvTitle": "Ich habe einen Lebenslauf",
-      "withCvBody": "Claude liest ihn und füllt Ihr Profil aus. Danach prüfen Sie alles.",
+      "withCvBody": "{{ai}} liest ihn und füllt Ihr Profil aus. Danach prüfen Sie alles.",
       "withoutCvTitle": "Ich habe keinen Lebenslauf",
       "withoutCvBody": "Füllen Sie dieselben Abschnitte selbst aus, Schritt für Schritt.",
       "withoutCv": "Ohne Lebenslauf ausfüllen"
     },
-    "review": { "intro": "Prüfen Sie jeden Abschnitt. Mit „KI – bitte prüfen“ markierte Felder wurden von Claude ausgefüllt. Wenn ein Abschnitt stimmt, klicken Sie auf „Alles korrekt“." },
+    "review": { "intro": "Prüfen Sie jeden Abschnitt. Mit „KI – bitte prüfen“ markierte Felder wurden von {{ai}} ausgefüllt. Wenn ein Abschnitt stimmt, klicken Sie auf „Alles korrekt“." },
     "aiCheck": "KI – bitte prüfen",
-    "aiHint": "Claude hat dieses Feld anhand Ihres Lebenslaufs ausgefüllt. Bitte prüfen Sie es.",
+    "aiHint": "{{ai}} hat dieses Feld anhand Ihres Lebenslaufs ausgefüllt. Bitte prüfen Sie es.",
     "save": "Speichern",
     "allCorrect": "Alles korrekt",
     "remove": "Entfernen",
@@ -238,13 +243,13 @@
     "remote": { "any": "Egal", "onsite": "Am Arbeitsplatz", "hybrid": "Teilweise von zu Hause", "remote": "Nur von zu Hause" },
     "employment": { "fulltime": "Vollzeit", "parttime": "Teilzeit", "minijob": "Minijob", "apprenticeship": "Ausbildung", "internship": "Praktikum" },
     "stories": {
-      "intro": "Ein gutes Anschreiben wiederholt nicht Ihren Lebenslauf — es erzählt ein oder zwei wahre Geschichten darüber, was Sie getan haben. Claude stellt ein paar Fragen, um sie zu finden.",
-      "askIntro": "Claude sieht sich Ihr Profil an und stellt 3 bis 7 kurze, persönliche Fragen.",
+      "intro": "Ein gutes Anschreiben wiederholt nicht Ihren Lebenslauf — es erzählt ein oder zwei wahre Geschichten darüber, was Sie getan haben. {{ai}} stellt ein paar Fragen, um sie zu finden.",
+      "askIntro": "{{ai}} sieht sich Ihr Profil an und stellt 3 bis 7 kurze, persönliche Fragen.",
       "ask": "Fragen Sie mich",
-      "asking": "Claude überlegt sich Fragen…",
+      "asking": "{{ai}} überlegt sich Fragen…",
       "answerIntro": "Antworten Sie in beliebiger Sprache, mit Ihren eigenen Worten. Um eine Frage zu überspringen, lassen Sie sie leer.",
       "structure": "Meine Antworten in Geschichten verwandeln",
-      "structuring": "Claude schreibt Ihre Geschichten…",
+      "structuring": "{{ai}} schreibt Ihre Geschichten…",
       "listTitle": "Ihre Geschichten",
       "new": "Neu — bitte prüfen",
       "confirm": "Das stimmt so",
@@ -308,9 +313,9 @@
     "followUp": { "notice": "Sie haben diese Bewerbung am {{date}} gesendet und seit 14 Tagen keine Antwort erhalten. Es lohnt sich, noch einmal zu schreiben.", "write": "Erinnerung schreiben", "dismiss": "Nicht erinnern", "badge": "Nachfassen", "title": "Erinnerung", "markReminded": "Als erinnert markieren" },
     "mailDraft": { "copy": "Nachricht kopieren", "copied": "Kopiert.", "copyFailed": "Das Kopieren hat nicht geklappt — markieren Sie den Text und kopieren Sie ihn selbst.", "needMail": "Verbinden Sie Ihre E-Mail, um die Nachricht von hier zu senden.", "needMailLink": "Einstellungen öffnen", "reauthLink": "Erneut mit Google anmelden" },
     "reply": { "rejection": "Auf die Absage antworten", "offer": "Auf das Angebot antworten" },
-    "offerReply": { "working": "Claude schreibt die Antwort…", "offered": "Was man Ihnen angeboten hat", "wanted": "Was Sie möchten", "wantedHint": "Schreiben Sie den Betrag mit Ziffern, z. B. 55.000 €.", "ask": "Claude die Antwort schreiben lassen", "text": "Ihre Antwort", "save": "Speichern", "discard": "Änderungen verwerfen", "copy": "Kopieren", "send": "Senden…", "again": "Neu schreiben lassen", "close": "Schließen", "saveFirst": "Speichern Sie zuerst den Text." },
+    "offerReply": { "working": "{{ai}} schreibt die Antwort…", "offered": "Was man Ihnen angeboten hat", "wanted": "Was Sie möchten", "wantedHint": "Schreiben Sie den Betrag mit Ziffern, z. B. 55.000 €.", "ask": "{{ai}} die Antwort schreiben lassen", "text": "Ihre Antwort", "save": "Speichern", "discard": "Änderungen verwerfen", "copy": "Kopieren", "send": "Senden…", "again": "Neu schreiben lassen", "close": "Schließen", "saveFirst": "Speichern Sie zuerst den Text." },
     "open": "Paket öffnen",
-    "busy": "Claude arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
+    "busy": "{{ai}} arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Alle Bewerbungen",
     "tabs": {
@@ -323,10 +328,10 @@
       "update": "Lebenslauf aktualisieren",
       "keepQuestion": "Die Texte behalten, die Sie selbst geändert haben (Profil, Berufsbezeichnung)?",
       "keepYes": "Meinen Text behalten",
-      "keepNo": "Claude neu schreiben lassen",
+      "keepNo": "{{ai}} neu schreiben lassen",
       "profil": "Profil (Beginn des Lebenslaufs)",
       "headline": "Berufsbezeichnung unter Ihrem Namen",
-      "headlineHint": "Claude schlägt sie für dieses Angebot vor; Sie können sie ändern.",
+      "headlineHint": "{{ai}} schlägt sie für dieses Angebot vor; Sie können sie ändern.",
       "profilHint": "2–3 Sätze. Alles andere im Lebenslauf stammt aus Ihrem Profil.",
       "save": "Speichern",
       "fromProfile": "Um Daten, Stationen, Kenntnisse oder Sprachen zu ändern, ändern Sie Ihr Profil und klicken Sie dann auf „Lebenslauf aktualisieren“.",
@@ -351,16 +356,16 @@
     "unapprove": "Zurück zum Entwurf",
     "recreate": "Neu erstellen",
     "copyDraft": "Als neuen Entwurf kopieren",
-    "recreateConfirm": "Claude schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben und am Profil-Text des Lebenslaufs gehen verloren.",
+    "recreateConfirm": "{{ai}} schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben und am Profil-Text des Lebenslaufs gehen verloren.",
     "recreateYes": "Ja, neu erstellen",
     "delete": "Paket löschen",
     "deleteConfirm": "Dieses Paket löschen? Die Stellenanzeige bleibt in Ihrer Liste.",
     "deleteYes": "Ja, löschen",
     "working": {
-      "create": "Claude schreibt das Anschreiben und bereitet den Lebenslauf vor…",
-      "recreate": "Claude schreibt das Paket neu…",
-      "revise": "Claude ändert das Anschreiben…",
-      "refreshCv": "Claude aktualisiert den Lebenslauf…"
+      "create": "{{ai}} schreibt das Anschreiben und bereitet den Lebenslauf vor…",
+      "recreate": "{{ai}} schreibt das Paket neu…",
+      "revise": "{{ai}} ändert das Anschreiben…",
+      "refreshCv": "{{ai}} aktualisiert den Lebenslauf…"
     },
     "letter": {
       "hintTitle": "Tipp:",
@@ -375,9 +380,9 @@
       "signature": "Name unter dem Brief",
       "save": "Änderungen speichern",
       "discard": "Änderungen verwerfen",
-      "askLabel": "Claude bitten, das Anschreiben zu ändern",
+      "askLabel": "{{ai}} bitten, das Anschreiben zu ändern",
       "askPlaceholder": "Zum Beispiel: kürzer, oder die Geschichte über den Onlineshop verwenden",
-      "ask": "Claude fragen",
+      "ask": "{{ai}} fragen",
       "saveFirst": "Speichern oder verwerfen Sie zuerst Ihre Änderungen.",
       "preview": "Vorschau des Anschreibens"
     },
@@ -388,7 +393,7 @@
       "englishWarning": "Ihr Englisch liegt laut Profil unter B2. Der Arbeitgeber könnte Sie auf Englisch zum Gespräch einladen.",
       "shortText": "Der Text dieses Angebots ist sehr kurz — das Anschreiben wird allgemeiner. Sie können den vollständigen Text von Hand als neues Angebot einfügen.",
       "start": "Erstellen",
-      "working": "Claude schreibt das Anschreiben und bereitet den Lebenslauf vor… Das dauert ein bis zwei Minuten.",
+      "working": "{{ai}} schreibt das Anschreiben und bereitet den Lebenslauf vor… Das dauert ein bis zwei Minuten.",
       "exists": "Für dieses Angebot gibt es schon ein Paket.",
       "notReady": "Bevor ein Paket erstellt werden kann, ergänzen Sie bitte in Ihrem Profil:",
       "noStory": "eine geprüfte Geschichte, die Arbeitgebern erzählt werden darf",
@@ -396,11 +401,14 @@
     }
   },
   "errors": {
-    "LLM_NOT_INSTALLED": { "message": "Claude Code ist nicht installiert.", "hint": "Starten Sie den BewerbungsPilot-Installer erneut — er installiert Claude Code für Sie." },
-    "LLM_NOT_LOGGED_IN": { "message": "Sie sind nicht bei Claude angemeldet.", "hint": "Öffnen Sie die Einstellungen und klicken Sie auf „Anmeldefenster öffnen“." },
-    "LLM_TIMEOUT": { "message": "Claude hat zu lange für eine Antwort gebraucht.", "hint": "Bitte versuchen Sie es gleich noch einmal." },
-    "LLM_BAD_OUTPUT": { "message": "Claudes Antwort konnte nicht verstanden werden.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
-    "LLM_FAILED": { "message": "Claude konnte die Aufgabe nicht abschließen.", "hint": "Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut." },
+    "LLM_NOT_INSTALLED": { "message": "Der KI-Assistent {{ai}} ist nicht installiert.", "hint": "Öffnen Sie Einstellungen → KI-Assistent und klicken Sie auf „Installieren“." },
+    "LLM_NOT_LOGGED_IN": { "message": "Sie sind bei {{ai}} nicht angemeldet.", "hint": "Öffnen Sie Einstellungen → KI-Assistent und klicken Sie auf „Anmeldefenster öffnen“." },
+    "LLM_TIMEOUT": { "message": "{{ai}} hat zu lange für eine Antwort gebraucht.", "hint": "Bitte versuchen Sie es gleich noch einmal." },
+    "LLM_BAD_OUTPUT": { "message": "Die Antwort von {{ai}} konnte nicht verstanden werden.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
+    "LLM_FAILED": { "message": "{{ai}} konnte die Aufgabe nicht abschließen.", "hint": "Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut." },
+    "LLM_LIMIT": { "message": "Das Limit von {{ai}} ist vorerst aufgebraucht.", "hint": "Versuchen Sie es später erneut oder wählen Sie in den Einstellungen einen anderen KI-Assistenten." },
+    "LLM_NOT_CHOSEN": { "message": "Es ist noch kein KI-Assistent ausgewählt.", "hint": "Wählen Sie einen unter Einstellungen → KI-Assistent." },
+    "CV_NO_TEXT": { "message": "Dieses PDF sieht aus wie ein Scan oder ein Foto.", "hint": "{{ai}} liest nur PDFs mit Text oder Word-Dateien. Speichern Sie Ihren Lebenslauf in Word als PDF oder laden Sie die DOCX-Datei hoch." },
     "LLM_CANCELLED": { "message": "Die Aufgabe wurde abgebrochen.", "hint": "Starten Sie sie jederzeit erneut." },
     "DATA_WRITE_FAILED": { "message": "Ihre Änderungen konnten nicht gespeichert werden.", "hint": "Prüfen Sie, ob Ihre Festplatte voll ist, und versuchen Sie es erneut." },
     "FILE_TOO_LARGE": { "message": "Diese Datei ist zu groß.", "hint": "Ein Lebenslauf oder Dokument darf bis zu 10 MB groß sein, ein Foto bis zu 5 MB. Versuchen Sie eine kleinere Datei, speichern Sie das PDF zum Beispiel erneut mit geringerer Qualität." },
@@ -417,8 +425,8 @@
     "VACANCY_DUPLICATE": { "message": "Dieses Angebot ist bereits in Ihrer Liste.", "hint": "Öffnen Sie es dort, statt es erneut hinzuzufügen." },
     "VACANCY_NOT_FOUND": { "message": "Dieses Angebot ist nicht mehr in Ihrer Liste.", "hint": "Laden Sie die Seite neu." },
     "BROWSER_MISSING": { "message": "Es wurde kein geeigneter Browser zum Erstellen von PDFs gefunden.", "hint": "BewerbungsPilot nutzt Microsoft Edge oder Google Chrome, um PDFs zu erstellen. Bitte installieren Sie Google Chrome und versuchen Sie es erneut." },
-    "LETTER_TOO_LONG": { "message": "Das Anschreiben ist länger als eine Seite.", "hint": "Kürzen Sie das Anschreiben (oder bitten Sie Claude, es zu kürzen), bis die rote Markierung verschwindet, und genehmigen Sie es dann." },
-    "PACKAGE_RULES_BROKEN": { "message": "Claude konnte das Anschreiben nicht regelkonform schreiben.", "hint": "Versuchen Sie es erneut. Wenn es wieder passiert, prüfen Sie Ihre Geschichten und die Liste „Nicht erwähnen“ in Ihrem Profil." },
+    "LETTER_TOO_LONG": { "message": "Das Anschreiben ist länger als eine Seite.", "hint": "Kürzen Sie das Anschreiben (oder bitten Sie {{ai}}, es zu kürzen), bis die rote Markierung verschwindet, und genehmigen Sie es dann." },
+    "PACKAGE_RULES_BROKEN": { "message": "{{ai}} konnte das Anschreiben nicht regelkonform schreiben.", "hint": "Versuchen Sie es erneut. Wenn es wieder passiert, prüfen Sie Ihre Geschichten und die Liste „Nicht erwähnen“ in Ihrem Profil." },
     "PACKAGE_EXISTS": { "message": "Für dieses Stellenangebot gibt es bereits ein Paket.", "hint": "Öffnen Sie das vorhandene Paket. Um neu zu beginnen, nutzen Sie darin „Neu erstellen“." },
     "CONFLICT": { "message": "Das wurde inzwischen geändert.", "hint": "Bitte sehen Sie es sich noch einmal an und wählen Sie dann erneut." },
     "BAD_REQUEST": { "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
@@ -433,20 +441,21 @@
     "UNKNOWN": { "message": "Etwas ist schiefgelaufen.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
     "reasons": {
       "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",
-      "cvNoContent": "Claude hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",
+      "cvNoContent": "{{ai}} hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",
       "cvDocxBroken": "Die Datei konnte nicht als Word-Dokument geöffnet werden. Sie ist möglicherweise beschädigt oder in einem anderen Format gespeichert.",
+      "cvPdfBroken": "Die PDF-Datei konnte nicht gelesen werden.",
       "fileTypeDetected": "Die Datei ist tatsächlich eine {{detected}}-Datei. Hier erlaubt: {{allowed}}.",
       "allowedTypes": { "cv": "PDF oder Word (DOCX)", "photo": "JPG oder PNG", "document": "PDF" },
       "tooManyDocuments": "Sie haben bereits {{max}} Dokumente — löschen Sie eines, um ein neues hinzuzufügen.",
       "profileMissing": "Es fehlt noch: {{sections}}.",
-      "llmTimeout": "Claude hat innerhalb von {{seconds}} Sekunden nicht geantwortet.",
+      "llmTimeout": "{{ai}} hat innerhalb von {{seconds}} Sekunden nicht geantwortet.",
       "cancelledByUser": "Sie haben es abgebrochen.",
       "proposalChanged": "Der neue Lebenslauf hat sich noch einmal geändert — bitte sehen Sie ihn sich noch einmal an.",
       "pastedTooShort": "Der eingefügte Text ist zu kurz (mindestens {{min}} Zeichen). Fügen Sie das ganze Stellenangebot ein, nicht nur den Titel.",
       "offerGone": "Die Bundesagentur für Arbeit listet dieses Angebot nicht mehr.",
       "noStory": "Sie haben noch keine geprüfte Geschichte, die Arbeitgebern erzählt werden darf. Fügen Sie in Ihrem Profil unter „Geschichten für Anschreiben“ eine hinzu.",
       "attachmentUnreadable": "Der Anhang „{{name}}“ kann nicht gelesen werden (beschädigt oder passwortgeschützt). Entfernen Sie ihn aus diesem Paket oder ersetzen Sie ihn in Ihrem Profil.",
-      "packageBusy": "Claude arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist.",
+      "packageBusy": "{{ai}} arbeitet gerade an diesem Paket. Bitte warten Sie, bis es fertig ist.",
       "packageSent": "Diese Bewerbung wurde bereits versendet oder eingereicht – sie kann nicht mehr geändert werden.",
       "packageSending": "Diese Bewerbung wird gerade versendet. Bitte warten Sie einen Moment.",
       "packageChanged": "Die Bewerbung wurde während der Vorbereitung des Versands geändert. Es wurde nichts gesendet – bitte prüfen Sie sie und versuchen Sie es erneut.",
@@ -475,7 +484,7 @@
       "phase": {
         "querying": "Suche auf der Jobbörse…",
         "details": "Angebotstexte werden geladen…",
-        "scoring": "Claude bewertet die Angebote…",
+        "scoring": "{{ai}} bewertet die Angebote…",
         "staleCheck": "Es wird geprüft, welche älteren Angebote entfernt wurden…"
       },
       "counters": "Gefunden: {{found}} · ausgefiltert: {{filtered}} · bewertet: {{scored}} von {{total}}",
@@ -520,7 +529,7 @@
       "failed": "Bewertung fehlgeschlagen",
       "score": "Bewerten",
       "scoreAgain": "Erneut bewerten",
-      "scoring": "Claude bewertet dieses Angebot…",
+      "scoring": "{{ai}} bewertet dieses Angebot…",
       "interesting": "★ Interessant",
       "notInteresting": "Nicht interessant",
       "unfavorite": "Aus Favoriten entfernen",
@@ -541,13 +550,13 @@
       "link": "Link (optional)",
       "linkHint": "Der Link wird nur für Sie gespeichert — BewerbungsPilot öffnet keine anderen Websites. Nur Links zu arbeitsagentur.de/jobsuche/jobdetail/… werden direkt gelesen.",
       "add": "Hinzufügen",
-      "working": "Claude liest das Angebot…",
+      "working": "{{ai}} liest das Angebot…",
       "duplicate": "Dieses Angebot steht schon in Ihrer Liste.",
       "showIt": "Anzeigen"
     },
     "edit": {
       "open": "Bearbeiten",
-      "checkHint": "Claude hat diese Felder ausgefüllt — bitte prüfen Sie sie.",
+      "checkHint": "{{ai}} hat diese Felder ausgefüllt — bitte prüfen Sie sie.",
       "title": "Jobtitel",
       "titleRequired": "Bitte geben Sie den Jobtitel ein.",
       "company": "Unternehmen",
@@ -559,5 +568,6 @@
       "name": "Ansprechperson",
       "save": "Speichern"
     }
-  }
+  },
+  "writtenBy": { "label": "Geschrieben von: {{name}}", "tipPackage": "Diesen Text hat der KI-Assistent {{name}} geschrieben. Prüfen Sie ihn vor dem Senden.", "tipScore": "Bewertung von {{name}}." }
 }

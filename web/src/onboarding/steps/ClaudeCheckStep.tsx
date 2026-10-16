@@ -7,6 +7,7 @@ import type { StepProps } from '../steps';
 
 type State = { kind: 'checking' } | { kind: 'done'; availability: Availability } | { kind: 'failed'; error: unknown };
 
+// Interim (task 9): same check as before on the new onboarding.ai.* texts; task 10 replaces it with the AI-helper cards.
 export function ClaudeCheckStep({ onNext }: StepProps) {
   const { t } = useTranslation();
   const [state, setState] = useState<State>({ kind: 'checking' });
@@ -32,26 +33,20 @@ export function ClaudeCheckStep({ onNext }: StepProps) {
 
   return (
     <>
-      <p>{t('onboarding.claude.intro')}</p>
-      {state.kind === 'checking' ? <p className="muted">{t('onboarding.claude.checking')}</p> : null}
-      {ready ? <p className="ok">✓ <span>{t('onboarding.claude.ok')}</span></p> : null}
+      <p>{t('onboarding.ai.intro')}</p>
+      {state.kind === 'checking' ? <p className="muted">{t('onboarding.ai.checking')}</p> : null}
+      {ready ? <p className="ok">✓ <span>{t('onboarding.ai.ready')}</span></p> : null}
       {reason === 'not-installed' || reason === 'not-logged-in' ? (
         <div className="card">
-          <h2>{t(`onboarding.claude.${reason === 'not-installed' ? 'notInstalled' : 'notLoggedIn'}.title`)}</h2>
-          <ol className="steps-list">
-            {(['step1', 'step2', 'step3'] as const).map((s) => (
-              <li key={s}>{t(`onboarding.claude.${reason === 'not-installed' ? 'notInstalled' : 'notLoggedIn'}.${s}`)}</li>
-            ))}
-          </ol>
+          <p>{t(reason === 'not-installed' ? 'onboarding.ai.notInstalled' : 'onboarding.ai.notLoggedIn')}</p>
           {reason === 'not-logged-in' ? (
-            <button type="button" className="btn" onClick={() => void openLogin()}>{t('onboarding.claude.openLogin')}</button>
+            <button type="button" className="btn" onClick={() => void openLogin()}>{t('onboarding.ai.openLogin')}</button>
           ) : null}
         </div>
       ) : null}
       {reason === 'error' ? (
         <div className="card">
-          <h2>{t('onboarding.claude.error.title')}</h2>
-          <p>{t('onboarding.claude.error.hint')}</p>
+          <p>{t('onboarding.ai.error')}</p>
         </div>
       ) : null}
       {state.kind === 'failed' ? <ErrorBanner error={state.error} /> : null}

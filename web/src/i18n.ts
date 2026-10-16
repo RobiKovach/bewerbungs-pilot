@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import type { Language } from './types';
+import type { Language, ProviderId } from './types';
 import de from './locales/de.json';
 import en from './locales/en.json';
 import pl from './locales/pl.json';
@@ -28,6 +28,27 @@ function syncDocumentLang(lng: string) {
   document.documentElement.lang = lng;
 }
 
+// Provider names are never translated (spec §7).
+export const AI_NAMES: Record<ProviderId, string> = { claude: 'Claude', chatgpt: 'ChatGPT' };
+let aiProvider: ProviderId | null = null;
+
+// {{ai}} in every text = the chosen AI helper (spec §7); no provider yet → the localized "AI helper".
+// i18next reads defaultVariables at t() time, so updating the object is enough.
+function applyAiName() {
+  const interpolation = (i18n.options.interpolation ??= {});
+  const vars = (interpolation.defaultVariables ??= {});
+  vars.ai = aiProvider ? AI_NAMES[aiProvider] : i18n.t('common.aiHelper', { ai: '' });
+}
+
+// Components re-render on 'aiChanged' (react.bindI18n below), so visible texts switch names at once.
+export function setAiProvider(id: ProviderId | null) {
+  if (id === aiProvider) return;
+  aiProvider = id;
+  if (!i18n.isInitialized) return;
+  applyAiName();
+  i18n.emit('aiChanged');
+}
+
 export function initI18n(lng: Language) {
   if (i18n.isInitialized) {
     void i18n.changeLanguage(lng);
@@ -40,10 +61,13 @@ export function initI18n(lng: Language) {
     },
     lng,
     fallbackLng: 'en',
-    interpolation: { escapeValue: false },
+    interpolation: { escapeValue: false, defaultVariables: { ai: '' } },
     initAsync: false,
+    react: { bindI18n: 'languageChanged aiChanged' },
   });
   syncDocumentLang(i18n.language);
   i18n.on('languageChanged', syncDocumentLang);
+  applyAiName();
+  i18n.on('languageChanged', applyAiName);
   return i18n;
 }

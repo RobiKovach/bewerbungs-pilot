@@ -29,7 +29,7 @@ describe('OnboardingWizard', () => {
     const { server, user } = setup(null);
     expect(await screen.findByText('Step 1 of 5')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    expect(await screen.findByRole('heading', { name: 'Connect Claude' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Your AI helper' })).toBeInTheDocument();
     expect(server.current().onboarding.currentStep).toBe('claude');
   });
 
@@ -71,7 +71,7 @@ describe('OnboardingWizard', () => {
 
   it('explains how to sign in and re-checks on demand', async () => {
     const { f, user } = setup('claude', { ok: false, reason: 'not-logged-in' });
-    expect(await screen.findByText('Please sign in to Claude')).toBeInTheDocument();
+    expect(await screen.findByText('Installed, not signed in yet.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Open sign-in window' }));
     await user.click(screen.getByRole('button', { name: 'Check again' }));
     const urls = f.mock.calls.map((c) => c[0]);

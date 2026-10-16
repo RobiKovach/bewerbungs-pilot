@@ -7,7 +7,8 @@
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
     "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}",
     "technicalDetails": "Text tehnic pentru asistență",
-    "dismiss": "Ascundeți acest mesaj"
+    "dismiss": "Ascundeți acest mesaj",
+    "aiHelper": "Asistentul AI"
   },
   "language": { "label": "Limbă" },
   "unsaved": { "leave": "Unele modificări nu sunt încă salvate. Dacă plecați acum, se vor pierde. Plecați totuși?" },
@@ -21,25 +22,29 @@
   },
   "onboarding": {
     "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând." },
-    "claude": {
-      "title": "Conectați Claude",
-      "intro": "BewerbungsPilot folosește Claude Code pe computerul dumneavoastră pentru a citi ofertele de angajare și a redacta documentele dumneavoastră.",
-      "checking": "Se verifică conexiunea la Claude…",
-      "ok": "Claude este pregătit.",
+    "ai": {
+      "title": "Asistentul dumneavoastră AI",
+      "intro": "BewerbungsPilot folosește un asistent AI pe computerul dumneavoastră pentru a citi ofertele de angajare și a redacta documentele dumneavoastră. Alegeți unul.",
+      "choose": "Alegeți",
+      "chosen": "Ales",
+      "install": "Instalați",
+      "installing": "Se instalează… Poate dura câteva minute.",
+      "installFailed": "Instalarea nu a reușit.",
+      "supportLine": "Pentru asistență:",
       "openLogin": "Deschideți fereastra de autentificare",
-      "notInstalled": {
-        "title": "Claude Code nu este încă instalat",
-        "step1": "Închideți BewerbungsPilot.",
-        "step2": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră.",
-        "step3": "Porniți BewerbungsPilot cu ajutorul comenzii rapide de pe desktop și reveniți la acest pas."
-      },
-      "notLoggedIn": {
-        "title": "Vă rugăm să vă autentificați la Claude",
-        "step1": "Faceți clic pe „Deschideți fereastra de autentificare”.",
-        "step2": "Autentificați-vă cu contul dumneavoastră Claude în fereastra care se deschide (este posibil să se deschidă și o pagină de browser).",
-        "step3": "După ce v-ați autentificat, închideți fereastra și faceți clic pe „Verificați din nou”."
-      },
-      "error": { "title": "Claude nu a răspuns", "hint": "Verificați conexiunea la internet și faceți clic pe „Verificați din nou”." }
+      "checkAgain": "Verificați din nou",
+      "checking": "Se verifică…",
+      "ready": "{{ai}} este pregătit.",
+      "notInstalled": "Încă nu este instalat.",
+      "notLoggedIn": "Instalat, dar încă nu v-ați autentificat.",
+      "error": "{{ai}} nu a răspuns. Verificați conexiunea la internet și faceți clic pe „Verificați din nou”.",
+      "noneChosen": "Încă nu ați ales un asistent AI.",
+      "claude": { "name": "Claude", "price": "Necesită un abonament Claude plătit (Pro sau Max).", "limit": "Limită: depinde de planul dumneavoastră.", "cost": "Un pachet de candidatură ≈ 1–3 cereri, o căutare ≈ până la 5." },
+      "chatgpt": {
+        "name": "ChatGPT", "price": "Gratuit cu un cont ChatGPT; planurile plătite oferă mai mult.", "limit": "Limită: depinde de planul dumneavoastră ChatGPT (pentru planul gratuit, OpenAI nu publică cifre exacte).", "cost": "Un pachet de candidatură ≈ 1–3 cereri, o căutare ≈ până la 5.",
+        "privacy": "ChatGPT gratuit poate folosi textele dumneavoastră (CV, povești) pentru a îmbunătăți modelele OpenAI. Puteți dezactiva acest lucru în ChatGPT: Setări → Controale de date (Settings → Data controls).",
+        "privacyLink": "Cum dezactivați acest lucru"
+      }
     },
     "profile": { "title": "Profilul dumneavoastră", "body": "Încărcați CV-ul dumneavoastră sau completați datele singur/singură, apoi răspundeți la câteva întrebări scurte. Puteți face acest lucru și mai târziu, la secțiunea „Profil”." },
     "email": { "title": "E-mailul dumneavoastră", "body": "Conectați e-mailul dumneavoastră, astfel încât BewerbungsPilot să poată trimite cererile aprobate de dumneavoastră. Puteți și să săriți peste acest pas și să-l faceți mai târziu în Setări." },
@@ -52,7 +57,7 @@
     "todoLabel": "Ce faceți dumneavoastră",
     "go": "Deschideți",
     "stages": {
-      "install": { "title": "Instalare", "what": "Instalatorul pune BewerbungsPilot și Claude Code pe computerul dumneavoastră și creează o comandă rapidă pe desktop.", "todo": "Nimic altceva — ați făcut deja acest lucru. Porniți aplicația cu ajutorul comenzii rapide de pe desktop." },
+      "install": { "title": "Instalare", "what": "Instalatorul pune BewerbungsPilot pe computerul dumneavoastră și creează o comandă rapidă pe desktop. Asistentul AI îl alegeți și îl conectați în aplicație.", "todo": "Nimic altceva — ați făcut deja acest lucru. Porniți aplicația cu ajutorul comenzii rapide de pe desktop." },
       "profile": { "title": "Profil", "what": "CV-ul, competențele și preferințele dumneavoastră — baza fiecărei candidaturi. Nu se inventează niciodată nimic.", "todo": "Încărcați CV-ul și răspundeți la câteva întrebări scurte." },
       "email": { "title": "E-mail", "what": "Cererile sunt trimise de la propria dumneavoastră adresă de e-mail.", "todo": "Introduceți adresa dumneavoastră de e-mail și o parolă specială de aplicație — vă arătăm cum să o creați în 3 pași." },
       "search": { "title": "Căutarea locurilor de muncă", "what": "BewerbungsPilot caută pe bursa de locuri de muncă a Agenției Federale pentru Ocuparea Forței de Muncă și selectează ofertele potrivite profilului dumneavoastră. Puteți, de asemenea, să inserați o ofertă găsită de dumneavoastră.", "todo": "Faceți clic pe „Căutați acum” — sau inserați o ofertă găsită de dumneavoastră. Căutarea zilnică automată va veni mai târziu." },
@@ -63,12 +68,12 @@
   },
   "info": {
     "languageSwitcher": "Schimbă limba aplicației. Documentele pentru angajatori folosesc limba ofertei de angajare.",
-    "claudeTest": "Trimite o scurtă întrebare de test către Claude pentru a verifica dacă totul funcționează.",
+    "claudeTest": "Trimite o scurtă întrebare de test către {{ai}} pentru a verifica dacă totul funcționează.",
     "restartIntro": "Afișează din nou pașii de bun venit. Datele dumneavoastră rămân neschimbate.",
     "quit": "Oprește BewerbungsPilot pe acest computer. Porniți-l din nou cu ajutorul comenzii rapide de pe desktop.",
     "profileConfirm": "Faceți clic după ce ați verificat fiecare câmp din această secțiune. Doar secțiunile verificate sunt folosite pentru candidaturi.",
-    "profileCv": "CV-ul dvs. rămâne pe acest computer. Claude îl citește doar pentru a vă completa profilul. Nimic nu este inventat.",
-    "profileAsk": "Claude doar întreabă — nu inventează niciodată nimic. Răspunsurile dumneavoastră devin povești pe care le verificați și le puteți schimba.",
+    "profileCv": "CV-ul dvs. rămâne pe acest computer. {{ai}} îl citește doar pentru a vă completa profilul. Nimic nu este inventat.",
+    "profileAsk": "{{ai}} doar întreabă — nu inventează niciodată nimic. Răspunsurile dumneavoastră devin povești pe care le verificați și le puteți schimba.",
     "profileDocs": "Fișiere PDF de până la 10 MB fiecare, cel mult 20. Documentele bifate sunt atașate automat la fiecare aplicație."
   },
   "mail": {
@@ -137,10 +142,10 @@
     "title": "Setări",
     "languageTitle": "Limbă",
     "mailTitle": "E-mail pentru trimitere",
-    "claudeTitle": "Conexiune la Claude",
+    "claudeTitle": "Asistent AI",
     "claudeTest": "Testați conexiunea",
-    "claudeRunning": "Se așteaptă răspunsul Claude…",
-    "claudeResult": "Claude spune: „{{greeting}}”",
+    "claudeRunning": "Se așteaptă răspunsul {{ai}}…",
+    "claudeResult": "{{ai}} spune: „{{greeting}}”",
     "introTitle": "Pașii de bun venit",
     "introRestart": "Afișați din nou pașii de bun venit",
     "quitTitle": "Închideți aplicația",
@@ -169,7 +174,7 @@
       "changed": "Vă rugăm verificați din nou aceste secțiuni: {{sections}}",
       "proposed": "Ați verificat sau editat deja aceste secțiuni, așa că nu s-a schimbat nimic în ele. Noul CV are o altă versiune — vă rugăm să alegeți pe care o păstrați: {{sections}}",
       "unchanged": "Noul CV nu a schimbat nimic în profilul dumneavoastră.",
-      "reading": "Claude vă citește CV-ul… Poate dura până la 3 minute."
+      "reading": "{{ai}} vă citește CV-ul… Poate dura până la 3 minute."
     },
     "proposal": {
       "title": "Noul CV are o altă versiune a acestei secțiuni",
@@ -183,14 +188,14 @@
     "start": {
       "intro": "Profilul dvs. este baza fiecărei candidaturi. Rămâne pe acest computer.",
       "withCvTitle": "Am un CV",
-      "withCvBody": "Claude îl citește și vă completează profilul. După aceea verificați totul.",
+      "withCvBody": "{{ai}} îl citește și vă completează profilul. După aceea verificați totul.",
       "withoutCvTitle": "Nu am un CV",
       "withoutCvBody": "Completați aceleași secțiuni singur, pas cu pas.",
       "withoutCv": "Completați fără CV"
     },
-    "review": { "intro": "Verificați fiecare secțiune. Câmpurile marcate „AI – vă rugăm verificați” au fost completate de Claude. Când o secțiune este corectă, faceți clic pe „Totul corect”." },
+    "review": { "intro": "Verificați fiecare secțiune. Câmpurile marcate „AI – vă rugăm verificați” au fost completate de {{ai}}. Când o secțiune este corectă, faceți clic pe „Totul corect”." },
     "aiCheck": "AI – vă rugăm verificați",
-    "aiHint": "Claude a completat acest câmp pe baza CV-ului dumneavoastră. Vă rugăm să îl verificați.",
+    "aiHint": "{{ai}} a completat acest câmp pe baza CV-ului dumneavoastră. Vă rugăm să îl verificați.",
     "save": "Salvați",
     "allCorrect": "Totul corect",
     "remove": "Eliminați",
@@ -238,13 +243,13 @@
     "remote": { "any": "Nu contează", "onsite": "La locul de muncă", "hybrid": "Parțial de acasă", "remote": "Doar de acasă" },
     "employment": { "fulltime": "Normă întreagă", "parttime": "Normă parțială", "minijob": "Minijob", "apprenticeship": "Ucenicie (Ausbildung)", "internship": "Stagiu" },
     "stories": {
-      "intro": "O scrisoare de intenție bună nu repetă CV-ul — spune una sau două povești adevărate despre ce ați făcut. Claude vă pune câteva întrebări pentru a le găsi.",
-      "askIntro": "Claude se uită la profilul dumneavoastră și vă pune 3 până la 7 întrebări scurte, personale.",
+      "intro": "O scrisoare de intenție bună nu repetă CV-ul — spune una sau două povești adevărate despre ce ați făcut. {{ai}} vă pune câteva întrebări pentru a le găsi.",
+      "askIntro": "{{ai}} se uită la profilul dumneavoastră și vă pune 3 până la 7 întrebări scurte, personale.",
       "ask": "Puneți-mi întrebări",
-      "asking": "Claude se gândește la întrebări…",
+      "asking": "{{ai}} se gândește la întrebări…",
       "answerIntro": "Răspundeți în orice limbă, cu propriile cuvinte. Pentru a sări peste o întrebare, lăsați-o goală.",
       "structure": "Transformați răspunsurile mele în povești",
-      "structuring": "Claude vă scrie poveștile…",
+      "structuring": "{{ai}} vă scrie poveștile…",
       "listTitle": "Poveștile dumneavoastră",
       "new": "Nou — vă rugăm verificați",
       "confirm": "Așa este corect",
@@ -308,9 +313,9 @@
     "followUp": { "notice": "Ați trimis această candidatură pe {{date}} și de 14 zile nu ați primit niciun răspuns. Merită să scrieți din nou.", "write": "Scrieți un memento", "dismiss": "Nu mă mai reaminti", "badge": "Scrieți din nou", "title": "Memento", "markReminded": "Marcați ca reamintit" },
     "mailDraft": { "copy": "Copiați mesajul", "copied": "Copiat.", "copyFailed": "Copierea nu a reușit — selectați textul și copiați-l singur.", "needMail": "Conectați e-mailul pentru a trimite mesajul de aici.", "needMailLink": "Deschideți setările", "reauthLink": "Conectați-vă din nou cu Google" },
     "reply": { "rejection": "Răspundeți la refuz", "offer": "Răspundeți la ofertă" },
-    "offerReply": { "working": "Claude scrie răspunsul…", "offered": "Ce vi s-a oferit", "wanted": "Ce doriți", "wantedHint": "Scrieți suma cu cifre, de exemplu 55.000 €.", "ask": "Cereți-i lui Claude să scrie răspunsul", "text": "Răspunsul dumneavoastră", "save": "Salvați", "discard": "Renunțați la modificări", "copy": "Copiați", "send": "Trimiteți…", "again": "Scrieți din nou", "close": "Închideți", "saveFirst": "Salvați mai întâi textul." },
+    "offerReply": { "working": "{{ai}} scrie răspunsul…", "offered": "Ce vi s-a oferit", "wanted": "Ce doriți", "wantedHint": "Scrieți suma cu cifre, de exemplu 55.000 €.", "ask": "Cereți-i lui {{ai}} să scrie răspunsul", "text": "Răspunsul dumneavoastră", "save": "Salvați", "discard": "Renunțați la modificări", "copy": "Copiați", "send": "Trimiteți…", "again": "Scrieți din nou", "close": "Închideți", "saveFirst": "Salvați mai întâi textul." },
     "open": "Deschideți pachetul",
-    "busy": "Claude lucrează acum la alt pachet. Vă rugăm să așteptați puțin.",
+    "busy": "{{ai}} lucrează acum la alt pachet. Vă rugăm să așteptați puțin.",
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Toate aplicațiile",
     "tabs": {
@@ -323,10 +328,10 @@
       "update": "Actualizează CV-ul",
       "keepQuestion": "Păstrăm textele modificate de dvs. (Profil, titlul postului)?",
       "keepYes": "Păstrează textul meu",
-      "keepNo": "Lasă Claude să scrie din nou",
+      "keepNo": "Lăsați {{ai}} să scrie din nou",
       "profil": "Profil (începutul CV-ului)",
       "headline": "Titlul postului sub numele dvs.",
-      "headlineHint": "Claude îl propune pentru această ofertă; îl puteți modifica.",
+      "headlineHint": "{{ai}} îl propune pentru această ofertă; îl puteți modifica.",
       "profilHint": "2–3 propoziții. Tot restul din CV provine din profilul dvs.",
       "save": "Salvați",
       "fromProfile": "Pentru a schimba date, locuri de muncă, competențe sau limbi, modificați profilul, apoi faceți clic pe „Actualizează CV-ul”.",
@@ -351,16 +356,16 @@
     "unapprove": "Înapoi la ciornă",
     "recreate": "Creați din nou",
     "copyDraft": "Copiați ca ciornă nouă",
-    "recreateConfirm": "Claude scrie din nou scrisoarea și părțile CV-ului. Modificările dvs. din scrisoare și din textul „Profil” al CV-ului se vor pierde.",
+    "recreateConfirm": "{{ai}} scrie din nou scrisoarea și părțile CV-ului. Modificările dvs. din scrisoare și din textul „Profil” al CV-ului se vor pierde.",
     "recreateYes": "Da, creează din nou",
     "delete": "Ștergeți pachetul",
     "deleteConfirm": "Ștergeți acest pachet? Oferta de muncă rămâne în lista dvs.",
     "deleteYes": "Da, șterge",
     "working": {
-      "create": "Claude scrie scrisoarea și pregătește CV-ul…",
-      "recreate": "Claude scrie din nou pachetul…",
-      "revise": "Claude modifică scrisoarea…",
-      "refreshCv": "Claude actualizează CV-ul…"
+      "create": "{{ai}} scrie scrisoarea și pregătește CV-ul…",
+      "recreate": "{{ai}} scrie din nou pachetul…",
+      "revise": "{{ai}} modifică scrisoarea…",
+      "refreshCv": "{{ai}} actualizează CV-ul…"
     },
     "letter": {
       "hintTitle": "Sfat:",
@@ -375,9 +380,9 @@
       "signature": "Numele de sub scrisoare",
       "save": "Salvează modificările",
       "discard": "Renunță la modificări",
-      "askLabel": "Rugați Claude să modifice scrisoarea",
+      "askLabel": "Rugați {{ai}} să modifice scrisoarea",
       "askPlaceholder": "De exemplu: mai scurt, sau folosește povestea despre magazinul online",
-      "ask": "Întreabă Claude",
+      "ask": "Întrebați {{ai}}",
       "saveFirst": "Mai întâi salvați sau renunțați la modificări.",
       "preview": "Previzualizarea scrisorii"
     },
@@ -388,7 +393,7 @@
       "englishWarning": "În profilul dumneavoastră, engleza este sub B2. Angajatorul vă poate invita la interviu în engleză.",
       "shortText": "Textul acestei oferte este foarte scurt — scrisoarea va fi mai generală. Puteți lipi manual textul complet ca ofertă nouă.",
       "start": "Creează",
-      "working": "Claude scrie scrisoarea și pregătește CV-ul… Durează un minut sau două.",
+      "working": "{{ai}} scrie scrisoarea și pregătește CV-ul… Durează un minut sau două.",
       "exists": "Pentru această ofertă există deja un pachet.",
       "notReady": "Înainte de a crea un pachet, vă rugăm să completați în profil:",
       "noStory": "o poveste verificată, care poate fi spusă angajatorilor",
@@ -396,11 +401,14 @@
     }
   },
   "errors": {
-    "LLM_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },
-    "LLM_NOT_LOGGED_IN": { "message": "Nu sunteți autentificat la Claude.", "hint": "Deschideți Setările și faceți clic pe „Deschideți fereastra de autentificare”." },
-    "LLM_TIMEOUT": { "message": "Claude a durat prea mult pentru a răspunde.", "hint": "Vă rugăm să încercați din nou peste puțin timp." },
-    "LLM_BAD_OUTPUT": { "message": "Răspunsul Claude nu a putut fi înțeles.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
-    "LLM_FAILED": { "message": "Claude nu a putut finaliza sarcina.", "hint": "Verificați conexiunea la internet și încercați din nou." },
+    "LLM_NOT_INSTALLED": { "message": "Asistentul AI {{ai}} nu este instalat.", "hint": "Deschideți Setări → Asistent AI și faceți clic pe „Instalați”." },
+    "LLM_NOT_LOGGED_IN": { "message": "Nu sunteți autentificat la {{ai}}.", "hint": "Deschideți Setări → Asistent AI și faceți clic pe „Deschideți fereastra de autentificare”." },
+    "LLM_TIMEOUT": { "message": "{{ai}} a durat prea mult pentru a răspunde.", "hint": "Vă rugăm să încercați din nou peste puțin timp." },
+    "LLM_BAD_OUTPUT": { "message": "Răspunsul lui {{ai}} nu a putut fi înțeles.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
+    "LLM_FAILED": { "message": "{{ai}} nu a putut finaliza sarcina.", "hint": "Verificați conexiunea la internet și încercați din nou." },
+    "LLM_LIMIT": { "message": "Limita {{ai}} este epuizată deocamdată.", "hint": "Încercați mai târziu sau alegeți alt asistent AI în Setări." },
+    "LLM_NOT_CHOSEN": { "message": "Încă nu ați ales un asistent AI.", "hint": "Alegeți unul în Setări → Asistent AI." },
+    "CV_NO_TEXT": { "message": "Acest PDF pare a fi o scanare sau o fotografie.", "hint": "{{ai}} citește doar fișiere PDF cu text sau fișiere Word. Salvați CV-ul ca PDF din Word sau încărcați fișierul DOCX." },
     "LLM_CANCELLED": { "message": "Sarcina a fost anulată.", "hint": "Porniți-o din nou oricând doriți." },
     "DATA_WRITE_FAILED": { "message": "Modificările dumneavoastră nu au putut fi salvate.", "hint": "Verificați dacă discul nu este plin și încercați din nou." },
     "FILE_TOO_LARGE": { "message": "Acest fișier este prea mare.", "hint": "Un CV sau document poate avea până la 10 MB, o fotografie până la 5 MB. Încercați un fișier mai mic, de exemplu salvați din nou PDF-ul cu o calitate mai scăzută." },
@@ -417,8 +425,8 @@
     "VACANCY_DUPLICATE": { "message": "Acest anunț este deja în lista dumneavoastră.", "hint": "Deschideți-l acolo, în loc să îl adăugați din nou." },
     "VACANCY_NOT_FOUND": { "message": "Acest anunț nu mai este în lista dumneavoastră.", "hint": "Reîncărcați pagina." },
     "BROWSER_MISSING": { "message": "Nu s-a găsit un browser potrivit pentru a crea PDF-uri.", "hint": "BewerbungsPilot folosește Microsoft Edge sau Google Chrome pentru a crea PDF-uri. Vă rugăm să instalați Google Chrome și să încercați din nou." },
-    "LETTER_TOO_LONG": { "message": "Scrisoarea de intenție are mai mult de o pagină.", "hint": "Scurtați scrisoarea (sau rugați Claude s-o scurteze) până când dispare marcajul roșu, apoi aprobați-o." },
-    "PACKAGE_RULES_BROKEN": { "message": "Claude nu a putut scrie scrisoarea respectând regulile.", "hint": "Încercați din nou. Dacă se repetă, verificați poveștile și lista „de nu menționat” din profil." },
+    "LETTER_TOO_LONG": { "message": "Scrisoarea de intenție are mai mult de o pagină.", "hint": "Scurtați scrisoarea (sau rugați {{ai}} s-o scurteze) până când dispare marcajul roșu, apoi aprobați-o." },
+    "PACKAGE_RULES_BROKEN": { "message": "{{ai}} nu a putut scrie scrisoarea respectând regulile.", "hint": "Încercați din nou. Dacă se repetă, verificați poveștile și lista „de nu menționat” din profil." },
     "PACKAGE_EXISTS": { "message": "Există deja un pachet pentru acest anunț.", "hint": "Deschideți pachetul existent. Pentru a începe de la zero, folosiți în el „Creați din nou”." },
     "CONFLICT": { "message": "Între timp, aici s-a schimbat ceva.", "hint": "Vă rugăm să vă uitați încă o dată și apoi să alegeți din nou." },
     "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
@@ -433,20 +441,21 @@
     "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
     "reasons": {
       "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",
-      "cvNoContent": "Claude a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",
+      "cvNoContent": "{{ai}} a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",
       "cvDocxBroken": "Fișierul nu a putut fi deschis ca document Word. Este posibil să fie deteriorat sau salvat într-un alt format.",
+      "cvPdfBroken": "Fișierul PDF nu a putut fi citit.",
       "fileTypeDetected": "Fișierul este de fapt un fișier {{detected}}. Aici sunt permise: {{allowed}}.",
       "allowedTypes": { "cv": "PDF sau Word (DOCX)", "photo": "JPG sau PNG", "document": "PDF" },
       "tooManyDocuments": "Aveți deja {{max}} documente — ștergeți unul pentru a adăuga altul nou.",
       "profileMissing": "Încă lipsește: {{sections}}.",
-      "llmTimeout": "Claude nu a răspuns în {{seconds}} secunde.",
+      "llmTimeout": "{{ai}} nu a răspuns în {{seconds}} secunde.",
       "cancelledByUser": "Ați anulat.",
       "proposalChanged": "CV-ul nou s-a schimbat din nou — vă rugăm să vă uitați încă o dată la el.",
       "pastedTooShort": "Textul lipit este prea scurt (cel puțin {{min}} caractere). Lipiți întregul anunț, nu doar titlul.",
       "offerGone": "Agenția Federală a Muncii nu mai afișează acest anunț.",
       "noStory": "Nu aveți încă nicio poveste verificată care poate fi spusă angajatorilor. Adăugați una în profil, la secțiunea „Povești pentru scrisorile de intenție”.",
       "attachmentUnreadable": "Atașamentul „{{name}}” nu poate fi citit (deteriorat sau protejat cu parolă). Eliminați-l din acest pachet sau înlocuiți-l în profil.",
-      "packageBusy": "Claude lucrează chiar acum la acest pachet. Vă rugăm să așteptați până termină.",
+      "packageBusy": "{{ai}} lucrează chiar acum la acest pachet. Vă rugăm să așteptați până termină.",
       "packageSent": "Această candidatură a fost deja trimisă sau depusă – nu mai poate fi modificată.",
       "packageSending": "Această candidatură se trimite chiar acum. Vă rugăm să așteptați un moment.",
       "packageChanged": "Candidatura a fost modificată în timp ce se pregătea trimiterea. Nu s-a trimis nimic – verificați-o și încercați din nou.",
@@ -475,7 +484,7 @@
       "phase": {
         "querying": "Căutare pe bursa locurilor de muncă…",
         "details": "Se încarcă textele ofertelor…",
-        "scoring": "Claude evaluează ofertele…",
+        "scoring": "{{ai}} evaluează ofertele…",
         "staleCheck": "Se verifică ce oferte mai vechi au fost eliminate…"
       },
       "counters": "Găsite {{found}} · filtrate {{filtered}} · evaluate {{scored}} din {{total}}",
@@ -520,7 +529,7 @@
       "failed": "Evaluarea a eșuat",
       "score": "Evaluați",
       "scoreAgain": "Evaluați din nou",
-      "scoring": "Claude evaluează această ofertă…",
+      "scoring": "{{ai}} evaluează această ofertă…",
       "interesting": "★ Interesant",
       "notInteresting": "Neinteresant",
       "unfavorite": "Eliminați din favorite",
@@ -541,13 +550,13 @@
       "link": "Link (opțional)",
       "linkHint": "Linkul este salvat doar pentru dumneavoastră — BewerbungsPilot nu deschide alte site-uri. Sunt citite direct doar linkurile către arbeitsagentur.de/jobsuche/jobdetail/…",
       "add": "Adăugați",
-      "working": "Claude citește oferta…",
+      "working": "{{ai}} citește oferta…",
       "duplicate": "Această ofertă se află deja în lista dumneavoastră.",
       "showIt": "Afișați"
     },
     "edit": {
       "open": "Editați",
-      "checkHint": "Claude a completat aceste câmpuri — vă rugăm să le verificați.",
+      "checkHint": "{{ai}} a completat aceste câmpuri — vă rugăm să le verificați.",
       "title": "Titlul postului",
       "titleRequired": "Vă rugăm să introduceți titlul postului.",
       "company": "Companie",
@@ -559,5 +568,6 @@
       "name": "Persoană de contact",
       "save": "Salvați"
     }
-  }
+  },
+  "writtenBy": { "label": "Scris de: {{name}}", "tipPackage": "Acest text a fost scris de asistentul AI {{name}}. Verificați-l înainte de trimitere.", "tipScore": "Scor acordat de {{name}}." }
 }

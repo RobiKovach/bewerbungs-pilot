@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
 import { SettingsProvider, useSettings } from './settings';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -12,7 +13,29 @@ function Probe() {
   return <span>{`lang:${settings.language}`}</span>;
 }
 
+// Uses only i18n, not the settings context: it must still re-render when the AI helper changes.
+function AiReady() {
+  const { t } = useTranslation();
+  return <span>{t('onboarding.ai.ready')}</span>;
+}
+
+function SwitchToClaude() {
+  const { update } = useSettings();
+  return <button type="button" onClick={() => void update({ llm: { provider: 'claude' } })}>switch</button>;
+}
+
 describe('SettingsProvider', () => {
+  it('names the saved AI helper in all texts and follows a change at once', async () => {
+    const server = settingsRoutes(baseSettings({ llm: { timeoutSec: 180, provider: 'chatgpt' } }));
+    mockFetch(server.routes);
+    render(<SettingsProvider><AiReady /><SwitchToClaude /></SettingsProvider>);
+    expect(await screen.findByText('ChatGPT is ready.')).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'switch' }));
+    expect(await screen.findByText('Claude is ready.')).toBeInTheDocument();
+    expect(server.current().llm.provider).toBe('claude');
+  });
+
+
   it('detects the browser language on first start and saves it', async () => {
     Object.defineProperty(window.navigator, 'languages', { value: ['de-DE', 'en'], configurable: true });
     const server = settingsRoutes(baseSettings({ language: null }));

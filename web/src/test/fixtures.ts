@@ -17,7 +17,7 @@ export function settingsRoutes(initial: Settings) {
       const p = JSON.parse(String(init?.body)) as SettingsPatch;
       state = {
         ...state, language: p.language ?? state.language, onboarding: { ...state.onboarding, ...p.onboarding },
-        vacancies: p.vacancies ?? state.vacancies,
+        vacancies: p.vacancies ?? state.vacancies, llm: p.llm ? { ...state.llm, ...p.llm } : state.llm,
       };
       return { body: state };
     },
