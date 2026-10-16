@@ -33,12 +33,12 @@ export class InstallJob {
     this.state = { state: 'running', provider: id };
     let out = '';
     let finished = false;
-    let timer: NodeJS.Timeout | undefined;
+    const timer: { id?: NodeJS.Timeout } = {}; // set once the process runs; finish() may come earlier (spawn throw)
     const timeoutMs = this.o.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const finish = (next: InstallStatus) => {
       if (finished) return;
       finished = true;
-      if (timer) clearTimeout(timer);
+      clearTimeout(timer.id);
       this.state = next;
       logger.info('ai_install', { provider: id, state: next.state });
       if (next.state === 'done') {
@@ -57,7 +57,7 @@ export class InstallJob {
     const keep = (chunk: Buffer) => { out = (out + chunk.toString('utf8')).slice(-TAIL); };
     child.stdout.on('data', keep);
     child.stderr.on('data', keep);
-    timer = setTimeout(() => {
+    timer.id = setTimeout(() => {
       killTree(child, logger);
       finish({ state: 'failed', provider: id, detail: `timeout after ${Math.round(timeoutMs / 1000)} s\n${out}`.trim() });
     }, timeoutMs);
