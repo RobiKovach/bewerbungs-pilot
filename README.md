@@ -4,16 +4,16 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.7 — foundation, profile, job offers, application packages, sending, statuses, reminders and statistics.** The app installs, runs,
-speaks six languages, walks you through the first steps, talks to Claude, builds your profile from your CV and your own
+**Status: v0.8 — foundation, profile, job offers, application packages, sending, statuses, reminders and statistics.** The app installs, runs,
+speaks six languages, walks you through the first steps, talks to an AI helper (Claude or ChatGPT), builds your profile from your CV and your own
 stories, finds job offers that fit your profile, writes an application package (cover letter + tailored CV) for the
 offers you choose, sends it from your own email, keeps track of the status of every application, reminds you to follow up and helps you answer.
 
 ## Requirements
 
 - Windows 10 or 11
-- A Claude account that can use [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-  (the installer sets up Claude Code and Node.js for you)
+- Node.js 20+ and one AI helper: Claude (paid subscription) or ChatGPT (free or paid ChatGPT account) — you choose and connect it inside the app
+  (the installer sets up Node.js for you)
 
 ## Install
 
@@ -23,6 +23,17 @@ offers you choose, sends it from your own email, keeps track of the status of ev
 
 Your data stays on your PC in `%LOCALAPPDATA%\BewerbungsPilot`. Updating = run the new
 installer; your data is kept.
+
+## AI helper
+
+In the first steps you choose who does the writing: **Claude** or **ChatGPT**. The app installs the helper for you and
+walks you through signing in; you can switch at any time in Settings. Only one helper works at a time.
+
+- Limits depend on your plan. With a free ChatGPT account the limit is small: one application package takes about 1–3
+  requests, a job search up to about 5. When the limit is reached the app says so and stops; try again later or switch helper.
+- Privacy: your CV and answers are sent to the helper's provider. On personal ChatGPT plans (free and paid), turn off
+  "Improve the model for everyone" in ChatGPT Settings → Data controls so your texts are not used for training; this also
+  covers Codex. See <https://help.openai.com/en/articles/7730893-data-controls-in-chatgpt>.
 
 ## Languages
 
@@ -83,6 +94,14 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## What's new in 0.8.0
+
+- **ChatGPT as a second AI helper** next to Claude. You pick one in the first steps or in Settings.
+- The helper is installed and signed in from inside the app.
+- **"Written by" badges** show which helper wrote each letter, reply and job score.
+- PDF CVs are read as text for ChatGPT. For a scanned PDF, use a text PDF or a DOCX instead.
+- The installer no longer installs Claude.
 
 ## What's new in 0.7.2
 

@@ -29,13 +29,6 @@ function Fail([string]$Detail) {
 function Refresh-Path {
   $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
 }
-function Find-Claude {
-  $cmd = Get-Command claude -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  $native = Join-Path $env:USERPROFILE '.local\bin\claude.exe'
-  if (Test-Path $native) { return $native }
-  return $null
-}
 
 Say 'title'
 
@@ -53,18 +46,7 @@ if ($major -lt 20) {
 }
 $NodeExe = (Get-Command node).Source
 
-# 2. Claude Code
-Say 'checkingClaude'
-$Claude = Find-Claude
-if (-not $Claude) {
-  if (-not (Ask 'claudeMissing')) { Say 'aborted'; exit 1 }
-  & powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://claude.ai/install.ps1 | iex"
-  Refresh-Path
-  $Claude = Find-Claude
-  if (-not $Claude) { Fail 'claude not found after installation' }
-}
-
-# 2b. A browser for PDFs (Edge or Chrome). Only a warning: everything else works without it.
+# 2. A browser for PDFs (Edge or Chrome). Only a warning: everything else works without it.
 Say 'checkingBrowser'
 $browserPaths = @()
 foreach ($base in @(${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
@@ -113,16 +95,6 @@ foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::Ge
   $lnk.WorkingDirectory = $AppDir
   $lnk.Description = 'BewerbungsPilot'
   $lnk.Save()
-}
-
-# 5. Claude sign-in (the one terminal window the user ever sees)
-$probe = 'Reply with the word ok.' | & $Claude -p --output-format json --model haiku --no-session-persistence 2>$null | Out-String
-$loggedIn = $false
-try { $loggedIn = -not ($probe | ConvertFrom-Json).is_error } catch { }
-if (-not $loggedIn) {
-  Say 'loginNeeded'
-  Start-Process -FilePath $Claude
-  Read-Host '>' | Out-Null
 }
 
 Say 'done'
