@@ -21,8 +21,11 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'BAD_REQUEST': return 400;
     case 'NOT_FOUND': return 404;
     case 'LLM_CANCELLED': return 499;
-    case 'CLAUDE_NOT_INSTALLED':
-    case 'CLAUDE_NOT_LOGGED_IN': return 503;
+    case 'LLM_NOT_INSTALLED':
+    case 'LLM_NOT_LOGGED_IN': return 503;
+    case 'LLM_LIMIT': return 429;
+    case 'LLM_NOT_CHOSEN': return 409;
+    case 'CV_NO_TEXT': return 422;
     case 'LLM_TIMEOUT': return 504;
     case 'FILE_TOO_LARGE': return 413;
     case 'FILE_TYPE_NOT_ALLOWED': return 415;

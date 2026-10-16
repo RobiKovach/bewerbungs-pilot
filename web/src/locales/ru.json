@@ -396,8 +396,8 @@
     }
   },
   "errors": {
-    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code не установлен.", "hint": "Запустите установщик BewerbungsPilot ещё раз — он сам установит Claude Code." },
-    "CLAUDE_NOT_LOGGED_IN": { "message": "Вы не вошли в Claude.", "hint": "Откройте Настройки и нажмите «Открыть окно входа»." },
+    "LLM_NOT_INSTALLED": { "message": "Claude Code не установлен.", "hint": "Запустите установщик BewerbungsPilot ещё раз — он сам установит Claude Code." },
+    "LLM_NOT_LOGGED_IN": { "message": "Вы не вошли в Claude.", "hint": "Откройте Настройки и нажмите «Открыть окно входа»." },
     "LLM_TIMEOUT": { "message": "Claude слишком долго не отвечал.", "hint": "Пожалуйста, попробуйте ещё раз через минуту." },
     "LLM_BAD_OUTPUT": { "message": "Не удалось разобрать ответ Claude.", "hint": "Попробуйте ещё раз. Если это повторяется, перезапустите приложение." },
     "LLM_FAILED": { "message": "Claude не смог выполнить задачу.", "hint": "Проверьте подключение к интернету и попробуйте ещё раз." },

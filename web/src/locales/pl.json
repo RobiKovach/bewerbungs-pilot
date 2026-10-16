@@ -396,8 +396,8 @@
     }
   },
   "errors": {
-    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },
-    "CLAUDE_NOT_LOGGED_IN": { "message": "Nie zalogowano do Claude.", "hint": "Otwórz Ustawienia i kliknij „Otwórz okno logowania”." },
+    "LLM_NOT_INSTALLED": { "message": "Claude Code nie jest zainstalowany.", "hint": "Uruchom ponownie instalator BewerbungsPilot — sam zainstaluje Claude Code." },
+    "LLM_NOT_LOGGED_IN": { "message": "Nie zalogowano do Claude.", "hint": "Otwórz Ustawienia i kliknij „Otwórz okno logowania”." },
     "LLM_TIMEOUT": { "message": "Claude zbyt długo nie odpowiadał.", "hint": "Spróbuj ponownie za chwilę." },
     "LLM_BAD_OUTPUT": { "message": "Nie udało się zrozumieć odpowiedzi Claude.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom program ponownie." },
     "LLM_FAILED": { "message": "Claude nie zdołał wykonać zadania.", "hint": "Sprawdź połączenie z internetem i spróbuj ponownie." },

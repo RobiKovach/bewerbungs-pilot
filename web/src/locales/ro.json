@@ -396,8 +396,8 @@
     }
   },
   "errors": {
-    "CLAUDE_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },
-    "CLAUDE_NOT_LOGGED_IN": { "message": "Nu sunteți autentificat la Claude.", "hint": "Deschideți Setările și faceți clic pe „Deschideți fereastra de autentificare”." },
+    "LLM_NOT_INSTALLED": { "message": "Claude Code nu este instalat.", "hint": "Rulați din nou instalatorul BewerbungsPilot — acesta instalează Claude Code pentru dumneavoastră." },
+    "LLM_NOT_LOGGED_IN": { "message": "Nu sunteți autentificat la Claude.", "hint": "Deschideți Setările și faceți clic pe „Deschideți fereastra de autentificare”." },
     "LLM_TIMEOUT": { "message": "Claude a durat prea mult pentru a răspunde.", "hint": "Vă rugăm să încercați din nou peste puțin timp." },
     "LLM_BAD_OUTPUT": { "message": "Răspunsul Claude nu a putut fi înțeles.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
     "LLM_FAILED": { "message": "Claude nu a putut finaliza sarcina.", "hint": "Verificați conexiunea la internet și încercați din nou." },

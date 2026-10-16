@@ -1,20 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Language, MailSettings, PublishedWithinDays, Settings, SettingsPatch } from '@bp/shared';
+import type { Language, MailSettings, ProviderId, PublishedWithinDays, Settings, SettingsPatch } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { CorruptJsonError, readJson, writeJsonAtomic } from './atomic.js';
 
-export type { Language, Settings, SettingsPatch };
+export type { Language, ProviderId, Settings, SettingsPatch };
 
 export const SUPPORTED_LANGUAGES = ['uk', 'en', 'de', 'ru', 'pl', 'ro'] as const satisfies readonly Language[];
 
 export const PUBLISHED_WITHIN_DAYS = [1, 3, 7, 14, 30] as const satisfies readonly PublishedWithinDays[];
 
+export const PROVIDER_IDS = ['claude', 'chatgpt'] as const satisfies readonly ProviderId[];
+
 export const DEFAULT_SETTINGS: Settings = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   language: null,
   onboarding: { currentStep: null, completed: false },
-  llm: { timeoutSec: 180 },
+  llm: { timeoutSec: 180, provider: null },
   vacancies: { publishedWithinDays: 14 },
   mail: null,
 };
@@ -49,6 +51,7 @@ export class SettingsStore {
       ...this.current,
       language: p.language ?? this.current.language,
       onboarding: { ...this.current.onboarding, ...p.onboarding },
+      llm: { ...this.current.llm, ...(p.llm ?? {}) },
       vacancies: { ...this.current.vacancies, ...p.vacancies },
     };
     try {
@@ -90,22 +93,26 @@ function normalize(raw: unknown): Settings {
   const d = structuredClone(DEFAULT_SETTINGS);
   if (!raw || typeof raw !== 'object') return d;
   const r = raw as {
+    schemaVersion?: unknown;
     language?: unknown;
     onboarding?: { currentStep?: unknown; completed?: unknown };
-    llm?: { timeoutSec?: unknown };
+    llm?: { timeoutSec?: unknown; provider?: unknown };
     vacancies?: { publishedWithinDays?: unknown };
     mail?: unknown;
   };
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
+  const provider: ProviderId | null = PROVIDER_IDS.find((id) => id === r.llm?.provider)
+    // v1 files predate the choice: everyone who finished onboarding used Claude.
+    ?? (r.schemaVersion !== 2 && r.onboarding?.completed === true ? 'claude' : null);
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     language: lang,
     onboarding: {
       currentStep: typeof r.onboarding?.currentStep === 'string' ? r.onboarding.currentStep : null,
       completed: r.onboarding?.completed === true,
     },
-    llm: { timeoutSec: typeof timeout === 'number' && timeout >= 30 ? timeout : d.llm.timeoutSec },
+    llm: { timeoutSec: typeof timeout === 'number' && timeout >= 30 ? timeout : d.llm.timeoutSec, provider },
     vacancies: {
       publishedWithinDays: PUBLISHED_WITHIN_DAYS.find((n) => n === r.vacancies?.publishedWithinDays) ?? d.vacancies.publishedWithinDays,
     },

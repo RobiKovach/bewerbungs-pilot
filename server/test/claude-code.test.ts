@@ -56,7 +56,7 @@ describe('parseClaudeOutput', () => {
     expect(parseClaudeOutput('{"type":"result","subtype":"success","is_error":false,"structured_output":{"a":1}}', '', 0)).toEqual({ ok: true, value: { a: 1 } });
   });
   it('treats an auth message as not logged in', () => {
-    expect(parseClaudeOutput('', 'Invalid API key · Please run /login', 1)).toMatchObject({ ok: false, code: 'CLAUDE_NOT_LOGGED_IN' });
+    expect(parseClaudeOutput('', 'Invalid API key · Please run /login', 1)).toMatchObject({ ok: false, code: 'LLM_NOT_LOGGED_IN' });
   });
 });
 
@@ -106,7 +106,7 @@ describe('ClaudeCodeProvider.run', () => {
   });
   it('reports a signed-out CLI without retrying', async () => {
     const counter = path.join(tmp(), 'n');
-    await expect(provider('not-logged-in', { FAKE_CLAUDE_COUNTER: counter }).p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'CLAUDE_NOT_LOGGED_IN' });
+    await expect(provider('not-logged-in', { FAKE_CLAUDE_COUNTER: counter }).p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_NOT_LOGGED_IN' });
     expect(fs.readFileSync(counter, 'utf8')).toBe('1');
   });
   it('reports a crash as LLM_FAILED', async () => {
@@ -122,9 +122,9 @@ describe('ClaudeCodeProvider.run', () => {
     setTimeout(() => ctrl.abort(), 300);
     await expect(provider('hang').p.run(helloTask('en'), ctrl.signal)).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
   });
-  it('reports a missing CLI as CLAUDE_NOT_INSTALLED', async () => {
+  it('reports a missing CLI as LLM_NOT_INSTALLED', async () => {
     const p = new ClaudeCodeProvider({ tmpRoot: tmp(), timeoutMs: () => 1000, command: null });
-    await expect(p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'CLAUDE_NOT_INSTALLED' });
+    await expect(p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_NOT_INSTALLED' });
   });
   it('rejects instead of hanging forever when killing the process does not make it exit, and cleans up once it eventually does', async () => {
     const tmpRoot = path.join(tmp(), 'tmp');

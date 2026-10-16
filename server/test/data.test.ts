@@ -157,3 +157,39 @@ describe('settings: mail', () => {
     expect(new SettingsStore(file).load().mail).toBeNull();
   });
 });
+
+describe('settings v2 — llm.provider', () => {
+  const write = (dir: string, doc: unknown) => fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify(doc));
+  const load = (dir: string) => { const s = new SettingsStore(path.join(dir, 'settings.json')); return s.load(); };
+  const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-set-'));
+
+  it('a v1 file with completed onboarding becomes claude', () => {
+    const dir = tmpDir();
+    write(dir, { schemaVersion: 1, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180 } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 2, llm: { timeoutSec: 180, provider: 'claude' } });
+  });
+  it('a v1 file without completed onboarding gets null', () => {
+    const dir = tmpDir();
+    write(dir, { schemaVersion: 1, onboarding: { currentStep: 'claude', completed: false } });
+    expect(load(dir).llm.provider).toBeNull();
+  });
+  it('a v2 file keeps null even when onboarding is completed ("continue anyway")', () => {
+    const dir = tmpDir();
+    write(dir, { schemaVersion: 2, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } });
+    expect(load(dir).llm.provider).toBeNull();
+  });
+  it('a v2 file keeps chatgpt; an unknown provider becomes null', () => {
+    const dir = tmpDir();
+    write(dir, { schemaVersion: 2, llm: { provider: 'chatgpt' } });
+    expect(load(dir).llm.provider).toBe('chatgpt');
+    write(dir, { schemaVersion: 2, llm: { provider: 'gpt' } });
+    expect(load(dir).llm.provider).toBeNull();
+  });
+  it('patch sets the provider and keeps the timeout', () => {
+    const dir = tmpDir();
+    const s = new SettingsStore(path.join(dir, 'settings.json'));
+    s.load();
+    expect(s.patch({ llm: { provider: 'chatgpt' } }).llm).toEqual({ timeoutSec: 180, provider: 'chatgpt' });
+    expect(new SettingsStore(path.join(dir, 'settings.json')).load().llm.provider).toBe('chatgpt');
+  });
+});

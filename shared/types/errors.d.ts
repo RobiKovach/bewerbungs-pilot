@@ -1,7 +1,10 @@
 /** Codes the server sends as { error: { code, detailsForLog } }. The web client adds its own SERVER_UNREACHABLE. */
 export type ErrorCode =
-  | 'CLAUDE_NOT_INSTALLED'
-  | 'CLAUDE_NOT_LOGGED_IN'
+  | 'LLM_NOT_INSTALLED'
+  | 'LLM_NOT_LOGGED_IN'
+  | 'LLM_LIMIT'
+  | 'LLM_NOT_CHOSEN'
+  | 'CV_NO_TEXT'
   | 'LLM_TIMEOUT'
   | 'LLM_BAD_OUTPUT'
   | 'LLM_FAILED'

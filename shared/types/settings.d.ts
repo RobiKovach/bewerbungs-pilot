@@ -11,11 +11,13 @@ export interface MailProvider { id: string; label: string; domains: string[]; ho
 export interface GoogleSignInStatus { state: 'idle' | 'pending' | 'ready' | 'cancelled' | 'failed'; email?: string; code?: ErrorCode }
 export interface MailSettingsView { mail: MailSettings | null; passwordSaved: boolean }
 
+export type ProviderId = 'claude' | 'chatgpt';
+
 export interface Settings {
-  schemaVersion: 1;
+  schemaVersion: 2;
   language: Language | null;
   onboarding: { currentStep: string | null; completed: boolean };
-  llm: { timeoutSec: number };
+  llm: { timeoutSec: number; provider: ProviderId | null };
   vacancies: { publishedWithinDays: PublishedWithinDays };
   mail: MailSettings | null;
 }
@@ -24,7 +26,10 @@ export interface SettingsPatch {
   language?: Language;
   onboarding?: Partial<Settings['onboarding']>;
   vacancies?: { publishedWithinDays: PublishedWithinDays };
+  llm?: { provider: ProviderId };
 }
 
 export interface Availability { ok: boolean; reason?: 'not-installed' | 'not-logged-in' | 'error'; detail?: string }
-export interface LlmCheck { availability: Availability; queue: { running: boolean; queued: number } }
+/** provider null = none chosen yet (availability is then { ok: false, reason: 'error' }). */
+export interface LlmCheck { provider: ProviderId | null; availability: Availability; queue: { running: boolean; queued: number } }
+export interface InstallStatus { state: 'idle' | 'running' | 'done' | 'failed'; provider: ProviderId | null; detail?: string }

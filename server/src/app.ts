@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
-import { PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language, type SettingsPatch, type SettingsStore } from './data/settings.js';
+import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language, type SettingsPatch, type SettingsStore } from './data/settings.js';
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
 import type { LlmQueue } from './llm/queue.js';
@@ -65,6 +65,10 @@ const settingsPatchSchema = {
         currentStep: { type: ['string', 'null'], maxLength: 64 },
         completed: { type: 'boolean' },
       },
+    },
+    llm: {
+      type: 'object', additionalProperties: false, required: ['provider'],
+      properties: { provider: { type: 'string', enum: [...PROVIDER_IDS] } },
     },
     vacancies: {
       type: 'object',

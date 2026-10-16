@@ -16,7 +16,7 @@ describe('AppError', () => {
   it('maps codes to HTTP statuses', () => {
     expect(httpStatusFor('BAD_REQUEST')).toBe(400);
     expect(httpStatusFor('NOT_FOUND')).toBe(404);
-    expect(httpStatusFor('CLAUDE_NOT_LOGGED_IN')).toBe(503);
+    expect(httpStatusFor('LLM_NOT_LOGGED_IN')).toBe(503);
     expect(httpStatusFor('LLM_TIMEOUT')).toBe(504);
     expect(httpStatusFor('LLM_CANCELLED')).toBe(499);
     expect(httpStatusFor('UNKNOWN')).toBe(500);
@@ -50,5 +50,15 @@ describe('AppError', () => {
     ['PACKAGE_EXISTS', 409],
   ] as const)('maps package code %s to HTTP %i', (code, status) => {
     expect(httpStatusFor(code)).toBe(status);
+  });
+});
+
+describe('provider-neutral AI codes', () => {
+  it('maps the provider-neutral AI codes', () => {
+    expect(httpStatusFor('LLM_NOT_INSTALLED')).toBe(503);
+    expect(httpStatusFor('LLM_NOT_LOGGED_IN')).toBe(503);
+    expect(httpStatusFor('LLM_LIMIT')).toBe(429);
+    expect(httpStatusFor('LLM_NOT_CHOSEN')).toBe(409);
+    expect(httpStatusFor('CV_NO_TEXT')).toBe(422);
   });
 });

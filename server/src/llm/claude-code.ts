@@ -123,12 +123,12 @@ export function parseClaudeOutput(stdout: string, stderr: string, exitCode: numb
     // handled below
   }
   if (!obj) {
-    if (AUTH_ERROR_RE.test(all)) return { ok: false, code: 'CLAUDE_NOT_LOGGED_IN', detail: all.slice(0, 2000) };
+    if (AUTH_ERROR_RE.test(all)) return { ok: false, code: 'LLM_NOT_LOGGED_IN', detail: all.slice(0, 2000) };
     return { ok: false, code: exitCode === 0 ? 'LLM_BAD_OUTPUT' : 'LLM_FAILED', detail: all.slice(0, 2000) };
   }
   if (obj.is_error === true || (obj.subtype !== undefined && obj.subtype !== 'success')) {
     const msg = String(obj.result ?? obj.subtype ?? 'error');
-    return { ok: false, code: AUTH_ERROR_RE.test(msg) ? 'CLAUDE_NOT_LOGGED_IN' : 'LLM_FAILED', detail: msg.slice(0, 2000) };
+    return { ok: false, code: AUTH_ERROR_RE.test(msg) ? 'LLM_NOT_LOGGED_IN' : 'LLM_FAILED', detail: msg.slice(0, 2000) };
   }
   if (obj.structured_output !== undefined) return { ok: true, value: obj.structured_output };
   if (typeof obj.result === 'string') {
@@ -185,15 +185,15 @@ export class ClaudeCodeProvider implements LlmProvider {
     } catch (err) {
       const e = err instanceof AppError ? err : new AppError('UNKNOWN', String(err));
       this.logger.warn('claude_probe_failed', { code: e.code, detail: e.detailsForLog });
-      if (e.code === 'CLAUDE_NOT_INSTALLED') return { ok: false, reason: 'not-installed', detail: e.detailsForLog };
-      if (e.code === 'CLAUDE_NOT_LOGGED_IN') return { ok: false, reason: 'not-logged-in', detail: e.detailsForLog };
+      if (e.code === 'LLM_NOT_INSTALLED') return { ok: false, reason: 'not-installed', detail: e.detailsForLog };
+      if (e.code === 'LLM_NOT_LOGGED_IN') return { ok: false, reason: 'not-logged-in', detail: e.detailsForLog };
       return { ok: false, reason: 'error', detail: e.detailsForLog };
     }
   }
 
   async run<T>(task: LlmTask, signal: AbortSignal): Promise<T> {
     const cmd = this.command();
-    if (!cmd) throw new AppError('CLAUDE_NOT_INSTALLED', 'claude executable not found');
+    if (!cmd) throw new AppError('LLM_NOT_INSTALLED', 'claude executable not found');
     let lastError = new AppError('LLM_BAD_OUTPUT', 'no attempt made');
     for (let attempt = 1; attempt <= 2; attempt++) {
       const out = await this.runOnce(cmd, task, signal, [], this.opts.timeoutMs());
@@ -213,7 +213,7 @@ export class ClaudeCodeProvider implements LlmProvider {
 
   openLogin(): void {
     const cmd = this.command();
-    if (!cmd) throw new AppError('CLAUDE_NOT_INSTALLED', 'claude executable not found');
+    if (!cmd) throw new AppError('LLM_NOT_INSTALLED', 'claude executable not found');
     // Detached console app on Windows = its own visible window where the user signs in.
     spawn(cmd.file, cmd.argsPrefix, { detached: true, stdio: 'ignore', windowsHide: false, env: this.opts.env ?? process.env })
       .on('error', (err) => this.logger.error('open_login_failed', { message: err.message }))
@@ -304,7 +304,7 @@ export class ClaudeCodeProvider implements LlmProvider {
       child.stdin.end(promptWithInputs(task, inputs), 'utf8');
 
       child.on('error', (err: NodeJS.ErrnoException) =>
-        finish(() => reject(new AppError(err.code === 'ENOENT' ? 'CLAUDE_NOT_INSTALLED' : 'LLM_FAILED', err.message))),
+        finish(() => reject(new AppError(err.code === 'ENOENT' ? 'LLM_NOT_INSTALLED' : 'LLM_FAILED', err.message))),
       );
       child.on('close', (exitCode) => {
         // Retry cleanup unconditionally: if the promise already settled via the grace timer, the

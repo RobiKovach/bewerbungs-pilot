@@ -24,7 +24,7 @@ describe('SettingsPage', () => {
 
   it('shows a readable error when the test fails', async () => {
     const server = settingsRoutes(baseSettings());
-    mockFetch({ ...server.routes, ...mailRoutes, 'POST /api/llm/test': () => ({ status: 503, body: { error: { code: 'CLAUDE_NOT_LOGGED_IN', detailsForLog: '' } } }) });
+    mockFetch({ ...server.routes, ...mailRoutes, 'POST /api/llm/test': () => ({ status: 503, body: { error: { code: 'LLM_NOT_LOGGED_IN', detailsForLog: '' } } }) });
     render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Test the connection' }));
     expect(await screen.findByText('You are not signed in to Claude.')).toBeInTheDocument();
