@@ -7,6 +7,7 @@
     "comingSoon": "În curând", "moreInfo": "Mai multe informații", "loading": "Se încarcă…",
     "continueAnyway": "Continuați oricum", "stepOf": "Pasul {{current}} din {{total}}",
     "technicalDetails": "Text tehnic pentru asistență",
+    "openAiSettings": "Deschideți Setări → Asistent AI",
     "dismiss": "Ascundeți acest mesaj",
     "aiHelper": "Asistentul AI"
   },
@@ -30,6 +31,7 @@
       "install": "Instalați",
       "installing": "Se instalează… Poate dura câteva minute.",
       "installFailed": "Instalarea nu a reușit.",
+      "installedNotFound": "{{ai}} a fost instalat, dar aplicația nu îl găsește — reporniți BewerbungsPilot.",
       "supportLine": "Pentru asistență:",
       "openLogin": "Deschideți fereastra de autentificare",
       "checkAgain": "Verificați din nou",

@@ -13,7 +13,12 @@ type Check = { kind: 'checking' } | { kind: 'done'; a: Availability } | { kind: 
 
 /** Two cards (Claude, ChatGPT): state, "Choose", then Install → Open sign-in window → Check again.
  *  The choice is saved to settings.llm.provider only once that helper's check is ok. */
-export function AiHelperCards({ onReady, pollMs = POLL_MS }: { onReady?: (id: ProviderId) => void; pollMs?: number }) {
+export function AiHelperCards({ onReady, onLoginOffered, pollMs = POLL_MS }: {
+  onReady?: (id: ProviderId) => void;
+  /** Tells the parent whether the saved helper's card currently offers "Open sign-in window" (Settings hides its own). */
+  onLoginOffered?: (offered: boolean) => void;
+  pollMs?: number;
+}) {
   const { t } = useTranslation();
   const { settings, update } = useSettings();
   const [checks, setChecks] = useState<Record<ProviderId, Check>>({ claude: { kind: 'checking' }, chatgpt: { kind: 'checking' } });
@@ -45,6 +50,13 @@ export function AiHelperCards({ onReady, pollMs = POLL_MS }: { onReady?: (id: Pr
 
   useEffect(() => { for (const id of IDS) void check(id, false); }, [check]);
 
+  // An install started earlier (another page, a reload) is still running: show it and let the polling below take over.
+  useEffect(() => {
+    let stopped = false;
+    void api.installStatus().then((s) => { if (!stopped && s.state === 'running') setInstall(s); }).catch(() => undefined);
+    return () => { stopped = true; };
+  }, []);
+
   useEffect(() => {
     if (install?.state !== 'running') return;
     let stopped = false;
@@ -62,6 +74,11 @@ export function AiHelperCards({ onReady, pollMs = POLL_MS }: { onReady?: (id: Pr
     }, pollMs);
     return () => { stopped = true; clearInterval(timer); };
   }, [install?.state, check, pollMs]);
+
+  const saved = settings.llm.provider;
+  const savedCheck = saved ? checks[saved] : null;
+  const loginOffered = saved !== null && open === saved && savedCheck?.kind === 'done' && savedCheck.a.reason === 'not-logged-in';
+  useEffect(() => { onLoginOffered?.(loginOffered); }, [loginOffered, onLoginOffered]);
 
   const guarded = async (fn: () => Promise<unknown>) => {
     setError(null);
@@ -97,6 +114,7 @@ export function AiHelperCards({ onReady, pollMs = POLL_MS }: { onReady?: (id: Pr
               <p className={a?.ok ? 'ok' : 'muted'}>
                 {c.kind === 'checking' ? t('onboarding.ai.checking')
                   : a?.ok ? `✓ ${t('onboarding.ai.ready', { ai: name })}`
+                  : a?.reason === 'not-installed' && install?.provider === id && install.state === 'done' ? t('onboarding.ai.installedNotFound', { ai: name })
                   : a?.reason === 'not-installed' ? t('onboarding.ai.notInstalled')
                   : a?.reason === 'not-logged-in' ? t('onboarding.ai.notLoggedIn')
                   : t('onboarding.ai.error', { ai: name })}

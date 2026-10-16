@@ -7,6 +7,7 @@
     "comingSoon": "Wkrótce", "moreInfo": "Więcej informacji", "loading": "Ładowanie…",
     "continueAnyway": "Mimo to kontynuuj", "stepOf": "Krok {{current}} z {{total}}",
     "technicalDetails": "Tekst techniczny dla wsparcia",
+    "openAiSettings": "Otwórz Ustawienia → Asystent AI",
     "dismiss": "Ukryj tę wiadomość",
     "aiHelper": "Asystent AI"
   },
@@ -30,6 +31,7 @@
       "install": "Zainstaluj",
       "installing": "Instalowanie… To może potrwać kilka minut.",
       "installFailed": "Nie udało się zainstalować.",
+      "installedNotFound": "{{ai}} jest zainstalowany, ale aplikacja go nie znajduje — uruchom BewerbungsPilot ponownie.",
       "supportLine": "Pomoc techniczna:",
       "openLogin": "Otwórz okno logowania",
       "checkAgain": "Sprawdź ponownie",

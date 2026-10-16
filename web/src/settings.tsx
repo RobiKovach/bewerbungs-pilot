@@ -48,6 +48,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={{ settings, update }}>{children}</Ctx.Provider>;
 }
 
+/** For components that may also render outside the provider (e.g. ErrorBanner in isolated tests). */
+export function useOptionalSettings(): SettingsCtx | null {
+  return useContext(Ctx);
+}
+
 export function useSettings(): SettingsCtx {
   const ctx = useContext(Ctx);
   if (!ctx) throw new Error('useSettings must be used inside SettingsProvider');

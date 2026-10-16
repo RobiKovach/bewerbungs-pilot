@@ -7,6 +7,7 @@
     "comingSoon": "Coming soon", "moreInfo": "More information", "loading": "Loading…",
     "continueAnyway": "Continue anyway", "stepOf": "Step {{current}} of {{total}}",
     "technicalDetails": "Technical text for support",
+    "openAiSettings": "Open Settings → AI helper",
     "dismiss": "Hide this message",
     "aiHelper": "AI helper"
   },
@@ -30,6 +31,7 @@
       "install": "Install",
       "installing": "Installing… this can take a few minutes.",
       "installFailed": "Could not install.",
+      "installedNotFound": "{{ai}} is installed, but the app cannot find it — restart BewerbungsPilot.",
       "supportLine": "For support:",
       "openLogin": "Open sign-in window",
       "checkAgain": "Check again",

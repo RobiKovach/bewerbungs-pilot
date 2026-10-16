@@ -9,23 +9,31 @@ import type { Availability, InstallStatus, ProviderId, Settings } from '../types
 
 type Checks = Record<ProviderId, Availability>;
 
-function setup(opts: { checks: Checks; provider?: Settings['llm']['provider']; install?: InstallStatus[]; onReady?: (id: ProviderId) => void }) {
+function setup(opts: {
+  checks: Checks; provider?: Settings['llm']['provider']; install?: InstallStatus[]; onReady?: (id: ProviderId) => void;
+  /** What GET /api/llm/install answers before anything is posted (default idle); `install` then plays out from there. */
+  initialInstall?: InstallStatus; onLoginOffered?: (offered: boolean) => void;
+}) {
   const server = settingsRoutes(baseSettings({ llm: { timeoutSec: 180, provider: opts.provider ?? null } }));
   const checks = opts.checks;
   const checkRoute = (id: ProviderId): RouteHandler => () => ({ body: { provider: id, availability: checks[id], queue: { running: false, queued: 0 } } });
   const statuses = [...(opts.install ?? [])];
+  let posted = opts.initialInstall?.state === 'running';
   const routes: Record<string, RouteHandler> = {
     ...server.routes,
     'POST /api/llm/open-login': () => ({ body: { ok: true } }),
-    'POST /api/llm/install': (init) => ({ status: 202, body: { state: 'running', provider: JSON.parse(String(init?.body)).provider } }),
-    'GET /api/llm/install': () => ({ body: statuses.length > 1 ? statuses.shift() : statuses[0] }),
+    'POST /api/llm/install': (init) => { posted = true; return { status: 202, body: { state: 'running', provider: JSON.parse(String(init?.body)).provider } }; },
+    'GET /api/llm/install': () => {
+      if (!posted) return { body: opts.initialInstall ?? { state: 'idle', provider: null } };
+      return { body: statuses.length > 1 ? statuses.shift() : statuses[0] };
+    },
   };
   for (const id of ['claude', 'chatgpt'] as const) {
     routes[`GET /api/llm/check?provider=${id}`] = checkRoute(id);
     routes[`GET /api/llm/check?provider=${id}&refresh=1`] = checkRoute(id);
   }
   const f = mockFetch(routes);
-  render(<SettingsProvider><AiHelperCards pollMs={10} onReady={opts.onReady} /></SettingsProvider>);
+  render(<SettingsProvider><AiHelperCards pollMs={10} onReady={opts.onReady} onLoginOffered={opts.onLoginOffered} /></SettingsProvider>);
   return { server, f, checks, user: userEvent.setup() };
 }
 
@@ -106,6 +114,41 @@ describe('AiHelperCards', () => {
     await vi.waitFor(() => expect(patches(f)).toEqual([{ llm: { provider: 'chatgpt' } }]));
     expect(onReady).toHaveBeenLastCalledWith('chatgpt');
     expect(await within(card('ChatGPT')).findByText('Chosen')).toBeInTheDocument();
+  });
+
+  it('an install already running when the cards open is shown and followed to the end', async () => {
+    const { checks, f } = setup({
+      checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-installed' } },
+      provider: 'chatgpt',
+      initialInstall: { state: 'running', provider: 'chatgpt' },
+      install: [{ state: 'running', provider: 'chatgpt' }, { state: 'done', provider: 'chatgpt' }],
+    });
+    expect(await within(await waitCard('ChatGPT')).findByText('Installing… this can take a few minutes.')).toBeInTheDocument();
+    expect(within(card('ChatGPT')).getByRole('button', { name: 'Install' })).toBeDisabled();
+    checks.chatgpt = { ok: true };
+    expect(await within(card('ChatGPT')).findByText('✓ ChatGPT is ready.')).toBeInTheDocument();
+    expect(f.mock.calls.map((c) => c[0])).toContain('/api/llm/check?provider=chatgpt&refresh=1');
+    expect(f.mock.calls.some((c) => c[0] === '/api/llm/install' && (c[1] as RequestInit | undefined)?.method === 'POST')).toBe(false);
+  });
+
+  it('an install that finished but still cannot be found asks for a restart', async () => {
+    const { user } = setup({
+      checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-installed' } },
+      provider: 'claude',
+      install: [{ state: 'running', provider: 'chatgpt' }, { state: 'done', provider: 'chatgpt' }],
+    });
+    await within(await waitCard('ChatGPT')).findByText('Not installed yet.');
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Install' }));
+    expect(await within(card('ChatGPT')).findByText('ChatGPT is installed, but the app cannot find it — restart BewerbungsPilot.')).toBeInTheDocument();
+    expect(within(card('ChatGPT')).queryByText('Not installed yet.')).toBeNull();
+  });
+
+  it('reports when the saved helper card offers "Open sign-in window"', async () => {
+    const onLoginOffered = vi.fn();
+    setup({ checks: { claude: { ok: false, reason: 'not-logged-in' }, chatgpt: { ok: true } }, provider: 'claude', onLoginOffered });
+    await within(await waitCard('Claude')).findByRole('button', { name: 'Open sign-in window' });
+    await vi.waitFor(() => expect(onLoginOffered).toHaveBeenLastCalledWith(true));
   });
 });
 

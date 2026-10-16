@@ -67,6 +67,18 @@ describe('SettingsPage', () => {
     expect(JSON.parse(String((call[1] as RequestInit).body))).toEqual({});
   });
 
+  it('when the chosen helper is not signed in, only its card offers "Open sign-in window"', async () => {
+    const server = settingsRoutes(baseSettings());
+    const notLoggedIn = () => ({ body: { provider: 'claude', availability: { ok: false, reason: 'not-logged-in' }, queue: { running: false, queued: 0 } } });
+    const f = mockFetch({ ...server.routes, ...mailRoutes, 'GET /api/llm/check?provider=claude': notLoggedIn, 'GET /api/llm/check?provider=claude&refresh=1': notLoggedIn });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    expect(await screen.findByText('Installed, not signed in yet.')).toBeInTheDocument();
+    await vi.waitFor(() => expect(screen.getAllByRole('button', { name: 'Open sign-in window' })).toHaveLength(1));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Open sign-in window' }));
+    const call = f.mock.calls.find((c) => c[0] === '/api/llm/open-login')!;
+    expect(JSON.parse(String((call[1] as RequestInit).body))).toEqual({ provider: 'claude' });
+  });
+
   it('without a chosen helper the test is disabled and says so', async () => {
     const server = settingsRoutes(baseSettings({ llm: { timeoutSec: 180, provider: null } }));
     mockFetch({ ...server.routes, ...mailRoutes });

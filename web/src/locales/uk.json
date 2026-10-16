@@ -7,6 +7,7 @@
     "comingSoon": "Скоро", "moreInfo": "Докладніше", "loading": "Завантаження…",
     "continueAnyway": "Продовжити все одно", "stepOf": "Крок {{current}} з {{total}}",
     "technicalDetails": "Технічний текст для підтримки",
+    "openAiSettings": "Відкрити Налаштування → ШІ-помічник",
     "dismiss": "Приховати це повідомлення",
     "aiHelper": "ШІ-помічник"
   },
@@ -30,6 +31,7 @@
       "install": "Встановити",
       "installing": "Встановлюємо… це може тривати кілька хвилин.",
       "installFailed": "Не вдалося встановити.",
+      "installedNotFound": "{{ai}} встановлено, але програма його не знаходить — перезапустіть BewerbungsPilot.",
       "supportLine": "Для підтримки:",
       "openLogin": "Відкрити вікно входу",
       "checkAgain": "Перевірити ще раз",

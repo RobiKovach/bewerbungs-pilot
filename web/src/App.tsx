@@ -17,7 +17,8 @@ import type { Route } from './types';
 function routeFromHash(hash: string): Route {
   const r = hash.replace(/^#\/?/, '');
   if (r === 'applications' || r.startsWith('applications/')) return 'applications';
-  return r === 'guide' || r === 'settings' || r === 'profile' || r === 'vacancies' ? r : 'home';
+  if (r === 'settings' || r.startsWith('settings/')) return 'settings';
+  return r === 'guide' || r === 'profile' || r === 'vacancies' ? r : 'home';
 }
 
 export function App() {

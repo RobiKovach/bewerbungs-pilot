@@ -39,4 +39,16 @@ describe('App', () => {
     await userEvent.setup().click(await screen.findByRole('link', { name: 'Job offers' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Job offers' })).toBeInTheDocument();
   });
+
+  it('#/settings/ai (the link in AI errors) opens Settings', async () => {
+    window.location.hash = '#/settings/ai';
+    try {
+      mockFetch(settingsRoutes(baseSettings()).routes);
+      render(<SettingsProvider><App /></SettingsProvider>);
+      expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('aria-current', 'page');
+    } finally {
+      window.location.hash = '';
+    }
+  });
 });

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AiHelperCards } from '../ai/AiHelperCards';
 import { api } from '../api';
-import { ErrorBanner } from '../components/ErrorBanner';
+import { AI_SETTINGS_HASH, ErrorBanner } from '../components/ErrorBanner';
 import { InfoTip } from '../components/InfoTip';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { MailSettingsBlock } from '../mail/MailSettingsBlock';
@@ -21,6 +21,14 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
   const chosen = settings.llm.provider !== null;
   const [test, setTest] = useState<TestState>({ kind: 'idle' });
   const [error, setError] = useState<unknown>(null);
+  // The chosen helper's card already shows "Open sign-in window" — then the general button below is hidden.
+  const [cardOffersLogin, setCardOffersLogin] = useState(false);
+  const aiBlock = useRef<HTMLDivElement>(null);
+
+  // Arrived from an error's "Open Settings → AI helper" link: bring the AI block into view.
+  useEffect(() => {
+    if (window.location.hash === AI_SETTINGS_HASH) aiBlock.current?.scrollIntoView?.({ block: 'start' });
+  }, []);
 
   const runTest = async () => {
     const controller = new AbortController();
@@ -47,9 +55,9 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
         <LanguageSwitcher />
       </div>
 
-      <div className="card settings-section">
+      <div className="card settings-section" id="ai-helper" ref={aiBlock}>
         <h2>{t('onboarding.ai.title')}<InfoTip textKey="info.claudeTest" /></h2>
-        <AiHelperCards />
+        <AiHelperCards onLoginOffered={setCardOffersLogin} />
         {!chosen ? <p className="muted">{t('onboarding.ai.noneChosen')}</p> : null}
         {test.kind === 'running' ? (
           <div className="btn-row">
@@ -59,7 +67,7 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
         ) : (
           <div className="btn-row">
             <button type="button" className="btn" disabled={!chosen} onClick={() => void runTest()}>{t('settings.claudeTest')}</button>
-            {chosen ? (
+            {chosen && !cardOffersLogin ? (
               <button type="button" className="btn ghost" onClick={() => void guarded(() => api.openLogin())}>{t('onboarding.ai.openLogin')}</button>
             ) : null}
           </div>

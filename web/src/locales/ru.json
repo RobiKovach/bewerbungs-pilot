@@ -7,6 +7,7 @@
     "comingSoon": "Скоро", "moreInfo": "Дополнительная информация", "loading": "Загрузка…",
     "continueAnyway": "Всё равно продолжить", "stepOf": "Шаг {{current}} из {{total}}",
     "technicalDetails": "Технический текст для поддержки",
+    "openAiSettings": "Открыть Настройки → ИИ-помощник",
     "dismiss": "Скрыть это сообщение",
     "aiHelper": "ИИ-помощник"
   },
@@ -30,6 +31,7 @@
       "install": "Установить",
       "installing": "Устанавливаем… это может занять несколько минут.",
       "installFailed": "Не удалось установить.",
+      "installedNotFound": "{{ai}} установлен, но программа его не находит — перезапустите BewerbungsPilot.",
       "supportLine": "Для поддержки:",
       "openLogin": "Открыть окно входа",
       "checkAgain": "Проверить снова",

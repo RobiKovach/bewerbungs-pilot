@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { SettingsProvider } from '../settings';
+import { mockFetch } from '../test/fetchMock';
+import { baseSettings, settingsRoutes } from '../test/fixtures';
 import { ErrorBanner } from './ErrorBanner';
 import { ApiError } from '../api';
 import type { ErrorReason } from '../types';
@@ -48,5 +51,28 @@ describe('ErrorBanner', () => {
   it('translates FILE_TYPE_NOT_ALLOWED with the allowed types for the given kind', () => {
     render(<ErrorBanner error={new ApiError('FILE_TYPE_NOT_ALLOWED', 'photo: detected .pdf', 'fileTypeDetected', { kind: 'photo', detected: '.pdf' })} />);
     expect(screen.getByText('The file is actually a .pdf file. Allowed here: JPG or PNG.')).toBeInTheDocument();
+  });
+
+  describe('link to Settings → AI helper', () => {
+    afterEach(() => { window.location.hash = ''; });
+    it.each(['LLM_NOT_CHOSEN', 'LLM_NOT_INSTALLED', 'LLM_NOT_LOGGED_IN'])('%s links to the AI helper block in Settings', (code) => {
+      render(<ErrorBanner error={new ApiError(code, '')} />);
+      expect(screen.getByRole('link', { name: 'Open Settings → AI helper' })).toHaveAttribute('href', '#/settings/ai');
+    });
+    it('other codes have no such link', () => {
+      render(<ErrorBanner error={new ApiError('LLM_TIMEOUT', '')} />);
+      expect(screen.queryByRole('link', { name: 'Open Settings → AI helper' })).toBeNull();
+    });
+    it('not on the Settings page itself', () => {
+      window.location.hash = '#/settings';
+      render(<ErrorBanner error={new ApiError('LLM_NOT_CHOSEN', '')} />);
+      expect(screen.queryByRole('link', { name: 'Open Settings → AI helper' })).toBeNull();
+    });
+    it('not during the welcome steps (there are no pages to go to)', async () => {
+      mockFetch(settingsRoutes(baseSettings({ onboarding: { currentStep: 'profile', completed: false } })).routes);
+      render(<SettingsProvider><ErrorBanner error={new ApiError('LLM_NOT_CHOSEN', '')} /></SettingsProvider>);
+      expect(await screen.findByRole('alert')).toHaveTextContent('No AI helper is chosen yet.');
+      expect(screen.queryByRole('link', { name: 'Open Settings → AI helper' })).toBeNull();
+    });
   });
 });

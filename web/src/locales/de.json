@@ -7,6 +7,7 @@
     "comingSoon": "Demnächst", "moreInfo": "Weitere Informationen", "loading": "Wird geladen…",
     "continueAnyway": "Trotzdem fortfahren", "stepOf": "Schritt {{current}} von {{total}}",
     "technicalDetails": "Technischer Text für den Support",
+    "openAiSettings": "Einstellungen → KI-Assistent öffnen",
     "dismiss": "Diese Meldung ausblenden",
     "aiHelper": "KI-Assistent"
   },
@@ -30,6 +31,7 @@
       "install": "Installieren",
       "installing": "Wird installiert… Das kann einige Minuten dauern.",
       "installFailed": "Die Installation ist fehlgeschlagen.",
+      "installedNotFound": "{{ai}} wurde installiert, aber die App findet es nicht. Starten Sie BewerbungsPilot neu.",
       "supportLine": "Für den Support:",
       "openLogin": "Anmeldefenster öffnen",
       "checkAgain": "Erneut prüfen",
