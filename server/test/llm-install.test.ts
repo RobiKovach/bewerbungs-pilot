@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { INSTALL_COMMANDS, InstallJob } from '../src/llm/install.js';
+import { CODEX_VERIFIED_VERSION } from '../src/llm/codex-cli.js';
 
 const FAKE = fileURLToPath(new URL('./fixtures/fake-install.mjs', import.meta.url));
 const cmds = (mode: string) => ({ claude: () => ({ file: process.execPath, args: [FAKE, mode] }), chatgpt: () => ({ file: process.execPath, args: [FAKE, mode] }) });
@@ -37,10 +38,19 @@ describe('InstallJob', () => {
     expect(job.start('claude')).toMatchObject({ state: 'running', provider: 'claude' });
     await settle(job);
   });
+  it('a synchronous spawn throw ends in failed, never forever running; a new install can start', async () => {
+    const job = new InstallJob({ commands: { claude: () => ({ file: process.execPath, args: ['bad\0arg'] }), chatgpt: () => ({ file: process.execPath, args: ['bad\0arg'] }) }, timeoutMs: 200 });
+    expect(job.start('chatgpt')).toMatchObject({ state: 'failed', provider: 'chatgpt' });
+    expect(job.status().detail).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 300));
+    expect(job.status().state).toBe('failed');
+    expect(job.start('claude')).toMatchObject({ state: 'failed', provider: 'claude' });
+  });
   it('the built-in table uses no shell and fixed arguments', () => {
     const g = INSTALL_COMMANDS.chatgpt();
     expect(g.file).toBe(process.execPath);
-    expect(g.args.slice(1)).toEqual(['i', '-g', '@openai/codex']);
+    expect(g.args.slice(1)).toEqual(['i', '-g', `@openai/codex@${CODEX_VERIFIED_VERSION}`]);
+    expect(g.args.at(-1)).toBe('@openai/codex@0.162.1');
     expect(g.args[0]).toMatch(/npm-cli\.js$/);
     const c = INSTALL_COMMANDS.claude();
     expect(c.file.toLowerCase()).toMatch(/powershell\.exe$/);

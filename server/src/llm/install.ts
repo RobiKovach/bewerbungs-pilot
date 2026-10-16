@@ -4,6 +4,7 @@ import type { InstallStatus, ProviderId } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { nullLogger, type Logger } from '../log.js';
 import { killTree } from './cli-runner.js';
+import { CODEX_VERIFIED_VERSION } from './codex-cli.js';
 
 export interface InstallCommand { file: string; args: string[] }
 
@@ -13,7 +14,8 @@ const powershell = () => path.join(process.env.SystemRoot ?? 'C:\\Windows', 'Sys
 // Fixed commands only (spec §4): the request names a provider, never a package or a command.
 export const INSTALL_COMMANDS: Readonly<Record<ProviderId, () => InstallCommand>> = {
   claude: () => ({ file: powershell(), args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', 'irm https://claude.ai/install.ps1 | iex'] }),
-  chatgpt: () => ({ file: process.execPath, args: [npmCli(), 'i', '-g', '@openai/codex'] }),
+  // Pinned: the isolation flags were verified on exactly this version — bump only after `npm run check:codex`.
+  chatgpt: () => ({ file: process.execPath, args: [npmCli(), 'i', '-g', `@openai/codex@${CODEX_VERIFIED_VERSION}`] }),
 };
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 const TAIL = 2000;
@@ -31,22 +33,31 @@ export class InstallJob {
     this.state = { state: 'running', provider: id };
     let out = '';
     let finished = false;
+    let timer: NodeJS.Timeout | undefined;
     const timeoutMs = this.o.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const finish = (next: InstallStatus) => {
       if (finished) return;
       finished = true;
-      clearTimeout(timer); // declared below; finish only runs after it exists
+      if (timer) clearTimeout(timer);
       this.state = next;
       logger.info('ai_install', { provider: id, state: next.state });
       if (next.state === 'done') {
         try { this.o.onDone?.(id); } catch (err) { logger.warn('ai_install_ondone_failed', { message: (err as Error).message }); }
       }
     };
-    const child = spawn(cmd.file, cmd.args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    const spawnOrError = () => {
+      try { return spawn(cmd.file, cmd.args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (err) { return err instanceof Error ? err : new Error(String(err)); }
+    };
+    const child = spawnOrError();
+    if (child instanceof Error) {
+      // A synchronous spawn throw must never leave the status "running" forever.
+      finish({ state: 'failed', provider: id, detail: child.message });
+      return this.status();
+    }
     const keep = (chunk: Buffer) => { out = (out + chunk.toString('utf8')).slice(-TAIL); };
     child.stdout.on('data', keep);
     child.stderr.on('data', keep);
-    const timer = setTimeout(() => {
+    timer = setTimeout(() => {
       killTree(child, logger);
       finish({ state: 'failed', provider: id, detail: `timeout after ${Math.round(timeoutMs / 1000)} s\n${out}`.trim() });
     }, timeoutMs);

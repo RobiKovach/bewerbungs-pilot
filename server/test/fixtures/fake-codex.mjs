@@ -3,6 +3,7 @@ import fs from 'node:fs';
 
 const mode = process.env.FAKE_CODEX_MODE ?? 'ok';
 const args = process.argv.slice(2);
+if (args[0] === '--version') { console.log(`codex-cli ${process.env.FAKE_CODEX_VERSION ?? '0.162.1'}`); process.exit(0); }
 if (args[0] === 'login' && args[1] === 'status') {
   if (mode === 'not-logged-in') { console.error('Not logged in'); process.exit(1); }
   console.error('Logged in using ChatGPT'); process.exit(0);

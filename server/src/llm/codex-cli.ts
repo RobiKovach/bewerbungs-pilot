@@ -22,6 +22,9 @@ export const CODEX_DISABLED_FEATURES = ['shell_tool', 'unified_exec', 'apps', 'p
 const CODEX_LIMIT_RE = /usage[ _]limit|rate[ _]limit|quota|too many requests|\b429\b/i;
 const CODEX_AUTH_RE = /\b401\b|unauthori[sz]ed|not logged in|authentication/i;
 const STATUS_TIMEOUT_MS = 15_000;
+/** The one Codex CLI version the isolation flags above were verified on (`npm run check:codex`). The install table
+ *  pins it; the availability probe logs a warning when the person runs a different one. */
+export const CODEX_VERIFIED_VERSION = '0.162.1';
 
 export interface CodexCliProviderOptions {
   /** Parent of the per-run working folders (and of the short-lived schema files). */
@@ -38,11 +41,16 @@ type Parsed = { ok: true; value: unknown } | { ok: false; code: ErrorCode; detai
 const isFile = (p: string) => { try { return fs.statSync(p).isFile(); } catch { return false; } };
 
 /** npm puts codex.cmd next to node_modules; we run the package's own entry file with node — no shell, no .cmd. */
-export function resolveCodexCommand(env: NodeJS.ProcessEnv = process.env): CliCommand | null {
+/** Folders searched for the npm-installed package: PATH entries that hold a codex shim, then %APPDATA%\npm. */
+export function codexSearchRoots(env: NodeJS.ProcessEnv = process.env): string[] {
   const dirs = (env.PATH ?? env.Path ?? '').split(path.delimiter).filter(Boolean);
   const roots = dirs.filter((d) => isFile(path.join(d, 'codex.cmd')) || isFile(path.join(d, 'codex')));
   if (env.APPDATA) roots.push(path.join(env.APPDATA, 'npm'));
-  for (const root of roots) {
+  return roots;
+}
+
+export function resolveCodexCommand(env: NodeJS.ProcessEnv = process.env): CliCommand | null {
+  for (const root of codexSearchRoots(env)) {
     const pkgDir = path.resolve(root, 'node_modules', '@openai', 'codex');
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { bin?: string | Record<string, string> };
@@ -90,7 +98,9 @@ export function parseCodexOutput(stdout: string, stderr: string, exitCode: numbe
   const turnCompleted = events.some((e) => e.type === 'turn.completed');
   if (turnFailed || (exitCode !== 0 && !turnCompleted)) {
     const text = [...errors, stderr].join('\n').trim() || `codex exited with ${String(exitCode)}`;
-    return { ok: false, code: classify(text, 'LLM_FAILED'), detail: text.slice(0, 2000) };
+    // Classify on the run's own error events; stderr (log noise, retries) decides only when there are none.
+    const classifyOn = errors.length > 0 ? errors.join('\n') : stderr;
+    return { ok: false, code: classify(classifyOn, 'LLM_FAILED'), detail: text.slice(0, 2000) };
   }
   const last = events.filter((e) => e.type === 'item.completed' && (e.item as { type?: unknown } | undefined)?.type === 'agent_message').at(-1);
   const raw = (last?.item as { text?: unknown } | undefined)?.text;
@@ -142,6 +152,28 @@ export class CodexCliProvider implements LlmProvider {
   private async probe(): Promise<Availability> {
     const cmd = this.command();
     if (!cmd) return { ok: false, reason: 'not-installed' };
+    // Both run side by side; the version only ever adds a log line, it never changes the availability.
+    const [availability] = await Promise.all([this.loginStatus(cmd), this.checkVersion(cmd)]);
+    return availability;
+  }
+
+  /** `codex --version` → a warning in the log when it is not the version the isolation flags were verified on. */
+  private async checkVersion(cmd: CliCommand): Promise<void> {
+    try {
+      const out = await runCli({
+        command: cmd, args: ['--version'], stdin: () => '', tmpRoot: this.opts.tmpRoot, timeoutMs: STATUS_TIMEOUT_MS,
+        signal: new AbortController().signal, env: this.opts.env, logger: this.logger,
+      });
+      const found = /\d+\.\d+\.\d+(?:[-+][\w.-]+)?/.exec(`${out.stdout}\n${out.stderr}`)?.[0] ?? null;
+      if (found !== CODEX_VERIFIED_VERSION) {
+        this.logger.warn('codex_version_untested', { found, verified: CODEX_VERIFIED_VERSION, output: `${out.stdout}${out.stderr}`.trim().slice(0, 200) });
+      }
+    } catch (err) {
+      this.logger.warn('codex_version_unknown', { verified: CODEX_VERIFIED_VERSION, detail: err instanceof AppError ? err.detailsForLog : String(err) });
+    }
+  }
+
+  private async loginStatus(cmd: CliCommand): Promise<Availability> {
     try {
       const out = await runCli({
         command: cmd, args: ['login', 'status'], stdin: () => '', tmpRoot: this.opts.tmpRoot, timeoutMs: STATUS_TIMEOUT_MS,

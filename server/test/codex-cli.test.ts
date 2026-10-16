@@ -3,14 +3,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CODEX_DISABLED_FEATURES, CodexCliProvider, buildCodexArgs, parseCodexOutput, resolveCodexCommand } from '../src/llm/codex-cli.js';
+import type { Logger } from '../src/log.js';
+import { CODEX_DISABLED_FEATURES, CODEX_VERIFIED_VERSION, CodexCliProvider, buildCodexArgs, parseCodexOutput, resolveCodexCommand } from '../src/llm/codex-cli.js';
 import { helloTask } from '../src/prompts/hello.js';
 
 const FAKE = fileURLToPath(new URL('./fixtures/fake-codex.mjs', import.meta.url));
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-cx-'));
 const signal = () => new AbortController().signal;
-function provider(mode: string, extraEnv: Record<string, string> = {}) {
+function provider(mode: string, extraEnv: Record<string, string> = {}, logger?: Logger) {
   return new CodexCliProvider({
+    logger,
     tmpRoot: path.join(tmp(), 'tmp'), timeoutMs: () => 10_000,
     command: { file: process.execPath, argsPrefix: [FAKE] },
     env: { ...process.env, FAKE_CODEX_MODE: mode, ...extraEnv },
@@ -76,6 +78,10 @@ describe('parseCodexOutput', () => {
   it('a non-zero exit without any event: stderr decides, otherwise LLM_FAILED', () => {
     expect(parseCodexOutput('', 'boom', 1)).toMatchObject({ ok: false, code: 'LLM_FAILED' });
     expect(parseCodexOutput('', 'Error: Not logged in', 1)).toMatchObject({ ok: false, code: 'LLM_NOT_LOGGED_IN' });
+  });
+  it("a limit-like stderr line does not override the run's own generic failure events", () => {
+    expect(parseCodexOutput(failed('stream disconnected before completion'), 'WARN retrying: rate limit exceeded (429)', 1)).toMatchObject({ ok: false, code: 'LLM_FAILED' });
+    expect(parseCodexOutput(failed('stream disconnected'), 'Error: Not logged in', 1)).toMatchObject({ ok: false, code: 'LLM_FAILED' });
   });
   it('a retry notice before a completed turn does not spoil a good answer', () => {
     const out = [line({ type: 'error', message: 'Reconnecting... 1/5' }), msg('{"a":1}'), line({ type: 'turn.completed' })].join('\n');
@@ -153,5 +159,20 @@ describe('CodexCliProvider', () => {
     expect(await none.checkAvailable()).toEqual({ ok: false, reason: 'not-installed' });
     expect(await provider('not-logged-in').checkAvailable()).toMatchObject({ ok: false, reason: 'not-logged-in' });
     expect(await provider('ok').checkAvailable()).toEqual({ ok: true });
+  });
+  it('the probe reads --version: the verified one logs nothing, another one only logs a warning', async () => {
+    const warnings = (): { list: Array<[string, Record<string, unknown> | undefined]>; logger: Logger } => {
+      const list: Array<[string, Record<string, unknown> | undefined]> = [];
+      return { list, logger: { info() {}, error() {}, warn: (e, d) => list.push([e, d]) } };
+    };
+    const same = warnings();
+    expect(await provider('ok', {}, same.logger).checkAvailable()).toEqual({ ok: true });
+    expect(same.list.filter(([e]) => e.startsWith('codex_version'))).toEqual([]);
+    const other = warnings();
+    expect(await provider('ok', { FAKE_CODEX_VERSION: '0.170.0' }, other.logger).checkAvailable()).toEqual({ ok: true });
+    expect(other.list).toContainEqual(['codex_version_untested', expect.objectContaining({ found: '0.170.0', verified: CODEX_VERIFIED_VERSION })]);
+    const signedOut = warnings();
+    expect(await provider('not-logged-in', { FAKE_CODEX_VERSION: '0.150.0' }, signedOut.logger).checkAvailable()).toMatchObject({ ok: false, reason: 'not-logged-in' });
+    expect(signedOut.list.map(([e]) => e)).toContain('codex_version_untested');
   });
 });
