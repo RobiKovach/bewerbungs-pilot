@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AiHelperCards } from '../ai/AiHelperCards';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { InfoTip } from '../components/InfoTip';
@@ -16,7 +17,8 @@ type TestState =
 
 export function SettingsPage({ onQuit }: { onQuit: () => void }) {
   const { t, i18n } = useTranslation();
-  const { update } = useSettings();
+  const { settings, update } = useSettings();
+  const chosen = settings.llm.provider !== null;
   const [test, setTest] = useState<TestState>({ kind: 'idle' });
   const [error, setError] = useState<unknown>(null);
 
@@ -46,7 +48,9 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
       </div>
 
       <div className="card settings-section">
-        <h2>{t('settings.claudeTitle')}<InfoTip textKey="info.claudeTest" /></h2>
+        <h2>{t('onboarding.ai.title')}<InfoTip textKey="info.claudeTest" /></h2>
+        <AiHelperCards />
+        {!chosen ? <p className="muted">{t('onboarding.ai.noneChosen')}</p> : null}
         {test.kind === 'running' ? (
           <div className="btn-row">
             <span className="muted">{t('settings.claudeRunning')}</span>
@@ -54,8 +58,10 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
           </div>
         ) : (
           <div className="btn-row">
-            <button type="button" className="btn" onClick={() => void runTest()}>{t('settings.claudeTest')}</button>
-            <button type="button" className="btn ghost" onClick={() => void guarded(() => api.openLogin())}>{t('onboarding.ai.openLogin')}</button>
+            <button type="button" className="btn" disabled={!chosen} onClick={() => void runTest()}>{t('settings.claudeTest')}</button>
+            {chosen ? (
+              <button type="button" className="btn ghost" onClick={() => void guarded(() => api.openLogin())}>{t('onboarding.ai.openLogin')}</button>
+            ) : null}
           </div>
         )}
         {test.kind === 'ok' ? <p className="ok">{t('settings.claudeResult', { greeting: test.greeting })}</p> : null}

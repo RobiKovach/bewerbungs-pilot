@@ -1,6 +1,6 @@
 import type {
   ApplicationJobState, ApplicationListView, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness,
-  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, SearchState, SectionDataMap,
+  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
@@ -67,7 +67,10 @@ const fileName = (file: Blob, fallback: string) => (file instanceof File && file
 export const api = {
   getSettings: () => request<Settings>('GET', '/api/settings'),
   patchSettings: (patch: SettingsPatch) => request<Settings>('PATCH', '/api/settings', patch),
-  checkLlm: (refresh = false) => request<LlmCheck>('GET', `/api/llm/check${refresh ? '?refresh=1' : ''}`),
+  checkLlm: (provider?: ProviderId, refresh = false) => {
+    const q = new URLSearchParams({ ...(provider ? { provider } : {}), ...(refresh ? { refresh: '1' } : {}) }).toString();
+    return request<LlmCheck>('GET', `/api/llm/check${q ? `?${q}` : ''}`);
+  },
   testLlm: (language: Language, signal?: AbortSignal) => request<{ greeting: string }>('POST', '/api/llm/test', { language }, signal),
   getMail: () => request<MailSettingsView>('GET', '/api/mail/settings'),
   mailProviders: () => request<MailProvider[]>('GET', '/api/mail/providers'),
@@ -76,7 +79,9 @@ export const api = {
   googleStart: (address: string) => request<{ url: string }>('POST', '/api/mail/google/start', { address }),
   googleStatus: () => request<GoogleSignInStatus>('GET', '/api/mail/google/status'),
   googleSave: (body: { senderName: string; language: Language }) => request<MailSettingsView>('POST', '/api/mail/google/save', body),
-  openLogin: () => request<{ ok: true }>('POST', '/api/llm/open-login', {}),
+  openLogin: (provider?: ProviderId) => request<{ ok: true }>('POST', '/api/llm/open-login', provider ? { provider } : {}),
+  installLlm: (provider: ProviderId) => request<InstallStatus>('POST', '/api/llm/install', { provider }),
+  installStatus: () => request<InstallStatus>('GET', '/api/llm/install'),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
 
   getProfile: () => request<ProfileView>('GET', '/api/profile'),

@@ -9,6 +9,11 @@ import { baseSettings, settingsRoutes } from '../test/fixtures';
 const mailRoutes = {
   'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }),
   'GET /api/mail/providers': () => ({ body: [] }),
+  ...Object.fromEntries((['claude', 'chatgpt'] as const).flatMap((id) => {
+    const h = () => ({ body: { provider: id, availability: { ok: true }, queue: { running: false, queued: 0 } } });
+    return [[`GET /api/llm/check?provider=${id}`, h], [`GET /api/llm/check?provider=${id}&refresh=1`, h]];
+  })),
+  'POST /api/llm/open-login': () => ({ body: { ok: true } }),
 };
 
 describe('SettingsPage', () => {
@@ -46,6 +51,29 @@ describe('SettingsPage', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(await screen.findByRole('button', { name: 'Test the connection' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the AI helper cards; "Open sign-in window" acts on the current helper', async () => {
+    const server = settingsRoutes(baseSettings());
+    const f = mockFetch({ ...server.routes, ...mailRoutes });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    expect(await screen.findByRole('heading', { name: /^Your AI helper/ })).toBeInTheDocument();
+    expect(await screen.findByText('✓ ChatGPT is ready.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Claude/ })).toHaveTextContent('Chosen');
+    const buttons = screen.getAllByRole('button', { name: 'Open sign-in window' });
+    expect(buttons).toHaveLength(1);
+    await userEvent.setup().click(buttons[0]);
+    const call = f.mock.calls.find((c) => c[0] === '/api/llm/open-login')!;
+    expect(JSON.parse(String((call[1] as RequestInit).body))).toEqual({});
+  });
+
+  it('without a chosen helper the test is disabled and says so', async () => {
+    const server = settingsRoutes(baseSettings({ llm: { timeoutSec: 180, provider: null } }));
+    mockFetch({ ...server.routes, ...mailRoutes });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    expect(await screen.findByText('No AI helper chosen yet.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Test the connection' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Open sign-in window' })).toBeNull();
   });
 
   it('restarts the welcome steps', async () => {

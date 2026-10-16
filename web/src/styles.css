@@ -244,3 +244,13 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .stats-axis { stroke: var(--border); stroke-width: 1; }
 .stats-label { fill: var(--muted); font-size: 11px; }
 .stats-value { fill: var(--text); }
+/* AI helper cards (onboarding step + Settings) */
+.ai-cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); margin: 1rem 0; }
+.ai-card { margin: 0; display: flex; flex-direction: column; }
+.ai-card.open { outline: 2px solid var(--accent); }
+.ai-card h3 { margin: 0 0 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.ai-card p { margin: 0.35rem 0; }
+.ai-card .btn-row { margin-top: auto; padding-top: 0.5rem; }
+.ai-card > .btn { align-self: flex-start; margin-top: auto; }
+.ai-card .error-banner { margin: 0.75rem 0 0; }
+.ai-card code { overflow-wrap: anywhere; }

@@ -31,10 +31,12 @@ describe('api', () => {
     const f = mockFetch({
       'GET /api/llm/check': () => ({ body: { provider: 'claude', availability: { ok: true }, queue: { running: false, queued: 0 } } }),
       'GET /api/llm/check?refresh=1': () => ({ body: { provider: 'claude', availability: { ok: true }, queue: { running: false, queued: 0 } } }),
+      'GET /api/llm/check?provider=chatgpt&refresh=1': () => ({ body: { provider: 'chatgpt', availability: { ok: true }, queue: { running: false, queued: 0 } } }),
     });
     await api.checkLlm();
-    await api.checkLlm(true);
-    expect(f.mock.calls.map((c) => c[0])).toEqual(['/api/llm/check', '/api/llm/check?refresh=1']);
+    await api.checkLlm(undefined, true);
+    await api.checkLlm('chatgpt', true);
+    expect(f.mock.calls.map((c) => c[0])).toEqual(['/api/llm/check', '/api/llm/check?refresh=1', '/api/llm/check?provider=chatgpt&refresh=1']);
   });
   it('uploads a file as multipart: client header, no JSON content type, name kept', async () => {
     const f = mockFetch({ 'POST /api/profile/cv': () => ({ body: { ...viewOf(emptyProfile()), changedSections: [] } }) });

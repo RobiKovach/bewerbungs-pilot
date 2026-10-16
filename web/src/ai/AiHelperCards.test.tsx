@@ -1,0 +1,115 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { SettingsProvider } from '../settings';
+import { AiHelperCards, CHATGPT_PRIVACY_URL } from './AiHelperCards';
+import { mockFetch, type RouteHandler } from '../test/fetchMock';
+import { baseSettings, settingsRoutes } from '../test/fixtures';
+import type { Availability, InstallStatus, ProviderId, Settings } from '../types';
+
+type Checks = Record<ProviderId, Availability>;
+
+function setup(opts: { checks: Checks; provider?: Settings['llm']['provider']; install?: InstallStatus[]; onReady?: (id: ProviderId) => void }) {
+  const server = settingsRoutes(baseSettings({ llm: { timeoutSec: 180, provider: opts.provider ?? null } }));
+  const checks = opts.checks;
+  const checkRoute = (id: ProviderId): RouteHandler => () => ({ body: { provider: id, availability: checks[id], queue: { running: false, queued: 0 } } });
+  const statuses = [...(opts.install ?? [])];
+  const routes: Record<string, RouteHandler> = {
+    ...server.routes,
+    'POST /api/llm/open-login': () => ({ body: { ok: true } }),
+    'POST /api/llm/install': (init) => ({ status: 202, body: { state: 'running', provider: JSON.parse(String(init?.body)).provider } }),
+    'GET /api/llm/install': () => ({ body: statuses.length > 1 ? statuses.shift() : statuses[0] }),
+  };
+  for (const id of ['claude', 'chatgpt'] as const) {
+    routes[`GET /api/llm/check?provider=${id}`] = checkRoute(id);
+    routes[`GET /api/llm/check?provider=${id}&refresh=1`] = checkRoute(id);
+  }
+  const f = mockFetch(routes);
+  render(<SettingsProvider><AiHelperCards pollMs={10} onReady={opts.onReady} /></SettingsProvider>);
+  return { server, f, checks, user: userEvent.setup() };
+}
+
+const card = (name: string) => screen.getByRole('heading', { name: new RegExp(`^${name}`) }).closest('.ai-card') as HTMLElement;
+const patches = (f: ReturnType<typeof mockFetch>) =>
+  f.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === 'PATCH').map((c) => JSON.parse(String((c[1] as RequestInit).body)));
+
+describe('AiHelperCards', () => {
+  it('shows both cards with their state', async () => {
+    setup({ checks: { claude: { ok: false, reason: 'not-installed' }, chatgpt: { ok: true } } });
+    expect(await screen.findByText('Not installed yet.')).toBeInTheDocument();
+    expect(screen.getByText('Free with a ChatGPT account; paid plans get more.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'How to switch this off' })).toHaveAttribute('href', CHATGPT_PRIVACY_URL);
+    expect(await screen.findByText('✓ ChatGPT is ready.')).toBeInTheDocument();
+  });
+
+  it('choose -> install -> polls -> done -> re-check -> ready saves the provider', async () => {
+    const onReady = vi.fn();
+    const { f, checks, server, user } = setup({
+      checks: { claude: { ok: false, reason: 'not-installed' }, chatgpt: { ok: false, reason: 'not-installed' } },
+      install: [{ state: 'running', provider: 'chatgpt' }, { state: 'done', provider: 'chatgpt' }],
+      onReady,
+    });
+    await within(await waitCard('ChatGPT')).findByText('Not installed yet.');
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    checks.chatgpt = { ok: true };
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Install' }));
+    const post = f.mock.calls.find((c) => c[0] === '/api/llm/install' && (c[1] as RequestInit).method === 'POST')!;
+    expect(JSON.parse(String((post[1] as RequestInit).body))).toEqual({ provider: 'chatgpt' });
+    expect(await within(card('ChatGPT')).findByText('✓ ChatGPT is ready.')).toBeInTheDocument();
+    await vi.waitFor(() => expect(onReady).toHaveBeenCalledWith('chatgpt'));
+    expect(patches(f)).toEqual([{ llm: { provider: 'chatgpt' } }]);
+    expect(server.current().llm.provider).toBe('chatgpt');
+    expect(f.mock.calls.map((c) => c[0])).toContain('/api/llm/check?provider=chatgpt&refresh=1');
+  });
+
+  it('install failure shows the support line', async () => {
+    const { user } = setup({
+      checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-installed' } },
+      provider: 'claude',
+      install: [{ state: 'failed', provider: 'chatgpt', detail: 'npm ERR! E404' }],
+    });
+    await within(await waitCard('ChatGPT')).findByText('Not installed yet.');
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Install' }));
+    expect(await screen.findByText('Could not install.')).toBeInTheDocument();
+    expect(screen.getByText('For support:')).toBeInTheDocument();
+    expect(screen.getByText('npm ERR! E404')).toBeInTheDocument();
+  });
+
+  it('not signed in -> "Open sign-in window" calls openLogin(chatgpt)', async () => {
+    const { f, user } = setup({ checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-logged-in' } }, provider: 'claude' });
+    await within(await waitCard('ChatGPT')).findByText('Installed, not signed in yet.');
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Open sign-in window' }));
+    await vi.waitFor(() => {
+      const call = f.mock.calls.find((c) => c[0] === '/api/llm/open-login');
+      expect(JSON.parse(String((call![1] as RequestInit).body))).toEqual({ provider: 'chatgpt' });
+    });
+  });
+
+  it('the provider is saved only when the check is ok', async () => {
+    const { f, user } = setup({ checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-logged-in' } }, provider: 'claude' });
+    await within(await waitCard('ChatGPT')).findByText('Installed, not signed in yet.');
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Check again' }));
+    expect(await within(card('ChatGPT')).findByText('Installed, not signed in yet.')).toBeInTheDocument();
+    expect(patches(f)).toEqual([]);
+  });
+
+  it('choosing a helper that is already ready saves it at once', async () => {
+    const onReady = vi.fn();
+    const { f, user } = setup({ checks: { claude: { ok: true }, chatgpt: { ok: true } }, provider: 'claude', onReady });
+    await within(await waitCard('ChatGPT')).findByText('✓ ChatGPT is ready.');
+    expect(onReady).toHaveBeenCalledWith('claude');
+    expect(patches(f)).toEqual([]);
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    await vi.waitFor(() => expect(patches(f)).toEqual([{ llm: { provider: 'chatgpt' } }]));
+    expect(onReady).toHaveBeenLastCalledWith('chatgpt');
+    expect(await within(card('ChatGPT')).findByText('Chosen')).toBeInTheDocument();
+  });
+});
+
+async function waitCard(name: string) {
+  await screen.findByRole('heading', { name: new RegExp(`^${name}`) });
+  return card(name);
+}

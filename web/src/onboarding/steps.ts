@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import { ClaudeCheckStep } from './steps/ClaudeCheckStep';
+import { AiHelperStep } from './steps/AiHelperStep';
 import { DoneStep } from './steps/DoneStep';
 import { EmailStep } from './steps/EmailStep';
 import { ProfileStep } from './steps/ProfileStep';
@@ -17,7 +17,7 @@ export interface OnboardingStep {
 // Declarative: each later sub-project flips its step to 'available' and plugs in its component.
 export const ONBOARDING_STEPS: OnboardingStep[] = [
   { id: 'welcome', titleKey: 'onboarding.welcome.title', status: 'available', Component: WelcomeStep },
-  { id: 'claude', titleKey: 'onboarding.ai.title', status: 'available', Component: ClaudeCheckStep },
+  { id: 'claude', titleKey: 'onboarding.ai.title', status: 'available', Component: AiHelperStep },
   { id: 'profile', titleKey: 'onboarding.profile.title', status: 'available', Component: ProfileStep },
   { id: 'email', titleKey: 'onboarding.email.title', status: 'available', Component: EmailStep },
   { id: 'done', titleKey: 'onboarding.done.title', status: 'available', Component: DoneStep },
