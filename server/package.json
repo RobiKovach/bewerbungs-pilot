@@ -27,6 +27,7 @@
     "mammoth": "^1.12.3",
     "nodemailer": "^10.0.16",
     "pdf-lib": "^1.17.1",
-    "puppeteer-core": "^25.12.0"
+    "puppeteer-core": "^25.12.0",
+    "unpdf": "1.8.1"
   }
 }

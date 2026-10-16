@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { AppError } from '../src/errors.js';
+import { FakeProvider } from '../src/llm/fake.js';
 import { H, makeApp } from './helpers/app.js';
 import { makeDocx, multipartBody, PDF_BYTES } from './helpers/files.js';
 import { SAMPLE_CV, scriptedClaude } from './helpers/profile.js';
@@ -42,6 +43,48 @@ describe('POST /api/profile/cv', () => {
     expect(res.statusCode).toBe(200);
     expect(provider.calls[0].files).toBeUndefined();
     expect(provider.calls[0].prompt).toMatch(/<<<UNTRUSTED_CV_[0-9a-f]{16}>>>[\s\S]*Webentwickler bei Beispiel GmbH/);
+  });
+
+  describe('PDF CVs for a provider that never gets files (ChatGPT)', () => {
+    const fx = (n: string) => fs.readFileSync(new URL(`./fixtures/${n}`, import.meta.url));
+    const cvAnswer = () => new FakeProvider({ ok: true }, () => SAMPLE_CV, 'chatgpt');
+
+    it('sends the PDF text fenced, not the file', async () => {
+      const chatgpt = cvAnswer();
+      const { app } = await makeApp({ chosen: 'chatgpt', chatgpt });
+      const res = await uploadCv(app, 'cv.pdf', fx('cv-text.pdf'));
+      expect(res.statusCode).toBe(200);
+      expect(chatgpt.calls[0].files).toBeUndefined();
+      expect(chatgpt.calls[0].prompt).toContain('Max Mustermann');
+      expect(chatgpt.calls[0].prompt).toContain('Word or PDF');
+    });
+
+    it.each(['cv-scan.pdf', 'cv-footer-only.pdf'])('%s -> CV_NO_TEXT before ChatGPT is called, nothing kept', async (name) => {
+      const chatgpt = cvAnswer();
+      const { app, filesDir, profileStore } = await makeApp({ chosen: 'chatgpt', chatgpt });
+      const res = await uploadCv(app, 'scan.pdf', fx(name));
+      expect(res.statusCode).toBe(422);
+      expect(res.json().error.code).toBe('CV_NO_TEXT');
+      expect(chatgpt.calls).toHaveLength(0);
+      expect(fs.readdirSync(filesDir)).toEqual([]);
+      expect(profileStore.get().cv).toBeNull();
+    });
+
+    it('a broken PDF -> CV_UNREADABLE (cvPdfBroken), ChatGPT not called', async () => {
+      const chatgpt = cvAnswer();
+      const { app } = await makeApp({ chosen: 'chatgpt', chatgpt });
+      const res = await uploadCv(app, 'x.pdf', fx('broken.pdf'));
+      expect(res.statusCode).toBe(422);
+      expect(res.json().error).toMatchObject({ code: 'CV_UNREADABLE', reason: 'cvPdfBroken' });
+      expect(chatgpt.calls).toHaveLength(0);
+    });
+
+    it('Claude still reads the PDF file itself, even a scan', async () => {
+      const { app, provider, filesDir } = await makeApp({ provider: scriptedClaude({ cv: SAMPLE_CV }) });
+      const res = await uploadCv(app, 'scan.pdf', fx('cv-scan.pdf'));
+      expect(res.statusCode).toBe(200);
+      expect(provider.calls[0].files).toEqual([path.join(filesDir, `${res.json().profile.cv.id}.pdf`)]);
+    });
   });
 
   it('refuses a DOCX without text before asking Claude, and keeps nothing', async () => {

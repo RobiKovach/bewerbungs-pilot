@@ -46,6 +46,7 @@ export type ErrorReason =
   | 'cvTooLittleText'
   | 'cvNoContent'
   | 'cvDocxBroken'
+  | 'cvPdfBroken'
   | 'fileTypeDetected'
   | 'tooManyDocuments'
   | 'profileMissing'

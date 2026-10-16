@@ -5,6 +5,7 @@ import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
 import { docxToText } from './docx.js';
 import { removeQuietly } from './files.js';
+import { countLetters, MIN_PDF_LETTERS, pdfToText } from './pdf-text.js';
 import type { ProfileRouteDeps } from './routes.js';
 import { CV_SECTION_IDS, LIMITS } from './schema.js';
 import { applyExtraction, type ExtractionOutcome } from './sections.js';
@@ -43,6 +44,11 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
         if (text.length < MIN_CV_TEXT_CHARS) {
           throw new AppError('CV_UNREADABLE', `docx has only ${text.length} characters of text`, 'cvTooLittleText', { chars: text.length });
         }
+        source = { kind: 'text', text };
+      } else if (!d.queue.current().readsFiles) {
+        // ChatGPT never gets files: the app reads the PDF itself. A scan has no letters to read.
+        const text = (await pdfToText(file)).trim();
+        if (countLetters(text) < MIN_PDF_LETTERS) throw new AppError('CV_NO_TEXT', `pdf has only ${countLetters(text)} letters`);
         source = { kind: 'text', text };
       }
       const out = await d.queue.run<ExtractedCv>(extractCvTask(source, d.language()), signal);
