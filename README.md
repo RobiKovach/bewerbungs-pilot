@@ -43,26 +43,26 @@ German, Russian, Polish and Romanian are machine-translated — corrections are 
 ## Your profile
 
 The profile is the basis of every application. Upload your CV (PDF or Word) or fill in the same sections yourself.
-Claude reads the CV and fills in personal details, education, work experience, skills and languages; every field it
-filled is marked **"AI – please check"** until you save or confirm it. Then Claude asks 3–7 short personal questions
+The AI helper reads the CV and fills in personal details, education, work experience, skills and languages; every field it
+filled is marked **"AI – please check"** until you save or confirm it. Then the AI helper asks 3–7 short personal questions
 and turns your answers into a *story bank* — true, concrete stories that cover letters are later built from (a cover
 letter should tell what you did, not repeat your CV). You can add a CV photo (cropped to 3:4) and PDF documents to attach.
 
 - Everything stays on your computer: `%LOCALAPPDATA%\BewerbungsPilot\profile\`.
-- Claude only ever sees a copy of your CV in a throw-away folder, never your own folders.
-- Nothing is made up: Claude may only use what your CV and your answers say.
+- The AI helper never gets access to your folders: Claude reads a copy of your CV in a throw-away folder, ChatGPT gets only its text.
+- Nothing is made up: the AI helper may only use what your CV and your answers say.
 - Applications can only be written once every section is checked ("All correct").
 
 ## Job offers
 
 BewerbungsPilot searches the job board of the Federal Employment Agency (Bundesagentur für Arbeit) for your job titles,
 cities and search radius from your profile ("Job wishes"). Offers you have already seen, and formats you did not ask for
-(internships, apprenticeships, student jobs), are left out without asking Claude. Claude then scores every new offer
+(internships, apprenticeships, student jobs), are left out without asking the AI helper. The AI helper then scores every new offer
 from 0 to 100 and says in two or three points why it fits and what is missing.
 
 - "★ Interesting" keeps an offer in your favourites; "Not interesting" hides it for good (you can bring it back).
 - Offers the job board has removed move to "Removed by the job board" by themselves.
-- Found an offer somewhere else? Paste its text with "+ Add" — Claude reads it and scores it the same way.
+- Found an offer somewhere else? Paste its text with "+ Add" — the AI helper reads it and scores it the same way.
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. BewerbungsPilot only talks to
   `rest.arbeitsagentur.de`; it never opens links you paste.
@@ -73,14 +73,14 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
   documents (the language of the offer is suggested).
 - You need a checked profile (personal details, education, experience, skills, languages) and at least one checked
   story that may be told to employers.
-- Claude writes the cover letter from your stories — one or two true stories tied to what the offer asks for, never a
+- The AI helper writes the cover letter from your stories — one or two true stories tied to what the offer asks for, never a
   list of skills from your CV — and tailors the CV: descriptions translated into the document language, the skills
   that matter first, a short Profile at the top. Nothing is made up; your "never mention" list is respected.
 - The CV shows a round photo (crop it in a circle in your profile), a job title chosen for each offer (you can edit
   it), up to 3 links from your profile, and skills in groups. Education entries of type course or certificate get
   their own "Further training & certificates" section.
 - Countries and language names are translated into the document language.
-- Edit every part of the letter yourself or ask Claude to change it. The letter must fit on one page before you can
+- Edit every part of the letter yourself or ask the AI helper to change it. The letter must fit on one page before you can
   approve the package. Any change after approving makes it a draft again.
 - Download the letter, the CV and your attachments one by one, or everything as one PDF. PDFs are made with
   Microsoft Edge or Google Chrome installed on your computer.
@@ -136,7 +136,7 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 
 ```
 npm ci
-npm run dev -w server     # API on http://127.0.0.1:4280 (add -- --fake-llm to avoid real Claude calls)
+npm run dev -w server     # API on http://127.0.0.1:4280 (add -- --fake-llm to avoid real AI helper calls)
 npm run dev -w web        # dashboard on http://localhost:5173
 npm test && npm run i18n:check
 npm run release           # builds release/BewerbungsPilot-v<version>.zip
