@@ -42,7 +42,7 @@
       "claude": { "name": "Claude", "price": "Needs a paid Claude subscription (Pro or Max).", "limit": "Limit: depends on your plan.", "cost": "One application package ≈ 1–3 requests, one search ≈ up to 5." },
       "chatgpt": {
         "name": "ChatGPT", "price": "Free with a ChatGPT account; paid plans get more.", "limit": "Limit: depends on your ChatGPT plan (OpenAI publishes no exact numbers for the free plan).", "cost": "One application package ≈ 1–3 requests, one search ≈ up to 5.",
-        "privacy": "Free ChatGPT may use your texts (CV, stories) to improve OpenAI's models. You can switch this off in ChatGPT: Settings → Data controls.",
+        "privacy": "ChatGPT (free and personal paid plans) may use your texts (CV, stories) to improve OpenAI's models. You can switch this off in ChatGPT: Settings → Data controls → \"Improve the model for everyone\".",
         "privacyLink": "How to switch this off"
       }
     },

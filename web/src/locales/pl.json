@@ -30,19 +30,19 @@
       "install": "Zainstaluj",
       "installing": "Instalowanie… To może potrwać kilka minut.",
       "installFailed": "Nie udało się zainstalować.",
-      "supportLine": "Dla pomocy technicznej:",
+      "supportLine": "Pomoc techniczna:",
       "openLogin": "Otwórz okno logowania",
       "checkAgain": "Sprawdź ponownie",
       "checking": "Sprawdzanie…",
       "ready": "{{ai}} jest gotowy.",
       "notInstalled": "Jeszcze nie zainstalowany.",
-      "notLoggedIn": "Zainstalowany, ale jeszcze się nie zalogowałeś.",
+      "notLoggedIn": "Zainstalowany, ale jeszcze nie zalogowano.",
       "error": "{{ai}} nie odpowiedział. Sprawdź połączenie z internetem i kliknij „Sprawdź ponownie”.",
       "noneChosen": "Nie wybrano jeszcze asystenta AI.",
       "claude": { "name": "Claude", "price": "Wymaga płatnej subskrypcji Claude (Pro lub Max).", "limit": "Limit: zależy od Twojego planu.", "cost": "Jeden pakiet aplikacyjny ≈ 1–3 zapytania, jedno wyszukiwanie ≈ do 5." },
       "chatgpt": {
         "name": "ChatGPT", "price": "Za darmo z kontem ChatGPT; płatne plany dają więcej.", "limit": "Limit: zależy od Twojego planu ChatGPT (dla darmowego planu OpenAI nie podaje dokładnych liczb).", "cost": "Jeden pakiet aplikacyjny ≈ 1–3 zapytania, jedno wyszukiwanie ≈ do 5.",
-        "privacy": "Darmowy ChatGPT może używać Twoich tekstów (CV, historii) do ulepszania modeli OpenAI. Możesz to wyłączyć w ChatGPT: Ustawienia → Kontrola danych (Settings → Data controls).",
+        "privacy": "ChatGPT (darmowy i prywatne płatne plany) może używać Twoich tekstów (CV, historii) do ulepszania modeli OpenAI. Możesz to wyłączyć w ChatGPT: Ustawienia → Kontrola danych → „Ulepszaj model dla wszystkich” (Settings → Data controls → \"Improve the model for everyone\").",
         "privacyLink": "Jak to wyłączyć"
       }
     },

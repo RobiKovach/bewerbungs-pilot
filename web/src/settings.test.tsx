@@ -35,7 +35,6 @@ describe('SettingsProvider', () => {
     expect(server.current().llm.provider).toBe('claude');
   });
 
-
   it('detects the browser language on first start and saves it', async () => {
     Object.defineProperty(window.navigator, 'languages', { value: ['de-DE', 'en'], configurable: true });
     const server = settingsRoutes(baseSettings({ language: null }));

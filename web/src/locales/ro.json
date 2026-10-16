@@ -42,7 +42,7 @@
       "claude": { "name": "Claude", "price": "Necesită un abonament Claude plătit (Pro sau Max).", "limit": "Limită: depinde de planul dumneavoastră.", "cost": "Un pachet de candidatură ≈ 1–3 cereri, o căutare ≈ până la 5." },
       "chatgpt": {
         "name": "ChatGPT", "price": "Gratuit cu un cont ChatGPT; planurile plătite oferă mai mult.", "limit": "Limită: depinde de planul dumneavoastră ChatGPT (pentru planul gratuit, OpenAI nu publică cifre exacte).", "cost": "Un pachet de candidatură ≈ 1–3 cereri, o căutare ≈ până la 5.",
-        "privacy": "ChatGPT gratuit poate folosi textele dumneavoastră (CV, povești) pentru a îmbunătăți modelele OpenAI. Puteți dezactiva acest lucru în ChatGPT: Setări → Controale de date (Settings → Data controls).",
+        "privacy": "ChatGPT (gratuit și planurile personale plătite) poate folosi textele dumneavoastră (CV, povești) pentru a îmbunătăți modelele OpenAI. Puteți dezactiva acest lucru în ChatGPT: Setări → Controale de date → „Îmbunătățește modelul pentru toată lumea” (Settings → Data controls → \"Improve the model for everyone\").",
         "privacyLink": "Cum dezactivați acest lucru"
       }
     },
@@ -144,7 +144,7 @@
     "mailTitle": "E-mail pentru trimitere",
     "claudeTitle": "Asistent AI",
     "claudeTest": "Testați conexiunea",
-    "claudeRunning": "Se așteaptă răspunsul {{ai}}…",
+    "claudeRunning": "Se așteaptă răspunsul lui {{ai}}…",
     "claudeResult": "{{ai}} spune: „{{greeting}}”",
     "introTitle": "Pașii de bun venit",
     "introRestart": "Afișați din nou pașii de bun venit",
@@ -380,7 +380,7 @@
       "signature": "Numele de sub scrisoare",
       "save": "Salvează modificările",
       "discard": "Renunță la modificări",
-      "askLabel": "Rugați {{ai}} să modifice scrisoarea",
+      "askLabel": "Rugați-l pe {{ai}} să modifice scrisoarea",
       "askPlaceholder": "De exemplu: mai scurt, sau folosește povestea despre magazinul online",
       "ask": "Întrebați {{ai}}",
       "saveFirst": "Mai întâi salvați sau renunțați la modificări.",
@@ -406,7 +406,7 @@
     "LLM_TIMEOUT": { "message": "{{ai}} a durat prea mult pentru a răspunde.", "hint": "Vă rugăm să încercați din nou peste puțin timp." },
     "LLM_BAD_OUTPUT": { "message": "Răspunsul lui {{ai}} nu a putut fi înțeles.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
     "LLM_FAILED": { "message": "{{ai}} nu a putut finaliza sarcina.", "hint": "Verificați conexiunea la internet și încercați din nou." },
-    "LLM_LIMIT": { "message": "Limita {{ai}} este epuizată deocamdată.", "hint": "Încercați mai târziu sau alegeți alt asistent AI în Setări." },
+    "LLM_LIMIT": { "message": "Limita lui {{ai}} este epuizată deocamdată.", "hint": "Încercați mai târziu sau alegeți alt asistent AI în Setări." },
     "LLM_NOT_CHOSEN": { "message": "Încă nu ați ales un asistent AI.", "hint": "Alegeți unul în Setări → Asistent AI." },
     "CV_NO_TEXT": { "message": "Acest PDF pare a fi o scanare sau o fotografie.", "hint": "{{ai}} citește doar fișiere PDF cu text sau fișiere Word. Salvați CV-ul ca PDF din Word sau încărcați fișierul DOCX." },
     "LLM_CANCELLED": { "message": "Sarcina a fost anulată.", "hint": "Porniți-o din nou oricând doriți." },

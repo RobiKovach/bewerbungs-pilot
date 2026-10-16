@@ -42,7 +42,7 @@
       "claude": { "name": "Claude", "price": "Benötigt ein kostenpflichtiges Claude-Abo (Pro oder Max).", "limit": "Limit: hängt von Ihrem Tarif ab.", "cost": "Ein Bewerbungspaket ≈ 1–3 Anfragen, eine Suche ≈ bis zu 5." },
       "chatgpt": {
         "name": "ChatGPT", "price": "Kostenlos mit einem ChatGPT-Konto; bezahlte Tarife bieten mehr.", "limit": "Limit: hängt von Ihrem ChatGPT-Tarif ab (für den kostenlosen Tarif nennt OpenAI keine genauen Zahlen).", "cost": "Ein Bewerbungspaket ≈ 1–3 Anfragen, eine Suche ≈ bis zu 5.",
-        "privacy": "Das kostenlose ChatGPT darf Ihre Texte (Lebenslauf, Geschichten) nutzen, um die Modelle von OpenAI zu verbessern. Sie können das in ChatGPT abschalten: Einstellungen → Datenkontrollen (Settings → Data controls).",
+        "privacy": "ChatGPT (kostenlos und private Bezahl-Tarife) darf Ihre Texte (Lebenslauf, Geschichten) nutzen, um die Modelle von OpenAI zu verbessern. Sie können das in ChatGPT abschalten: Einstellungen → Datenkontrollen → „Das Modell für alle verbessern“ (Settings → Data controls → \"Improve the model for everyone\").",
         "privacyLink": "So schalten Sie das ab"
       }
     },
