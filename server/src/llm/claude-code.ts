@@ -116,7 +116,8 @@ export function parseClaudeOutput(stdout: string, stderr: string, exitCode: numb
 }
 
 export class ClaudeCodeProvider implements LlmProvider {
-  readonly id = 'claude-code' as const;
+  readonly id = 'claude' as const;
+  readonly readsFiles = true;
   private readonly cache = new AvailabilityCache();
 
   constructor(private readonly opts: ClaudeCodeProviderOptions) {}

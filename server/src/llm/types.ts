@@ -1,7 +1,7 @@
-import type { Availability } from '@bp/shared';
+import type { Availability, ProviderId } from '@bp/shared';
 import type { Language } from '../data/settings.js';
 
-export type { Availability };
+export type { Availability, ProviderId };
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -19,7 +19,9 @@ export interface LlmTask {
 }
 
 export interface LlmProvider {
-  readonly id: 'claude-code' | 'anthropic-api';
+  readonly id: ProviderId;
+  /** True only for Claude: it may get input files (LlmTask.files). Other providers get text only. */
+  readonly readsFiles: boolean;
   checkAvailable(opts?: { refresh?: boolean }): Promise<Availability>;
   run<T>(task: LlmTask, signal: AbortSignal): Promise<T>;
   /** Opens the provider's own sign-in window, if it has one. */

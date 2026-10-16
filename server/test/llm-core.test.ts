@@ -141,3 +141,14 @@ describe('LlmQueue', () => {
     await expect(queue.run(helloTask('en'), new AbortController().signal)).resolves.toEqual({ greeting: 'after' });
   });
 });
+
+describe('provider ids', () => {
+  it('Claude is "claude" and reads files; the fake takes an id and reads files only as Claude', async () => {
+    const { ClaudeCodeProvider } = await import('../src/llm/claude-code.js');
+    const claude = new ClaudeCodeProvider({ tmpRoot: 'x', timeoutMs: () => 1000, command: null });
+    expect([claude.id, claude.readsFiles]).toEqual(['claude', true]);
+    expect([new FakeProvider().id, new FakeProvider().readsFiles]).toEqual(['claude', true]);
+    const chatgpt = new FakeProvider(undefined, undefined, 'chatgpt');
+    expect([chatgpt.id, chatgpt.readsFiles]).toEqual(['chatgpt', false]);
+  });
+});
