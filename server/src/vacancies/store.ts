@@ -4,7 +4,7 @@ import type { Vacancy } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { migrate, MigrationError } from '../data/migrate.js';
 import { AppError } from '../errors.js';
-import { VACANCIES_SCHEMA_VERSION, VACANCY_ID, VACANCY_LIMITS, validateVacancies } from './schema.js';
+import { VACANCIES_SCHEMA_VERSION, VACANCY_ID, VACANCY_MIGRATIONS, VACANCY_LIMITS, validateVacancies } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
@@ -39,7 +39,7 @@ export class VacancyStore {
     }
     if (raw === null) return this.reset();
     try {
-      const doc = migrate(raw, VACANCIES_SCHEMA_VERSION, {});
+      const doc = migrate(raw, VACANCIES_SCHEMA_VERSION, VACANCY_MIGRATIONS);
       const problem = validateVacancies(doc);
       if (problem) throw new MigrationError(problem);
       this.items = (doc as unknown as { vacancies: Vacancy[] }).vacancies;

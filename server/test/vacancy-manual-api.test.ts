@@ -132,3 +132,18 @@ describe('POST /api/vacancies/manual — Arbeitsagentur link', () => {
     expect(ctx.vacancyStore.list()).toHaveLength(1);
   });
 });
+
+describe('0.8.0: a pasted offer remembers which AI scored it', () => {
+  it('pasted text and an Arbeitsagentur link, scored by ChatGPT → score.provider chatgpt', async () => {
+    const h = hit({ sourceId: '10000-2222222222-S' });
+    const ctx = await makeApp({
+      chosen: 'chatgpt', chatgpt: scoringClaude({ id: 'chatgpt', manual: MANUAL, score: () => 60 }),
+      source: fakeSource({ details: () => details(h, 'API-Text') }),
+    });
+    const pasted = (await paste(ctx, { text: TEXT })).json().vacancy as Vacancy;
+    expect(pasted.score).toMatchObject({ value: 82, provider: 'chatgpt' });
+    const linked = (await paste(ctx, { url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-2222222222-S' })).json().vacancy as Vacancy;
+    expect(linked.score).toMatchObject({ value: 60, provider: 'chatgpt' });
+    expect(ctx.provider.calls).toHaveLength(0);
+  });
+});

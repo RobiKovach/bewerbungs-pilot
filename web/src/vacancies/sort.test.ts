@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { vac } from '../test/vacancyFixtures';
 import { forTab, isWeak, tabCounts } from './sort';
 
-const scored = (value: number, over = {}) => vac({ score: { value, why: [], missing: [], scoredAt: '2026-09-28T10:00:00.000Z' }, ...over });
+const scored = (value: number, over = {}) => vac({ score: { value, why: [], missing: [], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' }, ...over });
 
 describe('sort', () => {
   it('new tab: scored by score, then pending, then not scored / failed; weak ones apart', () => {
@@ -23,6 +23,6 @@ describe('sort', () => {
     expect(tabCounts([vac(), vac({ status: 'favorite' }), vac({ status: 'hidden' }), vac({ status: 'hidden' })])).toEqual({ new: 1, favorite: 1, stale: 0, hidden: 2 });
     expect(isWeak(scored(49))).toBe(true);
     expect(isWeak(scored(50))).toBe(false);
-    expect(isWeak(vac({ scoreState: 'failed', score: { value: 10, why: [], missing: [], scoredAt: '' } }))).toBe(false);
+    expect(isWeak(vac({ scoreState: 'failed', score: { value: 10, why: [], missing: [], scoredAt: '', provider: 'claude' } }))).toBe(false);
   });
 });

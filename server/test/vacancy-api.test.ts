@@ -140,3 +140,22 @@ describe('card endpoints', () => {
     expect(js.statusCode).toBe(400);
   });
 });
+
+describe('0.8.0: score again remembers which AI scored it', () => {
+  it('a Claude score scored again with ChatGPT → provider chatgpt; no AI chosen → 409 LLM_NOT_CHOSEN, card unchanged', async () => {
+    const ctx = await makeApp({ chatgpt: scoringClaude({ id: 'chatgpt', score: () => 77 }) });
+    ctx.vacancyStore.add(vacancy({ id: 'a' }), 'Text');
+    expect(ctx.vacancyStore.get('a')!.score!.provider).toBe('claude');
+    ctx.settings.patch({ llm: { provider: 'chatgpt' } });
+    const res = await post(ctx, '/api/vacancies/a/score');
+    expect(res.json().vacancy.score).toMatchObject({ value: 77, provider: 'chatgpt' });
+
+    const none = await makeApp({ chosen: null });
+    none.vacancyStore.add(vacancy({ id: 'b' }), 'Text');
+    const before = none.vacancyStore.get('b');
+    const refused = await post(none, '/api/vacancies/b/score');
+    expect(refused.statusCode).toBe(409);
+    expect(refused.json().error.code).toBe('LLM_NOT_CHOSEN');
+    expect(none.vacancyStore.get('b')).toEqual(before);
+  });
+});

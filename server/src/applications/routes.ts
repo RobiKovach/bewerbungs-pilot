@@ -559,17 +559,20 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       const ctx = packageContext(d.profile(), start.language, false);
       const signal = abortOnClose(reply);
       const task = offerReplyTask(ctx, start, offered, wanted);
-      let body = (await d.queue.run<{ body: string }>(task, signal)).body;
-      let violations = offerReplyViolations(body, wanted, ctx);
+      // AI errors (LLM_LIMIT, LLM_NOT_CHOSEN …) are thrown by the queue and go straight to the person — never retried.
+      let answer = await d.queue.runTagged<{ body: string }>(task, signal);
+      let violations = offerReplyViolations(answer.value.body, wanted, ctx);
       if (violations.length > 0) {
-        body = (await d.queue.run<{ body: string }>(withFeedback(task, violations), signal)).body;
-        violations = offerReplyViolations(body, wanted, ctx);
+        answer = await d.queue.runTagged<{ body: string }>(withFeedback(task, violations), signal);
+        violations = offerReplyViolations(answer.value.body, wanted, ctx);
       }
       if (violations.length > 0) throw new AppError('LLM_BAD_OUTPUT', offerReplyViolationKinds(violations));
+      const { value: { body }, provider } = answer;
       const at = now().toISOString();
       d.store.update(id, (q) => {
         if (q.status !== 'offer') throw new AppError('CONFLICT', 'status changed', 'packageChanged');
         q.offerReply = { offered, wanted, body: body.trim(), createdAt: q.offerReply?.createdAt ?? at, updatedAt: at };
+        q.writtenBy = provider;
       });
       d.logger.info('offer_reply', { id, result: 'ok' });
       return view(id);

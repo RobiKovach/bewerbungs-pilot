@@ -1,7 +1,23 @@
 import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
+import type { Migration } from '../data/migrate.js';
+import { PROVIDER_IDS } from '../data/settings.js';
 
-export const VACANCIES_SCHEMA_VERSION = 1;
+export const VACANCIES_SCHEMA_VERSION = 2;
+
+/** migrations[n] turns vacancies.json version n into n + 1 (applied on read; written back on the next save). */
+export const VACANCY_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 2: a score says which AI wrote it (Claude was the only AI before 0.8.0).
+  1: (doc) => ({
+    ...doc,
+    vacancies: Array.isArray(doc.vacancies)
+      ? doc.vacancies.map((v) => {
+        const x = v as Record<string, unknown>;
+        return x.score && typeof x.score === 'object' ? { ...x, score: { ...(x.score as object), provider: 'claude' } } : x;
+      })
+      : [],
+  }),
+};
 export const VACANCY_LIMITS = {
   title: 300, company: 300, location: 100, locations: 20, point: 300, points: 3, salary: 200, url: 2000, email: 300, name: 200,
   sourceId: 64, text: 100_000,
@@ -36,7 +52,7 @@ const VACANCY = obj({
   hasText: { type: 'boolean' },
   status: { enum: ['new', 'favorite', 'hidden', 'stale'] },
   scoreState: { enum: ['pending', 'scored', 'failed', 'notScored'] },
-  score: nullable(obj({ value: { type: 'integer', minimum: 0, maximum: 100 }, why: points, missing: points, scoredAt: TIMESTAMP })),
+  score: nullable(obj({ value: { type: 'integer', minimum: 0, maximum: 100 }, why: points, missing: points, scoredAt: TIMESTAMP, provider: { enum: [...PROVIDER_IDS] } })),
   hiddenAt: nullable(TIMESTAMP),
 });
 

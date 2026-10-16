@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ApplicationStore } from '../src/applications/store.js';
-import { validatePackage } from '../src/applications/schema.js';
+import { PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validatePackage } from '../src/applications/schema.js';
+import { migrate } from '../src/data/migrate.js';
 import { pkg } from './helpers/applications.js';
 import { cvHtml } from '../src/applications/render/cv.js';
 
@@ -28,7 +29,7 @@ describe('package v1 → v2', () => {
     store.load();
     const got = store.require(p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(4);
+    expect(got.schemaVersion).toBe(5);
     expect(got.cv).toMatchObject({ headline: '', headlineEditedByHand: false, translations: {}, skillGroups: [{ name: '', skillIds: old.cv.skillOrder }] });
     expect(got.snapshot.personal.links).toEqual([]);
     expect(validatePackage(got)).toBeNull();
@@ -67,7 +68,7 @@ describe('package v2 → v3', () => {
     const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z' });
     const { got, warnings } = loadOne(v2From(p), p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(4);
+    expect(got.schemaVersion).toBe(5);
     expect(got.history).toEqual([{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }]);
     expect(got.sentAt).toBeNull();
     expect(got.sentEmail).toBeNull();
@@ -81,7 +82,7 @@ describe('package v2 → v3', () => {
     const p = pkg();
     const { got, warnings } = loadOne(v1From(p), p.id);
     expect(warnings).toEqual([]);
-    expect(got).toMatchObject({ schemaVersion: 4, history: [], sentAt: null, sentEmail: null });
+    expect(got).toMatchObject({ schemaVersion: 5, history: [], sentAt: null, sentEmail: null });
   });
 });
 
@@ -139,7 +140,7 @@ describe('package v3 → v4', () => {
     void _o;
     const { got, warnings } = loadOne({ ...v3, schemaVersion: 3 }, p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(4);
+    expect(got.schemaVersion).toBe(5);
     expect(got.offerReply).toBeNull();
     expect(got.history).toEqual(history);
   });
@@ -149,7 +150,7 @@ describe('package v3 → v4', () => {
     void _h; void _s; void _e; void _o;
     const { got, warnings } = loadOne({ ...rest, schemaVersion: 2 }, p.id);
     expect(warnings).toEqual([]);
-    expect(got).toMatchObject({ schemaVersion: 4, offerReply: null, history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
+    expect(got).toMatchObject({ schemaVersion: 5, offerReply: null, history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
   });
 });
 
@@ -163,5 +164,61 @@ describe('0.7.1: Gmail conversation id on history entries', () => {
 
   it('a package from 0.7.0 (no threadId) stays valid', () => {
     expect(validatePackage(pkg({ status: 'sent', history: [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z', messageId: '1a13e5cf' }] }))).toBeNull();
+  });
+});
+
+/** A package as 0.5.0–0.7.x wrote it (before "who wrote it" existed). */
+function v4From(p: ReturnType<typeof pkg>) {
+  const { writtenBy: _w, ...rest } = p;
+  void _w;
+  return { ...rest, schemaVersion: 4 };
+}
+
+describe('0.8.0: who wrote the package', () => {
+  it('v4 -> v5: old packages were written by Claude', () => {
+    const doc = migrate(v4From(pkg()), PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS);
+    expect(doc).toMatchObject({ schemaVersion: 5, writtenBy: 'claude' });
+    expect(validatePackage(doc)).toBeNull();
+  });
+
+  it('a v5 package without writtenBy (or with an unknown AI) is invalid', () => {
+    expect(validatePackage(v4From(pkg()))).not.toBeNull();
+    expect(validatePackage({ ...pkg(), writtenBy: 'gemini' })).not.toBeNull();
+    expect(validatePackage(pkg({ writtenBy: 'chatgpt' }))).toBeNull();
+  });
+
+  it('an applications.json v1 is migrated, not set aside', () => {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+    const warnings: string[] = [];
+    const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z', history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
+    const old = v4From(p);
+    fs.mkdirSync(path.join(dir, p.id), { recursive: true });
+    fs.writeFileSync(path.join(dir, p.id, 'package.json'), JSON.stringify(old));
+    const summary = {
+      id: p.id, vacancyId: p.vacancyId, company: p.vacancy.company, title: p.vacancy.title, language: p.language, status: p.status,
+      createdAt: p.createdAt, updatedAt: p.updatedAt, approvedAt: p.approvedAt,
+    };
+    fs.writeFileSync(path.join(dir, 'applications.json'), JSON.stringify({ schemaVersion: 1, applications: [summary] }));
+    const store = new ApplicationStore(dir, (event) => warnings.push(event));
+    store.load();
+    expect(warnings).not.toContain('applications_invalid');
+    expect(warnings).toEqual([]);
+    expect(store.list()[0].writtenBy).toBe('claude');
+    expect(fs.readdirSync(dir).filter((f) => f.includes('invalid') || f.includes('corrupt'))).toEqual([]);
+    // Nothing else changed: the migrated package equals the old one plus writtenBy.
+    expect(store.require(p.id)).toEqual({ ...old, schemaVersion: 5, writtenBy: 'claude' });
+    expect(JSON.parse(fs.readFileSync(path.join(dir, 'applications.json'), 'utf8'))).toMatchObject({ schemaVersion: 2, applications: [{ id: p.id, writtenBy: 'claude' }] });
+  });
+
+  it('an applications.json from a newer app is set aside and rebuilt from the folders', () => {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp mig-')), 'applications');
+    const warnings: string[] = [];
+    const p = pkg();
+    fs.mkdirSync(path.join(dir, p.id), { recursive: true });
+    fs.writeFileSync(path.join(dir, p.id, 'package.json'), JSON.stringify(p));
+    fs.writeFileSync(path.join(dir, 'applications.json'), JSON.stringify({ schemaVersion: 9, applications: [] }));
+    const store = new ApplicationStore(dir, (event) => warnings.push(event));
+    expect(store.load().map((s) => s.id)).toEqual([p.id]);
+    expect(warnings).toEqual(['applications_invalid']);
   });
 });

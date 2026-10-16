@@ -3,7 +3,7 @@ import type { ApplicationJobState, ApplicationPackage, DocLanguage, PackageLette
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
-import type { LlmTask } from '../llm/types.js';
+import type { LlmTask, ProviderId } from '../llm/types.js';
 import type { Logger } from '../log.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { checkCv, checkLetter, mergeChecks, toCv, type CheckResult } from './checks.js';
@@ -75,6 +75,8 @@ export class ApplicationJob {
   private running: Promise<void> = Promise.resolve();
   private readonly newId: () => string;
   private readonly now: () => Date;
+  /** The AI helper that answered last in the current job; null = no AI call yet (spec §4: writtenBy = who wrote last). */
+  private writer: ProviderId | null = null;
 
   constructor(private readonly d: ApplicationJobDeps) {
     this.newId = d.newId ?? (() => crypto.randomUUID());
@@ -142,6 +144,7 @@ export class ApplicationJob {
   }
 
   private async run(req: JobRequest, profile: Profile, signal: AbortSignal): Promise<string> {
+    this.writer = null;
     if (req.kind === 'create') return this.create(req.vacancyId, req.language, profile, signal, null);
     const existing = this.d.store.require(req.applicationId);
     if (req.kind === 'recreate') return this.create(existing.vacancyId, req.language, profile, signal, existing);
@@ -169,6 +172,8 @@ export class ApplicationJob {
       sentAt: null,
       sentEmail: null,
       offerReply: null,
+      // create always asks the AI, so writer is set here.
+      writtenBy: this.writer ?? 'claude',
       profileFingerprint: profileFingerprint(profile),
       snapshot: takeSnapshot(profile),
       vacancy,
@@ -181,6 +186,7 @@ export class ApplicationJob {
       attachments: previous?.attachments ?? profile.documents.filter((doc) => doc.attachAlways).map((doc) => doc.id),
     };
     pkg.letter = await this.fitOnePage(pkg, ctx, text, signal);
+    pkg.writtenBy = this.writer ?? pkg.writtenBy;
     signal.throwIfAborted();
     return this.d.store.save(pkg, { vacancyText: text, photo: this.d.photo(profile) }).id;
   }
@@ -194,7 +200,7 @@ export class ApplicationJob {
     next.letter = await this.fitOnePage(next, ctx, text, signal);
     signal.throwIfAborted();
     const now = this.now();
-    return this.d.store.update(existing.id, (p) => { p.letter = next.letter; touchDraft(p, now); }).id;
+    return this.d.store.update(existing.id, (p) => { p.letter = next.letter; p.writtenBy = this.writer ?? p.writtenBy; touchDraft(p, now); }).id;
   }
 
   private async refreshCv(existing: ApplicationPackage, keepProfil: boolean, keepHeadline: boolean, profile: Profile, signal: AbortSignal): Promise<string> {
@@ -217,21 +223,31 @@ export class ApplicationJob {
     next.snapshot = snapshot;
     next.profileFingerprint = profileFingerprint(profile);
     next.cv = cv;
+    next.writtenBy = this.writer ?? existing.writtenBy;
     touchDraft(next, this.now());
     return this.d.store.save(next, { photo: this.d.photo(profile) }).id;
   }
 
-  /** Claude + code checks: fatal → error at once; rule violations → one retry with feedback (spec, section 3). */
+  /**
+   * AI + code checks: fatal → error at once; rule violations → one retry with feedback (spec, section 3).
+   * An AI error (LLM_LIMIT, LLM_NOT_CHOSEN, timeouts …) is thrown by the queue and never retried here.
+   */
   private async ask<T>(task: LlmTask, check: (out: T) => CheckResult, signal: AbortSignal): Promise<T> {
-    let out = await this.d.queue.run<T>(task, signal);
+    let out = await this.askOnce<T>(task, signal);
     let r = check(out);
     if (r.fatal) throw new AppError('LLM_BAD_OUTPUT', `package check: ${r.fatal}`);
     if (r.violations.length === 0) return out;
-    out = await this.d.queue.run<T>(withFeedback(task, r.violations), signal);
+    out = await this.askOnce<T>(withFeedback(task, r.violations), signal);
     r = check(out);
     if (r.fatal) throw new AppError('LLM_BAD_OUTPUT', `package check after retry: ${r.fatal}`);
     if (r.violations.length > 0) throw new AppError('PACKAGE_RULES_BROKEN', `${r.violations.length} rule violation(s) after one retry`);
     return out;
+  }
+
+  private async askOnce<T>(task: LlmTask, signal: AbortSignal): Promise<T> {
+    const r = await this.d.queue.runTagged<T>(task, signal);
+    this.writer = r.provider;
+    return r.value;
   }
 
   /** Print, count; more than one page → one shorten call, count again (spec, section 3). */

@@ -1,4 +1,4 @@
-import type { EmploymentType, Language, Profile, RemoteKind, VacancyScore } from '@bp/shared';
+import type { EmploymentType, Language, Profile, ProviderId, RemoteKind, VacancyScore } from '@bp/shared';
 import { fenceUntrusted } from '../../llm/fence.js';
 import type { JsonSchema, LlmTask } from '../../llm/types.js';
 import { scoringProfile } from '../profile-context.js';
@@ -61,16 +61,17 @@ export function scoreTask(items: readonly ScoreInput[], profile: Profile, langua
 const clip = (list: string[]) =>
   list.map((s) => s.trim().slice(0, VACANCY_LIMITS.point)).filter(Boolean).slice(0, VACANCY_LIMITS.points);
 
-export function toScore(raw: { score: number; why: string[]; missing: string[] }, at: string): VacancyScore {
+/** `provider`: the AI helper that actually answered (LlmQueue.runTagged). */
+export function toScore(raw: { score: number; why: string[]; missing: string[] }, at: string, provider: ProviderId): VacancyScore {
   const value = Math.min(100, Math.max(0, Math.round(Number.isFinite(raw.score) ? raw.score : 0)));
-  return { value, why: clip(raw.why), missing: clip(raw.missing), scoredAt: at };
+  return { value, why: clip(raw.why), missing: clip(raw.missing), scoredAt: at, provider };
 }
 
-export function toScores(out: ScoreOutput, ids: readonly string[], at: string): Map<string, VacancyScore> {
+export function toScores(out: ScoreOutput, ids: readonly string[], at: string, provider: ProviderId): Map<string, VacancyScore> {
   const wanted = new Set(ids);
   const scores = new Map<string, VacancyScore>();
   for (const r of out.results) {
-    if (wanted.has(r.id) && !scores.has(r.id)) scores.set(r.id, toScore(r, at));
+    if (wanted.has(r.id) && !scores.has(r.id)) scores.set(r.id, toScore(r, at, provider));
   }
   return scores;
 }

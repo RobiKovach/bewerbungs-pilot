@@ -2,7 +2,7 @@ import { FakeProvider } from '../../src/llm/fake.js';
 import type { LlmTask } from '../../src/llm/types.js';
 import { AppError } from '../../src/errors.js';
 import type { CreateOutput, CvOutput, LetterOutput } from '../../src/applications/tasks/context.js';
-import type { ApplicationPackage, Profile } from '@bp/shared';
+import type { ApplicationPackage, Profile, ProviderId } from '@bp/shared';
 import { profileFingerprint, takeSnapshot } from '../../src/applications/snapshot.js';
 import { emptyProfile } from '../../src/profile/schema.js';
 import { PDFDocument } from 'pdf-lib';
@@ -39,7 +39,7 @@ let n = 0;
 export function pkg(over: Partial<ApplicationPackage> = {}, profile: Profile = readyPackageProfile()): ApplicationPackage {
   n++;
   return {
-    schemaVersion: 4, id: `a${n}`, vacancyId: `v${n}`, language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 5, writtenBy: 'claude', id: `a${n}`, vacancyId: `v${n}`, language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     history: [], sentAt: null, sentEmail: null, offerReply: null,
     profileFingerprint: profileFingerprint(profile), snapshot: takeSnapshot(profile),
     vacancy: { id: `v${n}`, title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Berlin'], remote: 'partial', contact: null, url: '' },
@@ -90,6 +90,8 @@ const resolve = async <T>(a: Answer<T>, task: LlmTask, signal: AbortSignal) =>
 export function packageClaude(opts: {
   create?: Answer<CreateOutput>; revise?: Answer<LetterOutput>; refresh?: Answer<CvOutput>; offer?: Answer<{ body: string }>;
   before?: (task: LlmTask, signal: AbortSignal) => unknown;
+  /** Which AI helper this fake pretends to be (default claude). */
+  id?: ProviderId;
 } = {}): FakeProvider {
   return new FakeProvider({ ok: true }, async (task, signal) => {
     await opts.before?.(task, signal);
@@ -100,7 +102,7 @@ export function packageClaude(opts: {
     if (required.includes('paragraphs')) return resolve(opts.revise ?? GOOD_LETTER, task, signal);
     if (required.includes('profil')) return resolve(opts.refresh ?? goodCvFor(task), task, signal);
     throw new Error(`unexpected task: ${required.join(',')}`);
-  });
+  }, opts.id);
 }
 export async function makePdf(pages: number): Promise<Buffer> {
   const doc = await PDFDocument.create();

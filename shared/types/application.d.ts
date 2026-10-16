@@ -1,6 +1,7 @@
 import type { CvSectionId, EducationEntry, ExperienceEntry, LanguageItem, PersonalData, SkillItem } from './profile.js';
 import type { ErrorCode } from './errors.js';
 import type { RemoteKind, VacancyContact } from './vacancy.js';
+import type { ProviderId } from './settings.js';
 
 export type DocLanguage = 'de' | 'en';
 export type ApplicationStatus = 'draft' | 'approved' | 'sent' | 'submitted' | 'interview' | 'rejected' | 'offer' | 'withdrawn';
@@ -76,7 +77,7 @@ export interface PackageVacancy {
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 4;
+  schemaVersion: 5;
   id: string;
   vacancyId: string;
   language: DocLanguage;
@@ -98,6 +99,8 @@ export interface ApplicationPackage {
   sentEmail: SentEmail | null;
   /** The answer to a job offer; null = none written yet. */
   offerReply: OfferReply | null;
+  /** Who wrote the AI parts last (create, "Ask AI", "Update CV", shortening, offer reply). Packages from before 0.8.0: 'claude'. */
+  writtenBy: ProviderId;
 }
 
 export interface ApplicationSummary {
@@ -110,6 +113,7 @@ export interface ApplicationSummary {
   createdAt: string;
   updatedAt: string;
   approvedAt: string | null;
+  writtenBy: ProviderId;
 }
 
 export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean; followUpDue: boolean })[] }

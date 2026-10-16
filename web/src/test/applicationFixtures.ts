@@ -3,7 +3,7 @@ import type { ApplicationJobState, ApplicationPackage, ApplicationSummary, Appli
 const NOW = '2026-09-29T10:00:00.000Z';
 export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationPackage {
   return {
-    schemaVersion: 4, id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 5, writtenBy: 'claude', id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     history: [], sentAt: null, sentEmail: null, offerReply: null,
     profileFingerprint: '0'.repeat(64),
     snapshot: {
@@ -25,7 +25,7 @@ export function appView(over: Partial<ApplicationView> = {}, pkg: Partial<Applic
   return { application: appPackage(pkg), profileChanged: false, attachments: [], canUndo: false, followUpDue: false, ...over };
 }
 export function appSummary(over: Partial<ApplicationSummary & { profileChanged: boolean; followUpDue: boolean }> = {}): ApplicationSummary & { profileChanged: boolean; followUpDue: boolean } {
-  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, profileChanged: false, followUpDue: false, ...over };
+  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, writtenBy: 'claude', profileChanged: false, followUpDue: false, ...over };
 }
 export function jobState(over: Partial<ApplicationJobState> = {}): ApplicationJobState {
   return { state: 'idle', kind: null, vacancyId: null, applicationId: null, error: null, startedAt: null, finishedAt: null, ...over };

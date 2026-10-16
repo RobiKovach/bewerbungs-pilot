@@ -1,4 +1,4 @@
-import type { Profile, Vacancy, WishesData } from '@bp/shared';
+import type { Profile, ProviderId, Vacancy, WishesData } from '@bp/shared';
 import { emptyProfile } from '../../src/profile/schema.js';
 import { AppError } from '../../src/errors.js';
 import { FakeProvider } from '../../src/llm/fake.js';
@@ -23,7 +23,7 @@ export function vacancy(over: Partial<Vacancy> = {}): Vacancy {
     id: over.id ?? `v${n}`, source: 'arbeitsagentur', sourceId: `10000-${String(n).padStart(10, '0')}-S`, addedManually: false,
     title: `Webentwickler ${n}`, company: `Firma ${n} GmbH`, locations: ['Dresden'], remote: 'unknown', employment: [],
     salaryText: '', publishedAt: '2026-09-20', foundAt: '2026-09-28T10:00:00.000Z', url: '', contact: null, hasText: false,
-    status: 'new', scoreState: 'scored', score: { value: 70, why: ['a'], missing: [], scoredAt: '2026-09-28T10:00:00.000Z' },
+    status: 'new', scoreState: 'scored', score: { value: 70, why: ['a'], missing: [], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' },
     hiddenAt: null, ...over,
   };
 }
@@ -77,6 +77,8 @@ export function scoringClaude(opts: {
   score?: (id: string) => number | null;
   manual?: unknown;
   before?: (task: LlmTask, signal: AbortSignal) => unknown;
+  /** Which AI helper this fake pretends to be (default claude). */
+  id?: ProviderId;
 } = {}): FakeProvider {
   return new FakeProvider({ ok: true }, async (task, signal) => {
     await opts.before?.(task, signal);
@@ -93,5 +95,5 @@ export function scoringClaude(opts: {
         return value === null ? [] : [{ id, score: value, why: ['passt'], missing: [] }];
       }),
     };
-  });
+  }, opts.id);
 }

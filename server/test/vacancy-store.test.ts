@@ -24,7 +24,7 @@ describe('VacancyStore', () => {
     const again = new VacancyStore(paths);
     expect(again.load()).toHaveLength(1);
     expect(again.readText('a1')).toBe('Wir suchen Sie.');
-    expect(JSON.parse(fs.readFileSync(paths.file, 'utf8')).schemaVersion).toBe(1);
+    expect(JSON.parse(fs.readFileSync(paths.file, 'utf8')).schemaVersion).toBe(2);
   });
 
   it('get/list return copies', () => {
@@ -132,5 +132,37 @@ describe('VacancyStore', () => {
     expect(reason).not.toContain('geheim@example.com');
     expect(reason).not.toContain('Geheimer Name');
     expect(reason).toContain('status');
+  });
+});
+
+describe('0.8.0: vacancies file v1 → v2', () => {
+  it('v1 file -> v2: old scores get provider claude', () => {
+    const { paths } = setup();
+    const { provider: _p, ...oldScore } = vacancy().score!;
+    void _p;
+    const scored = { ...vacancy({ id: 'old1' }), score: oldScore };
+    const unscored = vacancy({ id: 'old2', scoreState: 'failed', score: null });
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 1, vacancies: [scored, unscored] }));
+    const events: string[] = [];
+    const store = new VacancyStore(paths, (e) => events.push(e));
+    store.load();
+    expect(events).toEqual([]);
+    expect(store.get('old1')!.score).toEqual({ ...oldScore, provider: 'claude' });
+    // Nothing else changed.
+    expect(store.get('old1')).toEqual({ ...scored, score: { ...oldScore, provider: 'claude' } });
+    expect(store.get('old2')).toEqual(unscored);
+    expect(fs.readdirSync(path.dirname(paths.file)).some((f) => f.includes('invalid'))).toBe(false);
+  });
+
+  it('a v2 score without provider (or with an unknown AI) is invalid', () => {
+    const { paths } = setup();
+    const { provider: _p, ...oldScore } = vacancy().score!;
+    void _p;
+    for (const score of [oldScore, { ...oldScore, provider: 'gemini' }]) {
+      fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 2, vacancies: [{ ...vacancy({ id: 'x' }), score }] }));
+      const events: string[] = [];
+      expect(new VacancyStore(paths, (e) => events.push(e)).load()).toEqual([]);
+      expect(events).toEqual(['vacancies_invalid']);
+    }
   });
 });

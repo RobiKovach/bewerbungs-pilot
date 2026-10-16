@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import type { Profile } from '@bp/shared';
+import type { Profile, ProviderId } from '@bp/shared';
+import { AppError } from '../src/errors.js';
 import { ApplicationJob, type ApplicationJobDeps } from '../src/applications/job.js';
 import { ApplicationStore } from '../src/applications/store.js';
 import type { FakeProvider } from '../src/llm/fake.js';
@@ -14,7 +15,7 @@ import { FakePrinter, GOOD_CV, GOOD_LETTER, packageClaude, readyPackageProfile }
 
 const OFFER = 'Wir suchen einen Webentwickler (m/w/d) für unser Team in Hamburg. Sie bauen Online-Shops mit uns.';
 
-function setup(opts: { provider?: FakeProvider; profile?: Profile; printer?: FakePrinter } = {}) {
+function setup(opts: { provider?: FakeProvider; profile?: Profile; printer?: FakePrinter; queue?: LlmQueue } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp job Дані-'));
   const store = new ApplicationStore(path.join(dir, 'applications'));
   store.load();
@@ -26,7 +27,7 @@ function setup(opts: { provider?: FakeProvider; profile?: Profile; printer?: Fak
   let profile = opts.profile ?? readyPackageProfile((p) => { p.sections.wishes.data.remote = 'remote'; });
   let ids = 0;
   const deps: ApplicationJobDeps = {
-    store, vacancies, queue: new LlmQueue(provider), printer, logger: nullLogger,
+    store, vacancies, queue: opts.queue ?? new LlmQueue(provider), printer, logger: nullLogger,
     profile: () => structuredClone(profile), photo: () => null, stateFile: path.join(dir, 'applications', 'job-state.json'),
     newId: () => `app${++ids}`, now: () => new Date('2026-09-29T10:00:00.000Z'),
   };
@@ -318,5 +319,78 @@ describe('revise, recreate, refresh CV', () => {
     await t.job.whenIdle();
     expect(t.job.state()).toMatchObject({ state: 'failed', error: expect.anything() });
     expect(t.store.require('app1')).toEqual(before);
+  });
+});
+
+describe('0.8.0: who wrote it, and AI errors that are never retried', () => {
+  it('writtenBy = the provider that wrote last', async () => {
+    const claude = packageClaude();
+    const chatgpt = packageClaude({ id: 'chatgpt' });
+    let current: ProviderId = 'claude';
+    const queue = new LlmQueue(() => (current === 'claude' ? claude : chatgpt));
+    const t = setup({ provider: claude, queue });
+    t.job.start({ kind: 'create', vacancyId: 'fav1', language: 'de' });
+    await t.job.whenIdle();
+    expect(t.store.require('app1').writtenBy).toBe('claude');
+    expect(t.store.list()[0].writtenBy).toBe('claude');
+
+    current = 'chatgpt';
+    t.job.start({ kind: 'revise', applicationId: 'app1', instruction: 'Kürzer, bitte.' });
+    await t.job.whenIdle();
+    expect(t.job.state().state).toBe('done');
+    expect(chatgpt.calls).toHaveLength(1);
+    expect(t.store.require('app1').writtenBy).toBe('chatgpt');
+    expect(t.store.list()[0].writtenBy).toBe('chatgpt');
+
+    // Only the phone changed: "Update CV" needs no AI, so the last writer stays.
+    current = 'claude';
+    const claudeCalls = claude.calls.length;
+    t.setProfile(readyPackageProfile((p) => { p.sections.wishes.data.remote = 'remote'; p.sections.personal.data.phone = '+49 40 999'; }));
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
+    await t.job.whenIdle();
+    expect(t.job.state().state).toBe('done');
+    expect(claude.calls.length).toBe(claudeCalls);
+    expect(t.store.require('app1').writtenBy).toBe('chatgpt');
+
+    // A CV change that does need the AI: the writer becomes Claude again.
+    t.setProfile(readyPackageProfile((p) => { p.sections.wishes.data.remote = 'remote'; p.sections.experience.data.items[0].description = 'Neu.'; }));
+    t.job.start({ kind: 'refreshCv', applicationId: 'app1', keepProfil: false, keepHeadline: false });
+    await t.job.whenIdle();
+    expect(t.job.state().state).toBe('done');
+    expect(t.store.require('app1').writtenBy).toBe('claude');
+  });
+
+  it('LLM_LIMIT is not retried by the letter-rule retry', async () => {
+    const provider = packageClaude({ before: () => { throw new AppError('LLM_LIMIT', 'usage limit'); } });
+    const t = setup({ provider });
+    t.job.start({ kind: 'create', vacancyId: 'fav1', language: 'de' });
+    await t.job.whenIdle();
+    expect(t.job.state()).toMatchObject({ state: 'failed', error: { code: 'LLM_LIMIT' } });
+    expect(provider.calls).toHaveLength(1);
+    expect(t.store.list()).toEqual([]);
+  });
+
+  it('LLM_LIMIT on the rule retry is not retried again and surfaces as LLM_LIMIT', async () => {
+    let n = 0;
+    const provider = packageClaude({
+      before: () => { if (++n === 2) throw new AppError('LLM_LIMIT', 'usage limit'); },
+      // The first answer breaks a rule ("never mention"), so the job asks once more — and that call hits the limit.
+      create: { ...GOOD_LETTER, ...GOOD_CV, profil: 'Arbeit für Kunde X.' },
+    });
+    const t = setup({ provider });
+    t.job.start({ kind: 'create', vacancyId: 'fav1', language: 'de' });
+    await t.job.whenIdle();
+    expect(t.job.state()).toMatchObject({ state: 'failed', error: { code: 'LLM_LIMIT' } });
+    expect(provider.calls).toHaveLength(2);
+  });
+
+  it('no AI helper chosen → LLM_NOT_CHOSEN, nothing written', async () => {
+    const queue = new LlmQueue(() => { throw new AppError('LLM_NOT_CHOSEN', 'no AI helper chosen'); });
+    const t = setup({ queue });
+    t.job.start({ kind: 'create', vacancyId: 'fav1', language: 'de' });
+    await t.job.whenIdle();
+    expect(t.job.state()).toMatchObject({ state: 'failed', error: { code: 'LLM_NOT_CHOSEN' } });
+    expect(t.provider.calls).toHaveLength(0);
+    expect(t.store.list()).toEqual([]);
   });
 });

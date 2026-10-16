@@ -1,14 +1,17 @@
 import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
 import type { Migration } from '../data/migrate.js';
+import { PROVIDER_IDS } from '../data/settings.js';
 import { LIMITS, validateSectionData } from '../profile/schema.js';
 import { VACANCY_LIMITS } from '../vacancies/schema.js';
 
-export const APPLICATIONS_SCHEMA_VERSION = 1;
-export const PACKAGE_SCHEMA_VERSION = 4;
+export const APPLICATIONS_SCHEMA_VERSION = 2;
+export const PACKAGE_SCHEMA_VERSION = 5;
 
 /** migrations[n] turns package version n into n + 1 (applied on read; written back on the next save). */
 export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 5: who wrote the package (Claude was the only AI before 0.8.0).
+  4: (doc) => ({ ...doc, writtenBy: 'claude' }),
   // 4: the answer to a job offer; history may hold events (reminders, replies).
   3: (doc) => ({ ...doc, offerReply: null }),
   // 3: statuses beyond approved, history, the sent email.
@@ -30,6 +33,14 @@ export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
       snapshot: { ...snapshot, personal: { links: [], ...personal } },
     };
   },
+};
+/** migrations[n] turns applications.json version n into n + 1. */
+export const LIST_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 2: summaries say who wrote the package (Claude was the only AI before 0.8.0).
+  1: (doc) => ({
+    ...doc,
+    applications: Array.isArray(doc.applications) ? doc.applications.map((s) => ({ writtenBy: 'claude', ...(s as object) })) : [],
+  }),
 };
 export const APPLICATION_ID = /^[A-Za-z0-9_-]{1,64}$/;
 // Letter fields that copy vacancy or profile data are never tighter than their source, so a valid vacancy/profile
@@ -54,11 +65,12 @@ const ID = { type: 'string', pattern: APPLICATION_ID.source };
 const TIMESTAMP = str(40);
 const LANGUAGE = { enum: ['de', 'en'] };
 const STATUS = { enum: ['draft', 'approved', 'sent', 'submitted', 'interview', 'rejected', 'offer', 'withdrawn'] };
+const PROVIDER = { enum: [...PROVIDER_IDS] };
 const HISTORY_KIND = { enum: [...STATUS.enum, 'followUp', 'followUpDismissed', 'reply'] };
 
 const SUMMARY = obj({
   id: ID, vacancyId: ID, company: str(V.company), title: str(V.title), language: LANGUAGE, status: STATUS,
-  createdAt: TIMESTAMP, updatedAt: TIMESTAMP, approvedAt: nullable(TIMESTAMP),
+  createdAt: TIMESTAMP, updatedAt: TIMESTAMP, approvedAt: nullable(TIMESTAMP), writtenBy: PROVIDER,
 });
 
 const PACKAGE = obj({
@@ -99,6 +111,7 @@ const PACKAGE = obj({
   sentAt: nullable(TIMESTAMP),
   sentEmail: nullable(obj({ to: str(L.address), subject: str(L.emailSubject), body: str(L.emailBody), attachments: { type: 'array', maxItems: 30, items: str(L.fileName) } })),
   offerReply: nullable(obj({ offered: str(L.offerField), wanted: str(L.offerField), body: str(L.offerBody), createdAt: TIMESTAMP, updatedAt: TIMESTAMP })),
+  writtenBy: PROVIDER,
 });
 
 const LIST = obj({ schemaVersion: { const: APPLICATIONS_SCHEMA_VERSION }, applications: { type: 'array', items: SUMMARY } });

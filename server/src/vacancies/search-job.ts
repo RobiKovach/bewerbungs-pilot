@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { FilterReason, Language, Profile, SearchState, SearchWarning, Vacancy, WishesData } from '@bp/shared';
+import type { ErrorCode, FilterReason, Language, Profile, SearchState, SearchWarning, Vacancy, WishesData } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
@@ -54,6 +54,9 @@ export interface SearchJobDeps {
   /** Pause between two details requests (ms). Default 300; tests pass 0. */
   pauseMs?: number;
 }
+
+/** AI errors that end the whole scoring phase instead of failing one batch. */
+const STOPS_SCORING: ReadonlySet<ErrorCode> = new Set<ErrorCode>(['LLM_LIMIT', 'LLM_NOT_CHOSEN']);
 
 const isCancel = (err: unknown, signal: AbortSignal) => signal.aborted || (err instanceof AppError && err.code === 'LLM_CANCELLED');
 
@@ -220,8 +223,8 @@ export class SearchJob {
     }));
     const ids = batch.map((v) => v.id);
     try {
-      const out = await this.d.queue.run<ScoreOutput>(scoreTask(inputs, profile, this.d.language()), signal);
-      const scores = toScores(out, ids, this.stamp());
+      const r = await this.d.queue.runTagged<ScoreOutput>(scoreTask(inputs, profile, this.d.language()), signal);
+      const scores = toScores(r.value, ids, this.stamp(), r.provider);
       this.d.store.updateMany(ids, (v) => {
         const s = scores.get(v.id);
         v.score = s ?? null;
@@ -229,6 +232,9 @@ export class SearchJob {
       });
     } catch (err) {
       if (isCancel(err, signal)) throw err;
+      // Neither comes back during this search: stop instead of burning the next batches (spec §8). finishWithError
+      // marks the cards still pending (this batch included) as notScored and keeps the code for the page.
+      if (err instanceof AppError && STOPS_SCORING.has(err.code)) throw err;
       this.d.logger.warn('search_batch_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN', size: ids.length });
       this.d.store.updateMany(ids, (v) => { v.scoreState = 'failed'; });
     }

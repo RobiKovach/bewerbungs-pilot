@@ -54,10 +54,10 @@ describe('toScores', () => {
       { id: 'zzz', score: 50, why: [], missing: [] },
       { id: 'b', score: -3.6, why: [' ok '], missing: [] },
       { id: 'b', score: 99, why: [], missing: [] },
-    ] }, ['a', 'b', 'c'], at);
+    ] }, ['a', 'b', 'c'], at, 'chatgpt');
     expect([...out.keys()]).toEqual(['a', 'b']);
-    expect(out.get('a')).toEqual({ value: 100, why: ['1', '2', '3'], missing: ['m'.repeat(300)], scoredAt: at });
-    expect(out.get('b')).toEqual({ value: 0, why: ['ok'], missing: [], scoredAt: at });
+    expect(out.get('a')).toEqual({ value: 100, why: ['1', '2', '3'], missing: ['m'.repeat(300)], scoredAt: at, provider: 'chatgpt' });
+    expect(out.get('b')).toEqual({ value: 0, why: ['ok'], missing: [], scoredAt: at, provider: 'chatgpt' });
   });
 });
 

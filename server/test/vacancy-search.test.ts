@@ -204,3 +204,51 @@ describe('SearchJob', () => {
     expect(job.state().state).toBe('idle');
   });
 });
+
+describe('0.8.0: scores remember the AI; the AI limit stops scoring', () => {
+  it('LLM_LIMIT stops scoring further batches; found cards stay, the rest are notScored', async () => {
+    const hits = Array.from({ length: 25 }, () => hit());
+    let call = 0;
+    const provider = scoringClaude({ id: 'chatgpt', before: () => { if (++call === 2) throw new AppError('LLM_LIMIT', 'usage limit'); } });
+    const { job, store } = setup({ source: fakeSource({ search: () => hits }), provider });
+    const s = await run(job);
+    expect(provider.calls).toHaveLength(2);
+    const cards = store.list();
+    expect(cards).toHaveLength(25);
+    const scored = cards.filter((v) => v.scoreState === 'scored');
+    expect(scored).toHaveLength(10);
+    expect(scored.every((v) => v.score?.provider === 'chatgpt')).toBe(true);
+    expect(cards.filter((v) => v.scoreState === 'notScored')).toHaveLength(15);
+    expect(s).toMatchObject({ state: 'failed', phase: null, error: { code: 'LLM_LIMIT' } });
+  });
+
+  it('no AI helper chosen: scoring stops at the first batch, every card notScored, LLM_NOT_CHOSEN', async () => {
+    const hits = Array.from({ length: 25 }, () => hit());
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp search Дані-'));
+    const store = new VacancyStore({ file: path.join(dir, 'vacancies.json'), textsDir: path.join(dir, 'texts') });
+    store.load();
+    let resolved = 0;
+    const queue = new LlmQueue(() => { resolved++; throw new AppError('LLM_NOT_CHOSEN', 'no AI helper chosen'); });
+    let ids = 0;
+    const job = new SearchJob({
+      store, source: fakeSource({ search: () => hits }), queue, logger: nullLogger, profile: () => profileWithWishes(WISHES), language: () => 'de',
+      publishedWithinDays: () => 14, stateFile: path.join(dir, 'search-state.json'), pauseMs: 0, newId: () => `id${++ids}`,
+    });
+    job.init();
+    const s = await run(job);
+    expect(resolved).toBe(1);
+    expect(store.list()).toHaveLength(25);
+    expect(store.list().every((v) => v.scoreState === 'notScored')).toBe(true);
+    expect(s).toMatchObject({ state: 'failed', error: { code: 'LLM_NOT_CHOSEN' } });
+  });
+
+  it('other AI errors still only fail their own batch', async () => {
+    const hits = Array.from({ length: 12 }, () => hit());
+    let call = 0;
+    const provider = scoringClaude({ before: () => { if (++call === 1) throw new AppError('LLM_TIMEOUT', 'slow'); } });
+    const { job, store } = setup({ source: fakeSource({ search: () => hits }), provider });
+    expect(await run(job)).toMatchObject({ state: 'done', error: null });
+    expect(store.list().filter((v) => v.scoreState === 'scored').every((v) => v.score?.provider === 'claude')).toBe(true);
+    expect(store.list().map((v) => v.scoreState)).toEqual([...Array(10).fill('failed'), 'scored', 'scored']);
+  });
+});

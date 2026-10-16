@@ -25,8 +25,8 @@ const findCard = async (title: string) => { await screen.findByRole('heading', {
 describe('VacancyList', () => {
   it('shows score, why/missing, facts; weak matches folded away', async () => {
     setup([
-      vac({ title: 'Stark', score: { value: 86, why: ['React passt'], missing: ['Deutsch C1'], scoredAt: '2026-09-28T10:00:00.000Z' }, locations: ['Dresden'], remote: 'partial', publishedAt: '2026-09-22' }),
-      vac({ title: 'Schwach', score: { value: 30, why: [], missing: ['kein Match'], scoredAt: '2026-09-28T10:00:00.000Z' } }),
+      vac({ title: 'Stark', score: { value: 86, why: ['React passt'], missing: ['Deutsch C1'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' }, locations: ['Dresden'], remote: 'partial', publishedAt: '2026-09-22' }),
+      vac({ title: 'Schwach', score: { value: 30, why: [], missing: ['kein Match'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' } }),
     ]);
     const strong = (await findCard('Stark'));
     expect(within(strong).getByText('86')).toHaveClass('score--good');

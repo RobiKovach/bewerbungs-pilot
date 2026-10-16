@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { MailDraft } from '@bp/shared';
+import { AppError } from '../src/errors.js';
 import { H } from './helpers/app.js';
 import { packageClaude } from './helpers/applications.js';
 import { type Ctx, post, sendTo, setup, viewOf } from './helpers/sending.js';
@@ -102,5 +103,31 @@ describe('offer reply', () => {
     await post(ctx, url(id), AMOUNTS);
     const prompt = ctx.provider.calls[0].prompt;
     for (const secret of ['max@example.com', '+49 30', 'Musterstraße', '10115']) expect(prompt).not.toContain(secret);
+  });
+});
+
+describe('0.8.0: offer reply remembers who wrote it', () => {
+  it('written with ChatGPT → writtenBy chatgpt (package and list)', async () => {
+    const { ctx, id } = await offerPackage();
+    expect((await viewOf(ctx, id)).application.writtenBy).toBe('claude');
+    ctx.chatgpt.respond = packageClaude({ offer: { body: GOOD } }).respond;
+    ctx.settings.patch({ llm: { provider: 'chatgpt' } });
+    const r = await post(ctx, url(id), AMOUNTS);
+    expect(r.statusCode).toBe(200);
+    expect(ctx.chatgpt.calls).toHaveLength(1);
+    expect(ctx.provider.calls).toHaveLength(0);
+    expect((await viewOf(ctx, id)).application.writtenBy).toBe('chatgpt');
+    expect(ctx.applicationStore.list().find((s) => s.id === id)!.writtenBy).toBe('chatgpt');
+  });
+
+  it('LLM_LIMIT → 429, no retry, package unchanged', async () => {
+    const { ctx, id } = await offerPackage(() => { throw new AppError('LLM_LIMIT', 'usage limit'); });
+    const r = await post(ctx, url(id), AMOUNTS);
+    expect(r.statusCode).toBe(429);
+    expect(r.json().error.code).toBe('LLM_LIMIT');
+    expect(ctx.provider.calls).toHaveLength(1);
+    const v = await viewOf(ctx, id);
+    expect(v.application.offerReply).toBeNull();
+    expect(v.application.writtenBy).toBe('claude');
   });
 });

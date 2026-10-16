@@ -5,14 +5,14 @@ import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import { migrate, MigrationError } from '../data/migrate.js';
 import { FROZEN } from './status.js';
-import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validateList, validatePackage } from './schema.js';
+import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, LIST_MIGRATIONS, PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validateList, validatePackage } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 export interface PhotoFile { data: Buffer; ext: '.jpg' | '.png' }
 
 const summaryOf = (p: ApplicationPackage): ApplicationSummary => ({
   id: p.id, vacancyId: p.vacancyId, company: p.vacancy.company, title: p.vacancy.title, language: p.language, status: p.status,
-  createdAt: p.createdAt, updatedAt: p.updatedAt, approvedAt: p.approvedAt,
+  createdAt: p.createdAt, updatedAt: p.updatedAt, approvedAt: p.approvedAt, writtenBy: p.writtenBy,
 });
 
 /**
@@ -33,9 +33,19 @@ export class ApplicationStore {
     try {
       const raw = readJson<unknown>(listFile);
       if (raw !== null) {
-        const problem = validateList(raw);
-        if (problem) this.setAsideList('invalid', forLog(problem));
-        else ids = (raw as { applications: ApplicationSummary[] }).applications.map((s) => s.id);
+        // Only the ids are used (the summaries are rebuilt from the packages), but a list that does not migrate
+        // or validate is still put aside like any broken file.
+        let problem: string | null;
+        let doc: Record<string, unknown> | null = null;
+        try {
+          doc = migrate(raw, APPLICATIONS_SCHEMA_VERSION, LIST_MIGRATIONS);
+          problem = validateList(doc);
+        } catch (err) {
+          if (!(err instanceof MigrationError)) throw err;
+          problem = err.message;
+        }
+        if (problem || !doc) this.setAsideList('invalid', forLog(problem ?? 'not a list'));
+        else ids = (doc as { applications: ApplicationSummary[] }).applications.map((s) => s.id);
       }
     } catch (err) {
       if (!(err instanceof CorruptJsonError)) throw err;
