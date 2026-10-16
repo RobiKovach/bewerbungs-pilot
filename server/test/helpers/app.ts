@@ -23,13 +23,15 @@ import { fakeSource, type FakeSource } from './vacancies.js';
 
 export const H = { 'x-bp-client': '1' };
 
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
+  // `settingsFile`: a settings.json already on disk before start (simulates a restart); taken as-is.
+  if (opts.settingsFile !== undefined) fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify(opts.settingsFile));
   settings.load();
   // Test apps have Claude chosen unless a test asks otherwise; `chosen: null` = "Continue anyway" person.
-  if (opts.chosen !== null) settings.patch({ llm: { provider: opts.chosen ?? 'claude' } });
+  if (opts.settingsFile === undefined && opts.chosen !== null) settings.patch({ llm: { provider: opts.chosen ?? 'claude' } });
   const profileFile = path.join(dir, 'profile', 'profile.json');
   const filesDir = path.join(dir, 'profile', 'files');
   fs.mkdirSync(filesDir, { recursive: true });

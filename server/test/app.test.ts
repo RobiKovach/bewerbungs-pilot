@@ -118,6 +118,27 @@ describe('api', () => {
     expect(provider.calls).toHaveLength(0);
     expect(chatgpt.calls).toHaveLength(0);
   });
+  it('restart with a settings v2 file and no AI helper chosen keeps every AI route on LLM_NOT_CHOSEN', async () => {
+    const { app, provider, chatgpt, vacancyStore } = await makeApp({
+      settingsFile: {
+        schemaVersion: 2, language: 'en', onboarding: { currentStep: null, completed: true },
+        llm: { timeoutSec: 180, provider: null }, vacancies: { publishedWithinDays: 14 }, mail: null,
+      },
+    });
+    const s = await app.inject({ method: 'GET', url: '/api/settings', headers: H });
+    expect(s.json().llm).toEqual({ timeoutSec: 180, provider: null });
+    expect(s.json().onboarding.completed).toBe(true);
+    const test = await app.inject({ method: 'POST', url: '/api/llm/test', headers: H, payload: { language: 'en' } });
+    expect(test.statusCode).toBe(409);
+    expect(test.json().error.code).toBe('LLM_NOT_CHOSEN');
+    // A real feature route that goes through the queue: pasting a job offer.
+    const paste = await app.inject({ method: 'POST', url: '/api/vacancies/manual', headers: H, payload: { text: 'Wir suchen eine Frontend-Entwicklerin (m/w/d) in Dresden. '.repeat(8) } });
+    expect(paste.statusCode).toBe(409);
+    expect(paste.json().error.code).toBe('LLM_NOT_CHOSEN');
+    expect(vacancyStore.list()).toHaveLength(0);
+    expect(provider.calls).toHaveLength(0);
+    expect(chatgpt.calls).toHaveLength(0);
+  });
   it('PATCH /api/settings switches the provider for the next request', async () => {
     const { app, chatgpt, provider } = await makeApp();
     await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { llm: { provider: 'chatgpt' } } });
