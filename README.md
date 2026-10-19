@@ -88,10 +88,11 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 ## Email and sending
 
 - Connect your mailbox in Settings and send a test email. Gmail addresses use "Sign in with Google" (see What's new in 0.7.0 below).
-  **"Sign in with Google" is still in Google's testing mode:** it only works for people the author has added as test users,
-  Google shows "Google hasn't verified this app", and the sign-in has to be renewed every 7 days. Want to use it? Open an
-  issue on GitHub and ask to be added. Until then, use another mailbox (e.g. GMX or WEB.DE) for sending, or send the
-  PDFs yourself and mark the application as submitted. The app is going to be submitted for Google's verification later.
+  **"Sign in with Google" is not verified by Google yet.** Until Google approves the app, Google shows "Google hasn't
+  verified this app": click **Advanced → Go to BewerbungsPilot (unsafe)** to continue. The app only asks to *send* email,
+  never to read it (see the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html)). Before
+  verification Google allows at most 100 people in total to sign in; if it stops working for you, use another mailbox
+  (e.g. GMX or WEB.DE) for sending, or send the PDFs yourself and mark the application as submitted.
   For other providers you use an app password (a separate password for apps): GMX, WEB.DE, T-Online, Yahoo and iCloud are filled in
   automatically; others (e.g. Outlook.com) are entered by hand.
 - Send an approved package from the app: you see and can edit the email first, and a copy goes to your own mailbox.
