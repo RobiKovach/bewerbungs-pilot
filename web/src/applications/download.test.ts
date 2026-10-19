@@ -3,7 +3,8 @@ import { download } from './download';
 
 describe('download', () => {
   it('saves the file under the server\'s name', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(new Blob(['%PDF-1.7']), { status: 200, headers: { 'Content-Disposition': 'attachment; filename="Lebenslauf_Max_Mustermann.pdf"' } })));
+    // A string body: Node 22's Response does not accept jsdom's Blob (Node 24 does).
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('%PDF-1.7', { status: 200, headers: { 'Content-Disposition': 'attachment; filename="Lebenslauf_Max_Mustermann.pdf"' } })));
     const create = vi.fn(() => 'blob:x');
     vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: create, revokeObjectURL: vi.fn() }));
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
