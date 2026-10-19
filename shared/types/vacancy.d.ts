@@ -1,6 +1,6 @@
 import type { ErrorCode } from './errors.js';
 import type { EmploymentType } from './profile.js';
-import type { ProviderId } from './settings.js';
+import type { Language, ProviderId } from './settings.js';
 
 export type VacancySourceId = 'arbeitsagentur' | 'manual';
 /** new → favorite / hidden; new → stale (the source removed it); stale → hidden. See the spec, section 2. */
@@ -13,8 +13,11 @@ export type PublishedWithinDays = 1 | 3 | 7 | 14 | 30;
 
 /** Only for pasted offers, and only what the pasted text literally contains (checked by code). */
 export interface VacancyContact { email: string; salutation: Salutation; name: string }
-/** `provider`: the AI helper that scored it (scores from before 0.8.0: 'claude'). */
-export interface VacancyScore { value: number; why: string[]; missing: string[]; scoredAt: string; provider: ProviderId }
+/**
+ * `provider`: the AI helper that scored it (scores from before 0.8.0: 'claude').
+ * `language`: the language `why`/`missing` are written in (scores from before 0.8.2: null = not known).
+ */
+export interface VacancyScore { value: number; why: string[]; missing: string[]; scoredAt: string; provider: ProviderId; language: Language | null }
 
 export interface Vacancy {
   id: string;

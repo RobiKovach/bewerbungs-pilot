@@ -11,7 +11,7 @@ export function vac(over: Partial<Vacancy> = {}): Vacancy {
     company: `Firma ${n} GmbH`, locations: ['Dresden'], remote: 'partial', employment: ['fulltime'], salaryText: '',
     publishedAt: '2026-09-22', foundAt: '2026-09-28T10:00:00.000Z', url: `https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-${n}-S`,
     contact: null, hasText: true, status: 'new', scoreState: 'scored',
-    score: { value: 70, why: ['React passt'], missing: [], scoredAt: '2026-09-28T10:05:00.000Z', provider: 'claude' }, hiddenAt: null, ...over,
+    score: { value: 70, why: ['React passt'], missing: [], scoredAt: '2026-09-28T10:05:00.000Z', provider: 'claude', language: 'en' }, hiddenAt: null, ...over,
   };
 }
 

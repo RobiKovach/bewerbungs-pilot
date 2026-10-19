@@ -23,7 +23,7 @@ export function vacancy(over: Partial<Vacancy> = {}): Vacancy {
     id: over.id ?? `v${n}`, source: 'arbeitsagentur', sourceId: `10000-${String(n).padStart(10, '0')}-S`, addedManually: false,
     title: `Webentwickler ${n}`, company: `Firma ${n} GmbH`, locations: ['Dresden'], remote: 'unknown', employment: [],
     salaryText: '', publishedAt: '2026-09-20', foundAt: '2026-09-28T10:00:00.000Z', url: '', contact: null, hasText: false,
-    status: 'new', scoreState: 'scored', score: { value: 70, why: ['a'], missing: [], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' },
+    status: 'new', scoreState: 'scored', score: { value: 70, why: ['a'], missing: [], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude', language: 'de' },
     hiddenAt: null, ...over,
   };
 }

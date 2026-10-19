@@ -50,7 +50,13 @@ export function SearchProgress({ status }: { status: SearchStatus }) {
           </div>
         </>
       ) : null}
-      {s.state === 'done' ? <p>{t('vacancies.progress.done', { count: s.toScore })}</p> : null}
+      {s.state === 'done' ? (
+        <p>
+          {s.toScore > 0 ? t('vacancies.progress.done', { count: s.toScore })
+            : s.found > 0 ? t('vacancies.progress.doneNothingNew', { found: s.found })
+              : t('vacancies.progress.doneNothingFound')}
+        </p>
+      ) : null}
       {s.state === 'stopped' ? <p>{t('vacancies.progress.stopped', { scored: s.scored, total: s.toScore })}</p> : null}
       {s.state === 'interrupted' ? <p>{t('vacancies.progress.interrupted')}</p> : null}
       {s.state !== 'running' && s.moreAvailable > 0 ? <p>{t('vacancies.progress.more', { count: s.moreAvailable })}</p> : null}

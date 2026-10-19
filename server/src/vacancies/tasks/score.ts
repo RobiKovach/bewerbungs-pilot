@@ -61,17 +61,17 @@ export function scoreTask(items: readonly ScoreInput[], profile: Profile, langua
 const clip = (list: string[]) =>
   list.map((s) => s.trim().slice(0, VACANCY_LIMITS.point)).filter(Boolean).slice(0, VACANCY_LIMITS.points);
 
-/** `provider`: the AI helper that actually answered (LlmQueue.runTagged). */
-export function toScore(raw: { score: number; why: string[]; missing: string[] }, at: string, provider: ProviderId): VacancyScore {
+/** `provider`: the AI helper that actually answered (LlmQueue.runTagged); `language`: the reply language the task asked for. */
+export function toScore(raw: { score: number; why: string[]; missing: string[] }, at: string, provider: ProviderId, language: Language): VacancyScore {
   const value = Math.min(100, Math.max(0, Math.round(Number.isFinite(raw.score) ? raw.score : 0)));
-  return { value, why: clip(raw.why), missing: clip(raw.missing), scoredAt: at, provider };
+  return { value, why: clip(raw.why), missing: clip(raw.missing), scoredAt: at, provider, language };
 }
 
-export function toScores(out: ScoreOutput, ids: readonly string[], at: string, provider: ProviderId): Map<string, VacancyScore> {
+export function toScores(out: ScoreOutput, ids: readonly string[], at: string, provider: ProviderId, language: Language): Map<string, VacancyScore> {
   const wanted = new Set(ids);
   const scores = new Map<string, VacancyScore>();
   for (const r of out.results) {
-    if (wanted.has(r.id) && !scores.has(r.id)) scores.set(r.id, toScore(r, at, provider));
+    if (wanted.has(r.id) && !scores.has(r.id)) scores.set(r.id, toScore(r, at, provider, language));
   }
   return scores;
 }

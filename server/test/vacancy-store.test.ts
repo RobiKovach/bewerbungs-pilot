@@ -24,7 +24,7 @@ describe('VacancyStore', () => {
     const again = new VacancyStore(paths);
     expect(again.load()).toHaveLength(1);
     expect(again.readText('a1')).toBe('Wir suchen Sie.');
-    expect(JSON.parse(fs.readFileSync(paths.file, 'utf8')).schemaVersion).toBe(2);
+    expect(JSON.parse(fs.readFileSync(paths.file, 'utf8')).schemaVersion).toBe(3);
   });
 
   it('get/list return copies', () => {
@@ -136,10 +136,10 @@ describe('VacancyStore', () => {
 });
 
 describe('0.8.0: vacancies file v1 → v2', () => {
-  it('v1 file -> v2: old scores get provider claude', () => {
+  it('v1 file -> v3: old scores get provider claude and an unknown language', () => {
     const { paths } = setup();
-    const { provider: _p, ...oldScore } = vacancy().score!;
-    void _p;
+    const { provider: _p, language: _l, ...oldScore } = vacancy().score!;
+    void _p; void _l;
     const scored = { ...vacancy({ id: 'old1' }), score: oldScore };
     const unscored = vacancy({ id: 'old2', scoreState: 'failed', score: null });
     fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 1, vacancies: [scored, unscored] }));
@@ -147,9 +147,9 @@ describe('0.8.0: vacancies file v1 → v2', () => {
     const store = new VacancyStore(paths, (e) => events.push(e));
     store.load();
     expect(events).toEqual([]);
-    expect(store.get('old1')!.score).toEqual({ ...oldScore, provider: 'claude' });
+    expect(store.get('old1')!.score).toEqual({ ...oldScore, provider: 'claude', language: null });
     // Nothing else changed.
-    expect(store.get('old1')).toEqual({ ...scored, score: { ...oldScore, provider: 'claude' } });
+    expect(store.get('old1')).toEqual({ ...scored, score: { ...oldScore, provider: 'claude', language: null } });
     expect(store.get('old2')).toEqual(unscored);
     expect(fs.readdirSync(path.dirname(paths.file)).some((f) => f.includes('invalid'))).toBe(false);
   });
@@ -164,6 +164,31 @@ describe('0.8.0: vacancies file v1 → v2', () => {
       expect(new VacancyStore(paths, (e) => events.push(e)).load()).toEqual([]);
       expect(events).toEqual(['vacancies_invalid']);
     }
+  });
+});
+
+describe('0.8.2: vacancies file v2 → v3', () => {
+  it('v2 scores get language null (not known); cards without a score are unchanged', () => {
+    const { paths } = setup();
+    const { language: _l, ...v2Score } = vacancy().score!;
+    void _l;
+    const scored = { ...vacancy({ id: 'a' }), score: v2Score };
+    const unscored = vacancy({ id: 'b', scoreState: 'failed', score: null });
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 2, vacancies: [scored, unscored] }));
+    const events: string[] = [];
+    const store = new VacancyStore(paths, (e) => events.push(e));
+    store.load();
+    expect(events).toEqual([]);
+    expect(store.get('a')).toEqual({ ...scored, score: { ...v2Score, language: null } });
+    expect(store.get('b')).toEqual(unscored);
+  });
+
+  it('a v3 score with an unknown language is invalid', () => {
+    const { paths } = setup();
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 3, vacancies: [{ ...vacancy({ id: 'x' }), score: { ...vacancy().score!, language: 'fr' } }] }));
+    const events: string[] = [];
+    expect(new VacancyStore(paths, (e) => events.push(e)).load()).toEqual([]);
+    expect(events).toEqual(['vacancies_invalid']);
   });
 });
 

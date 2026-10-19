@@ -128,9 +128,10 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     // '' is a real, scoreable text (a partner-stub offer whose batch scoring failed) — only a missing
     // text file (readText returns null) means there is nothing to send to Claude.
     if (text === null) throw new AppError('CONFLICT', 'no text to score');
-    const task = scoreTask([{ id, title: v.title, company: v.company, locations: v.locations, remote: v.remote, employment: v.employment, salaryText: v.salaryText, text }], d.profile(), d.language());
+    const language = d.language();
+    const task = scoreTask([{ id, title: v.title, company: v.company, locations: v.locations, remote: v.remote, employment: v.employment, salaryText: v.salaryText, text }], d.profile(), language);
     const r = await d.queue.runTagged<ScoreOutput>(task, abortOnClose(reply));
-    const score = toScores(r.value, [id], new Date().toISOString(), r.provider).get(id);
+    const score = toScores(r.value, [id], new Date().toISOString(), r.provider, language).get(id);
     return view(d.store.update(id, (x) => { x.score = score ?? x.score; x.scoreState = score ? 'scored' : 'failed'; }));
   });
 
@@ -167,8 +168,9 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
         remote: found.remote, employment: found.employment, salaryText: found.salaryText, publishedAt: found.publishedAt,
         url: found.url, contact: null, scoreState: 'failed', score: null,
       };
-      const r = await d.queue.runTagged<ScoreOutput>(scoreTask([{ ...card, text: found.text }], d.profile(), d.language()), signal);
-      const score = toScores(r.value, [card.id], new Date().toISOString(), r.provider).get(card.id);
+      const language = d.language();
+      const r = await d.queue.runTagged<ScoreOutput>(scoreTask([{ ...card, text: found.text }], d.profile(), language), signal);
+      const score = toScores(r.value, [card.id], new Date().toISOString(), r.provider, language).get(card.id);
       // Re-check right before adding: the Claude call above waits in the shared queue (behind a running
       // search's batches, potentially minutes), and that search is quite likely to add this very offer
       // in the meantime. Without this, both cards would land in the store with the same sourceId.
@@ -180,14 +182,15 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     if (text.length < MANUAL_TEXT_MIN) {
       throw new AppError('BAD_REQUEST', `pasted text has ${text.length} characters`, 'pastedTooShort', { min: MANUAL_TEXT_MIN });
     }
-    const { value: out, provider } = await d.queue.runTagged<ManualOutput>(extractManualTask(text, d.profile(), d.language()), signal);
+    const language = d.language();
+    const { value: out, provider } = await d.queue.runTagged<ManualOutput>(extractManualTask(text, d.profile(), language), signal);
     const fields = toManualFields(out, text);
     if (!out.isVacancy || !fields.title) throw new AppError('NOT_A_VACANCY', 'Claude found no job offer in the pasted text');
     const twin = findDuplicate(d.store.list(), { sourceId: null, title: fields.title, company: fields.company });
     if (twin) throw duplicateError(twin);
     return view(d.store.add({
       ...base, ...fields, source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
-      score: toScore(out, new Date().toISOString(), provider),
+      score: toScore(out, new Date().toISOString(), provider, language),
     }, rawText));
   });
 }

@@ -480,7 +480,12 @@
       "within": "Opublikowane w ciągu",
       "days": { "1": "1 dnia", "3": "3 dni", "7": "7 dni", "14": "14 dni", "30": "30 dni" },
       "search": "Szukaj teraz",
-      "add": "+ Dodaj"
+      "add": "+ Dodaj",
+      "jobTitles": "Stanowiska:",
+      "newTitle": "Nowe stanowisko",
+      "addTitle": "Dodaj stanowisko",
+      "removeTitle": "Usuń „{{title}}”",
+      "titlesFull": "Możesz dodać do {{max}} stanowisk."
     },
     "progress": {
       "phase": {
@@ -500,6 +505,8 @@
       },
       "stop": "Zatrzymaj",
       "done": "Wyszukiwanie zakończone: oceniono {{count}} nowych ofert.",
+      "doneNothingNew": "Brak nowych ofert: wszystkie znalezione ({{found}}) są już na twojej liście albo zostały odfiltrowane. Dodaj stanowiska albo wybierz dłuższy okres.",
+      "doneNothingFound": "Nic nie znaleziono. Dodaj stanowiska, zwiększ promień albo wybierz dłuższy okres.",
       "stopped": "Wyszukiwanie zatrzymane. Oceniono {{scored}} z {{total}} ofert; pozostałe można ocenić przyciskiem „Oceń”.",
       "interrupted": "Ostatnie wyszukiwanie zostało przerwane (BewerbungsPilot został zamknięty). Jeszcze nieocenione oferty można ocenić przyciskiem „Oceń”.",
       "more": "Znaleziono jeszcze {{count}} nowych ofert — uruchom wyszukiwanie ponownie, aby je zobaczyć.",
@@ -531,6 +538,7 @@
       "failed": "Ocena nie powiodła się",
       "score": "Oceń",
       "scoreAgain": "Oceń ponownie",
+      "otherLanguage": "Uzasadnienie jest w innym języku.",
       "scoring": "{{ai}} ocenia tę ofertę…",
       "interesting": "★ Interesujące",
       "notInteresting": "Nieinteresujące",

@@ -23,10 +23,23 @@ const card = (title: string) => screen.getByRole('heading', { name: title }).clo
 const findCard = async (title: string) => { await screen.findByRole('heading', { name: title }); return card(title); };
 
 describe('VacancyList', () => {
+  it('0.8.2: points written in another language say so (unknown language from before 0.8.2: nothing said)', async () => {
+    const base = vac().score!;
+    setup([
+      vac({ title: 'Ukrainisch', score: { ...base, language: 'uk' } }),
+      vac({ title: 'Alt', score: { ...base, language: null } }),
+      vac({ title: 'Englisch', score: { ...base, language: 'en' } }),
+    ]);
+    expect(within(await findCard('Ukrainisch')).getByText(/The explanation is in another language./)).toBeInTheDocument();
+    expect(within(card('Ukrainisch')).getByRole('button', { name: 'Score again' })).toBeInTheDocument();
+    expect(within(card('Alt')).queryByText(/another language/)).toBeNull();
+    expect(within(card('Englisch')).queryByText(/another language/)).toBeNull();
+  });
+
   it('shows score, why/missing, facts; weak matches folded away', async () => {
     setup([
-      vac({ title: 'Stark', score: { value: 86, why: ['React passt'], missing: ['Deutsch C1'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' }, locations: ['Dresden'], remote: 'partial', publishedAt: '2026-09-22' }),
-      vac({ title: 'Schwach', score: { value: 30, why: [], missing: ['kein Match'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude' } }),
+      vac({ title: 'Stark', score: { value: 86, why: ['React passt'], missing: ['Deutsch C1'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude', language: 'en' }, locations: ['Dresden'], remote: 'partial', publishedAt: '2026-09-22' }),
+      vac({ title: 'Schwach', score: { value: 30, why: [], missing: ['kein Match'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude', language: 'en' } }),
     ]);
     const strong = (await findCard('Stark'));
     expect(within(strong).getByText('86')).toHaveClass('score--good');

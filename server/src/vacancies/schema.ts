@@ -1,9 +1,9 @@
 import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
 import type { Migration } from '../data/migrate.js';
-import { PROVIDER_IDS } from '../data/settings.js';
+import { PROVIDER_IDS, SUPPORTED_LANGUAGES } from '../data/settings.js';
 
-export const VACANCIES_SCHEMA_VERSION = 2;
+export const VACANCIES_SCHEMA_VERSION = 3;
 
 /** migrations[n] turns vacancies.json version n into n + 1 (applied on read; written back on the next save). */
 export const VACANCY_MIGRATIONS: Readonly<Record<number, Migration>> = {
@@ -17,6 +17,17 @@ export const VACANCY_MIGRATIONS: Readonly<Record<number, Migration>> = {
         if (!v || typeof v !== 'object') return v;
         const x = v as Record<string, unknown>;
         return x.score && typeof x.score === 'object' ? { ...x, score: { ...(x.score as object), provider: 'claude' } } : x;
+      }),
+    }
+    : doc,
+  // 3: a score says which language its points are written in (not recorded before 0.8.2).
+  2: (doc) => Array.isArray(doc.vacancies)
+    ? {
+      ...doc,
+      vacancies: doc.vacancies.map((v: unknown) => {
+        if (!v || typeof v !== 'object') return v;
+        const x = v as Record<string, unknown>;
+        return x.score && typeof x.score === 'object' ? { ...x, score: { ...(x.score as object), language: null } } : x;
       }),
     }
     : doc,
@@ -55,7 +66,7 @@ const VACANCY = obj({
   hasText: { type: 'boolean' },
   status: { enum: ['new', 'favorite', 'hidden', 'stale'] },
   scoreState: { enum: ['pending', 'scored', 'failed', 'notScored'] },
-  score: nullable(obj({ value: { type: 'integer', minimum: 0, maximum: 100 }, why: points, missing: points, scoredAt: TIMESTAMP, provider: { enum: [...PROVIDER_IDS] } })),
+  score: nullable(obj({ value: { type: 'integer', minimum: 0, maximum: 100 }, why: points, missing: points, scoredAt: TIMESTAMP, provider: { enum: [...PROVIDER_IDS] }, language: nullable({ enum: [...SUPPORTED_LANGUAGES] }) })),
   hiddenAt: nullable(TIMESTAMP),
 });
 

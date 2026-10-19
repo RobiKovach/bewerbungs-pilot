@@ -480,7 +480,12 @@
       "within": "Veröffentlicht innerhalb von",
       "days": { "1": "1 Tag", "3": "3 Tagen", "7": "7 Tagen", "14": "14 Tagen", "30": "30 Tagen" },
       "search": "Jetzt suchen",
-      "add": "+ Hinzufügen"
+      "add": "+ Hinzufügen",
+      "jobTitles": "Berufe:",
+      "newTitle": "Neuer Beruf",
+      "addTitle": "Beruf hinzufügen",
+      "removeTitle": "„{{title}}“ entfernen",
+      "titlesFull": "Sie können bis zu {{max}} Berufe hinzufügen."
     },
     "progress": {
       "phase": {
@@ -500,6 +505,8 @@
       },
       "stop": "Stoppen",
       "done": "Suche abgeschlossen: {{count}} neue Angebote bewertet.",
+      "doneNothingNew": "Keine neuen Stellenangebote: Alle {{found}} gefundenen sind schon in Ihrer Liste oder wurden aussortiert. Fügen Sie Berufe hinzu oder wählen Sie einen längeren Zeitraum.",
+      "doneNothingFound": "Nichts gefunden. Fügen Sie Berufe hinzu, vergrößern Sie den Umkreis oder wählen Sie einen längeren Zeitraum.",
       "stopped": "Suche gestoppt. {{scored}} von {{total}} Angeboten wurden bewertet; die übrigen können mit „Bewerten“ bewertet werden.",
       "interrupted": "Die letzte Suche wurde unterbrochen (BewerbungsPilot wurde geschlossen). Noch nicht bewertete Angebote können mit „Bewerten“ bewertet werden.",
       "more": "{{count}} weitere neue Angebote wurden gefunden — starten Sie die Suche erneut, um sie zu sehen.",
@@ -531,6 +538,7 @@
       "failed": "Bewertung fehlgeschlagen",
       "score": "Bewerten",
       "scoreAgain": "Erneut bewerten",
+      "otherLanguage": "Die Begründung ist in einer anderen Sprache.",
       "scoring": "{{ai}} bewertet dieses Angebot…",
       "interesting": "★ Interessant",
       "notInteresting": "Nicht interessant",

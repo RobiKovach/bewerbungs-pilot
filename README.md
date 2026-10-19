@@ -62,6 +62,10 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 
 - "★ Interesting" keeps an offer in your favourites; "Not interesting" hides it for good (you can bring it back).
 - Offers the job board has removed move to "Removed by the job board" by themselves.
+- Add or remove job titles right above the search button; they are saved to your job wishes. Few results? Add more
+  job titles (e.g. "Softwareentwickler" next to "Frontend Entwickler") or choose a longer "Published within" period.
+- The points are written in the app's language at the moment of scoring. After switching the language, the card says
+  so; "Score again" writes them in the new language.
 - Found an offer somewhere else? Paste its text with "+ Add" — the AI helper reads it and scores it the same way.
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. BewerbungsPilot only talks to
@@ -99,6 +103,14 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## What's new in 0.8.2
+
+- **Job titles on the job offers page.** Add or remove the job titles to search for right above "Search now"; they are
+  saved to your job wishes.
+- A search that finds nothing new now says why ("all found offers are already in your list", or "nothing found") and
+  what to try, instead of "0 new offers scored".
+- A score written in another language than the app's says so on the card; "Score again" writes it in the current language.
 
 ## What's new in 0.8.1
 

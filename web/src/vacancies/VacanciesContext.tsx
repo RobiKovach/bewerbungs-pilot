@@ -10,6 +10,8 @@ export interface VacanciesCtx {
   reload: () => Promise<void>;
   /** Puts a changed card from a server answer into the list (adds it if new). */
   put: (v: Vacancy) => void;
+  /** Saves the job wishes to the profile (the search strip edits job titles in place); throws on failure. */
+  saveWishes: (w: WishesData) => Promise<void>;
 }
 
 const Ctx = createContext<VacanciesCtx | null>(null);
@@ -40,9 +42,14 @@ export function VacanciesProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const saveWishes = useCallback(async (w: WishesData) => {
+    const view = await api.saveSection('wishes', w);
+    setWishes(view.profile.sections.wishes.data);
+  }, []);
+
   if (error && !vacancies) return <ErrorBanner error={error} onRetry={() => void reload()} />;
   if (!vacancies || !wishes) return <p className="muted">{t('common.loading')}</p>;
-  return <Ctx.Provider value={{ vacancies, wishes, reload, put }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ vacancies, wishes, reload, put, saveWishes }}>{children}</Ctx.Provider>;
 }
 
 export function useVacancies(): VacanciesCtx {

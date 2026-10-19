@@ -29,6 +29,14 @@ describe('SearchProgress (panel only)', () => {
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '12');
     expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument();
   });
+  it('0.8.2: done with nothing new says why — all found were known, or nothing was found', () => {
+    const { unmount } = panel(searchState({ state: 'done', found: 2, filteredOut: { seen: 2 }, toScore: 0, scored: 0 }));
+    expect(screen.getByText('No new job offers: all 2 found are already in your list or were filtered out. Add job titles or choose a longer period.')).toBeInTheDocument();
+    unmount();
+    panel(searchState({ state: 'done', found: 0, toScore: 0 }));
+    expect(screen.getByText('Nothing found. Add job titles, widen the radius or choose a longer period.')).toBeInTheDocument();
+  });
+
   it('done with more available and warnings', () => {
     panel(searchState({ state: 'done', found: 80, afterFilter: 60, toScore: 50, scored: 50, moreAvailable: 10, warnings: ['someQueriesFailed'] }));
     expect(screen.getByText('Search finished: 50 new offers scored.')).toBeInTheDocument();

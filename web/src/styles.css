@@ -119,6 +119,16 @@ label.btn { cursor: pointer; }
 .manual-edit { margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
 .profile-wizard { margin-top: 1rem; }
 .search-strip p { margin: 0; }
+.job-titles { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.chips { display: contents; list-style: none; }
+.chip { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.15rem 0.3rem 0.15rem 0.7rem; border-radius: 999px;
+  background: var(--bg); border: 1px solid var(--border); }
+.chip__remove { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer;
+  padding: 0.1rem 0.35rem; border-radius: 999px; }
+.chip__remove:hover:not(:disabled) { color: var(--text); background: var(--border); }
+.job-titles input { font: inherit; padding: 0.3rem 0.6rem; border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); min-width: 0; width: 14rem; max-width: 100%; }
+.job-titles .muted, .job-titles .error-banner { flex-basis: 100%; margin: 0; }
 .inline-field { display: inline-flex; align-items: center; gap: 0.4rem; }
 .plain-list { list-style: none; padding: 0; }
 .search-progress p { margin: 0.25rem 0; }

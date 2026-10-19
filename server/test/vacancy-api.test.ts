@@ -101,6 +101,14 @@ describe('card endpoints', () => {
     expect((await post(ctx, '/api/vacancies/m/text/refresh')).statusCode).toBe(409);
   });
 
+  it('0.8.2: a new score records the language of its points (the interface language at that moment)', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 60 }) });
+    ctx.vacancyStore.add(vacancy({ id: 'a', score: { ...vacancy().score!, language: 'uk' } }), 'Text');
+    ctx.settings.patch({ language: 'de' });
+    expect((await post(ctx, '/api/vacancies/a/score')).json().vacancy.score).toMatchObject({ value: 60, language: 'de' });
+    expect(ctx.vacancyStore.get('a')!.score!.language).toBe('de');
+  });
+
   it('score again: one card, one Claude call; refused while pending or without text', async () => {
     const ctx = await makeApp({ provider: scoringClaude({ score: () => 91 }) });
     ctx.vacancyStore.add(vacancy({ id: 'a' }), 'Text');

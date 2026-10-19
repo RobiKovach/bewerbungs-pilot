@@ -223,8 +223,9 @@ export class SearchJob {
     }));
     const ids = batch.map((v) => v.id);
     try {
-      const r = await this.d.queue.runTagged<ScoreOutput>(scoreTask(inputs, profile, this.d.language()), signal);
-      const scores = toScores(r.value, ids, this.stamp(), r.provider);
+      const language = this.d.language();
+      const r = await this.d.queue.runTagged<ScoreOutput>(scoreTask(inputs, profile, language), signal);
+      const scores = toScores(r.value, ids, this.stamp(), r.provider, language);
       this.d.store.updateMany(ids, (v) => {
         const s = scores.get(v.id);
         v.score = s ?? null;

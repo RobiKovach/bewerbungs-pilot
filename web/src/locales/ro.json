@@ -480,7 +480,12 @@
       "within": "Publicat în ultimele",
       "days": { "1": "1 zi", "3": "3 zile", "7": "7 zile", "14": "14 zile", "30": "30 zile" },
       "search": "Căutați acum",
-      "add": "+ Adăugați"
+      "add": "+ Adăugați",
+      "jobTitles": "Posturi:",
+      "newTitle": "Post nou",
+      "addTitle": "Adăugați post",
+      "removeTitle": "Eliminați „{{title}}”",
+      "titlesFull": "Puteți adăuga până la {{max}} posturi."
     },
     "progress": {
       "phase": {
@@ -500,6 +505,8 @@
       },
       "stop": "Opriți",
       "done": "Căutare finalizată: {{count}} oferte noi evaluate.",
+      "doneNothingNew": "Nicio ofertă nouă: toate cele {{found}} găsite sunt deja în lista dvs. sau au fost filtrate. Adăugați posturi sau alegeți o perioadă mai lungă.",
+      "doneNothingFound": "Nu s-a găsit nimic. Adăugați posturi, măriți raza sau alegeți o perioadă mai lungă.",
       "stopped": "Căutare oprită. {{scored}} din {{total}} oferte au fost evaluate; celelalte pot fi evaluate cu „Evaluați”.",
       "interrupted": "Ultima căutare a fost întreruptă (BewerbungsPilot a fost închis). Ofertele care nu au fost încă evaluate pot fi evaluate cu „Evaluați”.",
       "more": "Au fost găsite încă {{count}} oferte noi — porniți din nou căutarea pentru a le vedea.",
@@ -531,6 +538,7 @@
       "failed": "Evaluarea a eșuat",
       "score": "Evaluați",
       "scoreAgain": "Evaluați din nou",
+      "otherLanguage": "Explicația este în altă limbă.",
       "scoring": "{{ai}} evaluează această ofertă…",
       "interesting": "★ Interesant",
       "notInteresting": "Neinteresant",

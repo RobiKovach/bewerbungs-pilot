@@ -14,7 +14,7 @@ const level = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'mid' : '
 const date = (iso: string) => { const [y, m, d] = iso.slice(0, 10).split('-'); return `${d}.${m}.${y}`; };
 
 export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }: { vacancy: Vacancy; highlighted?: boolean; onHidden: (v: Vacancy) => void; extra?: ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { put } = useVacancies();
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
@@ -82,6 +82,8 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }
         <span>
           {v.scoreState === 'pending' ? t('vacancies.card.pending') : null}
           {v.scoreState === 'scored' && v.score ? <>{t('vacancies.card.scoredAt', { date: date(v.score.scoredAt) })} <WrittenBy provider={v.score.provider} kind="score" /></> : null}
+          {/* The points are written once, in the interface language of that moment (null: a score from before 0.8.2). */}
+          {v.scoreState === 'scored' && v.score?.language && v.score.language !== i18n.language ? <> {t('vacancies.card.otherLanguage')}</> : null}
           {v.scoreState === 'notScored' ? t('vacancies.card.notScored') : null}
           {v.scoreState === 'failed' ? t('vacancies.card.failed') : null}
         </span>
