@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy policy — BewerbungsPilot</title>
+  <meta name="description" content="How BewerbungsPilot handles your data, including data from your Google account.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <nav><a href="./">Home</a><a href="privacy.html">Privacy policy</a><a href="https://github.com/RobiKovach/bewerbungs-pilot">Source code</a></nav>
+    <h1>Privacy policy</h1>
+    <p class="lead">BewerbungsPilot · effective 19 October 2026</p>
+  </header>
+
+  <h2>In short</h2>
+  <ul>
+    <li>BewerbungsPilot is a Windows app that runs only on your own PC. It has <strong>no server, no user accounts,
+      no tracking and no analytics</strong>.</li>
+    <li>The developer of BewerbungsPilot <strong>does not receive any of your data</strong> — not your profile, not
+      your documents, not your emails and not your Google account data.</li>
+    <li>The app sends data only to the services you use through it: the job board of the Federal Employment Agency,
+      the AI helper you chose, and your email provider (Google, if you use Sign in with Google). Each of them is
+      described below.</li>
+  </ul>
+
+  <h2>Who is responsible</h2>
+  <p>
+    BewerbungsPilot is developed by Robert Kovach as a noncommercial open-source project. Because the
+    app runs entirely on your PC and sends nothing to the developer, the developer does not process your personal data.
+    Questions about this policy: <a href="https://github.com/RobiKovach/bewerbungs-pilot/issues">open an issue on GitHub</a>.
+  </p>
+
+  <h2>Data saved on your PC</h2>
+  <p>
+    Everything you enter or create in the app is saved only in <code>%LOCALAPPDATA%\BewerbungsPilot</code> on your PC:
+    your profile (personal details, education, experience, skills, languages, wishes, stories), your CV file, photo and
+    documents, job offers you found or added, application packages, statuses and settings, and a technical log file
+    (without the contents of your letters, emails or CV). You can delete all of it by deleting that folder.
+  </p>
+
+  <h2>Data sent to other services</h2>
+
+  <h3>Federal Employment Agency job board</h3>
+  <p>
+    To search for job offers, the app sends your job titles, place, search radius and search filters to
+    <code>rest.arbeitsagentur.de</code>, the public job board of the Bundesagentur für Arbeit. No name or contact data is
+    sent.
+  </p>
+
+  <h3>Your AI helper (Claude by Anthropic or ChatGPT by OpenAI)</h3>
+  <p>
+    The AI helper runs with <em>your own</em> Claude or ChatGPT account, which you sign in to inside the app. The app
+    sends it the text needed for each task:
+  </p>
+  <ul>
+    <li>when reading your CV: the CV (as a file for Claude, as text for ChatGPT);</li>
+    <li>when writing an application or scoring a job offer: the job offer and your education, experience, skills,
+      languages, city and confirmed stories — <strong>never</strong> your name, email address, phone number, street,
+      postal code, birth date, nationality, photo or anything on your "never mention" list;</li>
+    <li>when writing a reply to an offer: the job title, the amounts you enter and the same profile data as above.</li>
+  </ul>
+  <p>
+    What the provider does with it is governed by your agreement with them:
+    <a href="https://www.anthropic.com/legal/privacy">Anthropic privacy policy</a>,
+    <a href="https://openai.com/policies/privacy-policy/">OpenAI privacy policy</a>.
+    On personal ChatGPT plans you can stop your texts from being used for training under
+    ChatGPT Settings → Data controls → "Improve the model for everyone".
+  </p>
+
+  <h3>Your email provider</h3>
+  <p>
+    When you send an application, a reminder or a reply, the email (with its attachments) goes from your PC to your own
+    email provider, which delivers it to the employer and puts a copy in your mailbox. For providers other than Gmail,
+    the app uses the app password you enter; it is stored on your PC encrypted with Windows (DPAPI) for your Windows
+    user only.
+  </p>
+
+  <h2 id="google">Google user data</h2>
+  <p>If you connect a Gmail address with <strong>Sign in with Google</strong>, the following applies.</p>
+
+  <h3>What the app accesses</h3>
+  <ul>
+    <li><code>https://www.googleapis.com/auth/gmail.send</code> — permission to send email from your Gmail account.</li>
+    <li><code>openid</code> and <code>email</code> — your Gmail address, so it can be used as the sender address and
+      shown to you as the connected account.</li>
+  </ul>
+  <p>The app cannot read, search, change or delete any email in your mailbox, and it does not ask for such access.</p>
+
+  <h3>How the app uses it</h3>
+  <p>
+    The app uses the send permission only to send emails that you have seen and approved in the app by clicking
+    <em>Send</em>: job applications (with the PDF documents attached and a blind copy to yourself), follow-up reminders
+    and replies to employers. It uses your Gmail address only as the sender address and to show which account is
+    connected. Google's answer to a sent email (a message and conversation number) is kept so that a later reminder or
+    reply joins the same conversation.
+  </p>
+
+  <h3>Storage and protection</h3>
+  <p>
+    The access key from Google (refresh token) is stored only on your PC, encrypted with Windows (DPAPI) for your Windows
+    user. Your Gmail address is stored in the app's settings on your PC. Nothing from your Google account is sent to the
+    developer, to the AI helper or to any other third party. All connections to Google use HTTPS.
+  </p>
+
+  <h3>Sharing</h3>
+  <p>
+    Data received from Google is not shared, sold or transferred to anyone. It is not used for advertising, and it is
+    not used to develop, improve or train AI or machine-learning models.
+  </p>
+
+  <h3>Retention and deletion</h3>
+  <p>
+    The key and the address stay on your PC until you disconnect. When you click <em>Disconnect</em> in the app's
+    Settings, or switch to another account or to a password mailbox, the app asks Google to revoke the permission and
+    deletes the key from your PC. You can also remove the app's access at any time at
+    <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.
+  </p>
+
+  <h3>Limited Use</h3>
+  <p>
+    BewerbungsPilot's use and transfer of information received from Google APIs adheres to the
+    <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>,
+    including the Limited Use requirements.
+  </p>
+
+  <h2>Downloads during installation</h2>
+  <p>
+    The installer may install Node.js from the official Windows package manager (winget). When you choose an AI helper,
+    the app installs it from its official source (Claude: claude.ai; ChatGPT: the <code>@openai/codex</code> package from
+    npm). These downloads contain no personal data.
+  </p>
+
+  <h2>Children</h2>
+  <p>BewerbungsPilot is meant for adults looking for a job and is not directed at children.</p>
+
+  <h2>Changes</h2>
+  <p>
+    Changes to this policy are published on this page with a new effective date. The history of every change is
+    visible in the <a href="https://github.com/RobiKovach/bewerbungs-pilot/commits/main/docs/privacy.html">source code
+    repository</a>.
+  </p>
+
+  <footer>
+    <p><a href="./">BewerbungsPilot</a> · <a href="https://github.com/RobiKovach/bewerbungs-pilot">Source code</a> ·
+      <a href="https://github.com/RobiKovach/bewerbungs-pilot/issues">Contact</a></p>
+  </footer>
+</main>
+</body>
+</html>

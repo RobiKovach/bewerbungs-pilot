@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BewerbungsPilot</title>
+  <meta name="description" content="BewerbungsPilot — a free Windows app that helps you apply for jobs in Germany: job offers, cover letters, CVs, sending and tracking.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <nav><a href="./">Home</a><a href="privacy.html">Privacy policy</a><a href="https://github.com/RobiKovach/bewerbungs-pilot">Source code</a></nav>
+    <h1>BewerbungsPilot</h1>
+    <p class="lead">A free assistant for job applications in Germany that runs on your own Windows PC.</p>
+  </header>
+
+  <p>
+    BewerbungsPilot finds job offers on the job board of the German Federal Employment Agency
+    (Bundesagentur für Arbeit) that fit your profile, writes a cover letter and a tailored CV for the offers you choose
+    with an AI helper of your choice (Claude or ChatGPT, using your own account), sends the applications you approved
+    from your own email address, and keeps track of every answer. The app speaks Ukrainian, English, German, Russian,
+    Polish and Romanian.
+  </p>
+  <p><a class="button" href="https://github.com/RobiKovach/bewerbungs-pilot/releases/latest">Download for Windows</a></p>
+
+  <h2>How it works</h2>
+  <ol>
+    <li><strong>Your profile.</strong> Upload your CV; the AI helper fills in your profile, and you check every section.
+      It also asks a few short questions and turns your answers into true stories for cover letters.</li>
+    <li><strong>Job offers.</strong> The app searches the job board for your job titles and cities and scores every
+      new offer from 0 to 100 with a short reason.</li>
+    <li><strong>Application package.</strong> For an offer you like, the AI helper writes a one-page cover letter and a
+      tailored CV. You edit and approve everything; nothing is made up.</li>
+    <li><strong>Sending and statuses.</strong> You send an approved package from your own mailbox, mark answers
+      (interview, rejection, offer) and get a reminder after 14 days without an answer.</li>
+  </ol>
+
+  <h2 id="google">Why the app asks for access to your Google account</h2>
+  <div class="card">
+    <p>
+      If your email address is a Gmail address, you can connect it with <strong>Sign in with Google</strong>.
+      The app then asks Google for exactly these permissions:
+    </p>
+    <ul>
+      <li><code>gmail.send</code> — to <strong>send</strong> the emails you approved in the app: your job applications
+        (with the PDF documents attached and a copy to yourself), follow-up reminders and replies to employers.
+        Every email is shown to you and only sent when you click <em>Send</em>.</li>
+      <li><code>openid</code> and <code>email</code> — to know which Gmail address you signed in with, so the app can
+        use it as the sender address and show you which account is connected.</li>
+    </ul>
+    <p>
+      The app <strong>cannot read, search, change or delete</strong> any email in your mailbox. Data from your Google
+      account stays on your PC, is never sent to the AI helper or anyone else, and you can disconnect at any time in the
+      app's Settings (the permission is then taken back from Google). Details: <a href="privacy.html">Privacy policy</a>.
+    </p>
+  </div>
+
+  <h2>Your data stays with you</h2>
+  <p>
+    BewerbungsPilot has no server and no user accounts. Your profile, documents, job offers and applications are saved
+    only on your PC, in <code>%LOCALAPPDATA%\BewerbungsPilot</code>. There is no tracking and no analytics.
+  </p>
+
+  <footer>
+    <p>BewerbungsPilot is developed by Robert Kovach. Source code and license (PolyForm Noncommercial 1.0.0):
+      <a href="https://github.com/RobiKovach/bewerbungs-pilot">github.com/RobiKovach/bewerbungs-pilot</a>.
+      Questions and problems: <a href="https://github.com/RobiKovach/bewerbungs-pilot/issues">GitHub issues</a>.</p>
+  </footer>
+</main>
+</body>
+</html>
