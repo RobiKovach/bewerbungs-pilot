@@ -12,7 +12,7 @@ offers you choose, sends it from your own email, keeps track of the status of ev
 ## Requirements
 
 - Windows 10 or 11
-- Node.js 20+ and one AI helper: Claude (paid subscription) or ChatGPT (free or paid ChatGPT account) — you choose and connect it inside the app
+- Node.js 22.12+ and one AI helper: Claude (paid subscription) or ChatGPT (free or paid ChatGPT account) — you choose and connect it inside the app
   (the installer sets up Node.js for you)
 
 ## Install

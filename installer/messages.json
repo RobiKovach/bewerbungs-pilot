@@ -2,7 +2,7 @@
   "en": {
     "title": "BewerbungsPilot installer",
     "checkingNode": "Checking Node.js…",
-    "nodeMissing": "Node.js 20 or newer is needed. Install it now? (Y/N)",
+    "nodeMissing": "Node.js 22.12 or newer is needed. Install it now? (Y/N)",
     "wingetMissing": "Automatic installation is not available on this PC. Please install Node.js LTS from https://nodejs.org and run this installer again.",
     "checkingBrowser": "Checking for a browser to make PDFs…",
     "browserMissing": "No Microsoft Edge or Google Chrome found. BewerbungsPilot needs one of them to make PDFs of your applications. Please install Google Chrome (https://www.google.com/chrome/) — everything else works already.",
@@ -15,7 +15,7 @@
   "uk": {
     "title": "Інсталятор BewerbungsPilot",
     "checkingNode": "Перевіряємо Node.js…",
-    "nodeMissing": "Потрібен Node.js 20 або новіший. Встановити зараз? (Y/N)",
+    "nodeMissing": "Потрібен Node.js 22.12 або новіший. Встановити зараз? (Y/N)",
     "wingetMissing": "Автоматичне встановлення на цьому ПК недоступне. Встановіть Node.js LTS з https://nodejs.org і запустіть інсталятор ще раз.",
     "checkingBrowser": "Перевіряємо браузер для створення PDF…",
     "browserMissing": "Microsoft Edge або Google Chrome не знайдено. BewerbungsPilot потрібен один із них, щоб створювати PDF ваших заявок. Будь ласка, встановіть Google Chrome (https://www.google.com/chrome/) — усе інше вже працює.",
@@ -28,7 +28,7 @@
   "de": {
     "title": "BewerbungsPilot-Installer",
     "checkingNode": "Node.js wird geprüft…",
-    "nodeMissing": "Node.js 20 oder neuer wird benötigt. Jetzt installieren? (J/N)",
+    "nodeMissing": "Node.js 22.12 oder neuer wird benötigt. Jetzt installieren? (J/N)",
     "wingetMissing": "Automatische Installation ist auf diesem PC nicht verfügbar. Bitte installieren Sie Node.js LTS von https://nodejs.org und starten Sie diesen Installer erneut.",
     "checkingBrowser": "Browser für PDFs wird gesucht…",
     "browserMissing": "Weder Microsoft Edge noch Google Chrome gefunden. BewerbungsPilot braucht einen von beiden, um PDFs Ihrer Bewerbungen zu erstellen. Bitte installieren Sie Google Chrome (https://www.google.com/chrome/) — alles andere funktioniert bereits.",
@@ -41,7 +41,7 @@
   "ru": {
     "title": "Установщик BewerbungsPilot",
     "checkingNode": "Проверяем Node.js…",
-    "nodeMissing": "Требуется Node.js версии 20 или новее. Установить сейчас? (Д/Н)",
+    "nodeMissing": "Требуется Node.js версии 22.12 или новее. Установить сейчас? (Д/Н)",
     "wingetMissing": "Автоматическая установка на этом ПК недоступна. Установите Node.js LTS с https://nodejs.org и запустите установщик ещё раз.",
     "checkingBrowser": "Проверяем браузер для создания PDF…",
     "browserMissing": "Microsoft Edge или Google Chrome не найдены. BewerbungsPilot нужен один из них, чтобы создавать PDF ваших заявок. Пожалуйста, установите Google Chrome (https://www.google.com/chrome/) — всё остальное уже работает.",
@@ -54,7 +54,7 @@
   "pl": {
     "title": "Instalator BewerbungsPilot",
     "checkingNode": "Sprawdzanie Node.js…",
-    "nodeMissing": "Wymagany jest Node.js w wersji 20 lub nowszej. Zainstalować teraz? (T/N)",
+    "nodeMissing": "Wymagany jest Node.js w wersji 22.12 lub nowszej. Zainstalować teraz? (T/N)",
     "wingetMissing": "Automatyczna instalacja nie jest dostępna na tym komputerze. Zainstaluj Node.js LTS ze strony https://nodejs.org i uruchom ten instalator ponownie.",
     "checkingBrowser": "Sprawdzanie przeglądarki do tworzenia plików PDF…",
     "browserMissing": "Nie znaleziono Microsoft Edge ani Google Chrome. BewerbungsPilot potrzebuje jednej z nich, aby tworzyć pliki PDF z Twoich aplikacji. Zainstaluj Google Chrome (https://www.google.com/chrome/) — wszystko inne już działa.",
@@ -67,7 +67,7 @@
   "ro": {
     "title": "Program de instalare BewerbungsPilot",
     "checkingNode": "Se verifică Node.js…",
-    "nodeMissing": "Este necesar Node.js 20 sau o versiune mai nouă. Instalați acum? (D/N)",
+    "nodeMissing": "Este necesar Node.js 22.12 sau o versiune mai nouă. Instalați acum? (D/N)",
     "wingetMissing": "Instalarea automată nu este disponibilă pe acest PC. Vă rugăm să instalați Node.js LTS de la https://nodejs.org și să rulați din nou acest program de instalare.",
     "checkingBrowser": "Se caută un browser pentru a crea PDF-uri…",
     "browserMissing": "Nu s-a găsit Microsoft Edge sau Google Chrome. BewerbungsPilot are nevoie de unul dintre ele pentru a crea PDF-uri din candidaturile tale. Te rugăm să instalezi Google Chrome (https://www.google.com/chrome/) — restul funcționează deja.",

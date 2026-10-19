@@ -32,17 +32,21 @@ function Refresh-Path {
 
 Say 'title'
 
-# 1. Node.js >= 20
+# 1. Node.js >= 22.12 (Google sign-in, PDF making and PDF reading need it)
+function Test-NodeVersion {
+  if (-not (Get-Command node -ErrorAction SilentlyContinue)) { return $false }
+  $v = (& node -p "process.versions.node").Split('.')
+  return ([int]$v[0] -gt 22) -or (([int]$v[0] -eq 22) -and ([int]$v[1] -ge 12))
+}
 Say 'checkingNode'
-$major = 0
-if (Get-Command node -ErrorAction SilentlyContinue) { $major = [int](& node -p "process.versions.node.split('.')[0]") }
-if ($major -lt 20) {
+if (-not (Test-NodeVersion)) {
   if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Say 'wingetMissing'; exit 1 }
   if (-not (Ask 'nodeMissing')) { Say 'aborted'; exit 1 }
   winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
   if ($LASTEXITCODE -ne 0) { Fail "winget exit code $LASTEXITCODE" }
   Refresh-Path
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail 'node not found after installation' }
+  if (-not (Test-NodeVersion)) { Fail "node $(& node -v) is still older than 22.12 after installation" }
 }
 $NodeExe = (Get-Command node).Source
 
