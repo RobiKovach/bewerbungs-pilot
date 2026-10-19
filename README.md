@@ -99,6 +99,12 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
 
+## What's new in 0.8.1
+
+- **Node.js 22.12 or newer is now required.** Sign in with Google, making PDFs and reading PDF CVs need it. The installer
+  checks the version and offers to install the current Node.js LTS if yours is older.
+- The README says plainly that "Sign in with Google" is still in Google's testing mode and what to do meanwhile.
+
 ## What's new in 0.8.0
 
 - **ChatGPT as a second AI helper** next to Claude. You pick one in the first steps or in Settings.
