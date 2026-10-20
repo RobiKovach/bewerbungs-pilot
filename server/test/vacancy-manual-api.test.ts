@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { Vacancy } from '@bp/shared';
+import { AppError } from '../src/errors.js';
 import { H, makeApp } from './helpers/app.js';
-import { details, fakeSource, hit, scoringClaude, vacancy } from './helpers/vacancies.js';
+import { details, fakeSource, FakePageReader, hit, scoringClaude, vacancy } from './helpers/vacancies.js';
 
 const TEXT = 'Frontend Developer (m/w/d) bei der Muster GmbH in Dresden. Wir bieten Homeoffice. Ansprechpartnerin: Frau Erika Beispiel, bewerbung@muster.example. ' + 'Aufgaben und Profil. '.repeat(12);
 const MANUAL = {
@@ -105,10 +106,11 @@ describe('POST /api/vacancies/manual — Arbeitsagentur link', () => {
     expect(res.json().error).toMatchObject({ code: 'VACANCY_NOT_FOUND', reason: 'offerGone' });
   });
 
-  it('a look-alike link is treated as a plain link: it needs text and is never requested', async () => {
+  it('a look-alike link is treated as a plain link: the Arbeitsagentur API is never asked', async () => {
     const ctx = await makeApp({ source: fakeSource({ details: () => details(h) }) });
     const res = await paste(ctx, { url: 'https://www.arbeitsagentur.de.evil.example/jobsuche/jobdetail/10000-1111111111-S' });
-    expect(res.json().error.reason).toBe('pastedTooShort');
+    expect(res.json().error.reason).toBe('pageUnreadable');
+    expect(ctx.pageReader.calls).toEqual(['https://www.arbeitsagentur.de.evil.example/jobsuche/jobdetail/10000-1111111111-S']);
     expect(ctx.source.detailCalls).toEqual([]);
   });
 
@@ -145,5 +147,63 @@ describe('0.8.0: a pasted offer remembers which AI scored it', () => {
     const linked = (await paste(ctx, { url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-2222222222-S' })).json().vacancy as Vacancy;
     expect(linked.score).toMatchObject({ value: 60, provider: 'chatgpt' });
     expect(ctx.provider.calls).toHaveLength(0);
+  });
+});
+
+describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app itself', () => {
+  const LINK = 'https://jobs.example.de/123';
+
+  it('link and no text → the page is read once; its text is scored and stored, the link kept', async () => {
+    const reader = new FakePageReader(() => TEXT);
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader });
+    const res = await paste(ctx, { url: LINK });
+    expect(res.statusCode).toBe(200);
+    const v = res.json().vacancy as Vacancy;
+    expect(v).toMatchObject({ source: 'manual', url: LINK, title: 'Frontend Developer (m/w/d)' });
+    expect(reader.calls).toEqual([LINK]);
+    expect(ctx.vacancyStore.readText(v.id)).toBe(TEXT);
+    expect(ctx.provider.calls).toHaveLength(1);
+  });
+
+  it('text that is too short counts as no text: the page is read', async () => {
+    const reader = new FakePageReader(() => TEXT);
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader });
+    expect((await paste(ctx, { url: LINK, text: 'Frontend' })).statusCode).toBe(200);
+    expect(reader.calls).toEqual([LINK]);
+  });
+
+  it('link and enough text → the pasted text wins, the page is not opened', async () => {
+    const reader = new FakePageReader(() => 'never');
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader });
+    expect((await paste(ctx, { url: LINK, text: TEXT })).statusCode).toBe(200);
+    expect(reader.calls).toEqual([]);
+  });
+
+  it('page unreadable → 400 pageUnreadable, no card, no AI run', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }) });
+    const res = await paste(ctx, { url: LINK });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatchObject({ code: 'BAD_REQUEST', reason: 'pageUnreadable' });
+    expect(ctx.vacancyStore.list()).toEqual([]);
+    expect(ctx.provider.calls).toHaveLength(0);
+  });
+
+  it('a page with too little text (e.g. a bot wall) → the same pageUnreadable', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: new FakePageReader(() => 'x'.repeat(50)) });
+    const res = await paste(ctx, { url: LINK });
+    expect(res.json().error).toMatchObject({ code: 'BAD_REQUEST', reason: 'pageUnreadable' });
+    expect(ctx.provider.calls).toHaveLength(0);
+  });
+
+  it('no browser → BROWSER_MISSING passes through', async () => {
+    const ctx = await makeApp({ pageReader: new FakePageReader(() => { throw new AppError('BROWSER_MISSING', 'none'); }) });
+    expect((await paste(ctx, { url: LINK })).json().error.code).toBe('BROWSER_MISSING');
+  });
+
+  it('an Arbeitsagentur jobdetail link still goes to the API, the page is not opened', async () => {
+    const h = hit({ sourceId: '10000-3333333333-S' });
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 50 }), source: fakeSource({ details: () => details(h, 'API-Text') }) });
+    expect((await paste(ctx, { url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-3333333333-S' })).statusCode).toBe(200);
+    expect(ctx.pageReader.calls).toEqual([]);
   });
 });

@@ -467,7 +467,8 @@
       "historyFull": "Acest pachet are prea multe modificări înregistrate pentru a fi trimis. Nu s-a trimis nimic. Apăsați „Creează din nou” pentru a-l începe de la zero.",
       "draftExists": "Pentru această ofertă există deja un pachet care nu a fost încă trimis. Deschideți-l pe acela — pentru o ofertă se poate edita un singur pachet.",
       "followUpDone": "Pentru această candidatură a fost deja trimisă o reamintire sau aceasta a fost dezactivată.",
-      "googleNotSignedIn": "Autentificarea cu Google nu este încă finalizată. Vă rugăm să vă autentificați mai întâi cu Google."
+      "googleNotSignedIn": "Autentificarea cu Google nu este încă finalizată. Vă rugăm să vă autentificați mai întâi cu Google.",
+      "pageUnreadable": "Această pagină nu a putut fi citită. Lipiți textul anunțului în câmpul de text."
     }
   },
   "vacancies": {
@@ -556,11 +557,11 @@
     },
     "manual": {
       "title": "Adăugați o ofertă manual",
-      "intro": "Ați găsit o ofertă în altă parte? Lipiți întregul text al acesteia. Pentru ofertele Agenției Federale a Muncii este suficient doar linkul.",
+      "intro": "Ați găsit o ofertă în altă parte? Lipiți întregul text al acesteia — sau doar linkul.",
       "text": "Textul ofertei",
       "counter": "{{count}} / cel puțin {{min}} caractere",
       "link": "Link (opțional)",
-      "linkHint": "Linkul este salvat doar pentru dumneavoastră — BewerbungsPilot nu deschide alte site-uri. Sunt citite direct doar linkurile către arbeitsagentur.de/jobsuche/jobdetail/…",
+      "linkHint": "Dacă lipiți doar un link, BewerbungsPilot încearcă să deschidă singur pagina și să citească anunțul (adresele interne, cum ar fi routerul dvs., nu sunt deschise niciodată). Unele site-uri, de ex. StepStone, Indeed sau LinkedIn, nu permit acest lucru — atunci lipiți textul anunțului în câmpul de mai sus.",
       "add": "Adăugați",
       "working": "{{ai}} citește oferta…",
       "duplicate": "Această ofertă se află deja în lista dumneavoastră.",

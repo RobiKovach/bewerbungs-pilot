@@ -80,10 +80,12 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
   job titles (e.g. "Softwareentwickler" next to "Frontend Entwickler") or choose a longer "Published within" period.
 - The points are written in the app's language at the moment of scoring. After switching the language, the card says
   so; "Score again" writes them in the new language.
-- Found an offer somewhere else? Paste its text with "+ Add" — the AI helper reads it and scores it the same way.
+- Found an offer somewhere else? Paste its text — or just its link — with "+ Add"; the AI helper reads it and scores it
+  the same way. Some sites (e.g. StepStone, Indeed, LinkedIn) do not let the app read the page; then paste the text.
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
-- Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. BewerbungsPilot only talks to
-  `rest.arbeitsagentur.de`; it never opens links you paste.
+- Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. The job search only talks to
+  `rest.arbeitsagentur.de`. A pasted link (not Arbeitsagentur) is opened only when you give no text, in a separate
+  browser profile, and never to an internal address such as your router or this PC.
 
 ## Application packages
 
@@ -127,6 +129,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
   names it and where it is. It is only a warning — you can still approve and send.
 - **Security notes.** A new "Security" section above, [SECURITY.md](SECURITY.md) for reporting problems privately,
   automatic dependency and code checks on GitHub, and the installer now closes the running app safely before updating.
+- **Pasted links are read.** "+ Add" with only a link (not Arbeitsagentur) now opens the page in a separate browser
+  profile and reads the offer; internal addresses (your router, this PC) are always blocked. Some sites (StepStone,
+  Indeed, LinkedIn) refuse — then paste the text.
 
 ## What's new in 0.8.2
 

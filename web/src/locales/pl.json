@@ -467,7 +467,8 @@
       "historyFull": "W tym pakiecie zapisano zbyt wiele zmian, aby go wysłać. Nic nie zostało wysłane. Kliknij „Utwórz ponownie”, aby zacząć od nowa.",
       "draftExists": "Dla tej oferty istnieje już pakiet, który nie został jeszcze wysłany. Otwórz go — dla jednej oferty można edytować tylko jeden pakiet.",
       "followUpDone": "Przypomnienie dla tej aplikacji zostało już wysłane lub wyłączone.",
-      "googleNotSignedIn": "Logowanie przez Google nie zostało jeszcze zakończone. Zaloguj się najpierw przez Google."
+      "googleNotSignedIn": "Logowanie przez Google nie zostało jeszcze zakończone. Zaloguj się najpierw przez Google.",
+      "pageUnreadable": "Nie udało się odczytać tej strony. Wklej tekst oferty w pole tekstowe."
     }
   },
   "vacancies": {
@@ -556,11 +557,11 @@
     },
     "manual": {
       "title": "Dodaj ofertę ręcznie",
-      "intro": "Znaleźliście ofertę gdzie indziej? Wklejcie cały jej tekst. Dla ofert Federalnej Agencji Pracy wystarczy sam link.",
+      "intro": "Oferta z innego miejsca? Wklej cały jej tekst — albo tylko link.",
       "text": "Treść oferty",
       "counter": "{{count}} / potrzeba co najmniej {{min}} znaków",
       "link": "Link (opcjonalnie)",
-      "linkHint": "Link jest zapisywany tylko dla Was — BewerbungsPilot nie otwiera innych stron. Bezpośrednio odczytywane są tylko linki do arbeitsagentur.de/jobsuche/jobdetail/…",
+      "linkHint": "Jeśli wkleisz tylko link, BewerbungsPilot spróbuje sam otworzyć stronę i przeczytać ofertę (adresy wewnętrzne, np. Twój router, nigdy nie są otwierane). Niektóre strony, np. StepStone, Indeed czy LinkedIn, na to nie pozwalają — wtedy wklej tekst oferty w pole powyżej.",
       "add": "Dodaj",
       "working": "{{ai}} czyta ofertę…",
       "duplicate": "Ta oferta jest już na Waszej liście.",

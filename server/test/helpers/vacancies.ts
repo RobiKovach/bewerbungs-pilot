@@ -3,6 +3,7 @@ import { emptyProfile } from '../../src/profile/schema.js';
 import { AppError } from '../../src/errors.js';
 import { FakeProvider } from '../../src/llm/fake.js';
 import type { LlmTask } from '../../src/llm/types.js';
+import type { PageReader } from '../../src/vacancies/sources/page-reader.js';
 import type { SearchQuery, SourceDetails, SourceHit, VacancySource } from '../../src/vacancies/sources/types.js';
 
 let n = 0;
@@ -96,4 +97,15 @@ export function scoringClaude(opts: {
       }),
     };
   }, opts.id);
+}
+
+/** Stands in for the real browser: `read` decides what a pasted link "contains"; by default every page is unreadable. */
+export class FakePageReader implements PageReader {
+  calls: string[] = [];
+  constructor(private readonly read_: (url: string) => string | Promise<string> = () => { throw new AppError('BAD_REQUEST', 'fake: unreadable', 'pageUnreadable'); }) {}
+  async read(url: string, signal: AbortSignal): Promise<string> {
+    if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
+    this.calls.push(url);
+    return this.read_(url);
+  }
 }

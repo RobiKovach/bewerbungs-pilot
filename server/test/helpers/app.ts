@@ -22,7 +22,7 @@ import { SearchJob } from '../../src/vacancies/search-job.js';
 import { VacancyStore } from '../../src/vacancies/store.js';
 import { FakePrinter } from './applications.js';
 import { FakeGoogleAuth, FakeMailer } from './mail.js';
-import { fakeSource, type FakeSource } from './vacancies.js';
+import { fakeSource, FakePageReader, type FakeSource } from './vacancies.js';
 
 export const TEST_KEY = 'test-launch-key-0123456789abcdefghijklmnopq';
 export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
@@ -31,7 +31,7 @@ export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
  * `autoKey` (default true): every `app.inject` carries the launch key unless the test sets its own `x-bp-key`
  * or cookie, so tests about other things need not repeat it. Launch-key tests pass `autoKey: false`.
  */
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -54,6 +54,7 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const vacancyStore = new VacancyStore({ file: path.join(dir, 'vacancies', 'vacancies.json'), textsDir: path.join(dir, 'vacancies', 'texts') });
   vacancyStore.load();
   const source = opts.source ?? fakeSource();
+  const pageReader = opts.pageReader ?? new FakePageReader();
   const searchJob = new SearchJob({
     store: vacancyStore, source, queue, logger: nullLogger, profile: () => profileStore.get(),
     language: () => settings.get().language ?? 'en', publishedWithinDays: () => settings.get().vacancies.publishedWithinDays,
@@ -84,7 +85,7 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     webDist: opts.webDist ?? null,
     allowedHosts: opts.allowedHosts ?? (() => ['localhost:80']),
     onShutdown: () => { shutdownCalls++; },
-    profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
+    profileStore, profileFiles, vacancyStore, vacancySource: source, pageReader, searchJob,
     applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
     googleAuth, origin: () => 'http://localhost:80', revokeTimeoutMs: opts.revokeTimeoutMs,
     session: { key: TEST_KEY, cookieName: 'bp_key_80' },
@@ -98,5 +99,5 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
       return inject({ ...o, headers } as InjectOptions);
     }) as unknown as typeof app.inject;
   }
-  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
+  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
 }

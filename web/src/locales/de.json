@@ -467,7 +467,8 @@
       "historyFull": "In diesem Paket sind zu viele Änderungen gespeichert, um es zu senden. Es wurde nichts gesendet. Klicken Sie auf „Neu erstellen“, um es neu anzulegen.",
       "draftExists": "Für dieses Angebot gibt es schon ein Paket, das noch nicht gesendet wurde. Bitte öffnen Sie dieses — pro Angebot kann nur ein Paket bearbeitet werden.",
       "followUpDone": "Für diese Bewerbung wurde bereits eine Erinnerung gesendet oder ausgeschaltet.",
-      "googleNotSignedIn": "Die Anmeldung bei Google ist noch nicht abgeschlossen. Bitte melden Sie sich zuerst bei Google an."
+      "googleNotSignedIn": "Die Anmeldung bei Google ist noch nicht abgeschlossen. Bitte melden Sie sich zuerst bei Google an.",
+      "pageUnreadable": "Diese Seite konnte nicht gelesen werden. Fügen Sie den Text des Angebots in das Textfeld ein."
     }
   },
   "vacancies": {
@@ -556,11 +557,11 @@
     },
     "manual": {
       "title": "Angebot manuell hinzufügen",
-      "intro": "Woanders ein Angebot gefunden? Fügen Sie den ganzen Text ein. Bei Angeboten der Bundesagentur für Arbeit genügt der Link allein.",
+      "intro": "Woanders ein Angebot gefunden? Fügen Sie den ganzen Text ein — oder nur den Link.",
       "text": "Text des Angebots",
       "counter": "{{count}} / mindestens {{min}} Zeichen",
       "link": "Link (optional)",
-      "linkHint": "Der Link wird nur für Sie gespeichert — BewerbungsPilot öffnet keine anderen Websites. Nur Links zu arbeitsagentur.de/jobsuche/jobdetail/… werden direkt gelesen.",
+      "linkHint": "Wenn Sie nur einen Link einfügen, versucht BewerbungsPilot, die Seite selbst zu öffnen und das Angebot zu lesen (interne Adressen wie Ihr Router werden nie geöffnet). Manche Seiten, z. B. StepStone, Indeed oder LinkedIn, lassen das nicht zu — fügen Sie dann den Text des Angebots oben ein.",
       "add": "Hinzufügen",
       "working": "{{ai}} liest das Angebot…",
       "duplicate": "Dieses Angebot steht schon in Ihrer Liste.",

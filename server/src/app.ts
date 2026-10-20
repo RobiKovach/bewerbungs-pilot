@@ -23,6 +23,7 @@ import type { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { registerMailRoutes } from './mail/routes.js';
 import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
+import type { PageReader } from './vacancies/sources/page-reader.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
 import type { VacancyStore } from './vacancies/store.js';
@@ -43,6 +44,8 @@ export interface AppDeps {
   profileFiles: ProfileFiles;
   vacancyStore: VacancyStore;
   vacancySource: VacancySource;
+  /** Opens pasted vacancy links that are not Arbeitsagentur (spec, section 6a). */
+  pageReader: PageReader;
   searchJob: SearchJob;
   applicationStore: ApplicationStore;
   applicationJob: ApplicationJob;
@@ -233,7 +236,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerVacancyRoutes(app, {
-    store: deps.vacancyStore, source: deps.vacancySource, queue: deps.queue, job: deps.searchJob, logger: deps.logger,
+    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, queue: deps.queue, job: deps.searchJob, logger: deps.logger,
     profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
   });
 

@@ -9,13 +9,14 @@ import { findDuplicate } from './dedup.js';
 import { VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
 import { jobdetailRefnr } from './sources/arbeitsagentur.js';
+import type { PageReader } from './sources/page-reader.js';
 import type { SourceDetails, VacancySource } from './sources/types.js';
 import type { VacancyStore } from './store.js';
 import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, type ManualOutput } from './tasks/extract-manual.js';
 import { scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
-  store: VacancyStore; source: VacancySource; queue: LlmQueue; job: SearchJob; logger: Logger;
+  store: VacancyStore; source: VacancySource; pageReader: PageReader; queue: LlmQueue; job: SearchJob; logger: Logger;
   profile: () => Profile; language: () => Language;
 }
 
@@ -179,18 +180,27 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       return view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, found.text));
     }
 
-    if (text.length < MANUAL_TEXT_MIN) {
+    // A link without (enough) pasted text: the app opens the page itself; pasted text always wins (spec, section 6a).
+    let offerText = text;
+    let stored = rawText;
+    if (text.length < MANUAL_TEXT_MIN && url) {
+      offerText = stored = await d.pageReader.read(url, signal);
+      if (offerText.length < MANUAL_TEXT_MIN) {
+        d.logger.info('vacancy.pageRead', { host: new URL(url).hostname, result: 'too-short' });
+        throw new AppError('BAD_REQUEST', `page text has ${offerText.length} characters`, 'pageUnreadable');
+      }
+    } else if (text.length < MANUAL_TEXT_MIN) {
       throw new AppError('BAD_REQUEST', `pasted text has ${text.length} characters`, 'pastedTooShort', { min: MANUAL_TEXT_MIN });
     }
     const language = d.language();
-    const { value: out, provider } = await d.queue.runTagged<ManualOutput>(extractManualTask(text, d.profile(), language), signal);
-    const fields = toManualFields(out, text);
+    const { value: out, provider } = await d.queue.runTagged<ManualOutput>(extractManualTask(offerText, d.profile(), language), signal);
+    const fields = toManualFields(out, offerText);
     if (!out.isVacancy || !fields.title) throw new AppError('NOT_A_VACANCY', 'Claude found no job offer in the pasted text');
     const twin = findDuplicate(d.store.list(), { sourceId: null, title: fields.title, company: fields.company });
     if (twin) throw duplicateError(twin);
     return view(d.store.add({
       ...base, ...fields, source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
       score: toScore(out, new Date().toISOString(), provider, language),
-    }, rawText));
+    }, stored));
   });
 }

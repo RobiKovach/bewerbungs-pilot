@@ -467,7 +467,8 @@
       "historyFull": "This package has too many recorded changes to be sent. Nothing was sent. Use \"Create again\" to start it fresh.",
       "draftExists": "This job offer already has a package that was not sent yet. Please open that one — only one package per job offer can be edited.",
       "followUpDone": "A reminder for this application was already sent or switched off.",
-      "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first."
+      "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first.",
+      "pageUnreadable": "Could not read this page. Paste the text of the offer into the text field."
     }
   },
   "vacancies": {
@@ -556,11 +557,11 @@
     },
     "manual": {
       "title": "Add an offer by hand",
-      "intro": "Found an offer somewhere else? Paste its whole text. For offers of the Federal Employment Agency the link alone is enough.",
+      "intro": "Found an offer somewhere else? Paste its whole text — or just its link.",
       "text": "Text of the offer",
       "counter": "{{count}} / at least {{min}} characters",
       "link": "Link (optional)",
-      "linkHint": "The link is only saved for you — BewerbungsPilot does not open other websites. Only links to arbeitsagentur.de/jobsuche/jobdetail/… are read directly.",
+      "linkHint": "If you paste only a link, BewerbungsPilot tries to open the page and read the offer itself (internal addresses such as your router are never opened). Some sites, e.g. StepStone, Indeed or LinkedIn, do not allow this — then paste the text of the offer above.",
       "add": "Add",
       "working": "{{ai}} is reading the offer…",
       "duplicate": "This offer is already in your list.",

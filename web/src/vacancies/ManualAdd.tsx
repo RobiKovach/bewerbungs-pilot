@@ -11,6 +11,7 @@ import { useVacancies } from './VacanciesContext';
 // Character class kept identical to the server's jobdetailRefnr (server/src/vacancies/sources/arbeitsagentur.ts) —
 // real Referenznummer values also contain `_`, `.` and `:` (e.g. "13635-js_bc_85_JB5198077-S", "15054-0001250:01-S").
 export const AA_LINK = /^https:\/\/www\.arbeitsagentur\.de\/jobsuche\/jobdetail\/[A-Za-z0-9_.:-]{5,40}\/?([?#].*)?$/;
+const WEB_LINK = /^https?:\/\/\S+$/;
 const MIN = 200;
 const MAX = 30_000;
 
@@ -22,8 +23,9 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
   const call = useCancellable();
   const trimmed = text.trim();
   useReportUnsaved(trimmed !== '' || url.trim() !== '');
-  const aaLink = AA_LINK.test(url.trim());
-  const canAdd = (trimmed.length >= MIN || aaLink) && call.state.kind !== 'running';
+  // Arbeitsagentur links go to its API; any other web link is opened by the app itself (0.8.3).
+  const webLink = AA_LINK.test(url.trim()) || WEB_LINK.test(url.trim());
+  const canAdd = (trimmed.length >= MIN || webLink) && call.state.kind !== 'running';
 
   const add = async () => {
     const input = { ...(trimmed ? { text: trimmed } : {}), ...(url.trim() ? { url: url.trim() } : {}) };
@@ -36,6 +38,8 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
   const error = call.state.kind === 'failed' ? call.state.error : null;
   const duplicateId = error instanceof ApiError && error.code === 'VACANCY_DUPLICATE' ? String(error.params?.id ?? '') : '';
   const duplicate = duplicateId ? vacancies.find((v) => v.id === duplicateId) : undefined;
+  // The page behind a link could not be read (or there is no browser to read it): the way out is pasting the text.
+  const pageUnreadable = error instanceof ApiError && (error.reason === 'pageUnreadable' || error.code === 'BROWSER_MISSING');
 
   return (
     <section className="card manual-add" aria-labelledby="manual-add-title">
@@ -62,6 +66,8 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
           <p>{t('vacancies.manual.duplicate')}</p>
           {duplicate ? <button type="button" className="btn small" onClick={() => onShow(duplicate)}>{t('vacancies.manual.showIt')}</button> : null}
         </div>
+      ) : pageUnreadable ? (
+        <div className="notice" role="alert"><p>{t('errors.reasons.pageUnreadable')}</p></div>
       ) : error ? <ErrorBanner error={error} /> : null}
     </section>
   );

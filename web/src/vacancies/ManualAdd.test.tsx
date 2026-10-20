@@ -33,6 +33,31 @@ describe('ManualAdd', () => {
     expect(add).toBeEnabled();
   });
 
+  it('0.8.3: any web link enables Add (the app reads the page); other schemes do not', async () => {
+    const { user } = setup([], {});
+    const panel = await open(user);
+    const add = within(panel).getByRole('button', { name: 'Add' });
+    const link = within(panel).getByLabelText('Link (optional)');
+    await user.type(link, 'ftp://jobs.example.de/1');
+    expect(add).toBeDisabled();
+    await user.clear(link);
+    await user.type(link, 'https://jobs.example.de/123');
+    expect(add).toBeEnabled();
+  });
+
+  it.each([
+    ['pageUnreadable', { code: 'BAD_REQUEST', detailsForLog: 'x', reason: 'pageUnreadable' }],
+    ['no browser', { code: 'BROWSER_MISSING', detailsForLog: 'x' }],
+  ])('0.8.3: page not readable (%s) → asks to paste the text, link kept', async (_name, error) => {
+    const { user } = setup([], { 'POST /api/vacancies/manual': () => ({ status: 400, body: { error } }) });
+    const panel = await open(user);
+    const link = within(panel).getByLabelText('Link (optional)');
+    await user.type(link, 'https://jobs.example.de/123');
+    await user.click(within(panel).getByRole('button', { name: 'Add' }));
+    expect(await within(panel).findByText(/Could not read this page. Paste the text of the offer/)).toBeInTheDocument();
+    expect(link).toHaveValue('https://jobs.example.de/123');
+  });
+
   it('accepts a real-shaped Arbeitsagentur number with underscore/dot/colon, not just letters/digits/hyphens', async () => {
     const { user } = setup([], {});
     const panel = await open(user);

@@ -31,6 +31,7 @@ import { cookieName, newLaunchKey, openUrl } from './runtime/launch-key.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
 import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
+import { BrowserPageReader } from './vacancies/sources/page-reader.js';
 import { SearchJob } from './vacancies/search-job.js';
 import { VacancyStore } from './vacancies/store.js';
 
@@ -107,6 +108,7 @@ async function main(): Promise<void> {
   const sentUnsaved = new SentUnsavedLog(path.join(paths.applications, 'sent-unsaved.json'), (event, data) => logger.warn(event, data));
   sentUnsaved.load();
   const printer = new BrowserPrinter({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data) });
+  const pageReader = new BrowserPageReader({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data), log: (event, data) => logger.info(event, data) });
   const applicationJob = new ApplicationJob({
     store: applicationStore, vacancies: vacancyStore, queue, printer, logger,
     profile: () => profileStore.get(), photo: (p) => profilePhoto(p, profileFiles),
@@ -120,7 +122,7 @@ async function main(): Promise<void> {
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),
-    profileStore, profileFiles, vacancyStore, vacancySource, searchJob,
+    profileStore, profileFiles, vacancyStore, vacancySource, pageReader, searchJob,
     applicationStore, applicationJob, printer,
     mailer: new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,

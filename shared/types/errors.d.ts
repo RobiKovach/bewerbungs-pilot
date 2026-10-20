@@ -67,4 +67,5 @@ export type ErrorReason =
   | 'historyFull'
   | 'draftExists'
   | 'followUpDone'
-  | 'googleNotSignedIn';
+  | 'googleNotSignedIn'
+  | 'pageUnreadable';
