@@ -16,6 +16,7 @@ import { HistoryBlock } from './HistoryBlock';
 import { LetterTab } from './LetterTab';
 import { MailDraftDialog } from './MailDraftDialog';
 import { OfferReplyDialog } from './OfferReplyDialog';
+import { PersonalDataWarning } from './PersonalDataWarning';
 import { SendDialog } from './SendDialog';
 import { StatusDialog } from './StatusDialog';
 import { jobError, useApplicationJob } from './useApplicationJob';
@@ -181,6 +182,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         </details>
       ) : null}
 
+      <PersonalDataWarning warnings={view.warnings} />
       <div className="btn-row app-actions">
         {frozen ? null : a.status === 'draft'
           ? <button type="button" className="btn" disabled={locked || dirty || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>
@@ -221,6 +223,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       ) : null}
       {reminding ? (
         <MailDraftDialog
+          id={id}
           onStale={() => void load()}
           title={t('applications.followUp.title')}
           load={() => api.followUpDraft(id)}
@@ -235,6 +238,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       ) : null}
       {(replying === 'rejection' && a.status === 'rejected') || (replying === 'offerMail' && a.status === 'offer') ? (
         <MailDraftDialog
+          id={id}
           onStale={() => void load()}
           title={t(replying === 'rejection' ? 'applications.reply.rejection' : 'applications.reply.offer')}
           load={() => api.replyDraft(id)}

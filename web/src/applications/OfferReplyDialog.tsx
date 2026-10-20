@@ -6,6 +6,8 @@ import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { TextField } from '../profile/fields';
 import { useReportUnsaved } from '../profile/unsaved';
 import { useScrollIntoView } from './dialog';
+import { PersonalDataWarning } from './PersonalDataWarning';
+import { useTextCheck } from './useTextCheck';
 import type { ApplicationView } from '../types';
 
 const FIELD_MAX = 50;
@@ -90,6 +92,8 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
   const dirty = mode === 'text' && body !== saved;
   useReportUnsaved(dirty);
   const empty = body.trim() === '';
+  // Only the written reply is checked (the form fields hold amounts, not text that goes out).
+  const warnings = useTextCheck(id, '', mode === 'text' ? body : '');
   return (
     <div ref={ref} className="card notice send-dialog" role="dialog" aria-label={title}>
       <h2>{title}</h2>
@@ -107,6 +111,7 @@ export function OfferReplyDialog({ view, onView, onClose, onSend }: {
       {copied === 'failed' ? <p className="notice" role="alert">{t('applications.mailDraft.copyFailed')}</p> : null}
       {error ? <ErrorBanner error={error} /> : null}
       {dirty ? <p className="muted">{t('applications.offerReply.saveFirst')}</p> : null}
+      {mode === 'text' && !working ? <PersonalDataWarning warnings={warnings} /> : null}
       {working ? null : mode === 'form' ? (
         <div className="btn-row">
           <button type="button" className="btn" disabled={!fieldsOk} onClick={() => void ask()}>{t('applications.offerReply.ask')}</button>

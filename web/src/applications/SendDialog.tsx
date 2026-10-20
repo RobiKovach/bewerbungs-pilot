@@ -8,6 +8,8 @@ import type { ApplicationView } from '../types';
 import { ATTACHMENTS_WARN_BYTES, mb } from './AttachmentsTab';
 import { isStale, useScrollIntoView } from './dialog';
 import { addressOk } from './format';
+import { PersonalDataWarning } from './PersonalDataWarning';
+import { useTextCheck } from './useTextCheck';
 
 /** The send window: the email is prefilled from the package; what the person changes is what goes out. */
 export function SendDialog({ id, onSent, onClose, onStale }: {
@@ -50,6 +52,7 @@ export function SendDialog({ id, onSent, onClose, onStale }: {
     }
   };
 
+  const warnings = useTextCheck(id, subject, body);
   const badAddress = to.trim() !== '' && !addressOk(to.trim());
   // Edited but not sent yet: leaving the page asks first.
   useReportUnsaved(draft !== null && (to !== draft.to || subject !== draft.subject || body !== draft.body));
@@ -80,6 +83,7 @@ export function SendDialog({ id, onSent, onClose, onStale }: {
       {sentNotSaved
         ? <p className="notice" role="alert">{t('errors.reasons.sentNotSaved')}</p>
         : error ? <ErrorBanner error={error} /> : null}
+      {draft ? <PersonalDataWarning warnings={warnings} /> : null}
       <div className="btn-row">
         {sentNotSaved ? null : (
           <button type="button" className="btn" disabled={!draft || !valid || sending} onClick={() => void send()}>

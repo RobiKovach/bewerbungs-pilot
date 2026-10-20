@@ -7,12 +7,16 @@ import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, MailDraft } from '../types';
 import { isStale, useScrollIntoView } from './dialog';
 import { addressOk } from './format';
+import { PersonalDataWarning } from './PersonalDataWarning';
+import { useTextCheck } from './useTextCheck';
 
 /**
  * A reminder or a reply: prefilled address, subject and message that the person can change, then "Send" (needs connected
  * mail) or "Copy" (the message text only; the optional `afterCopy` button records that it was done).
  */
-export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy, onStale }: {
+export function MailDraftDialog({ id, title, load, send, onDone, onClose, afterCopy, onStale }: {
+  /** The package: the text is checked for personal data that is not in the profile. */
+  id: string;
   title: string;
   load: () => Promise<MailDraft>;
   send: (mail: { to: string; subject: string; body: string }) => Promise<ApplicationView>;
@@ -71,6 +75,7 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy,
     }
   };
 
+  const warnings = useTextCheck(id, subject, body);
   const badAddress = to.trim() !== '' && !addressOk(to.trim());
   // Edited but not sent yet: leaving the page asks first.
   useReportUnsaved(draft !== null && (to !== draft.to || subject !== draft.subject || body !== draft.body));
@@ -101,6 +106,7 @@ export function MailDraftDialog({ title, load, send, onDone, onClose, afterCopy,
         ? <p className="notice" role="alert">{t('errors.reasons.sentNotSaved')}</p>
         : error ? <ErrorBanner error={error} /> : null}
       {reauth ? <p><a href="#/settings">{t('applications.mailDraft.reauthLink')}</a></p> : null}
+      {draft ? <PersonalDataWarning warnings={warnings} /> : null}
       <div className="btn-row">
         {sentNotSaved ? null : (
           <button type="button" className="btn" disabled={!draft || !mailReady || !valid || busy} onClick={() => void run(() => send({ to: to.trim(), subject: subject.trim(), body }), true)}>

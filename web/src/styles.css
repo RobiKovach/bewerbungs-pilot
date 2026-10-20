@@ -207,6 +207,9 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .mail-wizard .checkbox-group legend { padding: 0; }
 .notice.notice-ok { background: #dff3e4; border-color: #9fd1ac; color: #1e6b35; }
 @media (prefers-color-scheme: dark) { .notice.notice-ok { background: #1d3a27; border-color: #2f6b45; color: #a6e0b6; } }
+.notice.notice-warn { background: #fff4d6; border-color: #f0d48a; color: #5c4000; }
+@media (prefers-color-scheme: dark) { .notice.notice-warn { background: #3a2e10; border-color: #6b5520; color: #f3d88c; } }
+.personal-data ul { margin: 0.2rem 0; padding-left: 1.2rem; overflow-wrap: anywhere; }
 .send-dialog { margin-top: 1rem; }
 /* The editor behind an open mail window: visibly out of reach (it is also inert). */
 .behind-dialog { opacity: 0.5; }

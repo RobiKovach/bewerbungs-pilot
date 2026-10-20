@@ -94,7 +94,8 @@ describe('SendDialog', () => {
     await user.type(to, 'jobs@muster.example');
     expect(screen.queryByText(/Please check the address/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
-    expect(f.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
+    // Only the personal-data check may run; nothing is sent.
+    expect(f.mock.calls.some(([url, init]) => init?.method === 'POST' && url !== '/api/applications/app1/check-text')).toBe(false);
   });
 
   it('sent but not saved: a clear message and no "Try again"', async () => {

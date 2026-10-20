@@ -14,7 +14,7 @@ function setup(over: { d?: MailDraft; send?: () => Promise<ApplicationView>; aft
   const send = vi.fn(over.send ?? (() => Promise.resolve(appView())));
   const run = vi.fn(() => Promise.resolve(appView()));
   render(
-    <MailDraftDialog title="Reminder" load={() => Promise.resolve(over.d ?? draft())} send={send} onDone={onDone} onClose={onClose}
+    <MailDraftDialog id="app1" title="Reminder" load={() => Promise.resolve(over.d ?? draft())} send={send} onDone={onDone} onClose={onClose}
       afterCopy={over.afterCopy === false ? undefined : { label: 'Mark as reminded', run }} />,
   );
   return { onDone, onClose, send, run, user: userEvent.setup() };
@@ -80,7 +80,7 @@ describe('MailDraftDialog', () => {
   it('a failed "Mark as reminded" shows the error but Send still says Send (nothing was sent)', async () => {
     const onDone = vi.fn();
     render(
-      <MailDraftDialog title="Reminder" load={() => Promise.resolve(draft())} send={() => Promise.resolve(appView())} onDone={onDone} onClose={() => {}}
+      <MailDraftDialog id="app1" title="Reminder" load={() => Promise.resolve(draft())} send={() => Promise.resolve(appView())} onDone={onDone} onClose={() => {}}
         afterCopy={{ label: 'Mark as reminded', run: () => Promise.reject(new ApiError('CONFLICT', 'x', 'packageBusy')) }} />,
     );
     const user = userEvent.setup();
