@@ -137,6 +137,16 @@ export interface ApplicationStats {
   weeks: { start: string; count: number }[];
 }
 
+/** Personal data that may show up in text going to an employer (spec 0.8.3, section 3). */
+export type PersonalKind = 'email' | 'phone' | 'iban' | 'taxId' | 'socialSecurity' | 'birthDate' | 'postalCode' | 'link';
+/** Where a text sits; `index` = 1-based paragraph / recipient line. */
+export type TextPlace =
+  | { part: 'letter'; field: 'recipient' | 'subject' | 'salutation' | 'paragraph' | 'closing' | 'signature'; index?: number }
+  | { part: 'cv'; field: 'profil' | 'headline' | 'description' | 'translation' | 'skillGroup' }
+  | { part: 'email'; field: 'subject' | 'body' };
+/** Personal data found in a text that the profile does not have — a warning only. */
+export interface PersonalFinding { kind: PersonalKind; value: string; where: TextPlace }
+
 export interface PackageReadiness { ready: boolean; missingSections: CvSectionId[]; noStory: boolean }
 
 /** GET /api/applications/new?vacancyId=… — what the "Create package" dialog needs. */
