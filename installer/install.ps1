@@ -65,17 +65,35 @@ if (-not ($browserPaths | Where-Object { Test-Path $_ })) { Say 'browserMissing'
 # 3. Stop a running copy (update case), then copy the app. User data in $DataDir is never touched.
 $ServerJson = Join-Path $DataDir 'server.json'
 if (Test-Path $ServerJson) {
+  $info = $null
+  try { $info = Get-Content -Raw $ServerJson | ConvertFrom-Json } catch { }
   try {
-    $info = Get-Content -Raw $ServerJson | ConvertFrom-Json
-    Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$($info.port)/api/shutdown" -Headers @{ 'X-BP-Client' = '1' } -ContentType 'application/json' -Body '{}' -TimeoutSec 3 | Out-Null
+    if ($info -and $info.port) {
+      # Since 0.8.3 the server only accepts requests carrying this launch's key; older servers wrote none.
+      $headers = @{ 'X-BP-Client' = '1' }
+      if ($info.key) { $headers['X-BP-Key'] = [string]$info.key }
+      Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$($info.port)/api/shutdown" -Headers $headers -ContentType 'application/json' -Body '{}' -TimeoutSec 3 | Out-Null
+    }
   } catch { }
   # Wait (max. 15 s) until the old server process has really exited, so its files are no longer in use.
-  if ($info -and $info.pid) {
-    $deadline = (Get-Date).AddSeconds(15)
-    while ((Get-Process -Id $info.pid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
-      Start-Sleep -Milliseconds 250
+  # Still alive (e.g. it refused the request): stop it and wait max. 5 s more. Only a node process is stopped —
+  # a stale server.json may name a pid Windows has since given to another program.
+  try {
+    if ($info -and $info.pid) {
+      $deadline = (Get-Date).AddSeconds(15)
+      while ((Get-Process -Id $info.pid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+        Start-Sleep -Milliseconds 250
+      }
+      $proc = Get-Process -Id $info.pid -ErrorAction SilentlyContinue
+      if ($proc -and $proc.ProcessName -eq 'node') {
+        Stop-Process -Id $info.pid -Force -ErrorAction SilentlyContinue
+        $deadline = (Get-Date).AddSeconds(5)
+        while ((Get-Process -Id $info.pid -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) {
+          Start-Sleep -Milliseconds 250
+        }
+      }
     }
-  }
+  } catch { }
 }
 Say 'copying'
 if (Test-Path $AppDir) { Remove-Item $AppDir -Recurse -Force }

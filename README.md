@@ -34,6 +34,19 @@ walks you through signing in; you can switch at any time in Settings. Only one h
 - Privacy: your CV and answers are sent to the helper's provider. On personal ChatGPT plans (free and paid), turn off
   "Improve the model for everyone" in ChatGPT Settings → Data controls so your texts are not used for training; this also
   covers Codex. See <https://help.openai.com/en/articles/7730893-data-controls-in-chatgpt>.
+- What the install buttons run: **Install Claude** runs Anthropic's official installer
+  (`irm https://claude.ai/install.ps1 | iex`); **ChatGPT** installs the `@openai/codex` package from npm at a pinned
+  version.
+
+## Security
+
+- Every start of the app creates a new launch key. Only the shortcut opens the app with it; a bookmark or a typed
+  address shows "Open BewerbungsPilot with its shortcut" instead. The key stops other programs and other Windows users on
+  this PC from reading your data through the app.
+- It does not protect against an administrator of the PC or malware running under your own Windows account. If you
+  moved your data folder with `BP_DATA_DIR`, it is only as private as that folder's permissions.
+- Close the app before installing an older version: installers before 0.8.3 cannot stop the running app.
+- The installer is not signed yet, so Windows SmartScreen may warn you: click **More info → Run anyway**.
 
 ## Languages
 
