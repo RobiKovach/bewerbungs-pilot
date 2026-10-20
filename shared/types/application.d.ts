@@ -127,7 +127,11 @@ export interface AttachmentInfo {
   missing: boolean;
 }
 
-export interface ApplicationView { application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean; followUpDue: boolean }
+export interface ApplicationView {
+  application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean; followUpDue: boolean;
+  /** Personal data in the package that the profile does not have; recomputed on every read, never stored. */
+  warnings: PersonalFinding[];
+}
 
 export interface ApplicationStats {
   sent: number; replies: number; interviews: number; offers: number;

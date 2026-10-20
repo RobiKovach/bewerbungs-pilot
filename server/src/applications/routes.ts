@@ -30,6 +30,7 @@ import { APPLICATION_ID, PACKAGE_LIMITS as L, validatePackage } from './schema.j
 import type { ApplicationStore } from './store.js';
 import type { SentUnsavedLog } from './sent-unsaved.js';
 import { toListView, toView } from './views.js';
+import { allowedFor, findPersonalData } from './personal-data.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
@@ -89,11 +90,21 @@ const sendBody = {
 const amountField = { type: 'string', minLength: 1, maxLength: L.offerField, pattern: '^[^\\r\\n]*\\S[^\\r\\n]*$' };
 const offerReplyBody = { type: 'object', additionalProperties: false, required: ['offered', 'wanted'], properties: { offered: amountField, wanted: amountField } };
 const offerReplyPatch = { type: 'object', additionalProperties: false, required: ['body'], properties: { body: { type: 'string', minLength: 1, maxLength: L.offerBody, pattern: '\\S' } } };
+// propertyNames: Fastify's ajv strips unknown keys (removeAdditional) instead of refusing them; this route refuses.
+const checkTextBody = {
+  type: 'object', additionalProperties: false, propertyNames: { enum: ['subject', 'body'] }, required: ['subject', 'body'],
+  properties: { subject: { type: 'string', maxLength: 500 }, body: { type: 'string', maxLength: 20000 } },
+};
 const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
 
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
   const now = d.now ?? (() => new Date());
-  const view = (id: string) => toView(d.store.require(id), d.profile(), now());
+  /** The package's own copy of the offer text (kept when the vacancy is hidden or compacted), else the live one. */
+  const vacancyTextOf = (p: ApplicationPackage) => d.store.readVacancyText(p.id) || d.vacancies.readText(p.vacancyId);
+  const view = (id: string) => {
+    const p = d.store.require(id);
+    return toView(p, d.profile(), now(), vacancyTextOf(p));
+  };
   const editable = (id: string) => assertEditable(d.store.require(id));
   /** Packages with an email in flight: nothing may change them until SMTP answers. */
   const sending = new Set<string>();
@@ -138,6 +149,14 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   });
 
   app.get('/api/applications/:id', { schema: { params: idParams } }, async (req) => view((req.params as { id: string }).id));
+
+  // Text of an email window (send, reminder, replies) checked with the same allowed set as the package; any status.
+  app.post('/api/applications/:id/check-text', { schema: { params: idParams, body: checkTextBody } }, async (req) => {
+    const p = d.store.require((req.params as { id: string }).id);
+    const { subject, body } = req.body as { subject: string; body: string };
+    const texts = [{ text: subject, where: { part: 'email', field: 'subject' } as const }, { text: body, where: { part: 'email', field: 'body' } as const }];
+    return { warnings: findPersonalData(texts, allowedFor(p, d.profile(), vacancyTextOf(p))) };
+  });
 
   app.patch('/api/applications/:id/letter', { schema: { params: idParams, body: letterBody } }, async (req) => {
     const { id } = req.params as { id: string };

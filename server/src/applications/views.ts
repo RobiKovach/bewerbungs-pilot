@@ -2,17 +2,21 @@ import fs from 'node:fs';
 import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
 import { followUpDue } from './follow-up.js';
+import { allowedFor, findPersonalData, packageTexts } from './personal-data.js';
 import { profileFingerprint } from './snapshot.js';
 import { canUndo, isFrozen } from './status.js';
 import type { ApplicationStore, PhotoFile } from './store.js';
 
-export function toView(p: ApplicationPackage, profile: Profile, now: Date): ApplicationView {
+export function toView(p: ApplicationPackage, profile: Profile, now: Date, vacancyText: string | null): ApplicationView {
   const known = new Set(profile.documents.map((d) => d.id));
   const attachments: AttachmentInfo[] = [
     ...profile.documents.map((d) => ({ id: d.id, label: d.label || d.originalName, size: d.size, selected: p.attachments.includes(d.id), missing: false })),
     ...p.attachments.filter((id) => !known.has(id)).map((id) => ({ id, label: '', size: 0, selected: true, missing: true })),
   ];
-  return { application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p), followUpDue: followUpDue(p, now) };
+  return {
+    application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p), followUpDue: followUpDue(p, now),
+    warnings: findPersonalData(packageTexts(p), allowedFor(p, profile, vacancyText)),
+  };
 }
 
 const changed = (p: ApplicationPackage | undefined, current: string) => !p || (!isFrozen(p) && p.profileFingerprint !== current);
