@@ -82,6 +82,8 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
   so; "Score again" writes them in the new language.
 - Found an offer somewhere else? Paste its text — or just its link — with "+ Add"; the AI helper reads it and scores it
   the same way. Some sites (e.g. StepStone, Indeed, LinkedIn) do not let the app read the page; then paste the text.
+  Behind a company or system proxy, reading links may fail for every site (the proxy address looks internal, so it
+  is blocked); then paste the text as well.
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. The job search only talks to
   `rest.arbeitsagentur.de`. A pasted link (not Arbeitsagentur) is opened only when you give no text, in a separate

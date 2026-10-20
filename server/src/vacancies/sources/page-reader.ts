@@ -31,6 +31,30 @@ export function pageText(raw: string, maxChars: number): string {
   return raw.replace(/\r/g, '').replace(/\n[ \t]*(\n[ \t]*)+/g, '\n\n').trim().slice(0, maxChars);
 }
 
+/**
+ * Runs in every frame before the page's own scripts. The request filter only sees requests of the page itself:
+ * a popup's first navigation, workers, service workers, WebSockets, WebTransport and WebRTC would go around it,
+ * so the page simply does not get them. Reading the visible text of a career page needs none of them.
+ */
+export const LOCKDOWN_SCRIPT = `(() => {
+  const off = (obj, name, value) => { try { Object.defineProperty(obj, name, { value, writable: false, configurable: false }); } catch (e) {} };
+  off(window, 'open', () => null);
+  for (const name of ['Worker', 'SharedWorker', 'WebSocket', 'WebTransport', 'RTCPeerConnection', 'webkitRTCPeerConnection']) off(window, name, undefined);
+  if (navigator.serviceWorker) off(Object.getPrototypeOf(navigator.serviceWorker), 'register', () => Promise.reject(new Error('blocked')));
+})();`;
+
+/** puppeteer adds --disable-popup-blocking by default; the reading browser keeps Chrome's popup blocker on. */
+export function launchOptions(executablePath: string, userDataDir: string, timeoutMs: number) {
+  return {
+    executablePath, headless: true, userDataDir, timeout: timeoutMs,
+    ignoreDefaultArgs: ['--disable-popup-blocking'],
+    args: [
+      '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-sync', '--disable-background-networking',
+      '--block-new-web-contents', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp',
+    ],
+  };
+}
+
 const hostOf = (url: string) => { try { return new URL(url).hostname; } catch { return ''; } };
 const unreadable = (why: string) => new AppError('BAD_REQUEST', `page not readable: ${why}`, 'pageUnreadable');
 
@@ -99,13 +123,7 @@ export class BrowserPageReader implements PageReader {
     signal.addEventListener('abort', stop);
     try {
       try {
-        browser = await puppeteer.launch({
-          executablePath, headless: true, userDataDir: profile, timeout: this.timeoutMs,
-          args: [
-            '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-sync', '--disable-background-networking',
-            '--block-new-web-contents', '--force-webrtc-ip-handling-policy=disable_non_proxied_udp',
-          ],
-        });
+        browser = await puppeteer.launch(launchOptions(executablePath, profile, this.timeoutMs));
       } catch (err) {
         throw new AppError('BROWSER_MISSING', `browser did not start: ${String(err).slice(0, 300)}`);
       }
@@ -115,6 +133,7 @@ export class BrowserPageReader implements PageReader {
       const page: Page = await browser.newPage();
       browser.on('targetcreated', (t) => { if (t.type() === 'page' && t !== page.target()) void t.page().then((p) => p?.close()).catch(() => undefined); });
       await page.setBypassServiceWorker(true);
+      await page.evaluateOnNewDocument(LOCKDOWN_SCRIPT);
       await page.setRequestInterception(true);
       page.on('request', (req) => {
         void allowRequest(req.url(), req.resourceType(), this.check)

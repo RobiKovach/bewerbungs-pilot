@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { allowRequest, BrowserPageReader, pageText } from '../src/vacancies/sources/page-reader.js';
+import vm from 'node:vm';
+import { allowRequest, BrowserPageReader, launchOptions, LOCKDOWN_SCRIPT, pageText } from '../src/vacancies/sources/page-reader.js';
 import type { checkPublicUrl } from '../src/vacancies/sources/safe-address.js';
 
 type Check = typeof checkPublicUrl;
@@ -57,5 +58,30 @@ describe('BrowserPageReader', () => {
       .rejects.toMatchObject({ code: 'BAD_REQUEST', reason: 'pageUnreadable' });
     expect(log).toHaveBeenCalledWith('vacancy.pageRead', { host: '192.168.1.1', result: 'blocked' });
     expect(JSON.stringify(log.mock.calls)).not.toContain('secret');
+  });
+});
+
+describe('lockdown (popups, workers, sockets go around the request filter)', () => {
+  it('keeps the popup blocker on: puppeteer --disable-popup-blocking default is dropped', () => {
+    const o = launchOptions('C:/edge.exe', 'C:/tmp/p', 25_000);
+    expect(o.ignoreDefaultArgs).toContain('--disable-popup-blocking');
+    expect(o.args).toContain('--block-new-web-contents');
+  });
+
+  it('the page gets no window.open, workers, service workers, WebSocket, WebTransport or WebRTC', async () => {
+    class SwContainer { register() { return Promise.resolve('registered'); } }
+    const win: Record<string, unknown> = {
+      open: () => 'opened', Worker: class {}, SharedWorker: class {}, WebSocket: class {}, WebTransport: class {},
+      RTCPeerConnection: class {}, webkitRTCPeerConnection: class {}, fetch: () => 'kept',
+    };
+    const ctx = vm.createContext({ window: win, navigator: { serviceWorker: new SwContainer() }, Object, Promise, Error });
+    vm.runInContext(LOCKDOWN_SCRIPT, ctx);
+    expect((win.open as () => unknown)()).toBeNull();
+    for (const name of ['Worker', 'SharedWorker', 'WebSocket', 'WebTransport', 'RTCPeerConnection', 'webkitRTCPeerConnection']) expect(win[name]).toBeUndefined();
+    expect(() => { win.WebSocket = class {}; }).toThrow(TypeError);
+    expect(win.WebSocket).toBeUndefined();
+    const sw = (ctx as { navigator: { serviceWorker: SwContainer } }).navigator.serviceWorker;
+    await expect(sw.register()).rejects.toThrow('blocked');
+    expect((win.fetch as () => unknown)()).toBe('kept');
   });
 });
