@@ -49,7 +49,10 @@ describe('findRunningInstance', () => {
     await app.listen({ host: '127.0.0.1', port });
     cleanups.push(() => app.close());
     const file = path.join(dir, 'server.json');
+    fs.writeFileSync(file, JSON.stringify({ port, pid: process.pid, startedAt: '', key: 'k1' }));
+    expect(await findRunningInstance(file)).toEqual({ port, key: 'k1' });
+    // A server.json from a pre-0.8.3 server has no key: the caller then opens plain /.
     fs.writeFileSync(file, JSON.stringify({ port, pid: process.pid, startedAt: '' }));
-    expect(await findRunningInstance(file)).toBe(port);
+    expect(await findRunningInstance(file)).toEqual({ port, key: '' });
   });
 });

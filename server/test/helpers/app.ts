@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import { ApplicationJob } from '../../src/applications/job.js';
 import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
@@ -23,9 +24,14 @@ import { FakePrinter } from './applications.js';
 import { FakeGoogleAuth, FakeMailer } from './mail.js';
 import { fakeSource, type FakeSource } from './vacancies.js';
 
-export const H = { 'x-bp-client': '1' };
+export const TEST_KEY = 'test-launch-key-0123456789abcdefghijklmnopq';
+export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
 
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string } = {}) {
+/**
+ * `autoKey` (default true): every `app.inject` carries the launch key unless the test sets its own `x-bp-key`
+ * or cookie, so tests about other things need not repeat it. Launch-key tests pass `autoKey: false`.
+ */
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -81,6 +87,16 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     profileStore, profileFiles, vacancyStore, vacancySource: source, searchJob,
     applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
     googleAuth, origin: () => 'http://localhost:80', revokeTimeoutMs: opts.revokeTimeoutMs,
+    session: { key: TEST_KEY, cookieName: 'bp_key_80' },
   });
+  if (opts.autoKey !== false) {
+    const inject = app.inject.bind(app) as (o: InjectOptions | string) => Promise<LightMyRequestResponse>;
+    app.inject = ((o: InjectOptions | string) => {
+      if (typeof o !== 'object') return inject(o);
+      const headers: Record<string, unknown> = { ...(o.headers ?? {}) };
+      if (!('x-bp-key' in headers) && !('cookie' in headers)) headers['x-bp-key'] = TEST_KEY;
+      return inject({ ...o, headers } as InjectOptions);
+    }) as unknown as typeof app.inject;
+  }
   return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
 }

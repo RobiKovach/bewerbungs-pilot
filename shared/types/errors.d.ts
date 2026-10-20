@@ -36,6 +36,8 @@ export type ErrorCode =
   | 'CONFLICT'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
+  /** No launch key: the app was not opened via its shortcut (or it restarted since). */
+  | 'NO_SESSION'
   | 'UNKNOWN';
 
 /**

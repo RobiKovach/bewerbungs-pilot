@@ -20,6 +20,7 @@ export function httpStatusFor(code: ErrorCode): number {
   switch (code) {
     case 'BAD_REQUEST': return 400;
     case 'NOT_FOUND': return 404;
+    case 'NO_SESSION': return 401;
     case 'LLM_CANCELLED': return 499;
     case 'LLM_NOT_INSTALLED':
     case 'LLM_NOT_LOGGED_IN': return 503;

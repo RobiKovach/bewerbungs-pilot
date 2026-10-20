@@ -26,7 +26,8 @@ import { DpapiSecretStore } from './mail/secret.js';
 import { ProfileFiles } from './profile/files.js';
 import { ProfileStore } from './profile/store.js';
 import { openBrowser } from './runtime/browser.js';
-import { findRunningInstance, waitForRunningInstance, type ServerInfo } from './runtime/instance.js';
+import { findRunningInstance, waitForRunningInstance, type RunningInstance, type ServerInfo } from './runtime/instance.js';
+import { cookieName, newLaunchKey, openUrl } from './runtime/launch-key.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
 import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
@@ -39,6 +40,9 @@ const fakeLlm = process.argv.includes('--fake-llm') || process.env.BP_FAKE_LLM =
 const WINNER_WAIT_MS = 15_000;
 const CLOSE_TIMEOUT_MS = 3000;
 
+/** Where the browser goes: with the key, /open turns it into the session cookie; a pre-0.8.3 server has none. */
+const appUrl = (r: RunningInstance) => (r.key ? openUrl(HOST, r.port, r.key) : `http://${HOST}:${r.port}/`);
+
 async function main(): Promise<void> {
   const paths = dataPaths(resolveDataRoot());
   ensureDataDirs(paths);
@@ -46,8 +50,8 @@ async function main(): Promise<void> {
 
   const running = await findRunningInstance(paths.server);
   if (running !== null) {
-    if (!noOpen) openBrowser(`http://${HOST}:${running}/`);
-    logger.info('already_running', { port: running });
+    if (!noOpen) openBrowser(appUrl(running));
+    logger.info('already_running', { port: running.port });
     return;
   }
 
@@ -55,8 +59,8 @@ async function main(): Promise<void> {
   const lock = acquireInstanceLock(paths.lock);
   if (!lock) {
     const winner = await waitForRunningInstance(paths.server, WINNER_WAIT_MS);
-    logger.info('lost_start_race', { port: winner });
-    if (winner !== null && !noOpen) openBrowser(`http://${HOST}:${winner}/`);
+    logger.info('lost_start_race', { port: winner?.port ?? null });
+    if (winner !== null && !noOpen) openBrowser(appUrl(winner));
     return;
   }
   process.on('exit', () => lock.release());
@@ -110,6 +114,7 @@ async function main(): Promise<void> {
   });
   applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
+  const key = newLaunchKey();
   const app = await buildApp({
     settings, providers, install, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
@@ -119,6 +124,7 @@ async function main(): Promise<void> {
     applicationStore, applicationJob, printer,
     mailer: new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,
+    session: { key, cookieName: cookieName(port) },
   });
 
   const shutdown = createShutdown({
@@ -132,10 +138,11 @@ async function main(): Promise<void> {
   });
 
   await app.listen({ host: HOST, port });
-  const info: ServerInfo = { port, pid: process.pid, startedAt: new Date().toISOString() };
+  const info: ServerInfo = { port, pid: process.pid, startedAt: new Date().toISOString(), key };
   writeJsonAtomic(paths.server, info);
   logger.info('started', { port, version, fakeLlm });
-  if (!noOpen) openBrowser(`http://${HOST}:${port}/`);
+  if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
+  else openBrowser(openUrl(HOST, port, key));
 }
 
 main().catch((err: unknown) => {

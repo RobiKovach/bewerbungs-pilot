@@ -198,7 +198,7 @@ describe('cancellation', () => {
     await new Promise<void>((resolve) => {
       const req = http.request({
         host: '127.0.0.1', port, path: '/api/llm/test', method: 'POST',
-        headers: { 'x-bp-client': '1', 'content-type': 'application/json' },
+        headers: { ...H, 'content-type': 'application/json' },
       });
       req.on('error', () => { /* expected: we destroy the socket ourselves below */ });
       req.end(JSON.stringify({ language: 'en' }));

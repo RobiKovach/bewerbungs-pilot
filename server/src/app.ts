@@ -5,6 +5,7 @@ import type { LlmCheck } from '@bp/shared';
 import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language, type ProviderId, type SettingsPatch, type SettingsStore } from './data/settings.js';
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
+import { keyMatches, readCookie } from './runtime/launch-key.js';
 import type { LlmQueue } from './llm/queue.js';
 import type { InstallJob } from './llm/install.js';
 import type { ProviderRegistry } from './llm/providers.js';
@@ -55,7 +56,17 @@ export interface AppDeps {
   origin: () => string;
   /** How long "Disconnect" waits for Google to revoke the key (default 10 s). */
   revokeTimeoutMs?: number;
+  /** This launch's key (also in server.json) and the port-named cookie that carries it in the browser. */
+  session: { key: string; cookieName: string };
 }
+
+/**
+ * Routes anyone on this PC may call without the launch key — matched against the route Fastify chose
+ * (`req.routeOptions.url`), never the raw URL. `/` and `/*` are the web files (no personal data in them);
+ * the Google callback arrives from accounts.google.com, so the SameSite=Strict cookie is not sent with it
+ * (it is protected by state + PKCE and shows fixed texts only).
+ */
+const PUBLIC_ROUTES = new Set(['/open', '/api/health', '/oauth/google/callback', '/', '/*']);
 
 const settingsPatchSchema = {
   type: 'object',
@@ -106,6 +117,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     if (!deps.allowedHosts().includes(host)) {
       return reply.code(403).send(errorBody('BAD_REQUEST', `host not allowed: ${host}`));
     }
+    // Other programs and other Windows users on this PC can reach 127.0.0.1 too; only the launch key
+    // (readable from server.json by this Windows user alone) tells the person's own browser tab apart.
+    // An unmatched route (the not-found handler) has no routeOptions.url and therefore needs the key.
+    const route = req.routeOptions.url;
+    if (!(route !== undefined && PUBLIC_ROUTES.has(route))) {
+      const given = req.headers['x-bp-key'];
+      const key = typeof given === 'string' ? given : readCookie(req.headers.cookie, deps.session.cookieName);
+      if (!keyMatches(key, deps.session.key)) {
+        return reply.code(httpStatusFor('NO_SESSION')).send(errorBody('NO_SESSION', 'missing or wrong launch key'));
+      }
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers['x-bp-client'] !== '1') {
       return reply.code(403).send(errorBody('BAD_REQUEST', 'missing X-BP-Client header'));
     }
@@ -144,6 +166,17 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   app.get('/api/health', async () => ({ ok: true, app: 'bewerbungs-pilot', version: deps.version }));
+
+  // The shortcut opens /open?key=…: the right key becomes a session cookie (no Expires = gone when the
+  // browser closes; a restart makes a new key anyway). A wrong or missing key just goes on to the app,
+  // which then shows "open via the shortcut".
+  app.get('/open', async (req, reply) => {
+    const { key } = req.query as { key?: string };
+    if (keyMatches(typeof key === 'string' ? key : undefined, deps.session.key)) {
+      reply.header('Set-Cookie', `${deps.session.cookieName}=${deps.session.key}; HttpOnly; SameSite=Strict; Path=/`);
+    }
+    return reply.code(303).header('Location', '/').send();
+  });
 
   app.get('/api/settings', async () => deps.settings.get());
 

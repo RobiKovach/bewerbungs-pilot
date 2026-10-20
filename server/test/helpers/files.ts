@@ -1,3 +1,5 @@
+import { H } from './app.js';
+
 // Minimal real-looking file contents: only the first bytes matter for type detection.
 export const PDF_BYTES = Buffer.from('%PDF-1.4\n% BewerbungsPilot test file\n%%EOF\n', 'latin1');
 export const PNG_BYTES = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32)]);
@@ -68,7 +70,7 @@ export function multipartBody(filename: string, content: Buffer, contentType = '
   const tail = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');
   return {
     payload: Buffer.concat([head, content, tail]),
-    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-bp-client': '1' },
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, ...H },
   };
 }
 
