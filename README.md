@@ -47,6 +47,7 @@ walks you through signing in; you can switch at any time in Settings. Only one h
   moved your data folder with `BP_DATA_DIR`, it is only as private as that folder's permissions.
 - Close the app before installing an older version: installers before 0.8.3 cannot stop the running app.
 - The installer is not signed yet, so Windows SmartScreen may warn you: click **More info → Run anyway**.
+- Found a security problem? Please report it privately — see [SECURITY.md](SECURITY.md).
 
 ## Languages
 
@@ -116,6 +117,16 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## What's new in 0.8.3
+
+- **Launch key.** The app opens only through its shortcut; other programs and other Windows users on this PC can no
+  longer read your data through it. A bookmark or a typed address shows "Open BewerbungsPilot with its shortcut".
+- **Personal-data warning.** If a letter, CV or email contains personal data that is not in your profile (another
+  email address, phone number, IBAN, tax ID, birth date, address or link), a yellow note above "Approve" or "Send"
+  names it and where it is. It is only a warning — you can still approve and send.
+- **Security notes.** A new "Security" section above, [SECURITY.md](SECURITY.md) for reporting problems privately,
+  automatic dependency and code checks on GitHub, and the installer now closes the running app safely before updating.
 
 ## What's new in 0.8.2
 

@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in BewerbungsPilot does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Please do not paste personal data** (your CV, letters, email addresses, phone numbers)
+        into this issue — replace them with made-up examples.
+  - type: input
+    id: version
+    attributes:
+      label: BewerbungsPilot version
+      description: The version in the name of the zip file you installed, e.g. 0.8.3.
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 23H2
+    validations:
+      required: true
+  - type: dropdown
+    id: ai
+    attributes:
+      label: AI helper
+      options:
+        - Claude
+        - ChatGPT
+        - None chosen yet
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Error texts and the "for support" line help a lot (check them for personal data first).
+    validations:
+      required: true
