@@ -24,10 +24,13 @@ const LINK = /https?:\/\/[^\s<>"')]+|www\.[^\s<>"')]+|\b[a-z0-9][a-z0-9-]*(?:\.[
 const YEAR_RANGE = /^(?:19|20)\d{2}\s*[-/]\s*(?:19|20)\d{2}$/;
 const MONEY_AFTER = /^\s{0,3}(?:€|EUR|Euro)/;
 const MONEY_BEFORE = /(?:€|EUR|Euro)\s{0,3}$/;
+/** "12000 Kunden" is a count, not a postal address. */
+const COUNT_WORDS = new Set(['mitarbeiter', 'mitarbeitende', 'kunden', 'jahre', 'stunden', 'nutzer', 'euro']);
 
 export const normEmail = (s: string): string => s.trim().toLowerCase();
 export function normPhone(s: string): string {
-  const d = s.replace(/\D/g, '');
+  // "+49 (0)351 …": the "(0)" is only the local trunk prefix.
+  const d = s.replace(/\(0\)/g, '').replace(/\D/g, '');
   if (d.startsWith('0049')) return `0${d.slice(4)}`;
   if (d.startsWith('49')) return `0${d.slice(2)}`;
   return d;
@@ -104,7 +107,11 @@ function scan(text: string, allowed: AllowedData): Hit[] {
     }
   }
 
-  const postals = matches(POSTAL, text);
+  const postals = matches(POSTAL, text).filter((m) => {
+    const digitsEnd = m.start + 5;
+    if (MONEY_AFTER.test(text.slice(digitsEnd, digitsEnd + 7)) || MONEY_BEFORE.test(text.slice(Math.max(0, m.start - 7), m.start))) return false;
+    return !COUNT_WORDS.has(m.value.slice(5).trim().toLowerCase());
+  });
   for (const m of postals) if (!allowed.postalCodes.includes(m.value.slice(0, 5))) add('postalCode', m, m.value.slice(0, 5));
 
   // IBAN-shaped text with a wrong checksum is not flagged, and its digits are not a phone either.

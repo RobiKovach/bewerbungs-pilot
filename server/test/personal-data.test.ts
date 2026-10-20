@@ -65,6 +65,9 @@ describe('no warning for normal letter content', () => {
     ['vacancy contact email', 'an jobs@firma.de'],
     ['a date with no birth word', 'Ich kann ab 01.11.2026 anfangen.'],
     ['email domain is not a separate link', 'an JOBS@firma.de'],
+    ['own phone in +49 (0) format', 'Telefon: +49 (0)351 1234567'],
+    ['salary that looks like a postal code', 'Gehaltswunsch 55000 Euro brutto'],
+    ['a count that looks like a postal code', 'Software für über 12000 Kunden'],
   ])('%s', (_name, text) => {
     expect(find(text, ok)).toEqual([]);
   });
@@ -75,6 +78,10 @@ describe('allowedFor', () => {
     const profile = readyPackageProfile((p) => { p.sections.personal.data.phone = '+49 351 1234567'; });
     const a = allowedFor(pkg({}, profile), profile, null);
     expect(find('Telefon: 0351/1234567', a)).toEqual([]);
+  });
+  it('own phone saved as "+49 (0)…" is allowed in the plain format', () => {
+    const profile = readyPackageProfile((p) => { p.sections.personal.data.phone = '+49 (0)351 1234567'; });
+    expect(find('Telefon: 0351 1234567', allowedFor(pkg({}, profile), profile, null))).toEqual([]);
   });
   it('an old phone that is only in the package snapshot is not flagged', () => {
     const old = readyPackageProfile((p) => { p.sections.personal.data.phone = '+49 30 5555555'; });
