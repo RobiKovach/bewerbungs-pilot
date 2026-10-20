@@ -154,6 +154,7 @@
     "quitButton": "Quit BewerbungsPilot"
   },
   "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop." },
+  "noSession": { "title": "Open BewerbungsPilot with its shortcut", "text": "This page was not opened by BewerbungsPilot itself (for example from a bookmark after a restart). For your safety it shows nothing here. Open BewerbungsPilot with the shortcut on your desktop or in the Start menu." },
   "profile": {
     "title": "Your profile",
     "edit": "Edit",

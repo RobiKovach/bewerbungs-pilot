@@ -154,6 +154,7 @@
     "quitButton": "Închideți BewerbungsPilot"
   },
   "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop." },
+  "noSession": { "title": "Deschideți BewerbungsPilot din scurtătură", "text": "Această pagină nu a fost deschisă de BewerbungsPilot însuși (de exemplu dintr-un marcaj după o repornire). Pentru siguranța dumneavoastră, aici nu se afișează nimic. Deschideți BewerbungsPilot cu scurtătura de pe desktop sau din meniul Start." },
   "profile": {
     "title": "Profilul dumneavoastră",
     "edit": "Editați",

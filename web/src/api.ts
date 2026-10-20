@@ -31,6 +31,17 @@ export class ApiError extends Error {
 
 const CLIENT_HEADER = { 'X-BP-Client': '1' };
 
+const noSessionListeners = new Set<() => void>();
+
+/**
+ * Called when the server refuses a request for a missing or old launch key (the page was not opened via the
+ * shortcut, e.g. a bookmark after a restart). Returns the unsubscribe function.
+ */
+export function onNoSession(listener: () => void): () => void {
+  noSessionListeners.add(listener);
+  return () => { noSessionListeners.delete(listener); };
+}
+
 async function send<T>(url: string, init: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -44,6 +55,7 @@ async function send<T>(url: string, init: RequestInit): Promise<T> {
     view?: ProfileView;
   } | null;
   if (!res.ok) {
+    if (res.status === 401 && data?.error?.code === 'NO_SESSION') noSessionListeners.forEach((l) => l());
     throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params, data?.view);
   }
   return data as T;

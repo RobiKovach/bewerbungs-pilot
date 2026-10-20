@@ -154,6 +154,7 @@
     "quitButton": "Zamknij BewerbungsPilot"
   },
   "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie." },
+  "noSession": { "title": "Otwórz BewerbungsPilot za pomocą skrótu", "text": "Tej strony nie otworzył sam BewerbungsPilot (na przykład z zakładki po ponownym uruchomieniu). Dla twojego bezpieczeństwa nic tu nie jest wyświetlane. Otwórz BewerbungsPilot skrótem na pulpicie lub w menu Start." },
   "profile": {
     "title": "Twój profil",
     "edit": "Edytuj",

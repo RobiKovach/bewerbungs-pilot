@@ -154,6 +154,7 @@
     "quitButton": "BewerbungsPilot beenden"
   },
   "quit": { "title": "BewerbungsPilot wurde beendet", "body": "Sie können diesen Tab jetzt schließen. Um erneut zu starten, verwenden Sie die BewerbungsPilot-Verknüpfung auf Ihrem Desktop." },
+  "noSession": { "title": "BewerbungsPilot über die Verknüpfung öffnen", "text": "Diese Seite wurde nicht von BewerbungsPilot selbst geöffnet (zum Beispiel über ein Lesezeichen nach einem Neustart). Zu Ihrer Sicherheit wird hier nichts angezeigt. Öffnen Sie BewerbungsPilot über die Verknüpfung auf Ihrem Desktop oder im Startmenü." },
   "profile": {
     "title": "Ihr Profil",
     "edit": "Bearbeiten",
