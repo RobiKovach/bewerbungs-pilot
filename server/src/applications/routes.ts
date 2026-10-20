@@ -99,8 +99,17 @@ const attachmentsBody = { type: 'object', additionalProperties: false, required:
 
 export async function registerApplicationRoutes(app: FastifyInstance, d: ApplicationRouteDeps): Promise<void> {
   const now = d.now ?? (() => new Date());
-  /** The package's own copy of the offer text (kept when the vacancy is hidden or compacted), else the live one. */
-  const vacancyTextOf = (p: ApplicationPackage) => d.store.readVacancyText(p.id) || d.vacancies.readText(p.vacancyId);
+  /**
+   * The package's own copy of the offer text (kept when the vacancy is hidden or compacted), else the live one.
+   * Only used for the warnings: a locked file (antivirus, OneDrive) must never fail the package view → null.
+   */
+  const vacancyTextOf = (p: ApplicationPackage): string | null => {
+    try {
+      return d.store.readVacancyText(p.id) || d.vacancies.readText(p.vacancyId);
+    } catch {
+      return null;
+    }
+  };
   const view = (id: string) => {
     const p = d.store.require(id);
     return toView(p, d.profile(), now(), vacancyTextOf(p));

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { onNoSession } from '../api';
 import { download } from './download';
 
 describe('download', () => {
@@ -17,5 +18,13 @@ describe('download', () => {
   it('an error answer becomes an ApiError with code and reason', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'attachmentUnreadable', params: { name: 'Zeugnis' } } }), { status: 409 })));
     await expect(download('/x', 'x.pdf')).rejects.toMatchObject({ code: 'CONFLICT', reason: 'attachmentUnreadable', params: { name: 'Zeugnis' } });
+  });
+  it('an old launch key opens the "open via shortcut" screen like every other request', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: { code: 'NO_SESSION', detailsForLog: 'x' } }), { status: 401 })));
+    const seen = vi.fn();
+    const off = onNoSession(seen);
+    await expect(download('/x', 'x.pdf')).rejects.toMatchObject({ code: 'NO_SESSION' });
+    off();
+    expect(seen).toHaveBeenCalledOnce();
   });
 });

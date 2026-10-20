@@ -1,4 +1,4 @@
-import { ApiError } from '../api';
+import { ApiError, reportNoSession } from '../api';
 import type { ErrorReason } from '../types';
 
 /** GET a generated file and save it; an error answer becomes an ApiError (shown with ErrorBanner). */
@@ -11,6 +11,7 @@ export async function download(url: string, fallbackName: string): Promise<void>
   }
   if (!res.ok) {
     const data = (await res.json().catch(() => null)) as { error?: { code?: string; detailsForLog?: string; reason?: ErrorReason; params?: Record<string, string | number> } } | null;
+    reportNoSession(res.status, data?.error?.code);
     throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params);
   }
   const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? fallbackName;

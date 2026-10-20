@@ -165,22 +165,45 @@ export function packageTexts(p: ApplicationPackage): PlacedText[] {
 }
 
 /**
- * What may appear: the person's own data (live profile and the package snapshot), the vacancy's contact email and url,
+ * What may appear: the person's own data and own free profile texts (live profile and the package snapshot), the vacancy's contact email and url,
  * and the company's phones and postal codes (vacancy text, recipient lines). Emails and links from the free vacancy
  * text are NOT allowed — that is how a poisoned offer would look.
  */
 export function allowedFor(p: ApplicationPackage, profile: Profile, vacancyText: string | null): AllowedData {
   const people: PersonalData[] = [profile.sections.personal.data, p.snapshot.personal];
   const companyText = [vacancyText ?? '', ...p.letter.recipient].join('\n');
+  const ownText = ownProfileText(p, profile);
+  const fiveDigits = (text: string) => matches(/(?<!\d)\d{5}(?!\d)/g, text).map((m) => m.value);
   const nonEmpty = (xs: string[]) => [...new Set(xs.filter((x) => x !== ''))];
   return {
-    emails: nonEmpty([...people.map((x) => normEmail(x.email)), normEmail(p.vacancy.contact?.email ?? '')]),
+    emails: nonEmpty([
+      ...people.map((x) => normEmail(x.email)), normEmail(p.vacancy.contact?.email ?? ''),
+      ...matches(EMAIL, ownText).map((m) => normEmail(m.value)),
+    ]),
     phones: nonEmpty([
       ...people.map((x) => normPhone(x.phone)),
-      ...matches(PHONE, companyText).map((m) => normPhone(m.value)),
+      ...matches(PHONE, `${companyText}\n${ownText}`).map((m) => normPhone(m.value)),
     ]),
-    postalCodes: nonEmpty([...people.map((x) => x.postalCode.trim()), ...matches(/(?<!\d)\d{5}(?!\d)/g, companyText).map((m) => m.value)]),
+    postalCodes: nonEmpty([...people.map((x) => x.postalCode.trim()), ...fiveDigits(companyText), ...fiveDigits(ownText)]),
     birthDates: nonEmpty(people.map((x) => normDate(x.birthDate))),
-    links: nonEmpty([...people.flatMap((x) => x.links.map((l) => normLink(l.url))), normLink(p.vacancy.url)]),
+    links: nonEmpty([
+      ...people.flatMap((x) => x.links.map((l) => normLink(l.url))), normLink(p.vacancy.url), ...TECH_NAMES,
+      ...matches(LINK, ownText).map((m) => normLink(m.value.replace(/[.,;:!?]+$/, ''))),
+    ]),
   };
+}
+
+/** Technology names the bare-domain rule would take for links. */
+const TECH_NAMES = ['asp.net', 'vb.net', 'ado.net', 'socket.io'];
+
+/** The person's own free texts (live profile and the package snapshot): what they wrote there is theirs, not foreign. */
+function ownProfileText(p: ApplicationPackage, profile: Profile): string {
+  const s = profile.sections;
+  const entries = [...s.education.data.items, ...s.experience.data.items, ...p.snapshot.education, ...p.snapshot.experience];
+  return [
+    ...entries.flatMap((e) => Object.values(e).filter((v): v is string => typeof v === 'string')),
+    ...[...s.skills.data.items, ...p.snapshot.skills].map((x) => x.name),
+    ...[...s.languages.data.items, ...p.snapshot.languages].map((x) => x.certificate),
+    ...profile.stories.flatMap((x) => [x.title, x.text]),
+  ].join('\n');
 }

@@ -109,6 +109,24 @@ describe('allowedFor', () => {
     const a = allowedFor(p, profile, 'Kontakt: Tel. 0351 987654, Büro 01099 Dresden');
     expect(find('Tel. 0351-987654; 01067 Dresden; 01099 Dresden', a)).toEqual([]);
   });
+  it('links, emails, phones and postal codes from own profile texts are allowed (live and snapshot)', () => {
+    const profile = readyPackageProfile((p) => {
+      p.sections.experience.data.items[0].description = 'Relaunch von meinshop.de, Hotline 0351 7777777, Filiale 01097 Dresden, shop@meinshop.de.';
+      p.stories[0].text = 'Projekt unter https://www.baeckerei-beispiel.de/bestellung umgesetzt.';
+    });
+    const a = allowedFor(pkg({}, profile), profile, null);
+    expect(find('Relaunch von meinshop.de (shop@meinshop.de, 0351 7777777, 01097 Dresden), baeckerei-beispiel.de/bestellung', a)).toEqual([]);
+    const old = readyPackageProfile((p) => { p.sections.experience.data.items[0].description = 'Portal altkunde.de gebaut.'; });
+    expect(find('Portal altkunde.de', allowedFor(pkg({}, old), readyPackageProfile(), null))).toEqual([]);
+  });
+  it('technology names that look like domains are not links', () => {
+    const profile = readyPackageProfile();
+    expect(find('Erfahrung mit ASP.NET, VB.NET, ADO.NET und Socket.io.', allowedFor(pkg({}, profile), profile, null))).toEqual([]);
+  });
+  it('an unknown link is still flagged next to own profile texts', () => {
+    const profile = readyPackageProfile((p) => { p.sections.experience.data.items[0].description = 'Relaunch von meinshop.de.'; });
+    expect(find('Siehe evil.de', allowedFor(pkg({}, profile), profile, null)).map((f) => f.kind)).toEqual(['link']);
+  });
   it('an email or link that is only in the vacancy text is still flagged', () => {
     const profile = readyPackageProfile();
     const a = allowedFor(pkg({}, profile), profile, 'Bewerbung an hr@evil.example, Infos: https://evil.example/apply');

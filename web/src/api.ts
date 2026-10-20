@@ -42,6 +42,11 @@ export function onNoSession(listener: () => void): () => void {
   return () => { noSessionListeners.delete(listener); };
 }
 
+/** Shows the "open via shortcut" screen when the server refused a request for its launch key (also for raw fetches). */
+export function reportNoSession(status: number, code: string | undefined): void {
+  if (status === 401 && code === 'NO_SESSION') noSessionListeners.forEach((l) => l());
+}
+
 async function send<T>(url: string, init: RequestInit): Promise<T> {
   let res: Response;
   try {
@@ -55,7 +60,7 @@ async function send<T>(url: string, init: RequestInit): Promise<T> {
     view?: ProfileView;
   } | null;
   if (!res.ok) {
-    if (res.status === 401 && data?.error?.code === 'NO_SESSION') noSessionListeners.forEach((l) => l());
+    reportNoSession(res.status, data?.error?.code);
     throw new ApiError(data?.error?.code ?? 'UNKNOWN', data?.error?.detailsForLog ?? `HTTP ${res.status}`, data?.error?.reason, data?.error?.params, data?.view);
   }
   return data as T;

@@ -76,3 +76,16 @@ describe('POST /api/applications/:id/check-text', () => {
     expect(lines.join('\n')).not.toContain(IBAN);
   });
 });
+
+describe('the package view never fails because of the warning check', () => {
+  it('a locked vacancy text (EBUSY) still gives the package with warnings from the profile only', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const busy = () => { throw Object.assign(new Error('locked'), { code: 'EBUSY' }); };
+    ctx.applicationStore.readVacancyText = busy;
+    ctx.vacancyStore.readText = busy;
+    const r = await get(ctx, `/api/applications/${id}`);
+    expect(r.statusCode).toBe(200);
+    expect((r.json() as ApplicationView).warnings).toEqual([]);
+  });
+});

@@ -68,6 +68,28 @@ describe('API needs the launch key', () => {
     const res = await app.inject({ method: 'GET', url: '/api/does-not-exist' });
     expect(res.statusCode).not.toBe(200);
   });
+  it('every registered route except the public ones answers 401 NO_SESSION without a key', async () => {
+    const { app } = await keyless();
+    // Rebuild full paths from the route tree ("│   ├── /wizard (PUT)" is a child of the line above it).
+    const stack: string[] = [];
+    const routes: { url: string; methods: string[] }[] = [];
+    for (const line of app.printRoutes({ commonPrefix: false }).split('\n')) {
+      const m = /^([│ ]*)[├└]── (\S+) \(([^)]+)\)$/.exec(line.trimEnd());
+      if (!m) continue;
+      stack.length = m[1].length / 4;
+      stack.push(m[2]);
+      routes.push({ url: stack.join(''), methods: m[3].split(', ').filter((x) => x !== 'HEAD') });
+    }
+    const PUBLIC = new Set(['/open', '/api/health', '/oauth/google/callback']);
+    const checked = routes.filter((r) => !PUBLIC.has(r.url));
+    expect(checked.length).toBeGreaterThan(40);
+    for (const r of checked) {
+      for (const method of r.methods) {
+        const res = await app.inject({ method: method as 'GET', url: r.url.replace(/:\w+/g, 'x1'), headers: C });
+        expect([method, r.url, res.statusCode, res.statusCode === 401 ? res.json().error.code : '']).toEqual([method, r.url, 401, 'NO_SESSION']);
+      }
+    }
+  });
   it('answers health without a key', async () => {
     const { app } = await keyless();
     const res = await app.inject({ method: 'GET', url: '/api/health' });

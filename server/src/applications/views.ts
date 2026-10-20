@@ -15,8 +15,17 @@ export function toView(p: ApplicationPackage, profile: Profile, now: Date, vacan
   ];
   return {
     application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p), followUpDue: followUpDue(p, now),
-    warnings: findPersonalData(packageTexts(p), allowedFor(p, profile, vacancyText)),
+    warnings: warningsFor(p, profile, vacancyText),
   };
+}
+
+/** Only a hint: a bug in the check must never fail the package view (or the answer to a send that went out). */
+function warningsFor(p: ApplicationPackage, profile: Profile, vacancyText: string | null) {
+  try {
+    return findPersonalData(packageTexts(p), allowedFor(p, profile, vacancyText));
+  } catch {
+    return [];
+  }
 }
 
 const changed = (p: ApplicationPackage | undefined, current: string) => !p || (!isFrozen(p) && p.profileFingerprint !== current);
