@@ -1,5 +1,5 @@
 import type {
-  ApplicationJobState, ApplicationListView, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding,
+  ApplicationJobState, ApplicationListView, BackupInfo, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding,
   CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
@@ -100,6 +100,12 @@ export const api = {
   installLlm: (provider: ProviderId) => request<InstallStatus>('POST', '/api/llm/install', { provider }),
   installStatus: () => request<InstallStatus>('GET', '/api/llm/install'),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
+
+  listBackups: () => request<{ dir: string; backups: BackupInfo[] }>('GET', '/api/backups'),
+  createBackup: () => request<BackupInfo>('POST', '/api/backups', {}),
+  restoreBackup: (name: string) => request<{ restored: BackupMeta; beforeRestore: BackupInfo }>('POST', '/api/backups/restore', { name }),
+  restoreBackupUpload: (file: File) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>('/api/backups/restore-upload', file, fileName(file, 'backup.zip')),
+  openBackupFolder: () => request<{ ok: true }>('POST', '/api/backups/open-folder', {}),
 
   getProfile: () => request<ProfileView>('GET', '/api/profile'),
   setWizard: (step: 1 | 2 | 3 | 4, completed = false) =>

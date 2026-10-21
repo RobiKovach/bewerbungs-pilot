@@ -148,6 +148,29 @@
     "claudeTest": "Testați conexiunea",
     "claudeRunning": "Se așteaptă răspunsul lui {{ai}}…",
     "claudeResult": "{{ai}} spune: „{{greeting}}”",
+    "backupsTitle": "Copii de rezervă",
+    "backups": {
+      "intro": "O copie de rezervă conține profilul dumneavoastră, ofertele de muncă și candidaturile cu toate fișierele. Parola de e-mail sau cheia Google nu sunt incluse niciodată.",
+      "folder": "Folder:",
+      "save": "Salvați copia",
+      "saving": "Se salvează…",
+      "saved": "Salvat: {{name}}",
+      "openFolder": "Deschideți folderul",
+      "chooseFile": "Alegeți fișierul…",
+      "empty": "Încă nu există copii.",
+      "version": "Versiunea {{version}}",
+      "size": "{{size}} MB",
+      "kindManual": "manuală",
+      "kindInstaller": "înainte de actualizare",
+      "kindBeforeRestore": "înainte de restaurare",
+      "newer": "Creată de o versiune mai nouă a BewerbungsPilot. Actualizați mai întâi programul, apoi restaurați această copie.",
+      "restore": "Restaurați",
+      "restoring": "Se restaurează…",
+      "confirmTitle": "Restaurați această copie?",
+      "confirmText": "Datele actuale vor fi înlocuite. Înainte de aceasta, programul le salvează ca o copie separată.",
+      "restored": "Copia a fost restaurată. Datele dumneavoastră de dinainte au fost salvate ca {{name}}.",
+      "mailAgain": "Vă rugăm să conectați din nou e-mailul la „E-mail pentru trimitere\": o copie nu conține niciodată parola sau cheia Google."
+    },
     "introTitle": "Pașii de bun venit",
     "introRestart": "Afișați din nou pașii de bun venit",
     "quitTitle": "Închideți aplicația",
@@ -443,6 +466,9 @@
     "MAIL_SCOPE": { "message": "Nu ați permis ca BewerbungsPilot să trimită e-mailuri.", "hint": "Apăsați „Încercați din nou”, autentificați-vă cu Google și bifați „Trimiterea de e-mailuri în numele dumneavoastră”." },
     "MAIL_REJECTED": { "message": "Serverul dvs. de e-mail a refuzat acest mesaj.", "hint": "Verificați adresa destinatarului. Dacă atașamentele sunt mari, renunțați la unul și încercați din nou." },
     "UNKNOWN": { "message": "Ceva nu a funcționat corect.", "hint": "Încercați din nou. Dacă problema persistă, reporniți aplicația." },
+    "BACKUP_INVALID": { "message": "Acest fișier nu este o copie de rezervă BewerbungsPilot sau este deteriorat.", "hint": "Nu s-a modificat nimic. Alegeți alt fișier de copie." },
+    "BACKUP_NEWER": { "message": "Această copie a fost creată de o versiune mai nouă a BewerbungsPilot.", "hint": "Actualizați mai întâi programul, apoi restaurați această copie." },
+    "BACKUP_FAILED": { "message": "Copia nu a putut fi salvată sau restaurată.", "hint": "Datele dumneavoastră nu au fost modificate. Verificați dacă discul nu este plin și dacă nu este deschis niciun fișier din folderul de date al programului, apoi încercați din nou." },
     "reasons": {
       "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",
       "cvNoContent": "{{ai}} a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",
@@ -469,7 +495,11 @@
       "followUpDone": "Pentru această candidatură a fost deja trimisă o reamintire sau aceasta a fost dezactivată.",
       "googleNotSignedIn": "Autentificarea cu Google nu este încă finalizată. Vă rugăm să vă autentificați mai întâi cu Google.",
       "pageUnreadable": "Această pagină nu a putut fi citită. Lipiți textul anunțului în câmpul de text.",
-      "restoreRunning": "Chiar acum se restaurează o copie de rezervă. Vă rugăm să așteptați până se termină, apoi încercați din nou."
+      "restoreRunning": "Chiar acum se restaurează o copie de rezervă. Vă rugăm să așteptați până se termină, apoi încercați din nou.",
+      "restoreBusySearch": "O căutare de locuri de muncă este în curs. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
+      "restoreBusyPackage": "Se pregătește un pachet de candidatură. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
+      "restoreBusyAi": "{{ai}} încă lucrează. Vă rugăm să așteptați până termină, apoi restaurați copia.",
+      "restoreBusySend": "Se trimite un e-mail. Vă rugăm să așteptați un moment, apoi restaurați copia."
     }
   },
   "vacancies": {

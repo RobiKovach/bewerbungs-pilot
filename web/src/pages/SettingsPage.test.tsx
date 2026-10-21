@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
 import { SettingsPage } from './SettingsPage';
@@ -14,6 +14,7 @@ const mailRoutes = {
     return [[`GET /api/llm/check?provider=${id}`, h], [`GET /api/llm/check?provider=${id}&refresh=1`, h]];
   })),
   'POST /api/llm/open-login': () => ({ body: { ok: true } }),
+  'GET /api/backups': () => ({ body: { dir: 'backups', backups: [] } }),
 };
 
 describe('SettingsPage', () => {
@@ -94,6 +95,26 @@ describe('SettingsPage', () => {
     render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Show the welcome steps again' }));
     expect(server.current().onboarding).toEqual({ currentStep: 'welcome', completed: false });
+  });
+
+  it('after a restore shows the restored settings (language) without a page reload', async () => {
+    const server = settingsRoutes(baseSettings());
+    const restoredSettings = { ...baseSettings(), language: 'de' as const };
+    let restored = false;
+    const meta = { format: 1, app: 'bewerbungs-pilot', appVersion: '0.9.0', createdAt: '2026-10-20T08:30:00.000Z', kind: 'manual' };
+    const info = { ...meta, name: 'a.zip', file: 'backups/a.zip', sizeBytes: 1024, newer: false };
+    mockFetch({
+      ...server.routes, ...mailRoutes,
+      'GET /api/settings': () => ({ body: restored ? restoredSettings : server.current() }),
+      'GET /api/backups': () => ({ body: { dir: 'backups', backups: [info] } }),
+      'POST /api/backups/restore': () => { restored = true; return { body: { restored: meta, beforeRestore: { ...info, name: 'b.zip', kind: 'before-restore' } } }; },
+    });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Restore' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument();
+    expect(screen.getByText(/b.zip/)).toBeInTheDocument();
   });
 
   it('quits via the given callback', async () => {

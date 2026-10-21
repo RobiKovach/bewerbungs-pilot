@@ -148,6 +148,29 @@
     "claudeTest": "Testuj połączenie",
     "claudeRunning": "Oczekiwanie na {{ai}}…",
     "claudeResult": "{{ai}} odpowiada: „{{greeting}}”",
+    "backupsTitle": "Kopie zapasowe",
+    "backups": {
+      "intro": "Kopia zapasowa zawiera Twój profil, oferty pracy i aplikacje ze wszystkimi plikami. Hasło do poczty ani klucz Google nigdy się w niej nie znajdują.",
+      "folder": "Folder:",
+      "save": "Zapisz kopię",
+      "saving": "Zapisywanie…",
+      "saved": "Zapisano: {{name}}",
+      "openFolder": "Otwórz folder",
+      "chooseFile": "Wybierz plik…",
+      "empty": "Nie ma jeszcze kopii.",
+      "version": "Wersja {{version}}",
+      "size": "{{size}} MB",
+      "kindManual": "ręczna",
+      "kindInstaller": "przed aktualizacją",
+      "kindBeforeRestore": "przed przywróceniem",
+      "newer": "Utworzona przez nowszą wersję BewerbungsPilot. Najpierw zaktualizuj program, potem przywróć tę kopię.",
+      "restore": "Przywróć",
+      "restoring": "Przywracanie…",
+      "confirmTitle": "Przywrócić tę kopię?",
+      "confirmText": "Obecne dane zostaną zastąpione. Wcześniej program zapisze je jako osobną kopię.",
+      "restored": "Kopia przywrócona. Twoje wcześniejsze dane zapisano jako {{name}}.",
+      "mailAgain": "Połącz pocztę ponownie w sekcji \"E-mail do wysyłania\": kopia nigdy nie zawiera hasła ani klucza Google."
+    },
     "introTitle": "Kroki powitalne",
     "introRestart": "Pokaż ponownie kroki powitalne",
     "quitTitle": "Zamknij program",
@@ -443,6 +466,9 @@
     "MAIL_SCOPE": { "message": "BewerbungsPilot nie dostał zgody na wysyłanie e-maili.", "hint": "Kliknij „Spróbuj ponownie”, zaloguj się przez Google i zaznacz „Wysyłanie e-maili w Twoim imieniu”." },
     "MAIL_REJECTED": { "message": "Twój serwer poczty odrzucił tę wiadomość.", "hint": "Sprawdź adres odbiorcy. Jeśli załączniki są duże, pomiń jeden z nich i spróbuj ponownie." },
     "UNKNOWN": { "message": "Coś poszło nie tak.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom program ponownie." },
+    "BACKUP_INVALID": { "message": "Ten plik nie jest kopią zapasową BewerbungsPilot albo jest uszkodzony.", "hint": "Nic nie zostało zmienione. Wybierz inny plik kopii." },
+    "BACKUP_NEWER": { "message": "Ta kopia została utworzona przez nowszą wersję BewerbungsPilot.", "hint": "Najpierw zaktualizuj program, potem przywróć tę kopię." },
+    "BACKUP_FAILED": { "message": "Nie udało się zapisać ani przywrócić kopii.", "hint": "Twoje dane nie zostały zmienione. Sprawdź, czy dysk nie jest pełny i czy żaden plik z folderu danych programu nie jest otwarty, i spróbuj ponownie." },
     "reasons": {
       "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
       "cvNoContent": "{{ai}} odczytał plik, ale nie znalazł niczego, co wygląda jak CV.",
@@ -469,7 +495,11 @@
       "followUpDone": "Przypomnienie dla tej aplikacji zostało już wysłane lub wyłączone.",
       "googleNotSignedIn": "Logowanie przez Google nie zostało jeszcze zakończone. Zaloguj się najpierw przez Google.",
       "pageUnreadable": "Nie udało się odczytać tej strony. Wklej tekst oferty w pole tekstowe.",
-      "restoreRunning": "Właśnie przywracana jest kopia zapasowa. Poczekaj, aż się zakończy, i spróbuj ponownie."
+      "restoreRunning": "Właśnie przywracana jest kopia zapasowa. Poczekaj, aż się zakończy, i spróbuj ponownie.",
+      "restoreBusySearch": "Trwa wyszukiwanie ofert pracy. Poczekaj, aż się zakończy, potem przywróć kopię.",
+      "restoreBusyPackage": "Trwa przygotowanie pakietu aplikacji. Poczekaj, aż się zakończy, potem przywróć kopię.",
+      "restoreBusyAi": "{{ai}} jeszcze pracuje. Poczekaj, aż skończy, potem przywróć kopię.",
+      "restoreBusySend": "Trwa wysyłanie e-maila. Poczekaj chwilę, potem przywróć kopię."
     }
   },
   "vacancies": {

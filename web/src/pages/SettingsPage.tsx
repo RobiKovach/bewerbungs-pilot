@@ -7,6 +7,7 @@ import { InfoTip } from '../components/InfoTip';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { MailSettingsBlock } from '../mail/MailSettingsBlock';
 import { useSettings } from '../settings';
+import { BackupsSection } from '../settings/BackupsSection';
 import type { Language } from '../types';
 
 type TestState =
@@ -17,13 +18,19 @@ type TestState =
 
 export function SettingsPage({ onQuit }: { onQuit: () => void }) {
   const { t, i18n } = useTranslation();
-  const { settings, update } = useSettings();
+  const { settings, update, reload } = useSettings();
   const chosen = settings.llm.provider !== null;
   const [test, setTest] = useState<TestState>({ kind: 'idle' });
   const [error, setError] = useState<unknown>(null);
   // The chosen helper's card already shows "Open sign-in window" — then the general button below is hidden.
   const [cardOffersLogin, setCardOffersLogin] = useState(false);
   const aiBlock = useRef<HTMLDivElement>(null);
+  // After a restore the data on disk is different: blocks that keep their own copy are mounted again.
+  const [restores, setRestores] = useState(0);
+  const onRestored = async () => {
+    await reload();
+    setRestores((n) => n + 1);
+  };
 
   // Arrived from an error's "Open Settings → AI helper" link: bring the AI block into view.
   useEffect(() => {
@@ -57,7 +64,7 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
 
       <div className="card settings-section" id="ai-helper" ref={aiBlock}>
         <h2>{t('onboarding.ai.title')}<InfoTip textKey="info.claudeTest" /></h2>
-        <AiHelperCards onLoginOffered={setCardOffersLogin} />
+        <AiHelperCards key={restores} onLoginOffered={setCardOffersLogin} />
         {!chosen ? <p className="muted">{t('onboarding.ai.noneChosen')}</p> : null}
         {test.kind === 'running' ? (
           <div className="btn-row">
@@ -78,7 +85,12 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
 
       <div className="card settings-section">
         <h2>{t('settings.mailTitle')}</h2>
-        <MailSettingsBlock />
+        <MailSettingsBlock key={restores} />
+      </div>
+
+      <div className="card settings-section">
+        <h2>{t('settings.backupsTitle')}</h2>
+        <BackupsSection onRestored={onRestored} />
       </div>
 
       <div className="card settings-section">

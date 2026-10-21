@@ -148,6 +148,29 @@
     "claudeTest": "Verbindung testen",
     "claudeRunning": "Warten auf {{ai}}…",
     "claudeResult": "{{ai}} sagt: „{{greeting}}“",
+    "backupsTitle": "Sicherungen",
+    "backups": {
+      "intro": "Eine Sicherung enthält Ihr Profil, Stellenangebote und Bewerbungen mit allen Dateien. Ihr E-Mail-Passwort oder Ihr Google-Schlüssel ist nie enthalten.",
+      "folder": "Ordner:",
+      "save": "Sicherung speichern",
+      "saving": "Wird gespeichert…",
+      "saved": "Gespeichert: {{name}}",
+      "openFolder": "Ordner öffnen",
+      "chooseFile": "Datei auswählen…",
+      "empty": "Noch keine Sicherungen.",
+      "version": "Version {{version}}",
+      "size": "{{size}} MB",
+      "kindManual": "manuell",
+      "kindInstaller": "vor dem Update",
+      "kindBeforeRestore": "vor der Wiederherstellung",
+      "newer": "Mit einer neueren Version von BewerbungsPilot erstellt. Aktualisieren Sie zuerst das Programm und stellen Sie dann diese Sicherung wieder her.",
+      "restore": "Wiederherstellen",
+      "restoring": "Wird wiederhergestellt…",
+      "confirmTitle": "Diese Sicherung wiederherstellen?",
+      "confirmText": "Die aktuellen Daten werden ersetzt. Vorher speichert das Programm sie als eigene Sicherung.",
+      "restored": "Sicherung wiederhergestellt. Ihre bisherigen Daten wurden als {{name}} gespeichert.",
+      "mailAgain": "Bitte verbinden Sie Ihre E-Mail unter „E-Mail zum Versenden\" erneut: Eine Sicherung enthält nie das Passwort oder den Google-Schlüssel."
+    },
     "introTitle": "Willkommensschritte",
     "introRestart": "Willkommensschritte erneut anzeigen",
     "quitTitle": "App beenden",
@@ -443,6 +466,9 @@
     "MAIL_SCOPE": { "message": "Sie haben BewerbungsPilot nicht erlaubt, E-Mails zu senden.", "hint": "Klicken Sie auf „Erneut versuchen“, melden Sie sich bei Google an und setzen Sie das Häkchen bei „E-Mails in Ihrem Namen senden“." },
     "MAIL_REJECTED": { "message": "Ihr E-Mail-Server hat diese E-Mail abgelehnt.", "hint": "Prüfen Sie die Adresse des Empfängers. Wenn die Anhänge groß sind, lassen Sie einen weg und versuchen Sie es erneut." },
     "UNKNOWN": { "message": "Etwas ist schiefgelaufen.", "hint": "Bitte versuchen Sie es erneut. Wenn es weiterhin auftritt, starten Sie die App neu." },
+    "BACKUP_INVALID": { "message": "Diese Datei ist keine BewerbungsPilot-Sicherung oder sie ist beschädigt.", "hint": "Es wurde nichts geändert. Wählen Sie eine andere Sicherungsdatei." },
+    "BACKUP_NEWER": { "message": "Diese Sicherung wurde mit einer neueren Version von BewerbungsPilot erstellt.", "hint": "Aktualisieren Sie zuerst das Programm und stellen Sie dann diese Sicherung wieder her." },
+    "BACKUP_FAILED": { "message": "Die Sicherung konnte nicht gespeichert oder wiederhergestellt werden.", "hint": "Ihre Daten wurden nicht geändert. Prüfen Sie, ob die Festplatte voll ist und ob eine Datei aus dem Datenordner des Programms geöffnet ist, und versuchen Sie es erneut." },
     "reasons": {
       "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",
       "cvNoContent": "{{ai}} hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",
@@ -469,7 +495,11 @@
       "followUpDone": "Für diese Bewerbung wurde bereits eine Erinnerung gesendet oder ausgeschaltet.",
       "googleNotSignedIn": "Die Anmeldung bei Google ist noch nicht abgeschlossen. Bitte melden Sie sich zuerst bei Google an.",
       "pageUnreadable": "Diese Seite konnte nicht gelesen werden. Fügen Sie den Text des Angebots in das Textfeld ein.",
-      "restoreRunning": "Gerade wird eine Sicherung wiederhergestellt. Bitte warten Sie, bis sie fertig ist, und versuchen Sie es dann erneut."
+      "restoreRunning": "Gerade wird eine Sicherung wiederhergestellt. Bitte warten Sie, bis sie fertig ist, und versuchen Sie es dann erneut.",
+      "restoreBusySearch": "Gerade läuft eine Stellensuche. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
+      "restoreBusyPackage": "Gerade wird eine Bewerbungsmappe erstellt. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
+      "restoreBusyAi": "{{ai}} arbeitet noch. Bitte warten Sie, bis es fertig ist, und stellen Sie dann die Sicherung wieder her.",
+      "restoreBusySend": "Gerade wird eine E-Mail gesendet. Bitte warten Sie einen Moment und stellen Sie dann die Sicherung wieder her."
     }
   },
   "vacancies": {

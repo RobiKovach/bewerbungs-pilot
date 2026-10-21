@@ -8,6 +8,8 @@ import type { Settings, SettingsPatch } from './types';
 interface SettingsCtx {
   settings: Settings;
   update: (patch: SettingsPatch) => Promise<void>;
+  /** Reads the settings from the server again (after a backup was restored), without the loading screen. */
+  reload: () => Promise<void>;
 }
 
 const Ctx = createContext<SettingsCtx | null>(null);
@@ -43,9 +45,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings(await api.patchSettings(patch));
   }, [setSettings]);
 
+  const reload = useCallback(async () => {
+    const s = await api.getSettings();
+    await i18n.changeLanguage(s.language ?? 'en');
+    setSettings(s);
+  }, [setSettings]);
+
   if (error) return <div className="boot"><ErrorBanner error={error} onRetry={() => void load()} /></div>;
   if (!settings) return <div className="boot">{i18n.t('common.loading')}</div>;
-  return <Ctx.Provider value={{ settings, update }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ settings, update, reload }}>{children}</Ctx.Provider>;
 }
 
 /** For components that may also render outside the provider (e.g. ErrorBanner in isolated tests). */

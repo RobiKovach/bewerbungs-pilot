@@ -148,6 +148,29 @@
     "claudeTest": "Test the connection",
     "claudeRunning": "Waiting for {{ai}}…",
     "claudeResult": "{{ai}} says: \"{{greeting}}\"",
+    "backupsTitle": "Backups",
+    "backups": {
+      "intro": "A backup holds your profile, job offers and applications with all files. Your email password or Google key is never included.",
+      "folder": "Folder:",
+      "save": "Save backup",
+      "saving": "Saving…",
+      "saved": "Saved: {{name}}",
+      "openFolder": "Open folder",
+      "chooseFile": "Choose file…",
+      "empty": "No backups yet.",
+      "version": "Version {{version}}",
+      "size": "{{size}} MB",
+      "kindManual": "manual",
+      "kindInstaller": "before update",
+      "kindBeforeRestore": "before restore",
+      "newer": "Made by a newer version of BewerbungsPilot. Update the app first, then restore this backup.",
+      "restore": "Restore",
+      "restoring": "Restoring…",
+      "confirmTitle": "Restore this backup?",
+      "confirmText": "Current data will be replaced. Before that the app saves them as a separate backup.",
+      "restored": "Backup restored. Your data from before was saved as {{name}}.",
+      "mailAgain": "Please connect your email again under \"Email for sending\": a backup never contains the password or the Google key."
+    },
     "introTitle": "Welcome steps",
     "introRestart": "Show the welcome steps again",
     "quitTitle": "Quit the app",
@@ -443,6 +466,9 @@
     "MAIL_SCOPE": { "message": "You did not allow BewerbungsPilot to send emails.", "hint": "Click \"Try again\", sign in with Google and tick \"Send email on your behalf\"." },
     "MAIL_REJECTED": { "message": "Your email server refused this email.", "hint": "Check the recipient's address. If the attachments are large, leave one out and try again." },
     "UNKNOWN": { "message": "Something went wrong.", "hint": "Please try again. If it keeps happening, restart the app." },
+    "BACKUP_INVALID": { "message": "This file is not a BewerbungsPilot backup, or it is damaged.", "hint": "Nothing was changed. Choose another backup file." },
+    "BACKUP_NEWER": { "message": "This backup was made by a newer version of BewerbungsPilot.", "hint": "Update the app first, then restore this backup." },
+    "BACKUP_FAILED": { "message": "The backup could not be saved or restored.", "hint": "Your data was not changed. Check that the disk is not full and that no file from the app's data folder is open, then try again." },
     "reasons": {
       "cvTooLittleText": "The file contains almost no text ({{chars}} characters). It is probably empty, or the text is inside a picture.",
       "cvNoContent": "{{ai}} read the file but found nothing that looks like a CV.",
@@ -469,7 +495,11 @@
       "followUpDone": "A reminder for this application was already sent or switched off.",
       "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first.",
       "pageUnreadable": "Could not read this page. Paste the text of the offer into the text field.",
-      "restoreRunning": "A backup is being restored right now. Please wait until it is finished, then try again."
+      "restoreRunning": "A backup is being restored right now. Please wait until it is finished, then try again.",
+      "restoreBusySearch": "A job search is running. Please wait until it is finished, then restore the backup.",
+      "restoreBusyPackage": "An application package is being prepared. Please wait until it is finished, then restore the backup.",
+      "restoreBusyAi": "{{ai}} is still working. Please wait until it is finished, then restore the backup.",
+      "restoreBusySend": "An email is being sent. Please wait a moment, then restore the backup."
     }
   },
   "vacancies": {
