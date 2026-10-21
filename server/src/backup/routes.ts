@@ -10,7 +10,7 @@ import { AppError, type ErrorReason } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import type { GoogleAuth } from '../mail/google-auth.js';
-import { forgetMailbox } from '../mail/revoke.js';
+import { revokeToken } from '../mail/revoke.js';
 import type { SecretStore } from '../mail/secret.js';
 import { mapUploadError } from '../profile/upload.js';
 import type { Activity } from '../runtime/activity.js';
@@ -58,16 +58,17 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
 
   const restore = async (file: string) => {
     // One restore at a time; the UI disables the buttons, this keeps two quick requests apart.
-    if (d.activity.active().includes('restore')) throw new AppError('CONFLICT', 'a restore is already running');
+    d.activity.refuseDuringRestore();
     const end = d.activity.begin('restore');
     try {
-      const before = d.settings.get().mail;
       const result = await restoreBackup(file, {
         paths: d.paths, appVersion: d.version, backupDir: await d.dir(), busy, reload: d.reload,
+        warn: (event, data) => d.logger.warn(event, data),
         mail: {
-          before,
-          after: () => d.settings.get().mail,
-          forget: () => forgetMailbox(d, before, 'restore'),
+          before: d.settings.get().mail,
+          loadKey: () => d.secrets.load(),
+          removeKey: () => d.secrets.removeSync(),
+          revoke: (key) => revokeToken(d, key, 'restore'),
         },
       });
       d.logger.info('backup_restored', { appVersion: result.restored.appVersion, kind: result.restored.kind });

@@ -3,6 +3,7 @@ import type { Language, MailSecurity, MailSettings, MailSettingsView } from '@bp
 import { SUPPORTED_LANGUAGES, type SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
+import type { Activity } from '../runtime/activity.js';
 import { testMail } from './compose.js';
 import type { GoogleAuth } from './google-auth.js';
 import { callbackPage } from './google-page.js';
@@ -13,7 +14,7 @@ import { revokeGoogleKey } from './revoke.js';
 import type { SecretStore } from './secret.js';
 
 export interface MailRouteDeps { settings: SettingsStore; mailer: Mailer; secrets: SecretStore; logger: Logger;
-  googleAuth: GoogleAuth; origin: () => string; revokeTimeoutMs?: number }
+  googleAuth: GoogleAuth; origin: () => string; activity: Activity; revokeTimeoutMs?: number }
 
 /** One line of text: at least one character, no CR/LF anywhere (header injection). */
 const line = (maxLength: number) => ({ type: 'string', minLength: 1, maxLength, pattern: '^[^\r\n]+$' });
@@ -62,6 +63,7 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
   app.get('/api/mail/providers', async () => MAIL_PROVIDERS);
 
   app.put('/api/mail/settings', { schema: { body: putSchema } }, async (req) => {
+    deps.activity.refuseDuringRestore();
     const b = req.body as PutBody;
     if (!/^[^@\s]+@[^@\s]+$/.test(b.address)) throw new AppError('BAD_REQUEST', 'address is not an email address');
     // A saved secret is reusable only when it is an SMTP password: a Google refresh token must never go to an SMTP server.
@@ -92,6 +94,7 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
   const revokeSavedGoogleKey = (reason: 'switch') => revokeGoogleKey(deps, deps.settings.get().mail, reason);
 
   app.delete('/api/mail/settings', async () => {
+    deps.activity.refuseDuringRestore();
     await revokeGoogleKey(deps, deps.settings.get().mail, 'disconnect');
     deps.settings.setMail(null);
     await deps.secrets.remove();
@@ -118,6 +121,7 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
   });
 
   app.post('/api/mail/google/save', { schema: { body: saveSchema } }, async (req) => {
+    deps.activity.refuseDuringRestore();
     const b = req.body as { senderName: string; language: Language };
     const tokens = signIn.tokens();
     if (!tokens) throw new AppError('CONFLICT', 'google sign-in is not finished', 'googleNotSignedIn');

@@ -5,6 +5,7 @@ import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
+import type { Activity } from '../runtime/activity.js';
 import { findDuplicate } from './dedup.js';
 import { VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
@@ -16,7 +17,7 @@ import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, ty
 import { scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
-  store: VacancyStore; source: VacancySource; pageReader: PageReader; queue: LlmQueue; job: SearchJob; logger: Logger;
+  store: VacancyStore; source: VacancySource; pageReader: PageReader; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
   profile: () => Profile; language: () => Language;
 }
 
@@ -74,6 +75,7 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
   app.get('/api/vacancies/search', async () => d.job.state());
 
   app.post('/api/vacancies/search', async (_req, reply) => {
+    d.activity.refuseDuringRestore();
     d.job.start();
     return reply.code(202).send(d.job.state());
   });

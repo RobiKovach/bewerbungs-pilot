@@ -6,13 +6,16 @@ export interface SecretStore {
   save(secret: string): Promise<void>;
   load(): Promise<string | null>;
   remove(): Promise<void>;
+  /** Same as remove, synchronous: a restore deletes the key in the same step as it swaps the settings. */
+  removeSync(): void;
 }
 
 export class MemorySecretStore implements SecretStore {
   private value: string | null = null;
   async save(secret: string): Promise<void> { this.value = secret; }
   async load(): Promise<string | null> { return this.value; }
-  async remove(): Promise<void> { this.value = null; }
+  async remove(): Promise<void> { this.removeSync(); }
+  removeSync(): void { this.value = null; }
 }
 
 const ENCRYPT = "$s=(New-Object IO.StreamReader([Console]::OpenStandardInput(),[Text.Encoding]::UTF8)).ReadToEnd(); Add-Type -AssemblyName System.Security; $b=[Text.Encoding]::UTF8.GetBytes($s); [Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b,$null,'CurrentUser'))";
@@ -74,6 +77,10 @@ export class DpapiSecretStore implements SecretStore {
   }
 
   async remove(): Promise<void> {
+    this.removeSync();
+  }
+
+  removeSync(): void {
     fs.rmSync(this.file, { force: true });
   }
 }

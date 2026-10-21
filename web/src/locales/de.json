@@ -468,7 +468,8 @@
       "draftExists": "Für dieses Angebot gibt es schon ein Paket, das noch nicht gesendet wurde. Bitte öffnen Sie dieses — pro Angebot kann nur ein Paket bearbeitet werden.",
       "followUpDone": "Für diese Bewerbung wurde bereits eine Erinnerung gesendet oder ausgeschaltet.",
       "googleNotSignedIn": "Die Anmeldung bei Google ist noch nicht abgeschlossen. Bitte melden Sie sich zuerst bei Google an.",
-      "pageUnreadable": "Diese Seite konnte nicht gelesen werden. Fügen Sie den Text des Angebots in das Textfeld ein."
+      "pageUnreadable": "Diese Seite konnte nicht gelesen werden. Fügen Sie den Text des Angebots in das Textfeld ein.",
+      "restoreRunning": "Gerade wird eine Sicherung wiederhergestellt. Bitte warten Sie, bis sie fertig ist, und versuchen Sie es dann erneut."
     }
   },
   "vacancies": {

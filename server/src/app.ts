@@ -243,7 +243,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerVacancyRoutes(app, {
-    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, queue: deps.queue, job: deps.searchJob, logger: deps.logger,
+    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
     profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
   });
 
@@ -255,7 +255,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger,
-    googleAuth: deps.googleAuth, origin: deps.origin, revokeTimeoutMs: deps.revokeTimeoutMs });
+    googleAuth: deps.googleAuth, origin: deps.origin, activity: deps.activity, revokeTimeoutMs: deps.revokeTimeoutMs });
 
   // After the profile routes: restore-upload uses the multipart parser they register.
   await registerBackupRoutes(app, {

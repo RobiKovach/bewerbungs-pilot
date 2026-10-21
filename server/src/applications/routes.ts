@@ -124,6 +124,10 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const end = d.activity.begin('send');
     return () => { sending.delete(id); end(); };
   };
+  const startJob = (req: Parameters<ApplicationJob['start']>[0]) => {
+    d.activity.refuseDuringRestore();
+    return d.job.start(req);
+  };
   const notBusy = (id: string) => {
     if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageSending');
     if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
@@ -161,7 +165,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   app.post('/api/applications', { schema: { body: createBody } }, async (req, reply) => {
     const { vacancyId, language } = req.body as { vacancyId: string; language: DocLanguage };
-    return reply.code(202).send(d.job.start({ kind: 'create', vacancyId, language }));
+    return reply.code(202).send(startJob({ kind: 'create', vacancyId, language }));
   });
 
   app.get('/api/applications/:id', { schema: { params: idParams } }, async (req) => view((req.params as { id: string }).id));
@@ -229,21 +233,21 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { id } = req.params as { id: string };
     const { instruction } = req.body as { instruction: string };
     notBusy(id);
-    return reply.code(202).send(d.job.start({ kind: 'revise', applicationId: id, instruction: instruction.trim() }));
+    return reply.code(202).send(startJob({ kind: 'revise', applicationId: id, instruction: instruction.trim() }));
   });
 
   app.post('/api/applications/:id/refresh-cv', { schema: { params: idParams, body: refreshBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const { keepProfil, keepHeadline } = req.body as { keepProfil: boolean; keepHeadline?: boolean };
     notBusy(id);
-    return reply.code(202).send(d.job.start({ kind: 'refreshCv', applicationId: id, keepProfil, keepHeadline: keepHeadline ?? false }));
+    return reply.code(202).send(startJob({ kind: 'refreshCv', applicationId: id, keepProfil, keepHeadline: keepHeadline ?? false }));
   });
 
   app.post('/api/applications/:id/recreate', { schema: { params: idParams, body: languageBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const { language } = req.body as { language: DocLanguage };
     notBusy(id);
-    return reply.code(202).send(d.job.start({ kind: 'recreate', applicationId: id, language }));
+    return reply.code(202).send(startJob({ kind: 'recreate', applicationId: id, language }));
   });
 
   app.post('/api/applications/:id/approve', { schema: { params: idParams } }, async (req) => {
@@ -443,6 +447,8 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { id } = req.params as { id: string };
     const { to, subject, body } = req.body as { to: string; subject: string; body: string };
     // Every check and the lock come before the first await: two quick requests can never both pass.
+    // During a restore the mailbox settings and the saved key may belong to different mailboxes for a moment.
+    d.activity.refuseDuringRestore();
     notBusy(id);
     if (d.sentUnsaved.has(id)) throw new AppError('CONFLICT', 'this package was already sent (not saved)', 'sentNotSaved');
     const start = d.store.require(id);
@@ -500,6 +506,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
 
   /** A reminder or a reply: no attachments, same lock / "sent but not saved" rules as the application email. */
   const sendExtra = async (id: string, kind: 'followUp' | 'reply', allowed: (p: ApplicationPackage) => boolean, mail: { to: string; subject: string; body: string }) => {
+    d.activity.refuseDuringRestore();
     notBusy(id);
     const key = `${id}:${kind}`;
     if (d.sentUnsaved.has(key)) throw new AppError('CONFLICT', 'this email was already sent (not saved)', 'sentNotSaved');

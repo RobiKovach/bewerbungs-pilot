@@ -468,7 +468,8 @@
       "draftExists": "This job offer already has a package that was not sent yet. Please open that one — only one package per job offer can be edited.",
       "followUpDone": "A reminder for this application was already sent or switched off.",
       "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first.",
-      "pageUnreadable": "Could not read this page. Paste the text of the offer into the text field."
+      "pageUnreadable": "Could not read this page. Paste the text of the offer into the text field.",
+      "restoreRunning": "A backup is being restored right now. Please wait until it is finished, then try again."
     }
   },
   "vacancies": {

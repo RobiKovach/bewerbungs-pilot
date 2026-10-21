@@ -468,7 +468,8 @@
       "draftExists": "Dla tej oferty istnieje już pakiet, który nie został jeszcze wysłany. Otwórz go — dla jednej oferty można edytować tylko jeden pakiet.",
       "followUpDone": "Przypomnienie dla tej aplikacji zostało już wysłane lub wyłączone.",
       "googleNotSignedIn": "Logowanie przez Google nie zostało jeszcze zakończone. Zaloguj się najpierw przez Google.",
-      "pageUnreadable": "Nie udało się odczytać tej strony. Wklej tekst oferty w pole tekstowe."
+      "pageUnreadable": "Nie udało się odczytać tej strony. Wklej tekst oferty w pole tekstowe.",
+      "restoreRunning": "Właśnie przywracana jest kopia zapasowa. Poczekaj, aż się zakończy, i spróbuj ponownie."
     }
   },
   "vacancies": {

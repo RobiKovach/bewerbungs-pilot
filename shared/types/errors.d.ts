@@ -79,4 +79,6 @@ export type ErrorReason =
   | 'restoreBusySearch'
   | 'restoreBusyPackage'
   | 'restoreBusyAi'
-  | 'restoreBusySend';
+  | 'restoreBusySend'
+  // …and while it runs, nothing else may start (sending, search, package jobs, mailbox changes).
+  | 'restoreRunning';

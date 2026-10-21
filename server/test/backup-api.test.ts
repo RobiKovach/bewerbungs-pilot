@@ -167,6 +167,81 @@ describe('backup API', () => {
     expect(ctx.googleAuth.revoked).toEqual(['google-key']);
   });
 
+  it('while a restore runs, sending, search, package jobs and mailbox changes are refused', async () => {
+    const ctx = await makeApp();
+    const id = pkg().id;
+    const vacancyId = vacancy().id;
+    const made = await save(ctx);
+    const mail = { to: 'hr@firma.de', subject: 'Bewerbung', body: 'Hallo' };
+    const end = ctx.activity.begin('restore');
+    const calls: [string, string, unknown?][] = [
+      ['POST', `/api/applications/${id}/send`, mail],
+      ['POST', `/api/applications/${id}/follow-up/send`, mail],
+      ['POST', `/api/applications/${id}/reply/send`, mail],
+      ['POST', '/api/vacancies/search'],
+      ['POST', '/api/applications', { vacancyId, language: 'de' }],
+      ['POST', `/api/applications/${id}/revise`, { instruction: 'kürzer' }],
+      ['POST', `/api/applications/${id}/refresh-cv`, { keepProfil: true }],
+      ['POST', `/api/applications/${id}/recreate`, { language: 'de' }],
+      ['PUT', '/api/mail/settings', { address: 'b@y.de', senderName: 'Max', host: 'smtp.y.de', port: 465, security: 'ssl', user: 'b@y.de', password: 'pw', language: 'de' }],
+      ['DELETE', '/api/mail/settings'],
+      ['POST', '/api/mail/google/save', { senderName: 'Max', language: 'de' }],
+      ['POST', '/api/backups/restore', { name: made.name }],
+    ];
+    for (const [method, url, payload] of calls) {
+      const res = await ctx.app.inject({ method: method as 'POST', url, headers: H, ...(payload ? { payload: payload as object } : {}) });
+      expect([url, res.statusCode, res.json().error?.reason]).toEqual([url, 409, 'restoreRunning']);
+    }
+    expect(ctx.mailer.sent).toEqual([]);
+    end();
+    // Afterwards the guard is gone (the search may still refuse for its own reasons, e.g. an empty profile).
+    expect((await ctx.app.inject({ method: 'POST', url: '/api/vacancies/search', headers: H })).json().error?.reason).not.toBe('restoreRunning');
+  });
+
+  it('a different mailbox: the saved key is gone when the restore answers, the revoke runs in the background', async () => {
+    const ctx = await makeApp();
+    ctx.settings.setMail(SMTP_B);
+    const smtpBackup = await save(ctx);
+    ctx.settings.setMail(GOOGLE_A);
+    await ctx.secrets.save('google-key');
+    const revoke = vi.spyOn(ctx.googleAuth, 'revoke').mockReturnValue(new Promise(() => {}));
+    const res = await restore(ctx, smtpBackup.name);
+    expect(res.statusCode).toBe(200);
+    expect(ctx.settings.get().mail).toEqual(SMTP_B);
+    expect(await ctx.secrets.load()).toBeNull();
+    expect(revoke).toHaveBeenCalledWith('google-key');
+  });
+
+  it('a rename failing in the middle of the swap puts everything back', async () => {
+    const ctx = await makeApp();
+    await setName(ctx, 'Max Mustermann');
+    ctx.settings.setMail(SMTP_B);
+    const made = await save(ctx);
+    await setName(ctx, 'Erika Musterfrau');
+    ctx.settings.setMail(GOOGLE_A);
+    await ctx.secrets.save('google-key');
+    ctx.vacancyStore.add(vacancy({ id: 'v2' }), 'Text zwei');
+    const before = snapshot(ctx.dir);
+    // settings.json is swapped first; moving the current profile folder away then fails (a CV PDF open in a viewer).
+    const realRename = fs.renameSync;
+    const rename = vi.spyOn(fs, 'renameSync').mockImplementation((from, to) => {
+      if (path.resolve(String(from)) === path.join(ctx.dir, 'profile')) throw Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' });
+      realRename(from, to);
+    });
+    try {
+      const res = await restore(ctx, made.name);
+      expect([res.statusCode, res.json().error.code]).toEqual([500, 'BACKUP_FAILED']);
+    } finally {
+      rename.mockRestore();
+    }
+    expect(snapshot(ctx.dir)).toEqual(before);
+    expect(stagingLeft(ctx.dir)).toEqual([]);
+    expect(await ctx.secrets.load()).toBe('google-key');
+    expect(ctx.googleAuth.revoked).toEqual([]);
+    expect((await list(ctx)).backups.map((b) => b.kind).sort()).toEqual(['before-restore', 'manual']);
+    expect(ctx.profileStore.get().sections.personal.data.fullName).toBe('Erika Musterfrau');
+  });
+
   it('restores an uploaded .zip and refuses other files', async () => {
     const ctx = await makeApp();
     await setName(ctx, 'Max Mustermann');

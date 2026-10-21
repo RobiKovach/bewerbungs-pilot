@@ -468,7 +468,8 @@
       "draftExists": "Pentru această ofertă există deja un pachet care nu a fost încă trimis. Deschideți-l pe acela — pentru o ofertă se poate edita un singur pachet.",
       "followUpDone": "Pentru această candidatură a fost deja trimisă o reamintire sau aceasta a fost dezactivată.",
       "googleNotSignedIn": "Autentificarea cu Google nu este încă finalizată. Vă rugăm să vă autentificați mai întâi cu Google.",
-      "pageUnreadable": "Această pagină nu a putut fi citită. Lipiți textul anunțului în câmpul de text."
+      "pageUnreadable": "Această pagină nu a putut fi citită. Lipiți textul anunțului în câmpul de text.",
+      "restoreRunning": "Chiar acum se restaurează o copie de rezervă. Vă rugăm să așteptați până se termină, apoi încercați din nou."
     }
   },
   "vacancies": {
