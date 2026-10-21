@@ -86,10 +86,18 @@ function Install-PortableNode {
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
   }
   # The user's own Path (no administrator rights): new windows find node, npm and the AI helpers installed with it.
-  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-  if (-not (($userPath -split ';') -contains $NodeHome)) {
-    [Environment]::SetEnvironmentVariable('Path', ((@($userPath, $NodeHome) | Where-Object { $_ }) -join ';'), 'User')
-  }
+  # Read and written raw in the registry: [Environment]::SetEnvironmentVariable would expand entries like
+  # %USERPROFILE%\... into fixed paths and change the value type for good.
+  $envKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $true)
+  try {
+    $userPath = [string]$envKey.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+    if (-not (($userPath -split ';') -contains $NodeHome)) {
+      $envKey.SetValue('Path', ((@($userPath.TrimEnd(';'), $NodeHome) | Where-Object { $_ }) -join ';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
+      # Tell Windows the environment changed (a set-and-remove does the broadcast), so new windows see the new Path.
+      [Environment]::SetEnvironmentVariable('BP_PATH_REFRESH', '1', 'User')
+      [Environment]::SetEnvironmentVariable('BP_PATH_REFRESH', $null, 'User')
+    }
+  } finally { $envKey.Close() }
 }
 Say 'checkingNode'
 $NodeExe = Find-Node
