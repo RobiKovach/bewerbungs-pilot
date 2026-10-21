@@ -5,3 +5,4 @@ export type * from './errors.js';
 export type * from './profile.js';
 export type * from './vacancy.js';
 export type * from './application.js';
+export type * from './backup.js';

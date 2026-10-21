@@ -52,6 +52,8 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'MAIL_REAUTH':
     case 'MAIL_SCOPE': return 409;
     case 'MAIL_CONNECT': return 503;
+    case 'BACKUP_INVALID': return 422;
+    case 'BACKUP_NEWER': return 409;
     default: return 500;
   }
 }

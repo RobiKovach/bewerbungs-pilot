@@ -33,6 +33,12 @@ export type ErrorCode =
   | 'MAIL_REAUTH'
   | 'MAIL_SCOPE'
   | 'MAIL_REJECTED'
+  /** A backup zip that is damaged, foreign or unsafe (paths outside the data folders, too big). */
+  | 'BACKUP_INVALID'
+  /** A backup made by a newer version of the app. */
+  | 'BACKUP_NEWER'
+  /** A backup could not be written (disk full, no access to the folder). */
+  | 'BACKUP_FAILED'
   | 'CONFLICT'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
