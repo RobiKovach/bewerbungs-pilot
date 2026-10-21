@@ -4,12 +4,22 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Only versions that have been out for two weeks: a hijacked release is usually caught in the first days.
+    cooldown:
+      default-days: 14
     groups:
       minor-and-patch:
         update-types:
           - minor
           - patch
+    ignore:
+      # TypeScript 7 changes the compiler; moving to it is a planned step, not a weekly bump.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
