@@ -13,11 +13,12 @@ offers you choose, sends it from your own email, keeps track of the status of ev
 
 - Windows 10 or 11
 - Node.js 22.12+ and one AI helper: Claude (paid subscription) or ChatGPT (free or paid ChatGPT account) — you choose and connect it inside the app
-  (the installer sets up Node.js for you)
+  (the installer sets up Node.js for you — no administrator rights needed)
 
 ## Install
 
-1. Download `BewerbungsPilot-vX.Y.Z.zip` from the Releases page and unzip it.
+1. Download `BewerbungsPilot-vX.Y.Z.zip` under **Assets** on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases/latest)
+   and unzip it. Not the green **Code** button and not "Source code": that is the source code, not the app.
 2. Double-click `install.bat` and answer the questions.
 3. Start the app any time with the **BewerbungsPilot** shortcut on your desktop.
 
@@ -121,6 +122,14 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## What's new in 0.8.5
+
+- **No administrator rights needed.** Without a suitable Node.js the installer now downloads the official Node.js zip
+  from nodejs.org, checks its checksum and puts it into your own user folder
+  (`%LOCALAPPDATA%\Programs\BewerbungsPilot-Node`). Work and school PCs without admin rights work now.
+- **Clear message for the source code.** Running `install.bat` from the source code (the green **Code** button)
+  now says to download the app from Releases instead of showing a PowerShell error.
 
 ## What's new in 0.8.4
 
