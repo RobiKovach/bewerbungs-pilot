@@ -122,6 +122,11 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
 
+## What's new in 0.8.4
+
+- **Fix:** the desktop shortcut opens the app in your browser again (in 0.8.3 the app started but no browser
+  window appeared on Windows).
+
 ## What's new in 0.8.3
 
 - **Launch key.** The app opens only through its shortcut; other programs and other Windows users on this PC can no
