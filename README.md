@@ -23,7 +23,8 @@ offers you choose, sends it from your own email, keeps track of the status of ev
 3. Start the app any time with the **BewerbungsPilot** shortcut on your desktop.
 
 Your data stays on your PC in `%LOCALAPPDATA%\BewerbungsPilot`. Updating = run the new
-installer; your data is kept.
+installer; your data is kept. Before an update the installer saves a backup of your data to
+`Documents\BewerbungsPilot\Backups` and keeps the three newest of its own backups (your manual backups are never deleted).
 
 ## AI helper
 
