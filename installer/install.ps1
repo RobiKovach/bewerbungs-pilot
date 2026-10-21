@@ -26,29 +26,82 @@ function Fail([string]$Detail) {
   Write-Host $Detail -ForegroundColor Red
   exit 1
 }
-function Refresh-Path {
-  $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
-}
 
 Say 'title'
 
-# 1. Node.js >= 22.12 (Google sign-in, PDF making and PDF reading need it)
-function Test-NodeVersion {
-  if (-not (Get-Command node -ErrorAction SilentlyContinue)) { return $false }
-  $v = (& node -p "process.versions.node").Split('.')
+# The source code from GitHub ("Code" > "Download ZIP") has no built app in it.
+if (-not (Test-Path (Join-Path $ReleaseRoot 'server\dist\index.js'))) { Say 'sourceCode'; exit 1 }
+
+# 1. Node.js >= 22.12 (Google sign-in, PDF making and PDF reading need it).
+# Without a suitable one we put the official zip into the user's own folder: no administrator rights needed
+# (work and school PCs often have none), the same Node.js the .msi would install.
+$NodeHome = Join-Path $env:LOCALAPPDATA 'Programs\BewerbungsPilot-Node'
+function Test-MinVersion([string]$Version) {
+  $v = $Version.Trim().TrimStart('v').Split('.')
   return ([int]$v[0] -gt 22) -or (([int]$v[0] -eq 22) -and ([int]$v[1] -ge 12))
 }
-Say 'checkingNode'
-if (-not (Test-NodeVersion)) {
-  if (-not (Get-Command winget -ErrorAction SilentlyContinue)) { Say 'wingetMissing'; exit 1 }
-  if (-not (Ask 'nodeMissing')) { Say 'aborted'; exit 1 }
-  winget install --id OpenJS.NodeJS.LTS -e --accept-source-agreements --accept-package-agreements
-  if ($LASTEXITCODE -ne 0) { Fail "winget exit code $LASTEXITCODE" }
-  Refresh-Path
-  if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail 'node not found after installation' }
-  if (-not (Test-NodeVersion)) { Fail "node $(& node -v) is still older than 22.12 after installation" }
+function Find-Node {
+  $candidates = @()
+  $onPath = Get-Command node -ErrorAction SilentlyContinue
+  if ($onPath) { $candidates += $onPath.Source }
+  $candidates += (Join-Path $NodeHome 'node.exe')
+  foreach ($exe in $candidates) {
+    if (-not (Test-Path $exe)) { continue }
+    try { if (Test-MinVersion (& $exe -p "process.versions.node")) { return $exe } } catch { }
+  }
+  return $null
 }
-$NodeExe = (Get-Command node).Source
+function Install-PortableNode {
+  $ProgressPreference = 'SilentlyContinue'   # the progress bar makes downloads many times slower in PowerShell 5.1
+  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+  $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x64' }
+  $dist = 'https://nodejs.org/dist'
+  # The newest LTS that has been out for 14 days: a broken or hijacked release is usually caught in the first days.
+  $cutoff = (Get-Date).AddDays(-14)
+  # Into a variable first: PowerShell 5.1 passes a JSON array down a pipe as one object.
+  $index = Invoke-RestMethod "$dist/index.json" -UseBasicParsing
+  $release = $index |
+    Where-Object { $_.lts -and ($_.files -contains "win-$arch-zip") -and ([datetime]$_.date -le $cutoff) -and (Test-MinVersion $_.version) } |
+    Select-Object -First 1
+  if (-not $release) { throw 'no suitable Node.js LTS release in index.json' }
+  $name = "node-$($release.version)-win-$arch"
+  # Same drive as $NodeHome, so the folder can be moved in one step; a short name, because npm inside the zip
+  # has deep paths and Windows PowerShell stops at 260 characters.
+  $tmp = Join-Path $env:LOCALAPPDATA ('Programs\bpn-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
+  New-Item -ItemType Directory -Force $tmp | Out-Null
+  try {
+    $zip = Join-Path $tmp "$name.zip"
+    Invoke-WebRequest "$dist/$($release.version)/$name.zip" -OutFile $zip -UseBasicParsing
+    $sums = (Invoke-WebRequest "$dist/$($release.version)/SHASUMS256.txt" -UseBasicParsing).Content
+    if ($sums -is [byte[]]) { $sums = [Text.Encoding]::ASCII.GetString($sums) }
+    $match = [regex]::Match($sums, '(?m)^([0-9a-f]{64})\s+' + [regex]::Escape("$name.zip") + '\s*$')
+    if (-not $match.Success) { throw "no checksum for $name.zip" }
+    $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $match.Groups[1].Value) { throw "checksum mismatch for $name.zip" }
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [IO.Compression.ZipFile]::ExtractToDirectory($zip, $tmp)
+    if (Test-Path $NodeHome) { Remove-Item $NodeHome -Recurse -Force }
+    Move-Item (Join-Path $tmp $name) $NodeHome
+  } finally {
+    Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
+  }
+  # The user's own Path (no administrator rights): new windows find node, npm and the AI helpers installed with it.
+  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  if (-not (($userPath -split ';') -contains $NodeHome)) {
+    [Environment]::SetEnvironmentVariable('Path', ((@($userPath, $NodeHome) | Where-Object { $_ }) -join ';'), 'User')
+  }
+}
+Say 'checkingNode'
+$NodeExe = Find-Node
+if (-not $NodeExe) {
+  if (-not (Ask 'nodeMissing')) { Say 'aborted'; exit 1 }
+  Say 'downloadingNode'
+  try { Install-PortableNode } catch { Say 'nodeInstallFailed'; Fail $_.Exception.Message }
+  $NodeExe = Find-Node
+  if (-not $NodeExe) { Say 'nodeInstallFailed'; Fail 'node not found after installation' }
+}
+# npm below must be the one that belongs to this node.
+$env:Path = (Split-Path -Parent $NodeExe) + ';' + $env:Path
 
 # 2. A browser for PDFs (Edge or Chrome). Only a warning: everything else works without it.
 Say 'checkingBrowser'
