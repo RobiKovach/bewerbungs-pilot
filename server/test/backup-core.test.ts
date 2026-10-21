@@ -154,20 +154,60 @@ describe('extractBackup', () => {
     expect(fs.existsSync(path.join(parent, 'evil'))).toBe(false);
     expect(fs.existsSync(staging)).toBe(false);
   });
+
+  it('a disk problem is BACKUP_FAILED, not a damaged backup', async () => {
+    const root = dataRoot();
+    const info = await createBackup(root, { dir: tempRoot(), kind: 'manual', appVersion: '0.9.0' });
+    const parent = tempRoot();
+    const notAFolder = path.join(parent, 'a file');
+    fs.writeFileSync(notAFolder, 'x');
+    expect(await codeOf(extractBackup(info.file, path.join(notAFolder, 'stage'), { appVersion: '0.9.0' }))).toBe('BACKUP_FAILED');
+    const existing = path.join(parent, 'stage');
+    fs.mkdirSync(existing);
+    expect(await codeOf(extractBackup(info.file, existing, { appVersion: '0.9.0' }))).toBe('BACKUP_FAILED');
+  });
+
+  it('a file that cannot be written inside staging is BACKUP_FAILED', async () => {
+    const root = dataRoot();
+    const info = await createBackup(root, { dir: tempRoot(), kind: 'manual', appVersion: '0.9.0' });
+    const staging = path.join(tempRoot(), 'stage');
+    // Occupy the path of the first data entry (applications/x/package.json) with a folder: the write fails on disk.
+    const realMkdir = fs.promises.mkdir;
+    let planted = false;
+    fs.promises.mkdir = (async (p: fs.PathLike, o?: fs.MakeDirectoryOptions) => {
+      const r = await realMkdir(p, o);
+      if (!planted && String(p).endsWith(path.join('applications', 'x'))) {
+        planted = true;
+        await realMkdir(path.join(String(p), 'package.json'));
+      }
+      return r;
+    }) as typeof fs.promises.mkdir;
+    try {
+      expect(await codeOf(extractBackup(info.file, staging, { appVersion: '0.9.0' }))).toBe('BACKUP_FAILED');
+      expect(planted).toBe(true);
+    } finally {
+      fs.promises.mkdir = realMkdir;
+    }
+  });
 });
 
 describe('listBackups', () => {
-  it('returns newest first and skips non-backups', async () => {
+  it('returns newest first, marks newer backups and skips non-backups', async () => {
     const root = dataRoot();
     const dir = tempRoot();
     await createBackup(root, { dir, kind: 'manual', appVersion: '0.9.0', now: new Date(2026, 9, 20, 9, 0) });
     await createBackup(root, { dir, kind: 'installer', appVersion: '0.9.0', now: new Date(2026, 9, 21, 9, 0) });
+    await createBackup(root, { dir, kind: 'manual', appVersion: '9.9.9', now: new Date(2026, 9, 22, 9, 0) });
     fs.writeFileSync(path.join(dir, 'notes.txt'), 'hello');
     fs.writeFileSync(path.join(dir, 'broken.zip'), 'not a zip');
     const skipped: string[] = [];
     const list = await listBackups(dir, { appVersion: '0.9.0', onSkip: (file) => skipped.push(path.basename(file)) });
-    expect(list.map((b) => b.kind)).toEqual(['installer', 'manual']);
+    expect(list.map((b) => [b.kind, b.appVersion, b.newer])).toEqual([
+      ['manual', '9.9.9', true], ['installer', '0.9.0', false], ['manual', '0.9.0', false],
+    ]);
     expect(skipped).toEqual(['broken.zip']);
+    // Listed, but still refused when restoring.
+    expect(await codeOf(extractBackup(list[0]!.file, path.join(tempRoot(), 'stage'), { appVersion: '0.9.0' }))).toBe('BACKUP_NEWER');
   });
 
   it('an absent folder is an empty list', async () => {

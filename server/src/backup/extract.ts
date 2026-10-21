@@ -16,13 +16,20 @@ type OnEntry = (entry: Entry, zip: ZipFile) => Promise<void>;
  * migrate old schemas when they load.
  */
 export async function inspectBackup(file: string, opts: { appVersion: string }): Promise<BackupInfo> {
-  const meta = await walk(file);
-  if (compareVersions(meta.appVersion, opts.appVersion) > 0) {
-    throw new AppError('BACKUP_NEWER', `backup ${meta.appVersion} > app ${opts.appVersion}`);
-  }
-  const { size } = await fs.promises.stat(file);
-  return { ...meta, file, name: path.basename(file), sizeBytes: size };
+  const info = await readInfo(file, opts.appVersion);
+  if (info.newer) throw new AppError('BACKUP_NEWER', `backup ${info.appVersion} > app ${opts.appVersion}`);
+  return info;
 }
+
+/** All checks of `inspectBackup` except the version: a newer backup comes back with `newer: true`. */
+async function readInfo(file: string, appVersion: string): Promise<BackupInfo> {
+  const meta = await walk(file);
+  const { size } = await fs.promises.stat(file);
+  return { ...meta, file, name: path.basename(file), sizeBytes: size, newer: compareVersions(meta.appVersion, appVersion) > 0 };
+}
+
+/** The disk, not the backup, is the problem (full, no access, locked, path too long). */
+const writeFailed = (err: unknown) => new AppError('BACKUP_FAILED', String(err));
 
 /**
  * Unpacks a backup into `stagingDir` (which must not exist yet). Inspects first, then checks every entry again while
@@ -32,21 +39,32 @@ export async function inspectBackup(file: string, opts: { appVersion: string }):
 export async function extractBackup(file: string, stagingDir: string, opts: { appVersion: string }): Promise<void> {
   await inspectBackup(file, opts);
   const root = path.resolve(stagingDir);
-  await fs.promises.mkdir(root);
+  await fs.promises.mkdir(root).catch((err: unknown) => { throw writeFailed(err); });
   await walk(file, async (entry, zip) => {
     const target = path.resolve(root, ...entry.fileName.split('/').filter(Boolean));
     if (!target.startsWith(root + path.sep)) throw new AppError('BACKUP_INVALID', `outside staging: ${entry.fileName}`);
-    if (entry.fileName.endsWith('/')) {
-      await fs.promises.mkdir(target, { recursive: true });
-      return;
-    }
-    await fs.promises.mkdir(path.dirname(target), { recursive: true });
+    const folder = entry.fileName.endsWith('/') ? target : path.dirname(target);
+    await fs.promises.mkdir(folder, { recursive: true }).catch((err: unknown) => { throw writeFailed(err); });
+    if (folder === target) return;
     // `wx`: never overwrite — a second entry for the same file is an error, not a replacement.
-    await pipeline(await zip.openReadStreamPromise(entry), fs.createWriteStream(target, { flags: 'wx' }));
+    const input = await zip.openReadStreamPromise(entry);
+    const output = fs.createWriteStream(target, { flags: 'wx' });
+    // pipeline() passes a reading error on to the output too, so the reading side must be asked first.
+    let inputFailed = false;
+    input.once('error', () => { inputFailed = true; });
+    try {
+      await pipeline(input, output);
+    } catch (err) {
+      // Reading side (bad data, an entry larger than its header says) = damaged backup; writing side = the disk.
+      throw inputFailed ? new AppError('BACKUP_INVALID', String(err)) : writeFailed(err);
+    }
   });
 }
 
-/** Backups in `dir`, newest first. Files that are not valid backups for this app version are skipped. */
+/**
+ * Backups in `dir`, newest first. Files that are not valid backups are skipped; backups from a newer app version are
+ * listed with `newer: true` (the person should see them, with "update the app first").
+ */
 export async function listBackups(
   dir: string,
   opts: { appVersion: string; onSkip?: (file: string, err: unknown) => void },
@@ -62,7 +80,7 @@ export async function listBackups(
   for (const name of names) {
     const file = path.join(dir, name);
     try {
-      out.push(await inspectBackup(file, opts));
+      out.push(await readInfo(file, opts.appVersion));
     } catch (err) {
       opts.onSkip?.(file, err);
     }

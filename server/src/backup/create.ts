@@ -30,7 +30,7 @@ export async function createBackup(
     await fs.promises.rename(partial, file);
     partial = null;
     const { size } = await fs.promises.stat(file);
-    return { ...meta, file, name: path.basename(file), sizeBytes: size };
+    return { ...meta, file, name: path.basename(file), sizeBytes: size, newer: false };
   } catch (err) {
     if (partial) await fs.promises.rm(partial, { force: true }).catch(() => {});
     if (err instanceof AppError) throw err;

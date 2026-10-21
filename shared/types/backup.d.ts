@@ -15,4 +15,6 @@ export interface BackupInfo extends BackupMeta {
   file: string;
   name: string;
   sizeBytes: number;
+  /** Made by a newer app version than the one running: listed, but restoring it is refused (BACKUP_NEWER). */
+  newer: boolean;
 }
