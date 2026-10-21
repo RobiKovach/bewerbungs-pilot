@@ -8,6 +8,7 @@ import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
 import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
+import { dataPaths } from '../../src/data/paths.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
 import { InstallJob } from '../../src/llm/install.js';
@@ -18,6 +19,7 @@ import { nullLogger, type Logger } from '../../src/log.js';
 import { MemorySecretStore } from '../../src/mail/secret.js';
 import { ProfileFiles } from '../../src/profile/files.js';
 import { ProfileStore } from '../../src/profile/store.js';
+import { Activity } from '../../src/runtime/activity.js';
 import { SearchJob } from '../../src/vacancies/search-job.js';
 import { VacancyStore } from '../../src/vacancies/store.js';
 import { FakePrinter } from './applications.js';
@@ -76,6 +78,10 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const secrets = new MemorySecretStore();
   const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
   sentUnsaved.load();
+  const activity = new Activity();
+  // Outside the data folder, like Documents: a backup never contains the backups.
+  const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp backups-'));
+  const openedFolders: string[] = [];
   // Never the real installers: the fake one only prints / fails / hangs.
   const fakeInstall = fileURLToPath(new URL('../fixtures/fake-install.mjs', import.meta.url));
   const fakeCmd = () => ({ file: process.execPath, args: [fakeInstall, opts.installMode ?? 'ok'] });
@@ -89,6 +95,15 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved,
     googleAuth, origin: () => 'http://localhost:80', revokeTimeoutMs: opts.revokeTimeoutMs,
     session: { key: TEST_KEY, cookieName: 'bp_key_80' },
+    activity,
+    backup: {
+      paths: dataPaths(dir), dir: async () => { fs.mkdirSync(backupDir, { recursive: true }); return backupDir; },
+      openFolder: (d) => { openedFolders.push(d); },
+      reload: () => {
+        settings.load(); profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();
+        searchJob.init(); applicationJob.init();
+      },
+    },
   });
   if (opts.autoKey !== false) {
     const inject = app.inject.bind(app) as (o: InjectOptions | string) => Promise<LightMyRequestResponse>;
@@ -99,5 +114,5 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
       return inject({ ...o, headers } as InjectOptions);
     }) as unknown as typeof app.inject;
   }
-  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved };
+  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved, activity, backupDir, openedFolders };
 }

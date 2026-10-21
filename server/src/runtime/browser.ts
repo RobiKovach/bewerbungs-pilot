@@ -14,3 +14,9 @@ export function openBrowser(url: string): void {
   const [cmd, args] = browserCommand(process.platform, url);
   spawn(cmd, args, { detached: true, stdio: 'ignore', windowsHide: true }).on('error', () => {}).unref();
 }
+
+/** Shows one of our own folders (the backup folder) in the file manager; a plain path, never user text. */
+export function openFolder(dir: string): void {
+  const cmd = process.platform === 'win32' ? 'explorer.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
+  spawn(cmd, [dir], { detached: true, stdio: 'ignore' }).on('error', () => {}).unref();
+}

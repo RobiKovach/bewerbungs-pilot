@@ -74,4 +74,9 @@ export type ErrorReason =
   | 'draftExists'
   | 'followUpDone'
   | 'googleNotSignedIn'
-  | 'pageUnreadable';
+  | 'pageUnreadable'
+  // A restore waits until nothing else works on the data (spec 0.9.0, section 3.1).
+  | 'restoreBusySearch'
+  | 'restoreBusyPackage'
+  | 'restoreBusyAi'
+  | 'restoreBusySend';

@@ -49,14 +49,15 @@ export async function extractBackup(file: string, stagingDir: string, opts: { ap
     // `wx`: never overwrite — a second entry for the same file is an error, not a replacement.
     const input = await zip.openReadStreamPromise(entry);
     const output = fs.createWriteStream(target, { flags: 'wx' });
-    // pipeline() passes a reading error on to the output too, so the reading side must be asked first.
-    let inputFailed = false;
-    input.once('error', () => { inputFailed = true; });
+    // pipeline() tears down both sides when either fails, so the side that failed first decides.
+    let first: 'input' | 'output' | null = null;
+    input.once('error', () => { first ??= 'input'; });
+    output.once('error', () => { first ??= 'output'; });
     try {
       await pipeline(input, output);
     } catch (err) {
       // Reading side (bad data, an entry larger than its header says) = damaged backup; writing side = the disk.
-      throw inputFailed ? new AppError('BACKUP_INVALID', String(err)) : writeFailed(err);
+      throw first === 'input' ? new AppError('BACKUP_INVALID', String(err)) : writeFailed(err);
     }
   });
 }

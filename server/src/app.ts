@@ -27,6 +27,9 @@ import type { PageReader } from './vacancies/sources/page-reader.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
 import type { VacancyStore } from './vacancies/store.js';
+import { registerBackupRoutes } from './backup/routes.js';
+import type { DataPaths } from './data/paths.js';
+import type { Activity } from './runtime/activity.js';
 
 export interface AppDeps {
   settings: SettingsStore;
@@ -61,6 +64,10 @@ export interface AppDeps {
   revokeTimeoutMs?: number;
   /** This launch's key (also in server.json) and the port-named cookie that carries it in the browser. */
   session: { key: string; cookieName: string };
+  /** Work in flight without its own job state (sends, a restore). */
+  activity: Activity;
+  /** Backups (spec 0.9.0): the data folder, the backup folder, re-reading every store after a restore, Explorer. */
+  backup: { paths: DataPaths; dir: () => Promise<string>; reload: () => void; openFolder: (dir: string) => void };
 }
 
 /**
@@ -244,10 +251,18 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     store: deps.applicationStore, job: deps.applicationJob, printer: deps.printer, vacancies: deps.vacancyStore,
     files: deps.profileFiles, profile: () => deps.profileStore.get(), logger: deps.logger,
     settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, sentUnsaved: deps.sentUnsaved, queue: deps.queue,
+    activity: deps.activity,
   });
 
   await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger,
     googleAuth: deps.googleAuth, origin: deps.origin, revokeTimeoutMs: deps.revokeTimeoutMs });
+
+  // After the profile routes: restore-upload uses the multipart parser they register.
+  await registerBackupRoutes(app, {
+    ...deps.backup, version: deps.version, searchJob: deps.searchJob, applicationJob: deps.applicationJob, queue: deps.queue,
+    activity: deps.activity, settings: deps.settings, secrets: deps.secrets, googleAuth: deps.googleAuth, logger: deps.logger,
+    revokeTimeoutMs: deps.revokeTimeoutMs,
+  });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });

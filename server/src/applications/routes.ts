@@ -13,6 +13,7 @@ import type { SecretStore } from '../mail/secret.js';
 import type { ProfileFiles } from '../profile/files.js';
 import { VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
+import type { Activity } from '../runtime/activity.js';
 import { touchDraft, type ApplicationJob } from './job.js';
 import { addEvent, addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from './status.js';
 import { followUpOpen } from './follow-up.js';
@@ -34,7 +35,7 @@ import { allowedFor, findPersonalData } from './personal-data.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
-  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; sentUnsaved: SentUnsavedLog; queue: LlmQueue; now?: () => Date; newId?: () => string;
+  profile: () => Profile; logger: Logger; settings: SettingsStore; mailer: Mailer; secrets: SecretStore; sentUnsaved: SentUnsavedLog; queue: LlmQueue; activity: Activity; now?: () => Date; newId?: () => string;
 }
 
 /** Offer texts shorter than this are stubs (the full text is on a partner site): the dialog warns. */
@@ -117,6 +118,12 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   const editable = (id: string) => assertEditable(d.store.require(id));
   /** Packages with an email in flight: nothing may change them until SMTP answers. */
   const sending = new Set<string>();
+  /** Marks the package as sending and tells `activity` (a restore waits for it); returns the unlock. */
+  const lockSend = (id: string) => {
+    sending.add(id);
+    const end = d.activity.begin('send');
+    return () => { sending.delete(id); end(); };
+  };
   const notBusy = (id: string) => {
     if (sending.has(id)) throw new AppError('CONFLICT', 'this package is being sent', 'packageSending');
     if (d.job.busyWith(id)) throw new AppError('CONFLICT', 'a job is working on this package', 'packageBusy');
@@ -443,7 +450,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     if (start.status !== 'approved') throw new AppError('CONFLICT', 'only an approved package can be sent');
     const config = d.settings.get().mail;
     if (!config) throw new AppError('MAIL_NOT_CONFIGURED', 'no mailbox connected');
-    sending.add(id);
+    const unlock = lockSend(id);
     try {
       const password = await d.secrets.load();
       if (password === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no password saved');
@@ -482,7 +489,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       }
       throw err;
     } finally {
-      sending.delete(id);
+      unlock();
     }
   });
 
@@ -500,7 +507,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     if (!allowed(start)) throw new AppError('CONFLICT', `${kind} not possible now`, kind === 'followUp' ? 'followUpDone' : undefined);
     const config = d.settings.get().mail;
     if (!config) throw new AppError('MAIL_NOT_CONFIGURED', 'no mailbox connected');
-    sending.add(id);
+    const unlock = lockSend(id);
     try {
       const secret = await d.secrets.load();
       if (secret === null) throw new AppError('MAIL_NOT_CONFIGURED', 'no secret saved');
@@ -531,7 +538,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       if (!(err instanceof AppError && err.reason === 'sentNotSaved')) d.logger.warn('application_extra_send_failed', { id, kind, code: err instanceof AppError ? err.code : 'UNKNOWN' });
       throw err;
     } finally {
-      sending.delete(id);
+      unlock();
     }
   };
 

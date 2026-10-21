@@ -9,6 +9,7 @@ import { callbackPage } from './google-page.js';
 import { GoogleSignIn } from './google-signin.js';
 import type { Mailer } from './mailer.js';
 import { MAIL_PROVIDERS, providerFor } from './providers.js';
+import { revokeGoogleKey } from './revoke.js';
 import type { SecretStore } from './secret.js';
 
 export interface MailRouteDeps { settings: SettingsStore; mailer: Mailer; secrets: SecretStore; logger: Logger;
@@ -87,33 +88,11 @@ export async function registerMailRoutes(app: FastifyInstance, deps: MailRouteDe
     return view();
   });
 
-  /**
-   * Takes back the saved Google key at Google (best effort; the key is removed here anyway). Bounded: on a network that
-   * silently drops packets the request never ends. Google revokes the whole grant of that account — so this must never
-   * run for the account that was just signed in again.
-   */
-  const revokeSavedGoogleKey = async (reason: 'disconnect' | 'switch') => {
-    if (deps.settings.get().mail?.kind !== 'google') return;
-    const refreshToken = await deps.secrets.load();
-    if (refreshToken === null) return;
-    let timer: NodeJS.Timeout | undefined;
-    try {
-      await Promise.race([
-        deps.googleAuth.revoke(refreshToken),
-        new Promise<never>((_, reject) => {
-          timer = setTimeout(() => reject(new AppError('MAIL_CONNECT', 'google revoke timed out')), deps.revokeTimeoutMs ?? 10_000);
-        }),
-      ]);
-      if (reason === 'switch') deps.logger.info('google_revoked', { reason });
-    } catch (err) {
-      deps.logger.warn('google_revoke_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN', reason });
-    } finally {
-      clearTimeout(timer);
-    }
-  };
+  /** The saved key belongs to the mailbox in settings right now (see revokeGoogleKey). */
+  const revokeSavedGoogleKey = (reason: 'switch') => revokeGoogleKey(deps, deps.settings.get().mail, reason);
 
   app.delete('/api/mail/settings', async () => {
-    await revokeSavedGoogleKey('disconnect');
+    await revokeGoogleKey(deps, deps.settings.get().mail, 'disconnect');
     deps.settings.setMail(null);
     await deps.secrets.remove();
     return view();

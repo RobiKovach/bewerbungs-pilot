@@ -25,7 +25,9 @@ import { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { DpapiSecretStore } from './mail/secret.js';
 import { ProfileFiles } from './profile/files.js';
 import { ProfileStore } from './profile/store.js';
-import { openBrowser } from './runtime/browser.js';
+import { backupDir } from './backup/folder.js';
+import { Activity } from './runtime/activity.js';
+import { openBrowser, openFolder } from './runtime/browser.js';
 import { findRunningInstance, waitForRunningInstance, type RunningInstance, type ServerInfo } from './runtime/instance.js';
 import { cookieName, newLaunchKey, openUrl } from './runtime/launch-key.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
@@ -127,6 +129,15 @@ async function main(): Promise<void> {
     mailer: new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,
     session: { key, cookieName: cookieName(port) },
+    activity: new Activity(),
+    backup: {
+      paths, dir: () => backupDir(), openFolder,
+      // After a restore every store reads its files again (synchronous: nothing can start in between).
+      reload: () => {
+        settings.load(); profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();
+        searchJob.init(); applicationJob.init();
+      },
+    },
   });
 
   const shutdown = createShutdown({
