@@ -109,7 +109,7 @@ function Get-BpBackupDir {
 function Get-InstalledVersion([string]$Dir) {
   # The version of the app being replaced: it wrote the data this backup holds.
   try {
-    $v = [string](Get-Content -Raw -Encoding UTF8 (Join-Path $Dir 'package.json') | ConvertFrom-Json).version
+    $v = [string](Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $Dir 'package.json') | ConvertFrom-Json).version
     if ($v -match '^\d+\.\d+\.\d+$') { return $v }
   } catch { }
   return '0.0.0'
@@ -241,7 +241,7 @@ if ($MyInvocation.InvocationName -ne '.') {
   $ServerJson = Join-Path $DataDir 'server.json'
   if (Test-Path $ServerJson) {
     $info = $null
-    try { $info = Get-Content -Raw $ServerJson | ConvertFrom-Json } catch { }
+    try { $info = Get-Content -Raw -LiteralPath $ServerJson | ConvertFrom-Json } catch { }
     try {
       if ($info -and $info.port) {
         # Since 0.8.3 the server only accepts requests carrying this launch's key; older servers wrote none.
@@ -272,7 +272,7 @@ if ($MyInvocation.InvocationName -ne '.') {
   }
   # 3b. Back up the person's data before anything is replaced (spec 0.9.0, 3.2). The three newest installer backups
   # are kept; if the backup fails we ask instead of silently risking the data.
-  if (Test-Path $DataDir) {
+  if (Test-Path -LiteralPath $DataDir) {
     $BackupDir = Get-BpBackupDir
     Say 'backingUp'
     $backup = $null
