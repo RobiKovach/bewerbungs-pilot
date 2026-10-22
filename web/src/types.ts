@@ -4,7 +4,7 @@ export type {
   PackageLetter, PackageReadiness, PackageSnapshot, PackageVacancy, CvProposals, CvResult, CvSectionId, EducationEntry, EducationKind, EmploymentType, ErrorCode, ErrorReason,
   ExperienceEntry, FilterReason, GoogleSignInStatus, FollowUpQuestion, InstallStatus, Language, LanguageItem, LanguageLevel, LlmCheck, MailProvider, MailSecurity, MailSettings, MailSettingsView, ManualEdit, ManualInput,
   PersonalData, PersonalFinding, PersonalKind, Profile, ProviderId, ProfileDocument, ProfileLink, ProfileView, PublishedWithinDays, Readiness, RemoteKind, RemotePreference, Salutation,
-  ScoreState, Section, SectionDataMap, SectionId, SearchPhase, SearchRunState, SearchState, SearchWarning, Settings, SettingsPatch,
+  ScoreState, Section, SectionDataMap, SectionId, SearchPhase, SearchRunState, SearchState, SearchWarning, Settings, SettingsPatch, SubmittedInfo,
   SkillItem, SkillLevel, Story, StoryAnswer, StoryInput, StoryKind, StoredFile, Vacancy, VacancyContact, VacancyListView,
   TextPlace, UnsavedPackageText, UpdatesView, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
 } from '@bp/shared';

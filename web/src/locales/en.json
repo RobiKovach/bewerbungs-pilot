@@ -346,6 +346,8 @@
     "offerReply": { "working": "{{ai}} is writing the reply…", "offered": "What they offered", "wanted": "What you want", "wantedHint": "Write the amount with digits, e.g. 55.000 €.", "ask": "Ask {{ai}} to write the reply", "text": "Your reply", "save": "Save", "discard": "Discard changes", "copy": "Copy", "send": "Send…", "again": "Write again", "close": "Close", "saveFirst": "Save the text first." },
     "personalData": { "title": "There is personal data here that is not in your profile", "hint": "Check that it really belongs in this text.", "kind": { "email": "Email address", "phone": "Phone number", "iban": "IBAN", "taxId": "Tax ID", "socialSecurity": "Social security number", "birthDate": "Date of birth", "postalCode": "Postal address", "link": "Link" }, "where": { "other": "this text", "letter": { "recipient": "letter, address line {{n}}", "subject": "letter, subject", "salutation": "letter, salutation", "paragraph": "letter, paragraph {{n}}", "closing": "letter, closing", "signature": "letter, signature" }, "cv": { "profil": "CV, profile text", "headline": "CV, job title", "description": "CV, description", "translation": "CV, translation", "skillGroup": "CV, skill group" }, "email": { "subject": "email, subject", "body": "email, message" } } },
     "open": "Open package",
+    "fullScreen": "Full screen",
+    "closeFullScreen": "Close",
     "busy": "{{ai}} is working on another package. Please wait a moment.",
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← All applications",
@@ -560,10 +562,11 @@
     "remote": { "yes": "Remote", "partial": "Partly remote", "no": "On site" },
     "weak": "Weak match ({{count}})",
     "tabs": {
-      "new": "New", "favorite": "Favourites", "stale": "Removed by the job board", "hidden": "Hidden",
+      "new": "New", "favorite": "Favourites", "submitted": "Applied", "stale": "Removed by the job board", "hidden": "Hidden",
       "empty": {
         "new": "No new offers. Click \"Search now\".",
         "favorite": "No favourites yet. Mark an offer with \"★ Interesting\".",
+        "submitted": "No applications sent yet. Vacancies you applied to by email or on the company's website appear here.",
         "stale": "No removed offers.",
         "hidden": "No hidden offers."
       }
@@ -572,6 +575,8 @@
     "card": {
       "scoreTitle": "How well the offer fits your profile (0–100)",
       "manual": "added by hand",
+      "sentOn": "Sent {{date}}",
+      "submittedOn": "Submitted on the website {{date}}",
       "published": "published {{date}}",
       "pending": "Being scored…",
       "scoredAt": "Scored {{date}}",

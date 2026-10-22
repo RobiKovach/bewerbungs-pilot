@@ -346,6 +346,8 @@
     "offerReply": { "working": "{{ai}} schreibt die Antwort…", "offered": "Was man Ihnen angeboten hat", "wanted": "Was Sie möchten", "wantedHint": "Schreiben Sie den Betrag mit Ziffern, z. B. 55.000 €.", "ask": "{{ai}} die Antwort schreiben lassen", "text": "Ihre Antwort", "save": "Speichern", "discard": "Änderungen verwerfen", "copy": "Kopieren", "send": "Senden…", "again": "Neu schreiben lassen", "close": "Schließen", "saveFirst": "Speichern Sie zuerst den Text." },
     "personalData": { "title": "Hier stehen persönliche Daten, die nicht in Ihrem Profil sind", "hint": "Prüfen Sie, ob sie wirklich in diesen Text gehören.", "kind": { "email": "E-Mail-Adresse", "phone": "Telefonnummer", "iban": "IBAN", "taxId": "Steuer-ID", "socialSecurity": "Sozialversicherungsnummer", "birthDate": "Geburtsdatum", "postalCode": "Postanschrift", "link": "Link" }, "where": { "other": "dieser Text", "letter": { "recipient": "Anschreiben, Adresszeile {{n}}", "subject": "Anschreiben, Betreff", "salutation": "Anschreiben, Anrede", "paragraph": "Anschreiben, Absatz {{n}}", "closing": "Anschreiben, Grußformel", "signature": "Anschreiben, Unterschrift" }, "cv": { "profil": "Lebenslauf, Profil", "headline": "Lebenslauf, Berufsbezeichnung", "description": "Lebenslauf, Beschreibung", "translation": "Lebenslauf, Übersetzung", "skillGroup": "Lebenslauf, Kenntnisgruppe" }, "email": { "subject": "E-Mail, Betreff", "body": "E-Mail, Nachricht" } } },
     "open": "Paket öffnen",
+    "fullScreen": "Vollbild",
+    "closeFullScreen": "Schließen",
     "busy": "{{ai}} arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Alle Bewerbungen",
@@ -560,10 +562,11 @@
     "remote": { "yes": "Remote", "partial": "Teilweise Remote", "no": "Vor Ort" },
     "weak": "Schwache Übereinstimmung ({{count}})",
     "tabs": {
-      "new": "Neu", "favorite": "Favoriten", "stale": "Von der Jobbörse entfernt", "hidden": "Ausgeblendet",
+      "new": "Neu", "favorite": "Favoriten", "submitted": "Beworben", "stale": "Von der Jobbörse entfernt", "hidden": "Ausgeblendet",
       "empty": {
         "new": "Keine neuen Angebote. Klicken Sie auf „Jetzt suchen“.",
         "favorite": "Noch keine Favoriten. Markieren Sie ein Angebot mit „★ Interessant“.",
+        "submitted": "Noch keine Bewerbungen. Hier erscheinen Angebote, auf die Sie sich per E-Mail oder über die Website beworben haben.",
         "stale": "Keine entfernten Angebote.",
         "hidden": "Keine ausgeblendeten Angebote."
       }
@@ -572,6 +575,8 @@
     "card": {
       "scoreTitle": "Wie gut das Angebot zu Ihrem Profil passt (0–100)",
       "manual": "manuell hinzugefügt",
+      "sentOn": "Gesendet am {{date}}",
+      "submittedOn": "Über die Website eingereicht am {{date}}",
       "published": "veröffentlicht am {{date}}",
       "pending": "Wird bewertet…",
       "scoredAt": "Bewertet am {{date}}",

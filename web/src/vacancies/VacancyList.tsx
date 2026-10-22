@@ -2,19 +2,22 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import type { Vacancy } from '../types';
-import { forTab, tabCounts, TABS, type Tab } from './sort';
+import { forTab, tabCounts, TABS, type SubmittedMap, type Tab } from './sort';
 import { useVacancies } from './VacanciesContext';
 import { VacancyCard } from './VacancyCard';
 
-export function VacancyList({ tab, onTab, focusId = null, toastMs = 8000, renderExtra }: {
-  tab: Tab; onTab: (t: Tab) => void; focusId?: string | null; toastMs?: number; renderExtra?: (v: Vacancy) => ReactNode;
+const NO_SUBMITTED: SubmittedMap = new Map();
+
+/** `submitted`: vacancies the person applied to (from the applications list), shown in their own tab. */
+export function VacancyList({ tab, onTab, focusId = null, toastMs = 8000, renderExtra, submitted = NO_SUBMITTED }: {
+  tab: Tab; onTab: (t: Tab) => void; focusId?: string | null; toastMs?: number; renderExtra?: (v: Vacancy) => ReactNode; submitted?: SubmittedMap;
 }) {
   const { t } = useTranslation();
   const { vacancies, put } = useVacancies();
   const [toast, setToast] = useState<Vacancy | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const counts = tabCounts(vacancies);
-  const { main, weak } = forTab(vacancies, tab);
+  const counts = tabCounts(vacancies, submitted);
+  const { main, weak } = forTab(vacancies, tab, submitted);
 
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   useEffect(() => {
@@ -32,7 +35,7 @@ export function VacancyList({ tab, onTab, focusId = null, toastMs = 8000, render
     setToast(null);
     put((await api.setVacancyStatus(id, 'new')).vacancy);
   };
-  const cardOf = (v: Vacancy) => <VacancyCard key={v.id} vacancy={v} highlighted={v.id === focusId} onHidden={onHidden} extra={renderExtra?.(v)} />;
+  const cardOf = (v: Vacancy) => <VacancyCard key={v.id} vacancy={v} highlighted={v.id === focusId} onHidden={onHidden} submitted={submitted.get(v.id) ?? null} extra={renderExtra?.(v)} />;
 
   return (
     <div className="vacancy-list">

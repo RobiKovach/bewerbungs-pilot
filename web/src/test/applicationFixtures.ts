@@ -1,4 +1,4 @@
-import type { ApplicationJobState, ApplicationPackage, ApplicationSummary, ApplicationView } from '../types';
+import type { ApplicationJobState, ApplicationListView, ApplicationPackage, ApplicationView } from '../types';
 
 const NOW = '2026-09-29T10:00:00.000Z';
 export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationPackage {
@@ -24,8 +24,9 @@ export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationP
 export function appView(over: Partial<ApplicationView> = {}, pkg: Partial<ApplicationPackage> = {}): ApplicationView {
   return { application: appPackage(pkg), profileChanged: false, attachments: [], canUndo: false, followUpDue: false, warnings: [], ...over };
 }
-export function appSummary(over: Partial<ApplicationSummary & { profileChanged: boolean; followUpDue: boolean }> = {}): ApplicationSummary & { profileChanged: boolean; followUpDue: boolean } {
-  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, writtenBy: 'claude', profileChanged: false, followUpDue: false, ...over };
+type ListItem = ApplicationListView['applications'][number];
+export function appSummary(over: Partial<ListItem> = {}): ListItem {
+  return { id: 'app1', vacancyId: 'v1', company: 'Muster GmbH', title: 'Webentwickler (m/w/d)', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null, writtenBy: 'claude', profileChanged: false, followUpDue: false, submitted: null, ...over };
 }
 export function jobState(over: Partial<ApplicationJobState> = {}): ApplicationJobState {
   return { state: 'idle', kind: null, vacancyId: null, applicationId: null, error: null, startedAt: null, finishedAt: null, ...over };

@@ -1,3 +1,5 @@
+import type { SubmittedInfo } from '../types';
+
 /** DD.MM.YYYY in every UI language, like the rest of the app ("YYYY-MM-DD…" in). */
 export const formatDay = (iso: string) => { const [y, m, d] = iso.slice(0, 10).split('-'); return `${d}.${m}.${y}`; };
 
@@ -19,6 +21,16 @@ export function packageLinks(list: readonly { id: string; vacancyId: string; sta
     if (better) best.set(a.vacancyId, a);
   }
   return new Map([...best].map(([v, a]) => [v, { id: a.id, editable: !isFrozen(a.status) }]));
+}
+
+/** Vacancy id → its earliest submission (by mail or on the company's site), for the vacancies' "Submitted" tab. */
+export function submittedByVacancy(list: readonly { vacancyId: string; submitted: SubmittedInfo | null }[]): Map<string, SubmittedInfo> {
+  const out = new Map<string, SubmittedInfo>();
+  for (const a of list) {
+    const cur = out.get(a.vacancyId);
+    if (a.submitted && (!cur || a.submitted.at < cur.at)) out.set(a.vacancyId, a.submitted);
+  }
+  return out;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');

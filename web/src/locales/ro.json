@@ -346,6 +346,8 @@
     "offerReply": { "working": "{{ai}} scrie răspunsul…", "offered": "Ce vi s-a oferit", "wanted": "Ce doriți", "wantedHint": "Scrieți suma cu cifre, de exemplu 55.000 €.", "ask": "Cereți-i lui {{ai}} să scrie răspunsul", "text": "Răspunsul dumneavoastră", "save": "Salvați", "discard": "Renunțați la modificări", "copy": "Copiați", "send": "Trimiteți…", "again": "Scrieți din nou", "close": "Închideți", "saveFirst": "Salvați mai întâi textul." },
     "personalData": { "title": "Aici sunt date personale care nu sunt în profilul dvs.", "hint": "Verificați dacă își au într-adevăr locul în acest text.", "kind": { "email": "Adresă de email", "phone": "Număr de telefon", "iban": "IBAN", "taxId": "Cod fiscal (Steuer-ID)", "socialSecurity": "Număr de asigurare socială", "birthDate": "Data nașterii", "postalCode": "Adresă poștală", "link": "Link" }, "where": { "other": "acest text", "letter": { "recipient": "scrisoare, rândul de adresă {{n}}", "subject": "scrisoare, subiect", "salutation": "scrisoare, formula de adresare", "paragraph": "scrisoare, paragraful {{n}}", "closing": "scrisoare, formula de încheiere", "signature": "scrisoare, semnătură" }, "cv": { "profil": "CV, profil", "headline": "CV, denumirea postului", "description": "CV, descriere", "translation": "CV, traducere", "skillGroup": "CV, grupă de competențe" }, "email": { "subject": "email, subiect", "body": "email, mesaj" } } },
     "open": "Deschideți pachetul",
+    "fullScreen": "Ecran complet",
+    "closeFullScreen": "Închideți",
     "busy": "{{ai}} lucrează acum la alt pachet. Vă rugăm să așteptați puțin.",
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Toate aplicațiile",
@@ -560,10 +562,11 @@
     "remote": { "yes": "La distanță", "partial": "Parțial la distanță", "no": "La sediu" },
     "weak": "Potrivire slabă ({{count}})",
     "tabs": {
-      "new": "Noi", "favorite": "Favorite", "stale": "Eliminate de bursa locurilor de muncă", "hidden": "Ascunse",
+      "new": "Noi", "favorite": "Favorite", "submitted": "Trimise", "stale": "Eliminate de bursa locurilor de muncă", "hidden": "Ascunse",
       "empty": {
         "new": "Nu există oferte noi. Faceți clic pe „Căutați acum”.",
         "favorite": "Încă nu există favorite. Marcați o ofertă cu „★ Interesant”.",
+        "submitted": "Încă nu există candidaturi trimise. Aici apar ofertele la care ați trimis o candidatură prin e-mail sau ați depus-o pe site-ul companiei.",
         "stale": "Nu există oferte eliminate.",
         "hidden": "Nu există oferte ascunse."
       }
@@ -572,6 +575,8 @@
     "card": {
       "scoreTitle": "Cât de bine se potrivește oferta cu profilul dumneavoastră (0–100)",
       "manual": "adăugat manual",
+      "sentOn": "Trimis la {{date}}",
+      "submittedOn": "Depus pe site la {{date}}",
       "published": "publicat la {{date}}",
       "pending": "Se evaluează…",
       "scoredAt": "Evaluat la {{date}}",

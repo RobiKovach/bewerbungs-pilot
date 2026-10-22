@@ -346,6 +346,8 @@
     "offerReply": { "working": "{{ai}} pisze odpowiedź…", "offered": "Co Ci zaproponowano", "wanted": "Czego chcesz", "wantedHint": "Wpisz kwotę cyframi, np. 55.000 €.", "ask": "Poproś {{ai}} o napisanie odpowiedzi", "text": "Twoja odpowiedź", "save": "Zapisz", "discard": "Odrzuć zmiany", "copy": "Kopiuj", "send": "Wyślij…", "again": "Napisz ponownie", "close": "Zamknij", "saveFirst": "Najpierw zapisz tekst." },
     "personalData": { "title": "Są tu dane osobowe, których nie ma w Twoim profilu", "hint": "Sprawdź, czy naprawdę powinny być w tym tekście.", "kind": { "email": "Adres e-mail", "phone": "Numer telefonu", "iban": "IBAN", "taxId": "Numer podatkowy (Steuer-ID)", "socialSecurity": "Numer ubezpieczenia społecznego", "birthDate": "Data urodzenia", "postalCode": "Adres pocztowy", "link": "Link" }, "where": { "other": "ten tekst", "letter": { "recipient": "list, wiersz adresu {{n}}", "subject": "list, temat", "salutation": "list, zwrot grzecznościowy", "paragraph": "list, akapit {{n}}", "closing": "list, zakończenie", "signature": "list, podpis" }, "cv": { "profil": "CV, profil", "headline": "CV, stanowisko", "description": "CV, opis", "translation": "CV, tłumaczenie", "skillGroup": "CV, grupa umiejętności" }, "email": { "subject": "e-mail, temat", "body": "e-mail, treść" } } },
     "open": "Otwórz pakiet",
+    "fullScreen": "Pełny ekran",
+    "closeFullScreen": "Zamknij",
     "busy": "{{ai}} pracuje teraz nad innym pakietem. Poczekaj chwilę.",
     "language": { "de": "Deutsch", "en": "English" },
     "back": "← Wszystkie aplikacje",
@@ -560,10 +562,11 @@
     "remote": { "yes": "Zdalnie", "partial": "Częściowo zdalnie", "no": "Stacjonarnie" },
     "weak": "Słabe dopasowanie ({{count}})",
     "tabs": {
-      "new": "Nowe", "favorite": "Ulubione", "stale": "Usunięte przez giełdę pracy", "hidden": "Ukryte",
+      "new": "Nowe", "favorite": "Ulubione", "submitted": "Wysłane", "stale": "Usunięte przez giełdę pracy", "hidden": "Ukryte",
       "empty": {
         "new": "Brak nowych ofert. Kliknij „Szukaj teraz”.",
         "favorite": "Jeszcze brak ulubionych. Oznacz ofertę przyciskiem „★ Interesujące”.",
+        "submitted": "Brak wysłanych aplikacji. Tutaj pojawią się oferty, na które aplikacja została wysłana e-mailem lub złożona przez stronę firmy.",
         "stale": "Brak usuniętych ofert.",
         "hidden": "Brak ukrytych ofert."
       }
@@ -572,6 +575,8 @@
     "card": {
       "scoreTitle": "Jak dobrze oferta pasuje do Twojego profilu (0–100)",
       "manual": "dodane ręcznie",
+      "sentOn": "Wysłano {{date}}",
+      "submittedOn": "Złożono przez stronę {{date}}",
       "published": "opublikowano {{date}}",
       "pending": "Jest oceniana…",
       "scoredAt": "Oceniono {{date}}",

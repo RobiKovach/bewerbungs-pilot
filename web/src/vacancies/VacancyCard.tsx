@@ -5,7 +5,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { WrittenBy } from '../components/WrittenBy';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useCancellable } from '../profile/useCancellable';
-import type { Vacancy } from '../types';
+import type { SubmittedInfo, Vacancy } from '../types';
 import { useVacancies } from './VacanciesContext';
 
 const isHttp = (url: string) => /^https?:\/\//i.test(url);
@@ -13,7 +13,8 @@ const level = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'mid' : '
 /** DD.MM.YYYY in every UI language, like the German job ads themselves ("YYYY-MM-DD" or an ISO timestamp in). */
 const date = (iso: string) => { const [y, m, d] = iso.slice(0, 10).split('-'); return `${d}.${m}.${y}`; };
 
-export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }: { vacancy: Vacancy; highlighted?: boolean; onHidden: (v: Vacancy) => void; extra?: ReactNode }) {
+/** `submitted`: the person applied to this vacancy (it sits in the "Submitted" tab): a badge instead of the New/Favourite buttons. */
+export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, submitted = null }: { vacancy: Vacancy; highlighted?: boolean; onHidden: (v: Vacancy) => void; extra?: ReactNode; submitted?: SubmittedInfo | null }) {
   const { t, i18n } = useTranslation();
   const { put } = useVacancies();
   const [error, setError] = useState<unknown>(null);
@@ -63,6 +64,11 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }
             {v.company}{v.addedManually ? <> <span className="badge">{t('vacancies.card.manual')}</span></> : null}
           </p>
           {facts ? <p className="muted">{facts}</p> : null}
+          {submitted ? (
+            <p><span className={`badge status-${submitted.via === 'mail' ? 'sent' : 'submitted'}`}>
+              {t(submitted.via === 'mail' ? 'vacancies.card.sentOn' : 'vacancies.card.submittedOn', { date: date(submitted.at) })}
+            </span></p>
+          ) : null}
           {v.contact ? (
             <p className="muted">
               {t('vacancies.card.contact', { who: [v.contact.salutation, v.contact.name].filter(Boolean).join(' ') || '—', email: v.contact.email || '—' })}
@@ -97,14 +103,14 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra }
       {scoring.state.kind === 'failed' ? <ErrorBanner error={scoring.state.error} /> : null}
 
       <div className="btn-row">
-        {v.status === 'new' ? (
+        {v.status === 'new' && !submitted ? (
           <>
             <button type="button" className="btn" disabled={busy} onClick={() => void status('favorite')}>{t('vacancies.card.interesting')}</button>
             <button type="button" className="btn ghost" disabled={busy} onClick={() => void status('hidden', onHidden)}>{t('vacancies.card.notInteresting')}</button>
           </>
         ) : null}
-        {v.status === 'favorite' ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void status('new')}>{t('vacancies.card.unfavorite')}</button> : null}
-        {v.status === 'stale' ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void status('hidden')}>{t('vacancies.card.remove')}</button> : null}
+        {v.status === 'favorite' && !submitted ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void status('new')}>{t('vacancies.card.unfavorite')}</button> : null}
+        {v.status === 'stale' && !submitted ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void status('hidden')}>{t('vacancies.card.remove')}</button> : null}
         {v.status === 'hidden' ? <button type="button" className="btn ghost" disabled={busy} onClick={() => void status('new')}>{t('vacancies.card.bringBack')}</button> : null}
         {v.status !== 'hidden' && isHttp(v.url) ? (
           <a className="btn ghost" href={v.url} target="_blank" rel="noopener noreferrer">{t('vacancies.card.original')}</a>

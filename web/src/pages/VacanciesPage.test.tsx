@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
+import { appSummary } from '../test/applicationFixtures';
 import { mockFetch } from '../test/fetchMock';
 import { emptyProfile } from '../test/profileFixtures';
 import { readyProfile, vac, vacancyServer } from '../test/vacancyFixtures';
@@ -77,6 +78,38 @@ describe('VacanciesPage — strip and empty states', () => {
     expect(await screen.findByRole('button', { name: 'Remove “Frontend Developer”' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Remove “Webentwickler”' })).toBeNull();
     expect(f).toHaveBeenCalled();
+  });
+
+  it('9b: vacancies with a sent / site-submitted package sit in "Applied" with a dated badge, not in New/Favourites', async () => {
+    const sent = vac({ title: 'Sent by mail', status: 'favorite' });
+    const site = vac({ title: 'Applied on site' });
+    const open = vac({ title: 'Still open', status: 'favorite' });
+    mockFetch({
+      ...vacancyServer({ list: [sent, site, open] }).routes,
+      'GET /api/applications': () => ({ body: { applications: [
+        appSummary({ id: 'a1', vacancyId: sent.id, status: 'interview', submitted: { via: 'mail', at: '2026-10-02T09:00:00.000Z' } }),
+        appSummary({ id: 'a2', vacancyId: site.id, status: 'submitted', submitted: { via: 'site', at: '2026-10-03T12:00:00.000Z' } }),
+        appSummary({ id: 'a3', vacancyId: open.id, status: 'draft' }),
+      ] } }),
+    });
+    renderPage();
+    const user = userEvent.setup();
+    const applied = await screen.findByRole('tab', { name: 'Applied 2' });
+    expect(screen.getByRole('tab', { name: 'New 0' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Favourites 1' })).toBeInTheDocument();
+    await user.click(applied);
+    const cards = screen.getAllByRole('article');
+    expect(cards.map((c) => c.querySelector('h3')?.textContent)).toEqual(['Applied on site', 'Sent by mail']);
+    expect(cards[0]).toHaveTextContent('Submitted on the website 03.10.2026');
+    expect(cards[1]).toHaveTextContent('Sent 02.10.2026');
+    expect(screen.queryByRole('button', { name: /Interesting/ })).toBeNull();
+  });
+
+  it('9b: if the applications list does not load, vacancies stay where they are', async () => {
+    mockFetch({ ...vacancyServer({ list: [vac({ title: 'Somewhere', status: 'favorite' })] }).routes, 'GET /api/applications': () => ({ status: 500, body: { error: { code: 'INTERNAL' } } }) });
+    renderPage();
+    expect(await screen.findByRole('tab', { name: 'Favourites 1' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Applied 0' })).toBeInTheDocument();
   });
 
   it('lists cards it got from the server (titles only here; cards are tested in Task 12)', async () => {
