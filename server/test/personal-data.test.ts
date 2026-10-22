@@ -154,3 +154,29 @@ describe('packageTexts', () => {
     expect(t).toContainEqual({ text: 'Frontend', where: { part: 'cv', field: 'skillGroup' } });
   });
 });
+
+describe('long adversarial text is checked quickly (no polynomial regex)', () => {
+  const n = 100_000;
+  it.each([
+    ['letters', 'a'.repeat(n)],
+    ['dotted', 'a.'.repeat(n / 2)],
+    ['slashes after a url', `http://x${'/'.repeat(n)}y`],
+    ['dots after a url', `http://x${'.'.repeat(n)}y`],
+    ['digits', '1'.repeat(n)],
+    ['dashes', `1${'-'.repeat(n)}`],
+    ['email-like', `a@${'a.'.repeat(n / 2)}`],
+    ['dot-dash labels', 'a.-'.repeat(n / 3)],
+    ['dash-dot labels', 'a-.'.repeat(n / 3)],
+  ])('%s, 100 000 chars', (_name, text) => {
+    const t0 = performance.now();
+    find(text);
+    // Measured < 10 ms; seconds before the fix. The bound only has to catch a quadratic regex on a slow CI machine.
+    expect(performance.now() - t0).toBeLessThan(500);
+  });
+  it('a domain right after an ellipsis is still a link', () => {
+    expect(find('Mehr dazu...evil.de').map((f) => [f.kind, f.value])).toEqual([['link', 'evil.de']]);
+  });
+  it('a dotted host is one link, not one per label', () => {
+    expect(find('Siehe a.b.evil.de/x').map((f) => f.value)).toEqual(['a.b.evil.de/x']);
+  });
+});

@@ -11,7 +11,9 @@ export interface PlacedText { text: string; where: TextPlace }
 interface Span { start: number; end: number }
 interface Hit extends Span { kind: PersonalKind; value: string; key: string }
 
-const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+// EMAIL and the bare-domain LINK start only where a token starts (look-behind), so a long run of letters, digits or
+// dots is scanned once, not once per position — otherwise a long pasted text takes seconds (CodeQL polynomial regex).
+const EMAIL = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const IBAN = /\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){2,7}(?:\s?[A-Z0-9]{1,4})?\b/g;
 const TAX_ID = /(?<!\d)[1-9]\d(?:\s?\d{3}){3}(?!\d)/g;
 const SOCIAL = /\b\d{2}\s?\d{6}\s?[A-Z]\s?\d{3}\b/g;
@@ -20,7 +22,7 @@ const DATE = /(?<!\d)(?:\d{1,2}\.\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2})(?!\d)/g;
 const BIRTH_WORD = /(?<!\p{L})(?:geboren|geb\.|geburtsdatum|born|date of birth)/giu;
 const POSTAL = /\b\d{5}\s+\p{Lu}\p{L}+/gu;
 const PHONE = /\+?\(?\d[\d\s/()-]{5,}\d/g;
-const LINK = /https?:\/\/[^\s<>"')]+|www\.[^\s<>"')]+|\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:de|com|net|org|io|eu|dev|app)\b(?:\/[^\s<>"')]*)?/gi;
+const LINK = /https?:\/\/[^\s<>"')]+|www\.[^\s<>"')]+|(?<![a-z0-9-]|[a-z0-9-]\.)\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:de|com|net|org|io|eu|dev|app)\b(?:\/[^\s<>"')]*)?/gi;
 const YEAR_RANGE = /^(?:19|20)\d{2}\s*[-/]\s*(?:19|20)\d{2}$/;
 const MONEY_AFTER = /^\s{0,3}(?:€|EUR|Euro)/;
 const MONEY_BEFORE = /(?:€|EUR|Euro)\s{0,3}$/;
@@ -36,7 +38,14 @@ export function normPhone(s: string): string {
   return d;
 }
 export const normLink = (s: string): string =>
-  s.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
+  trimEndChars(s.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, ''), '/');
+/** Drops trailing characters that are in `chars` — a loop, because `/[…]+$/` is quadratic on long runs. */
+function trimEndChars(s: string, chars: string): string {
+  let end = s.length;
+  while (end > 0 && chars.includes(s[end - 1])) end--;
+  return s.slice(0, end);
+}
+const TRAILING_PUNCT = '.,;:!?';
 /** `DD.MM.YYYY`, `D.M.YYYY` or `YYYY-MM-DD` → `YYYY-MM-DD`; anything else → ''. */
 export function normDate(s: string): string {
   const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
@@ -122,7 +131,7 @@ function scan(text: string, allowed: AllowedData): Hit[] {
   }
 
   for (const m of matches(LINK, text)) {
-    const value = m.value.replace(/[.,;:!?]+$/, '');
+    const value = trimEndChars(m.value, TRAILING_PUNCT);
     const link = { ...m, end: m.start + value.length, value };
     if (overlaps(link, emails) || text[link.start - 1] === '@') continue;
     const n = normLink(value);
@@ -188,7 +197,7 @@ export function allowedFor(p: ApplicationPackage, profile: Profile, vacancyText:
     birthDates: nonEmpty(people.map((x) => normDate(x.birthDate))),
     links: nonEmpty([
       ...people.flatMap((x) => x.links.map((l) => normLink(l.url))), normLink(p.vacancy.url), ...TECH_NAMES,
-      ...matches(LINK, ownText).map((m) => normLink(m.value.replace(/[.,;:!?]+$/, ''))),
+      ...matches(LINK, ownText).map((m) => normLink(trimEndChars(m.value, TRAILING_PUNCT))),
     ]),
   };
 }
