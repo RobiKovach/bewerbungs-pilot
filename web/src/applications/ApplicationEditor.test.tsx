@@ -563,3 +563,52 @@ describe('ApplicationEditor — replies to a rejection or an offer', () => {
     expect(await screen.findByLabelText('Your reply')).toBeInTheDocument();
   });
 });
+
+describe('ApplicationEditor — personal-data block follows unsaved text', () => {
+  const IBAN = 'DE89370400440532013000';
+  const finding = { kind: 'iban', value: IBAN, where: { part: 'letter', field: 'paragraph', index: 2 } };
+
+  it('checks the unsaved letter while typing and shows the block before saving', async () => {
+    const { f, user } = setup({ 'POST /api/applications/app1/check-package': () => ({ body: { warnings: [finding] } }) });
+    const p2 = await screen.findByLabelText('Paragraph 2');
+    expect(screen.queryByText('There is personal data here that is not in your profile')).toBeNull();
+    await user.type(p2, ` Konto ${IBAN}`);
+    expect(await screen.findByText('There is personal data here that is not in your profile')).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`IBAN: ${IBAN}`))).toBeInTheDocument();
+    const calls = f.mock.calls.filter(([url]) => url === '/api/applications/app1/check-package');
+    // A pause after the last key: not one request per key.
+    expect(calls.length).toBeLessThan(5);
+    expect(JSON.parse(String(calls.at(-1)![1]!.body))).toEqual({ letter: { paragraphs: ['Absatz eins.', `Absatz zwei. Konto ${IBAN}`, 'Absatz drei.'] } });
+    expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled(); // unsaved text, as before — never because of the block
+  });
+
+  it('discarding the change goes back to the saved warnings without a request', async () => {
+    const { f, user } = setup({ 'POST /api/applications/app1/check-package': () => ({ body: { warnings: [finding] } }) });
+    await user.type(await screen.findByLabelText('Paragraph 2'), ' x');
+    await user.click(screen.getByRole('button', { name: 'Discard changes' }));
+    const before = f.mock.calls.filter(([url]) => url === '/api/applications/app1/check-package').length;
+    await new Promise((r) => setTimeout(r, 500));
+    expect(f.mock.calls.filter(([url]) => url === '/api/applications/app1/check-package').length).toBe(before);
+    expect(screen.queryByText('There is personal data here that is not in your profile')).toBeNull();
+  });
+
+  it('checks an unsaved CV job title too', async () => {
+    const mail = { kind: 'email', value: 'evil@x.example', where: { part: 'cv', field: 'headline' } };
+    const { f, user } = setup({ 'POST /api/applications/app1/check-package': () => ({ body: { warnings: [mail] } }) });
+    await user.click(await screen.findByRole('tab', { name: 'CV' }));
+    await user.type(screen.getByLabelText('Job title under your name'), ' evil@x.example');
+    expect(await screen.findByText(/evil@x.example — CV, job title/)).toBeInTheDocument();
+    const call = f.mock.calls.filter(([url]) => url === '/api/applications/app1/check-package').at(-1)!;
+    expect(Object.keys(JSON.parse(String(call[1]!.body)))).toEqual(['headline']);
+  });
+
+  it('a failed check keeps the saved warnings', async () => {
+    const { user } = setup(
+      { 'POST /api/applications/app1/check-package': () => ({ status: 500, body: { error: { code: 'UNKNOWN', detailsForLog: 'x' } } }) },
+      appView({ warnings: [finding] as ApplicationView['warnings'] }),
+    );
+    await user.type(await screen.findByLabelText('Paragraph 2'), ' x');
+    await new Promise((r) => setTimeout(r, 600));
+    expect(screen.getByText('There is personal data here that is not in your profile')).toBeInTheDocument();
+  });
+});

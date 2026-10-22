@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { TextField } from '../profile/fields';
-import type { ApplicationView } from '../types';
+import type { ApplicationView, UnsavedPackageText } from '../types';
 import { PreviewFrame } from './PreviewFrame';
 
-/** `locked`: a job works on this package (editing off). `busy`: any package job runs (Claude buttons off). `onDirty`: reports an unsaved Profil edit to the editor. */
-export function CvTab({ view, locked, frozen = false, busy, onView, onRefresh, onDirty }: { view: ApplicationView; locked: boolean; frozen?: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRefresh: (keepProfil: boolean, keepHeadline: boolean) => void; onDirty: (dirty: boolean) => void }) {
+/** `locked`: a job works on this package (editing off). `busy`: any package job runs (Claude buttons off). `onDirty`: reports an unsaved Profil edit to the editor. `onUnsaved`: that unsaved text (null when clean), checked for personal data. */
+export function CvTab({ view, locked, frozen = false, busy, onView, onRefresh, onDirty, onUnsaved }: { view: ApplicationView; locked: boolean; frozen?: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRefresh: (keepProfil: boolean, keepHeadline: boolean) => void; onDirty: (dirty: boolean) => void; onUnsaved?: (text: UnsavedPackageText | null) => void }) {
   const { t } = useTranslation();
   const a = view.application;
   const [profil, setProfil] = useState(a.cv.profil);
@@ -24,6 +24,11 @@ export function CvTab({ view, locked, frozen = false, busy, onView, onRefresh, o
     onDirty(dirty);
     return () => onDirty(false);
   }, [dirty, onDirty]);
+  const unsavedKey = dirty ? JSON.stringify({ ...(profilChanged ? { profil } : {}), ...(headlineChanged ? { headline } : {}) }) : null;
+  useEffect(() => {
+    onUnsaved?.(unsavedKey ? JSON.parse(unsavedKey) as UnsavedPackageText : null);
+    return () => onUnsaved?.(null);
+  }, [unsavedKey, onUnsaved]);
   // The question belongs to a clean Profil: typing closes it, so the remount after the job can never drop the edit.
   const asked = asking && view.profileChanged && !dirty;
   useEffect(() => {

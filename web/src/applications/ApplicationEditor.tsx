@@ -6,7 +6,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { WrittenBy } from '../components/WrittenBy';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useReportUnsaved } from '../profile/unsaved';
-import type { ApplicationView, DocLanguage } from '../types';
+import type { ApplicationView, DocLanguage, LetterPatch, UnsavedPackageText } from '../types';
 import { AttachmentsTab } from './AttachmentsTab';
 import { CvTab } from './CvTab';
 import { download } from './download';
@@ -20,6 +20,7 @@ import { PersonalDataWarning } from './PersonalDataWarning';
 import { SendDialog } from './SendDialog';
 import { StatusDialog } from './StatusDialog';
 import { jobError, useApplicationJob } from './useApplicationJob';
+import { usePackageCheck } from './useTextCheck';
 
 const TABS = ['letter', 'cv', 'attachments'] as const;
 type Tab = (typeof TABS)[number];
@@ -35,6 +36,10 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   const [letterDirty, setLetterDirty] = useState(false);
   const [cvDirty, setCvDirty] = useState(false);
   useReportUnsaved(letterDirty || cvDirty);
+  // Unsaved letter / CV text: the yellow personal-data block follows typing, like in the mail windows.
+  const [letterUnsaved, setLetterUnsaved] = useState<LetterPatch | null>(null);
+  const [cvUnsaved, setCvUnsaved] = useState<UnsavedPackageText | null>(null);
+  const unsaved = letterUnsaved || cvUnsaved ? { ...(letterUnsaved ? { letter: letterUnsaved } : {}), ...cvUnsaved } : null;
   const [downloading, setDownloading] = useState(false);
   const [language, setLanguage] = useState<DocLanguage>('de');
   // 'noPassword' = connected, but the saved password is missing or cannot be read here (other PC or Windows account).
@@ -73,6 +78,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   useEffect(() => { if (status !== 'approved') setSending(false); }, [status]);
   // Reply windows belong to a rejection / an offer: they close when the status changes (e.g. "Undo").
   useEffect(() => { if (status !== 'rejected' && status !== 'offer') setReplying(null); }, [status]);
+  const warnings = usePackageCheck(id, unsaved, view?.warnings ?? []);
   const job = useApplicationJob({ pollMs, onFinished: (s) => { if (s.applicationId === id) void load(); } });
 
   if (error && !view) return <ErrorBanner error={error} onRetry={() => void load()} />;
@@ -156,9 +162,9 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         ))}
       </div>
       {tab === 'letter' ? (
-        <LetterTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setLetterDirty} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
+        <LetterTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setLetterDirty} onUnsaved={setLetterUnsaved} onRevise={(instruction) => void job.start(() => api.reviseLetter(id, instruction))} />
       ) : null}
-      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setCvDirty} onRefresh={(keepProfil, keepHeadline) => void job.start(() => api.refreshCv(id, keepProfil, keepHeadline))} /> : null}
+      {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setCvDirty} onUnsaved={setCvUnsaved} onRefresh={(keepProfil, keepHeadline) => void job.start(() => api.refreshCv(id, keepProfil, keepHeadline))} /> : null}
       {tab === 'attachments' ? <AttachmentsTab view={view} locked={locked} onView={setView} /> : null}
 
       <div className="btn-row downloads" role="group" aria-label={t('applications.download.title')}>
@@ -182,7 +188,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         </details>
       ) : null}
 
-      <PersonalDataWarning warnings={view.warnings} />
+      <PersonalDataWarning warnings={warnings} />
       <div className="btn-row app-actions">
         {frozen ? null : a.status === 'draft'
           ? <button type="button" className="btn" disabled={locked || dirty || a.letter.pages > 1} onClick={() => void act(() => api.approveApplication(id))}>{t('applications.approve')}</button>

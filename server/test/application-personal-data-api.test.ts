@@ -89,3 +89,28 @@ describe('the package view never fails because of the warning check', () => {
     expect((r.json() as ApplicationView).warnings).toEqual([]);
   });
 });
+
+describe('POST /api/applications/:id/check-package (unsaved editor text)', () => {
+  it('checks unsaved letter and CV text without storing anything', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const before = ctx.applicationStore.require(id).updatedAt;
+    const r = await send(ctx, 'POST', `/api/applications/${id}/check-package`, {
+      letter: { paragraphs: [GOOD_LETTER.paragraphs[0], `Konto ${IBAN}`, ''] }, profil: 'Erreichbar unter evil@x.example',
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.json().warnings).toEqual([
+      { kind: 'iban', value: IBAN, where: { part: 'letter', field: 'paragraph', index: 2 } },
+      { kind: 'email', value: 'evil@x.example', where: { part: 'cv', field: 'profil' } },
+    ]);
+    expect(ctx.applicationStore.require(id).updatedAt).toBe(before);
+    expect(((await get(ctx, `/api/applications/${id}`)).json() as ApplicationView).warnings).toEqual([]);
+  });
+  it('an empty body checks the saved package; unknown fields and oversize text are refused', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/check-package`, {})).json().warnings).toEqual([]);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/check-package`, { letter: { pages: 3 } })).statusCode).toBe(400);
+    expect((await send(ctx, 'POST', `/api/applications/${id}/check-package`, { profil: 'a'.repeat(5000) })).statusCode).toBe(400);
+  });
+});

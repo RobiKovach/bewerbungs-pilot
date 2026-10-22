@@ -16,8 +16,11 @@ function patchOf(saved: PackageLetter, draft: Draft): LetterPatch | null {
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
-/** `locked`: this package is being changed by a job (editing off). `busy`: any package job runs (Claude buttons off). */
-export function LetterTab({ view, locked, frozen = false, busy, onView, onRevise, onDirty }: { view: ApplicationView; locked: boolean; frozen?: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRevise: (instruction: string) => void; onDirty: (dirty: boolean) => void }) {
+/**
+ * `locked`: this package is being changed by a job (editing off). `busy`: any package job runs (Claude buttons off).
+ * `onUnsaved`: the changed fields while unsaved (null when clean), so the editor can check them for personal data.
+ */
+export function LetterTab({ view, locked, frozen = false, busy, onView, onRevise, onDirty, onUnsaved }: { view: ApplicationView; locked: boolean; frozen?: boolean; busy: boolean; onView: (v: ApplicationView) => void; onRevise: (instruction: string) => void; onDirty: (dirty: boolean) => void; onUnsaved?: (patch: LetterPatch | null) => void }) {
   const { t } = useTranslation();
   const a = view.application;
   const L = a.letter;
@@ -33,6 +36,11 @@ export function LetterTab({ view, locked, frozen = false, busy, onView, onRevise
     onDirty(dirty);
     return () => onDirty(false);
   }, [dirty, onDirty]);
+  const patchKey = patch ? JSON.stringify(patch) : null;
+  useEffect(() => {
+    onUnsaved?.(patchKey ? JSON.parse(patchKey) as LetterPatch : null);
+    return () => onUnsaved?.(null);
+  }, [patchKey, onUnsaved]);
   const valid = draft.subject.trim() !== '' && draft.paragraphs.length > 0 && draft.paragraphs.every((p) => p.trim() !== '');
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const setParagraph = (i: number, v: string) => set('paragraphs', draft.paragraphs.map((p, j) => (j === i ? v : p)));

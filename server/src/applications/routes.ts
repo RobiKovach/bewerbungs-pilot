@@ -31,7 +31,7 @@ import { APPLICATION_ID, PACKAGE_LIMITS as L, validatePackage } from './schema.j
 import type { ApplicationStore } from './store.js';
 import type { SentUnsavedLog } from './sent-unsaved.js';
 import { toListView, toView } from './views.js';
-import { allowedFor, findPersonalData } from './personal-data.js';
+import { allowedFor, findPersonalData, packageTexts } from './personal-data.js';
 
 export interface ApplicationRouteDeps {
   store: ApplicationStore; job: ApplicationJob; printer: PdfPrinter; vacancies: VacancyStore; files: ProfileFiles;
@@ -95,6 +95,26 @@ const offerReplyPatch = { type: 'object', additionalProperties: false, required:
 const checkTextBody = {
   type: 'object', additionalProperties: false, propertyNames: { enum: ['subject', 'body'] }, required: ['subject', 'body'],
   properties: { subject: { type: 'string', maxLength: 500 }, body: { type: 'string', maxLength: 20000 } },
+};
+/** Unsaved editor text: like the save bodies, but empty fields are fine (typing is in progress). */
+const checkPackageBody = {
+  type: 'object', additionalProperties: false, propertyNames: { enum: ['letter', 'profil', 'headline'] },
+  properties: {
+    letter: {
+      type: 'object', additionalProperties: false,
+      propertyNames: { enum: ['recipient', 'subject', 'salutation', 'paragraphs', 'closing', 'signature'] },
+      properties: {
+        recipient: { type: 'array', maxItems: L.recipientLines, items: line(L.line) },
+        subject: line(L.subject),
+        salutation: line(L.salutation),
+        paragraphs: { type: 'array', maxItems: L.paragraphsMax, items: line(L.paragraph) },
+        closing: line(L.closing),
+        signature: line(L.signature),
+      },
+    },
+    profil: line(L.profil),
+    headline: line(L.headline),
+  },
 };
 const attachmentsBody = { type: 'object', additionalProperties: false, required: ['ids'], properties: { ids: { type: 'array', maxItems: L.attachments, uniqueItems: true, items: { type: 'string', maxLength: 64 } } } };
 
@@ -176,6 +196,18 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { subject, body } = req.body as { subject: string; body: string };
     const texts = [{ text: subject, where: { part: 'email', field: 'subject' } as const }, { text: body, where: { part: 'email', field: 'body' } as const }];
     return { warnings: findPersonalData(texts, allowedFor(p, d.profile(), vacancyTextOf(p))) };
+  });
+
+  // The whole package as the editor shows it right now, unsaved text included: the warning follows typing (nothing is stored).
+  app.post('/api/applications/:id/check-package', { schema: { params: idParams, body: checkPackageBody } }, async (req) => {
+    const p = d.store.require((req.params as { id: string }).id);
+    const { letter, profil, headline } = req.body as { letter?: LetterPatch; profil?: string; headline?: string };
+    const shown: ApplicationPackage = {
+      ...p,
+      letter: { ...p.letter, ...letter },
+      cv: { ...p.cv, ...(profil === undefined ? {} : { profil }), ...(headline === undefined ? {} : { headline }) },
+    };
+    return { warnings: findPersonalData(packageTexts(shown), allowedFor(p, d.profile(), vacancyTextOf(p))) };
   });
 
   app.patch('/api/applications/:id/letter', { schema: { params: idParams, body: letterBody } }, async (req) => {

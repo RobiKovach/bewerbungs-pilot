@@ -1,5 +1,5 @@
 import type {
-  ApplicationJobState, ApplicationListView, BackupInfo, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding,
+  ApplicationJobState, ApplicationListView, BackupInfo, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
@@ -182,6 +182,8 @@ export const api = {
   saveOfferReply: (id: string, body: string) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/offer-reply`, { body }),
   checkText: (id: string, subject: string, body: string, signal?: AbortSignal) =>
     request<{ warnings: PersonalFinding[] }>('POST', `/api/applications/${encodeURIComponent(id)}/check-text`, { subject, body }, signal),
+  checkPackage: (id: string, unsaved: UnsavedPackageText, signal?: AbortSignal) =>
+    request<{ warnings: PersonalFinding[] }>('POST', `/api/applications/${encodeURIComponent(id)}/check-package`, unsaved, signal),
   previewUrl: (id: string, kind: 'letter' | 'cv', version: string) => `/api/applications/${encodeURIComponent(id)}/preview/${kind}?v=${encodeURIComponent(version)}`,
   pdfUrl: (id: string, part: 'letter' | 'cv' | 'bundle') => `/api/applications/${encodeURIComponent(id)}/pdf/${part}`,
   attachmentUrl: (id: string, fileId: string) => `/api/applications/${encodeURIComponent(id)}/pdf/attachment/${encodeURIComponent(fileId)}`,

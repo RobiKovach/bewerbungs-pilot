@@ -167,6 +167,9 @@ export interface NewPackageInfo {
 
 export type LetterPatch = Partial<Pick<PackageLetter, 'recipient' | 'subject' | 'salutation' | 'paragraphs' | 'closing' | 'signature'>>;
 
+/** What the editor shows but has not saved yet: checked for personal data while typing (`POST …/check-package`). */
+export interface UnsavedPackageText { letter?: LetterPatch; profil?: string; headline?: string }
+
 export type ApplicationJobKind = 'create' | 'recreate' | 'revise' | 'refreshCv';
 export type ApplicationJobRunState = 'idle' | 'running' | 'done' | 'failed' | 'cancelled' | 'interrupted';
 
