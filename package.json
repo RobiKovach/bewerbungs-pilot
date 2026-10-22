@@ -35,6 +35,7 @@
     "source-map-js": "1.2.2",
     "mammoth": {
       "argparse": "2.0.1"
-    }
+    },
+    "rolldown": "1.2.13"
   }
 }
