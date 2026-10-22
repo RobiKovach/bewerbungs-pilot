@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
 import { appView, jobState } from '../test/applicationFixtures';
@@ -83,6 +83,28 @@ describe('SendDialog — personal data warning', () => {
     expect(screen.getByText(/evil@x\.example — email, message/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
     expect(f.mock.calls.some(([url]) => url === '/api/applications/app1/check-text')).toBe(true);
+  });
+
+  it('checks only after a 400 ms pause, once for a burst of changes', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { f } = sendDialog(() => ({ body: { warnings: [] } }));
+      const checkCalls = () => f.mock.calls.filter(([url]) => url === '/api/applications/app1/check-text');
+      const message = await screen.findByLabelText('Message');
+      await act(async () => { await vi.advanceTimersByTimeAsync(400); });
+      const before = checkCalls().length;
+      for (const text of ['a', 'ab', 'abc']) {
+        fireEvent.change(message, { target: { value: text } });
+        await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+      }
+      expect(checkCalls().length).toBe(before);
+      await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+      expect(checkCalls().length).toBe(before + 1);
+      const last = checkCalls().at(-1);
+      expect((JSON.parse(String(last?.[1]?.body)) as { body: string }).body).toBe('abc');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('a failing check shows no block and no error', async () => {

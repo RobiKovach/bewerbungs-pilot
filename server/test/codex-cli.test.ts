@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -87,6 +87,10 @@ describe('parseCodexOutput', () => {
     const out = [line({ type: 'error', message: 'Reconnecting... 1/5' }), msg('{"a":1}'), line({ type: 'turn.completed' })].join('\n');
     expect(parseCodexOutput(out, '', 0)).toEqual({ ok: true, value: { a: 1 } });
   });
+  it('a completed turn with a good answer counts even when codex then exits non-zero', () => {
+    const out = [msg('{"a":1}'), line({ type: 'turn.completed' })].join('\n');
+    expect(parseCodexOutput(out, 'shutdown warning', 1)).toEqual({ ok: true, value: { a: 1 } });
+  });
   it('a completed turn without an answer but with a limit error is LLM_LIMIT, not bad output', () => {
     const out = [line({ type: 'error', message: 'usage_limit_reached' }), line({ type: 'turn.completed' })].join('\n');
     expect(parseCodexOutput(out, '', 0)).toMatchObject({ ok: false, code: 'LLM_LIMIT' });
@@ -153,6 +157,17 @@ describe('CodexCliProvider', () => {
   it('not installed: run throws LLM_NOT_INSTALLED', async () => {
     const none = new CodexCliProvider({ tmpRoot: tmp(), timeoutMs: () => 5000, command: null });
     await expect(none.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_NOT_INSTALLED' });
+  });
+  it('the sign-in window runs `codex login` in the helper folder; not installed -> LLM_NOT_INSTALLED', async () => {
+    const rec = path.join(tmp(), 'login.json');
+    const p = provider('ok', { FAKE_CODEX_RECORD: rec });
+    p.openLogin();
+    await vi.waitFor(() => expect(fs.existsSync(rec)).toBe(true), { timeout: 5000 });
+    const r = JSON.parse(fs.readFileSync(rec, 'utf8')) as { args: string[]; cwd: string };
+    expect(r.args).toEqual(['login']);
+    expect(path.basename(r.cwd)).toBe('tmp');
+    const none = new CodexCliProvider({ tmpRoot: tmp(), timeoutMs: () => 5000, command: null });
+    expect(() => none.openLogin()).toThrow(expect.objectContaining({ code: 'LLM_NOT_INSTALLED' }));
   });
   it('availability via `codex login status`: not-installed / not-logged-in / ok', async () => {
     const none = new CodexCliProvider({ tmpRoot: tmp(), timeoutMs: () => 5000, command: null });

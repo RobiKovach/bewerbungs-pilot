@@ -8,7 +8,10 @@ if (args[0] === 'login' && args[1] === 'status') {
   if (mode === 'not-logged-in') { console.error('Not logged in'); process.exit(1); }
   console.error('Logged in using ChatGPT'); process.exit(0);
 }
-if (args[0] === 'login') process.exit(0);
+if (args[0] === 'login') {
+  if (process.env.FAKE_CODEX_RECORD) fs.writeFileSync(process.env.FAKE_CODEX_RECORD, JSON.stringify({ args, cwd: process.cwd() }));
+  process.exit(0);
+}
 const stdin = fs.readFileSync(0, 'utf8');
 if (process.env.FAKE_CODEX_RECORD) {
   const i = args.indexOf('--output-schema');
