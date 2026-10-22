@@ -45,7 +45,7 @@
       "claude": { "name": "Claude", "price": "Benötigt ein kostenpflichtiges Claude-Abo (Pro oder Max).", "limit": "Limit: hängt von Ihrem Tarif ab.", "cost": "Ein Bewerbungspaket ≈ 1–3 Anfragen, eine Suche ≈ bis zu 5." },
       "chatgpt": {
         "name": "ChatGPT", "price": "Kostenlos mit einem ChatGPT-Konto; bezahlte Tarife bieten mehr.", "limit": "Limit: hängt von Ihrem ChatGPT-Tarif ab (für den kostenlosen Tarif nennt OpenAI keine genauen Zahlen).", "cost": "Ein Bewerbungspaket ≈ 1–3 Anfragen, eine Suche ≈ bis zu 5.",
-        "privacy": "ChatGPT (kostenlos und private Bezahl-Tarife) darf Ihre Texte (Lebenslauf, Geschichten) nutzen, um die Modelle von OpenAI zu verbessern. Sie können das in ChatGPT abschalten: Einstellungen → Datenkontrollen → „Das Modell für alle verbessern“ (Settings → Data controls → \"Improve the model for everyone\").",
+        "privacy": "ChatGPT (kostenloser Tarif und private Bezahl-Tarife) darf Ihre Texte (Lebenslauf, Geschichten) nutzen, um die Modelle von OpenAI zu verbessern. Sie können das in ChatGPT abschalten: Einstellungen → Datenkontrollen → „Das Modell für alle verbessern“ (Settings → Data controls → \"Improve the model for everyone\").",
         "privacyLink": "So schalten Sie das ab"
       }
     },
@@ -71,7 +71,7 @@
   },
   "info": {
     "languageSwitcher": "Ändert die Sprache der App. Dokumente für Arbeitgeber verwenden die Sprache des Stellenangebots.",
-    "claudeTest": "Sendet eine kurze Testfrage an {{ai}}, um zu prüfen, dass alles funktioniert.",
+    "aiTest": "Sendet eine kurze Testfrage an {{ai}}, um zu prüfen, dass alles funktioniert.",
     "restartIntro": "Zeigt die Willkommensschritte erneut. Ihre Daten bleiben unverändert.",
     "quit": "Beendet BewerbungsPilot auf diesem Computer. Starten Sie es erneut über die Verknüpfung auf dem Desktop.",
     "profileConfirm": "Klicken Sie, wenn Sie jedes Feld dieses Abschnitts geprüft haben. Nur geprüfte Abschnitte werden für Bewerbungen verwendet.",
@@ -145,10 +145,10 @@
     "title": "Einstellungen",
     "languageTitle": "Sprache",
     "mailTitle": "E-Mail zum Versenden",
-    "claudeTitle": "KI-Assistent",
-    "claudeTest": "Verbindung testen",
-    "claudeRunning": "Warten auf {{ai}}…",
-    "claudeResult": "{{ai}} sagt: „{{greeting}}“",
+    "aiTitle": "KI-Assistent",
+    "aiTest": "Verbindung testen",
+    "aiRunning": "Warten auf {{ai}}…",
+    "aiResult": "{{ai}} sagt: „{{greeting}}“",
     "updatesTitle": "Updates",
     "updatesCheck": "Nach Updates suchen",
     "updatesExplain": "Einmal am Tag fragt die App die BewerbungsPilot-Website (GitHub), ob es eine neue Version gibt. Dabei wird nichts über Sie gesendet.",
@@ -344,7 +344,7 @@
     "mailDraft": { "copy": "Nachricht kopieren", "copied": "Kopiert.", "copyFailed": "Das Kopieren hat nicht geklappt — markieren Sie den Text und kopieren Sie ihn selbst.", "needMail": "Verbinden Sie Ihre E-Mail, um die Nachricht von hier zu senden.", "needMailLink": "Einstellungen öffnen", "reauthLink": "Erneut mit Google anmelden" },
     "reply": { "rejection": "Auf die Absage antworten", "offer": "Auf das Angebot antworten" },
     "offerReply": { "working": "{{ai}} schreibt die Antwort…", "offered": "Was man Ihnen angeboten hat", "wanted": "Was Sie möchten", "wantedHint": "Schreiben Sie den Betrag mit Ziffern, z. B. 55.000 €.", "ask": "{{ai}} die Antwort schreiben lassen", "text": "Ihre Antwort", "save": "Speichern", "discard": "Änderungen verwerfen", "copy": "Kopieren", "send": "Senden…", "again": "Neu schreiben lassen", "close": "Schließen", "saveFirst": "Speichern Sie zuerst den Text." },
-    "personalData": { "title": "Hier stehen persönliche Daten, die nicht in Ihrem Profil sind", "hint": "Prüfen Sie, ob sie wirklich in diesen Text gehören.", "kind": { "email": "E-Mail-Adresse", "phone": "Telefonnummer", "iban": "IBAN", "taxId": "Steuer-ID", "socialSecurity": "Sozialversicherungsnummer", "birthDate": "Geburtsdatum", "postalCode": "Postanschrift", "link": "Link" }, "where": { "letter": { "recipient": "Anschreiben, Adresszeile {{n}}", "subject": "Anschreiben, Betreff", "salutation": "Anschreiben, Anrede", "paragraph": "Anschreiben, Absatz {{n}}", "closing": "Anschreiben, Grußformel", "signature": "Anschreiben, Unterschrift" }, "cv": { "profil": "Lebenslauf, Profil", "headline": "Lebenslauf, Berufsbezeichnung", "description": "Lebenslauf, Beschreibung", "translation": "Lebenslauf, Übersetzung", "skillGroup": "Lebenslauf, Kenntnisgruppe" }, "email": { "subject": "E-Mail, Betreff", "body": "E-Mail, Nachricht" } } },
+    "personalData": { "title": "Hier stehen persönliche Daten, die nicht in Ihrem Profil sind", "hint": "Prüfen Sie, ob sie wirklich in diesen Text gehören.", "kind": { "email": "E-Mail-Adresse", "phone": "Telefonnummer", "iban": "IBAN", "taxId": "Steuer-ID", "socialSecurity": "Sozialversicherungsnummer", "birthDate": "Geburtsdatum", "postalCode": "Postanschrift", "link": "Link" }, "where": { "other": "dieser Text", "letter": { "recipient": "Anschreiben, Adresszeile {{n}}", "subject": "Anschreiben, Betreff", "salutation": "Anschreiben, Anrede", "paragraph": "Anschreiben, Absatz {{n}}", "closing": "Anschreiben, Grußformel", "signature": "Anschreiben, Unterschrift" }, "cv": { "profil": "Lebenslauf, Profil", "headline": "Lebenslauf, Berufsbezeichnung", "description": "Lebenslauf, Beschreibung", "translation": "Lebenslauf, Übersetzung", "skillGroup": "Lebenslauf, Kenntnisgruppe" }, "email": { "subject": "E-Mail, Betreff", "body": "E-Mail, Nachricht" } } },
     "open": "Paket öffnen",
     "busy": "{{ai}} arbeitet gerade an einem anderen Paket. Bitte warten Sie einen Moment.",
     "language": { "de": "Deutsch", "en": "English" },

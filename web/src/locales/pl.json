@@ -45,7 +45,7 @@
       "claude": { "name": "Claude", "price": "Wymaga płatnej subskrypcji Claude (Pro lub Max).", "limit": "Limit: zależy od Twojego planu.", "cost": "Jeden pakiet aplikacyjny ≈ 1–3 zapytania, jedno wyszukiwanie ≈ do 5." },
       "chatgpt": {
         "name": "ChatGPT", "price": "Za darmo z kontem ChatGPT; płatne plany dają więcej.", "limit": "Limit: zależy od Twojego planu ChatGPT (dla darmowego planu OpenAI nie podaje dokładnych liczb).", "cost": "Jeden pakiet aplikacyjny ≈ 1–3 zapytania, jedno wyszukiwanie ≈ do 5.",
-        "privacy": "ChatGPT (darmowy i prywatne płatne plany) może używać Twoich tekstów (CV, historii) do ulepszania modeli OpenAI. Możesz to wyłączyć w ChatGPT: Ustawienia → Kontrola danych → „Ulepszaj model dla wszystkich” (Settings → Data controls → \"Improve the model for everyone\").",
+        "privacy": "ChatGPT (darmowy plan i prywatne płatne plany) może używać Twoich tekstów (CV, historii) do ulepszania modeli OpenAI. Możesz to wyłączyć w ChatGPT: Ustawienia → Kontrola danych → „Ulepszaj model dla wszystkich” (Settings → Data controls → \"Improve the model for everyone\").",
         "privacyLink": "Jak to wyłączyć"
       }
     },
@@ -71,7 +71,7 @@
   },
   "info": {
     "languageSwitcher": "Zmienia język programu. Dokumenty dla pracodawców są w języku oferty pracy.",
-    "claudeTest": "Wysyła do {{ai}} krótkie pytanie testowe, aby sprawdzić, czy wszystko działa.",
+    "aiTest": "Wysyła do {{ai}} krótkie pytanie testowe, aby sprawdzić, czy wszystko działa.",
     "restartIntro": "Pokazuje ponownie kroki powitalne. Twoje dane pozostają bez zmian.",
     "quit": "Zatrzymuje BewerbungsPilot na tym komputerze. Uruchom go ponownie za pomocą skrótu na pulpicie.",
     "profileConfirm": "Kliknij, gdy sprawdzisz każde pole tej sekcji. Do aplikacji używane są tylko sprawdzone sekcje.",
@@ -145,10 +145,10 @@
     "title": "Ustawienia",
     "languageTitle": "Język",
     "mailTitle": "E-mail do wysyłania",
-    "claudeTitle": "Asystent AI",
-    "claudeTest": "Testuj połączenie",
-    "claudeRunning": "Oczekiwanie na {{ai}}…",
-    "claudeResult": "{{ai}} odpowiada: „{{greeting}}”",
+    "aiTitle": "Asystent AI",
+    "aiTest": "Testuj połączenie",
+    "aiRunning": "Oczekiwanie na {{ai}}…",
+    "aiResult": "{{ai}} odpowiada: „{{greeting}}”",
     "updatesTitle": "Aktualizacje",
     "updatesCheck": "Sprawdzaj aktualizacje",
     "updatesExplain": "Raz dziennie aplikacja pyta stronę BewerbungsPilot (GitHub), czy jest nowa wersja. Nic o Tobie nie jest wysyłane.",
@@ -344,7 +344,7 @@
     "mailDraft": { "copy": "Kopiuj treść", "copied": "Skopiowano.", "copyFailed": "Kopiowanie się nie udało — zaznacz tekst i skopiuj go samodzielnie.", "needMail": "Połącz pocztę, aby wysłać wiadomość stąd.", "needMailLink": "Otwórz ustawienia", "reauthLink": "Zaloguj się przez Google ponownie" },
     "reply": { "rejection": "Odpowiedz na odmowę", "offer": "Odpowiedz na ofertę" },
     "offerReply": { "working": "{{ai}} pisze odpowiedź…", "offered": "Co Ci zaproponowano", "wanted": "Czego chcesz", "wantedHint": "Wpisz kwotę cyframi, np. 55.000 €.", "ask": "Poproś {{ai}} o napisanie odpowiedzi", "text": "Twoja odpowiedź", "save": "Zapisz", "discard": "Odrzuć zmiany", "copy": "Kopiuj", "send": "Wyślij…", "again": "Napisz ponownie", "close": "Zamknij", "saveFirst": "Najpierw zapisz tekst." },
-    "personalData": { "title": "Są tu dane osobowe, których nie ma w Twoim profilu", "hint": "Sprawdź, czy naprawdę powinny być w tym tekście.", "kind": { "email": "Adres e-mail", "phone": "Numer telefonu", "iban": "IBAN", "taxId": "Numer podatkowy (Steuer-ID)", "socialSecurity": "Numer ubezpieczenia społecznego", "birthDate": "Data urodzenia", "postalCode": "Adres pocztowy", "link": "Link" }, "where": { "letter": { "recipient": "list, wiersz adresu {{n}}", "subject": "list, temat", "salutation": "list, zwrot grzecznościowy", "paragraph": "list, akapit {{n}}", "closing": "list, zakończenie", "signature": "list, podpis" }, "cv": { "profil": "CV, profil", "headline": "CV, stanowisko", "description": "CV, opis", "translation": "CV, tłumaczenie", "skillGroup": "CV, grupa umiejętności" }, "email": { "subject": "e-mail, temat", "body": "e-mail, treść" } } },
+    "personalData": { "title": "Są tu dane osobowe, których nie ma w Twoim profilu", "hint": "Sprawdź, czy naprawdę powinny być w tym tekście.", "kind": { "email": "Adres e-mail", "phone": "Numer telefonu", "iban": "IBAN", "taxId": "Numer podatkowy (Steuer-ID)", "socialSecurity": "Numer ubezpieczenia społecznego", "birthDate": "Data urodzenia", "postalCode": "Adres pocztowy", "link": "Link" }, "where": { "other": "ten tekst", "letter": { "recipient": "list, wiersz adresu {{n}}", "subject": "list, temat", "salutation": "list, zwrot grzecznościowy", "paragraph": "list, akapit {{n}}", "closing": "list, zakończenie", "signature": "list, podpis" }, "cv": { "profil": "CV, profil", "headline": "CV, stanowisko", "description": "CV, opis", "translation": "CV, tłumaczenie", "skillGroup": "CV, grupa umiejętności" }, "email": { "subject": "e-mail, temat", "body": "e-mail, treść" } } },
     "open": "Otwórz pakiet",
     "busy": "{{ai}} pracuje teraz nad innym pakietem. Poczekaj chwilę.",
     "language": { "de": "Deutsch", "en": "English" },

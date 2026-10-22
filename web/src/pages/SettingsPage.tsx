@@ -63,23 +63,23 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
       </div>
 
       <div className="card settings-section" id="ai-helper" ref={aiBlock}>
-        <h2>{t('onboarding.ai.title')}<InfoTip textKey="info.claudeTest" /></h2>
+        <h2>{t('onboarding.ai.title')}<InfoTip textKey="info.aiTest" /></h2>
         <AiHelperCards key={restores} onLoginOffered={setCardOffersLogin} />
         {!chosen ? <p className="muted">{t('onboarding.ai.noneChosen')}</p> : null}
         {test.kind === 'running' ? (
           <div className="btn-row">
-            <span className="muted">{t('settings.claudeRunning')}</span>
+            <span className="muted">{t('settings.aiRunning')}</span>
             <button type="button" className="btn ghost" onClick={() => test.controller.abort()}>{t('common.cancel')}</button>
           </div>
         ) : (
           <div className="btn-row">
-            <button type="button" className="btn" disabled={!chosen} onClick={() => void runTest()}>{t('settings.claudeTest')}</button>
+            <button type="button" className="btn" disabled={!chosen} onClick={() => void runTest()}>{t('settings.aiTest')}</button>
             {chosen && !cardOffersLogin ? (
               <button type="button" className="btn ghost" onClick={() => void guarded(() => api.openLogin())}>{t('onboarding.ai.openLogin')}</button>
             ) : null}
           </div>
         )}
-        {test.kind === 'ok' ? <p className="ok">{t('settings.claudeResult', { greeting: test.greeting })}</p> : null}
+        {test.kind === 'ok' ? <p className="ok">{t('settings.aiResult', { greeting: test.greeting })}</p> : null}
         {test.kind === 'failed' ? <ErrorBanner error={test.error} /> : null}
       </div>
 

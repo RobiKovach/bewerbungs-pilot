@@ -131,6 +131,41 @@ describe('AiHelperCards', () => {
     expect(f.mock.calls.some((c) => c[0] === '/api/llm/install' && (c[1] as RequestInit | undefined)?.method === 'POST')).toBe(false);
   });
 
+  it('a failed save of the choice shows that error, not "did not answer"', async () => {
+    const { f, user } = setup({ checks: { claude: { ok: true }, chatgpt: { ok: true } }, provider: 'claude' });
+    const real = f.getMockImplementation()!;
+    f.mockImplementation(async (url: string, init?: RequestInit) => (init?.method === 'PATCH' && url === '/api/settings'
+      ? new Response(JSON.stringify({ error: { code: 'UNKNOWN', detailsForLog: 'disk full' } }), { status: 500 })
+      : real(url, init)));
+    await within(await waitCard('ChatGPT')).findByText('✓ ChatGPT is ready.');
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Choose' }));
+    await user.click(within(card('ChatGPT')).getByRole('button', { name: 'Check again' }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(within(card('ChatGPT')).getByText('✓ ChatGPT is ready.')).toBeInTheDocument();
+    expect(screen.queryByText(/did not answer/)).toBeNull();
+  });
+
+  it('install polling never overlaps a slow answer', async () => {
+    const { f } = setup({
+      checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-installed' } },
+      provider: 'chatgpt',
+      initialInstall: { state: 'running', provider: 'chatgpt' },
+      install: [{ state: 'running', provider: 'chatgpt' }, { state: 'running', provider: 'chatgpt' }, { state: 'running', provider: 'chatgpt' }, { state: 'done', provider: 'chatgpt' }],
+    });
+    let inFlight = 0;
+    let most = 0;
+    const real = f.getMockImplementation()!;
+    f.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url !== '/api/llm/install') return real(url, init);
+      inFlight++;
+      most = Math.max(most, inFlight);
+      await new Promise((r) => setTimeout(r, 40)); // slower than the 10 ms poll
+      try { return await real(url, init); } finally { inFlight--; }
+    });
+    await vi.waitFor(() => expect(f.mock.calls.filter((c) => c[0] === '/api/llm/install').length).toBeGreaterThanOrEqual(4), { timeout: 3000 });
+    expect(most).toBe(1);
+  });
+
   it('an install that finished but still cannot be found asks for a restart', async () => {
     const { user } = setup({
       checks: { claude: { ok: true }, chatgpt: { ok: false, reason: 'not-installed' } },

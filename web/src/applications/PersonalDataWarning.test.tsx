@@ -35,6 +35,13 @@ function sendDialog(checkText: RouteHandler) {
 }
 
 describe('PersonalDataWarning', () => {
+  it('a place this version does not know shows a plain word, not a raw key', () => {
+    const odd = { kind: 'email', value: 'x@evil.example', where: { part: 'cv', field: 'footer' } } as unknown as PersonalFinding;
+    render(<PersonalDataWarning warnings={[odd]} />);
+    expect(screen.getByText('Email address: x@evil.example — this text')).toBeInTheDocument();
+    expect(screen.queryByText(/applications.personalData/)).toBeNull();
+  });
+
   it('renders nothing without findings', () => {
     const { container } = render(<PersonalDataWarning warnings={[]} />);
     expect(container).toBeEmptyDOMElement();

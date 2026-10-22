@@ -38,13 +38,19 @@ export function AiHelperCards({ onReady, onLoginOffered, pollMs = POLL_MS }: {
 
   const check = useCallback(async (id: ProviderId, refresh: boolean) => {
     setChecks((c) => ({ ...c, [id]: { kind: 'checking' } }));
+    let ok: boolean;
     try {
       const r = await api.checkLlm(id, refresh);
       setChecks((c) => ({ ...c, [id]: { kind: 'done', a: r.availability } }));
-      if (r.availability.ok && openRef.current === id) await select(id);
+      ok = r.availability.ok;
     } catch (err) {
       setChecks((c) => ({ ...c, [id]: { kind: 'failed' } }));
       setError(err);
+      return;
+    }
+    // The helper did answer: a failed save of the choice is shown as that error, not as "did not answer".
+    if (ok && openRef.current === id) {
+      try { await select(id); } catch (err) { setError(err); }
     }
   }, [select]);
 
@@ -60,19 +66,23 @@ export function AiHelperCards({ onReady, onLoginOffered, pollMs = POLL_MS }: {
   useEffect(() => {
     if (install?.state !== 'running') return;
     let stopped = false;
-    const timer = setInterval(() => {
-      void (async () => {
-        try {
-          const s = await api.installStatus();
-          if (stopped) return;
-          setInstall(s);
-          if (s.state === 'done' && s.provider) void check(s.provider, true);
-        } catch (err) {
-          if (!stopped) setError(err);
-        }
-      })();
-    }, pollMs);
-    return () => { stopped = true; clearInterval(timer); };
+    let timer: ReturnType<typeof setTimeout>;
+    // The next poll is planned only after the answer: a slow answer never overlaps the next request.
+    const poll = async () => {
+      try {
+        const s = await api.installStatus();
+        if (stopped) return;
+        setInstall(s);
+        if (s.state === 'done' && s.provider) void check(s.provider, true);
+        if (s.state === 'running') timer = setTimeout(() => void poll(), pollMs);
+      } catch (err) {
+        if (stopped) return;
+        setError(err);
+        timer = setTimeout(() => void poll(), pollMs);
+      }
+    };
+    timer = setTimeout(() => void poll(), pollMs);
+    return () => { stopped = true; clearTimeout(timer); };
   }, [install?.state, check, pollMs]);
 
   const saved = settings.llm.provider;

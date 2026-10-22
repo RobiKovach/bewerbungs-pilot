@@ -3,13 +3,14 @@ import type { PersonalFinding } from '../types';
 
 /** "There is personal data here that is not in your profile": a hint only, it never blocks Approve or Send. */
 export function PersonalDataWarning({ warnings }: { warnings: PersonalFinding[] }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   if (warnings.length === 0) return null;
   const place = (w: PersonalFinding) => {
     const where = w.where;
-    if (where.part === 'letter') return t(`applications.personalData.where.letter.${where.field}`, { n: where.index ?? '' });
-    if (where.part === 'cv') return t(`applications.personalData.where.cv.${where.field}`);
-    return t(`applications.personalData.where.email.${where.field}`);
+    const key = `applications.personalData.where.${where.part}.${where.field}`;
+    // A place this version does not know (newer server, older page) gets a plain word, never a raw key.
+    if (!i18n.exists(key)) return t('applications.personalData.where.other');
+    return where.part === 'letter' ? t(key, { n: where.index ?? '' }) : t(key);
   };
   return (
     <div className="card notice notice-warn personal-data" role="status">
