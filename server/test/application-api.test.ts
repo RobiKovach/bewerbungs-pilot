@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import type { ApplicationJobState, ApplicationView, Profile } from '@bp/shared';
+import type { ApplicationJobState, ApplicationListView, ApplicationView, Profile } from '@bp/shared';
 import { H, makeApp } from './helpers/app.js';
 import { FakePrinter, GOOD_LETTER, packageClaude, readyPackageProfile } from './helpers/applications.js';
 import { vacancy } from './helpers/vacancies.js';
@@ -172,6 +172,19 @@ describe('editing a package', () => {
     expect(((await get(ctx, `/api/applications/${id}`)).json() as ApplicationView).followUpDue).toBe(true);
     const list = (await get(ctx, '/api/applications')).json() as { applications: { id: string; followUpDue: boolean }[] };
     expect(list.applications.find((a) => a.id === id)?.followUpDue).toBe(true);
+  });
+  it('the list says how and when a package left the app: the first sent/submitted entry, null before that', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const submittedOfList = async () => ((await get(ctx, '/api/applications')).json() as ApplicationListView).applications.find((a) => a.id === id)?.submitted;
+    expect(await submittedOfList()).toBeNull();
+    ctx.applicationStore.update(id, (p) => {
+      p.status = 'interview';
+      p.history = [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }, { kind: 'sent', at: '2026-10-02T09:00:00.000Z' }, { kind: 'interview', at: '2026-10-09T12:00:00.000Z' }];
+    });
+    expect(await submittedOfList()).toEqual({ via: 'mail', at: '2026-10-02T09:00:00.000Z' });
+    ctx.applicationStore.update(id, (p) => { p.status = 'submitted'; p.history = [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }, { kind: 'submitted', at: '2026-10-03T12:00:00.000Z' }]; });
+    expect(await submittedOfList()).toEqual({ via: 'site', at: '2026-10-03T12:00:00.000Z' });
   });
   it('profileChanged turns true when a description changes, and back to false after refresh-cv', async () => {
     const ctx = await setup();

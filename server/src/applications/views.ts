@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile } from '@bp/shared';
+import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile, SubmittedInfo } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
 import { followUpDue } from './follow-up.js';
 import { allowedFor, findPersonalData, packageTexts } from './personal-data.js';
@@ -30,12 +30,18 @@ function warningsFor(p: ApplicationPackage, profile: Profile, vacancyText: strin
 
 const changed = (p: ApplicationPackage | undefined, current: string) => !p || (!isFrozen(p) && p.profileFingerprint !== current);
 
+/** Derived from the history, never stored: the vacancies page shows these vacancies in their own tab. */
+export function submittedOf(p: ApplicationPackage): SubmittedInfo | null {
+  const first = p.history.find((h) => h.kind === 'sent' || h.kind === 'submitted');
+  return first ? { via: first.kind === 'sent' ? 'mail' : 'site', at: first.at } : null;
+}
+
 export function toListView(store: ApplicationStore, profile: Profile, now: Date): ApplicationListView {
   const current = profileFingerprint(profile);
   return {
     applications: store.list().map((s) => {
       const p = store.get(s.id);
-      return { ...s, profileChanged: changed(p, current), followUpDue: p ? followUpDue(p, now) : false };
+      return { ...s, profileChanged: changed(p, current), followUpDue: p ? followUpDue(p, now) : false, submitted: p ? submittedOf(p) : null };
     }),
   };
 }

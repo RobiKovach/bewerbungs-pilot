@@ -116,7 +116,10 @@ export interface ApplicationSummary {
   writtenBy: ProviderId;
 }
 
-export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean; followUpDue: boolean })[] }
+/** How and when a package left the app: its first `sent` (by mail) or `submitted` (via the employer's site) entry. */
+export interface SubmittedInfo { via: 'mail' | 'site'; at: string }
+
+export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean; followUpDue: boolean; submitted: SubmittedInfo | null })[] }
 
 export interface AttachmentInfo {
   id: string;
