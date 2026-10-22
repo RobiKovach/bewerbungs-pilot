@@ -273,3 +273,11 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .backup-list { list-style: none; padding: 0; margin: 1rem 0 0; }
 .backup-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--border); }
 .backup-row p { margin: 0.2rem 0 0; }
+
+/* New-version banner under the top bar (0.9.0). */
+.update-banner { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; padding: 0.6rem 3rem 0.6rem 1.5rem;
+  background: var(--surface); color: var(--text); border-bottom: 1px solid var(--border); border-left: 4px solid var(--accent); }
+.update-banner__text { margin: 0; font-weight: 600; }
+.update-banner__actions { display: flex; align-items: center; gap: 0.75rem; }
+.update-banner__notes { flex-basis: 100%; margin: 0; white-space: pre-line; }
+.update-banner .notice-close { top: 0.45rem; }

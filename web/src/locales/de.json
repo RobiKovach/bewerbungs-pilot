@@ -13,6 +13,7 @@
   },
   "language": { "label": "Sprache" },
   "unsaved": { "leave": "Einige Änderungen sind noch nicht gespeichert. Wenn Sie jetzt weitergehen, gehen sie verloren. Trotzdem weiter?" },
+  "updates": { "available": "Version {{version}} ist verfügbar", "whatsNew": "Was ist neu", "download": "Herunterladen", "dismiss": "Bis zur nächsten Version ausblenden" },
   "home": {
     "title": "Willkommen bei BewerbungsPilot",
     "intro": "BewerbungsPilot findet Stellenangebote in Deutschland, die zu Ihnen passen, schreibt Ihre Bewerbungsunterlagen und hilft Ihnen, den Überblick über jede Bewerbung zu behalten.",
@@ -148,6 +149,9 @@
     "claudeTest": "Verbindung testen",
     "claudeRunning": "Warten auf {{ai}}…",
     "claudeResult": "{{ai}} sagt: „{{greeting}}“",
+    "updatesTitle": "Updates",
+    "updatesCheck": "Nach Updates suchen",
+    "updatesExplain": "Einmal am Tag fragt die App die BewerbungsPilot-Website (GitHub), ob es eine neue Version gibt. Dabei wird nichts über Sie gesendet.",
     "backupsTitle": "Sicherungen",
     "backups": {
       "intro": "Eine Sicherung enthält Ihr Profil, Stellenangebote und Bewerbungen mit allen Dateien. Ihr E-Mail-Passwort oder Ihr Google-Schlüssel ist nie enthalten.",

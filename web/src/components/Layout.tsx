@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Route } from '../types';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { UpdateBanner } from './UpdateBanner';
 
 const ROUTES: Route[] = ['home', 'profile', 'vacancies', 'applications', 'guide', 'settings'];
 
@@ -25,6 +26,7 @@ export function Layout({ route, onQuit, showNav, children }: { route: Route; onQ
           <button type="button" className="btn ghost" onClick={onQuit}>{t('nav.quit')}</button>
         </div>
       </header>
+      <UpdateBanner />
       <main className="content">{children}</main>
     </div>
   );

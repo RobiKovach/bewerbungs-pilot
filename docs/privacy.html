@@ -24,6 +24,8 @@
     <li>The app sends data only to the services you use through it: the job board of the Federal Employment Agency,
       the AI helper you chose, and your email provider (Google, if you use Sign in with Google). Each of them is
       described below.</li>
+    <li>Once a day the app asks the BewerbungsPilot website whether a newer version exists. Nothing about you is sent;
+      you can switch this off in Settings.</li>
   </ul>
 
   <h2>Who is responsible</h2>
@@ -83,6 +85,15 @@
     email provider, which delivers it to the employer and puts a copy in your mailbox. For providers other than Gmail,
     the app uses the app password you enter; it is stored on your PC encrypted with Windows (DPAPI) for your Windows
     user only.
+  </p>
+
+  <h3 id="updates">Check for a new version</h3>
+  <p>
+    Once a day, while the app is running, it downloads the small file
+    <code>https://robikovach.github.io/bewerbungs-pilot/version.json</code> from the BewerbungsPilot website (hosted on
+    GitHub Pages) to see whether a newer version exists. The request carries no query, no cookies and nothing about you
+    or your data. Like any website, GitHub sees the IP address of your connection. You can switch this off in
+    Settings → Updates; then the app makes no such request.
   </p>
 
   <h2 id="google">Google user data</h2>

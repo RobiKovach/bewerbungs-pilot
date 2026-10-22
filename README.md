@@ -49,7 +49,17 @@ walks you through signing in; you can switch at any time in Settings. Only one h
   moved your data folder with `BP_DATA_DIR`, it is only as private as that folder's permissions.
 - Close the app before installing an older version: installers before 0.8.3 cannot stop the running app.
 - The installer is not signed yet, so Windows SmartScreen may warn you: click **More info → Run anyway**.
+- The new-version notice only ever links to this repository's Releases page; any other link in the version file is
+  ignored, so a broken website cannot send you to a foreign download.
 - Found a security problem? Please report it privately — see [SECURITY.md](SECURITY.md).
+
+## Privacy
+
+The developer receives none of your data. The app talks only to the services you use through it (job board, AI
+helper, email provider) — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
+
+Once a day the app asks the BewerbungsPilot website (GitHub Pages) whether a newer version exists. GitHub sees your IP
+address, as with any website; nothing about you or your data is sent. You can switch it off in **Settings → Updates**.
 
 ## Languages
 

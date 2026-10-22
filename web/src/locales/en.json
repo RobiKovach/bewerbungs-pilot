@@ -13,6 +13,7 @@
   },
   "language": { "label": "Language" },
   "unsaved": { "leave": "Some changes are not saved yet. If you leave now, they will be lost. Leave anyway?" },
+  "updates": { "available": "Version {{version}} is available", "whatsNew": "What's new", "download": "Download", "dismiss": "Hide until the next version" },
   "home": {
     "title": "Welcome to BewerbungsPilot",
     "intro": "BewerbungsPilot finds job offers in Germany that fit you, writes your application documents and helps you keep track of every application.",
@@ -148,6 +149,9 @@
     "claudeTest": "Test the connection",
     "claudeRunning": "Waiting for {{ai}}…",
     "claudeResult": "{{ai}} says: \"{{greeting}}\"",
+    "updatesTitle": "Updates",
+    "updatesCheck": "Check for updates",
+    "updatesExplain": "Once a day the app asks the BewerbungsPilot website (GitHub) whether there is a new version. Nothing about you is sent.",
     "backupsTitle": "Backups",
     "backups": {
       "intro": "A backup holds your profile, job offers and applications with all files. Your email password or Google key is never included.",

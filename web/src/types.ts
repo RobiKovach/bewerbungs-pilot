@@ -6,7 +6,7 @@ export type {
   PersonalData, PersonalFinding, PersonalKind, Profile, ProviderId, ProfileDocument, ProfileLink, ProfileView, PublishedWithinDays, Readiness, RemoteKind, RemotePreference, Salutation,
   ScoreState, Section, SectionDataMap, SectionId, SearchPhase, SearchRunState, SearchState, SearchWarning, Settings, SettingsPatch,
   SkillItem, SkillLevel, Story, StoryAnswer, StoryInput, StoryKind, StoredFile, Vacancy, VacancyContact, VacancyListView,
-  TextPlace, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
+  TextPlace, UpdatesView, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
 } from '@bp/shared';
 
 export type Route = 'home' | 'profile' | 'vacancies' | 'applications' | 'guide' | 'settings';

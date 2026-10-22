@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
 import { SettingsPage } from './SettingsPage';
@@ -115,6 +115,21 @@ describe('SettingsPage', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }));
     expect(await screen.findByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument();
     expect(screen.getByText(/b.zip/)).toBeInTheDocument();
+  });
+
+  it('"Check for updates" is on by default, explains itself and can be switched off and on', async () => {
+    const server = settingsRoutes(baseSettings());
+    mockFetch({ ...server.routes, ...mailRoutes });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    const box = await screen.findByRole('checkbox', { name: 'Check for updates' });
+    expect(box).toBeChecked();
+    expect(screen.getByText(/Once a day the app asks the BewerbungsPilot website \(GitHub\)/)).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(box);
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Check for updates' })).not.toBeChecked());
+    expect(server.current().updates).toEqual({ check: false, dismissedVersion: null });
+    await user.click(screen.getByRole('checkbox', { name: 'Check for updates' }));
+    await waitFor(() => expect(server.current().updates.check).toBe(true));
   });
 
   it('quits via the given callback', async () => {

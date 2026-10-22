@@ -13,6 +13,7 @@
   },
   "language": { "label": "Limbă" },
   "unsaved": { "leave": "Unele modificări nu sunt încă salvate. Dacă plecați acum, se vor pierde. Plecați totuși?" },
+  "updates": { "available": "Versiunea {{version}} este disponibilă", "whatsNew": "Ce este nou", "download": "Descărcați", "dismiss": "Ascundeți până la următoarea versiune" },
   "home": {
     "title": "Bine ați venit la BewerbungsPilot",
     "intro": "BewerbungsPilot găsește oferte de angajare în Germania potrivite pentru dumneavoastră, redactează documentele de candidatură și vă ajută să urmăriți fiecare cerere.",
@@ -148,6 +149,9 @@
     "claudeTest": "Testați conexiunea",
     "claudeRunning": "Se așteaptă răspunsul lui {{ai}}…",
     "claudeResult": "{{ai}} spune: „{{greeting}}”",
+    "updatesTitle": "Actualizări",
+    "updatesCheck": "Căutați actualizări",
+    "updatesExplain": "O dată pe zi aplicația întreabă site-ul BewerbungsPilot (GitHub) dacă există o versiune nouă. Nu se trimite nimic despre dumneavoastră.",
     "backupsTitle": "Copii de rezervă",
     "backups": {
       "intro": "O copie de rezervă conține profilul dumneavoastră, ofertele de muncă și candidaturile cu toate fișierele. Parola de e-mail sau cheia Google nu sunt incluse niciodată.",

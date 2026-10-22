@@ -1,7 +1,7 @@
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding,
   CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
-  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, VacancyListView, VacancyTextView, VacancyView,
+  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
 /** Password is optional: left out = keep the saved one. Language = the interface language of the test email. */
@@ -106,6 +106,8 @@ export const api = {
   restoreBackup: (name: string) => request<{ restored: BackupMeta; beforeRestore: BackupInfo }>('POST', '/api/backups/restore', { name }),
   restoreBackupUpload: (file: File) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>('/api/backups/restore-upload', file, fileName(file, 'backup.zip')),
   openBackupFolder: () => request<{ ok: true }>('POST', '/api/backups/open-folder', {}),
+  getUpdates: () => request<UpdatesView>('GET', '/api/updates'),
+  dismissUpdate: (version: string) => request<unknown>('POST', '/api/updates/dismiss', { version }),
 
   getProfile: () => request<ProfileView>('GET', '/api/profile'),
   setWizard: (step: 1 | 2 | 3 | 4, completed = false) =>

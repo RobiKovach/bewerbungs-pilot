@@ -13,6 +13,7 @@
   },
   "language": { "label": "Język" },
   "unsaved": { "leave": "Niektóre zmiany nie są jeszcze zapisane. Jeśli teraz wyjdziesz, przepadną. Wyjść mimo to?" },
+  "updates": { "available": "Dostępna jest wersja {{version}}", "whatsNew": "Co nowego", "download": "Pobierz", "dismiss": "Ukryj do następnej wersji" },
   "home": {
     "title": "Witamy w BewerbungsPilot",
     "intro": "BewerbungsPilot znajduje oferty pracy w Niemczech, które Ci odpowiadają, przygotowuje dokumenty aplikacyjne i pomaga śledzić każdą aplikację.",
@@ -148,6 +149,9 @@
     "claudeTest": "Testuj połączenie",
     "claudeRunning": "Oczekiwanie na {{ai}}…",
     "claudeResult": "{{ai}} odpowiada: „{{greeting}}”",
+    "updatesTitle": "Aktualizacje",
+    "updatesCheck": "Sprawdzaj aktualizacje",
+    "updatesExplain": "Raz dziennie aplikacja pyta stronę BewerbungsPilot (GitHub), czy jest nowa wersja. Nic o Tobie nie jest wysyłane.",
     "backupsTitle": "Kopie zapasowe",
     "backups": {
       "intro": "Kopia zapasowa zawiera Twój profil, oferty pracy i aplikacje ze wszystkimi plikami. Hasło do poczty ani klucz Google nigdy się w niej nie znajdują.",
