@@ -503,7 +503,10 @@
       "restoreBusySearch": "Trwa wyszukiwanie ofert pracy. Poczekaj, aż się zakończy, potem przywróć kopię.",
       "restoreBusyPackage": "Trwa przygotowanie pakietu aplikacji. Poczekaj, aż się zakończy, potem przywróć kopię.",
       "restoreBusyAi": "{{ai}} jeszcze pracuje. Poczekaj, aż skończy, potem przywróć kopię.",
-      "restoreBusySend": "Trwa wysyłanie e-maila. Poczekaj chwilę, potem przywróć kopię."
+      "restoreBusySend": "Trwa wysyłanie e-maila. Poczekaj chwilę, potem przywróć kopię.",
+      "backupTooLarge": "Ta kopia zapasowa ma więcej niż 1 GB. Tak dużego pliku BewerbungsPilot nie może przywrócić.",
+      "backupNotZip": "To nie jest plik kopii zapasowej. Kopia BewerbungsPilot to plik .zip, na przykład BewerbungsPilot-backup-2026-10-20-1030.zip.",
+      "backupGone": "Tej kopii zapasowej nie ma już w folderze (została przeniesiona lub usunięta). Lista została odświeżona."
     }
   },
   "vacancies": {

@@ -81,4 +81,8 @@ export type ErrorReason =
   | 'restoreBusyAi'
   | 'restoreBusySend'
   // …and while it runs, nothing else may start (sending, search, package jobs, mailbox changes).
-  | 'restoreRunning';
+  | 'restoreRunning'
+  // Backup files (spec 0.9.0, section 3.1).
+  | 'backupTooLarge'
+  | 'backupNotZip'
+  | 'backupGone';

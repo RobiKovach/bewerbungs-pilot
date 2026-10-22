@@ -254,7 +254,19 @@ describe('backup API', () => {
     expect(fs.readdirSync(path.join(ctx.dir, 'tmp')).filter((n) => n.startsWith('upload-'))).toEqual([]);
 
     const txt = await ctx.app.inject({ method: 'POST', url: '/api/backups/restore-upload', ...multipartBody('notes.txt', Buffer.from('hi')) });
-    expect([txt.statusCode, txt.json().error.code]).toEqual([400, 'BAD_REQUEST']);
+    expect([txt.statusCode, txt.json().error.code, txt.json().error.reason]).toEqual([400, 'BAD_REQUEST', 'backupNotZip']);
+  });
+
+  it('a too large upload says "backup", not the CV/photo limits', async () => {
+    const ctx = await makeApp({ maxBackupUploadBytes: 1024 });
+    const res = await ctx.app.inject({ method: 'POST', url: '/api/backups/restore-upload', ...multipartBody('big.zip', Buffer.alloc(4096)) });
+    expect([res.statusCode, res.json().error.code, res.json().error.reason]).toEqual([413, 'FILE_TOO_LARGE', 'backupTooLarge']);
+  });
+
+  it('a backup deleted from the folder meanwhile has its own reason', async () => {
+    const ctx = await makeApp();
+    const res = await restore(ctx, 'BewerbungsPilot-backup-2026-01-01-0000.zip');
+    expect([res.statusCode, res.json().error.code, res.json().error.reason]).toEqual([404, 'NOT_FOUND', 'backupGone']);
   });
 
   it('open-folder shows the backup folder', async () => {

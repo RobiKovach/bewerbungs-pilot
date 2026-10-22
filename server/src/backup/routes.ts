@@ -38,6 +38,8 @@ export interface BackupRouteDeps {
   googleAuth: GoogleAuth;
   logger: Logger;
   revokeTimeoutMs?: number;
+  /** Largest accepted upload (tests); 1 GB like the unpacked limit. */
+  maxUploadBytes?: number;
 }
 
 /** A file name from the list: no folders, no tricks — it is resolved inside the backup folder only. */
@@ -98,22 +100,27 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     const dir = await d.dir();
     const file = path.resolve(dir, name);
     if (path.dirname(file) !== path.resolve(dir)) throw new AppError('BAD_REQUEST', 'backup name outside the backup folder');
-    if (!fs.existsSync(file)) throw new AppError('NOT_FOUND', 'no such backup');
+    if (!fs.existsSync(file)) throw new AppError('NOT_FOUND', 'no such backup', 'backupGone');
     return restore(file);
   });
+
+  const maxUpload = d.maxUploadBytes ?? MAX_UNPACKED_BYTES;
+  /** The generic size text speaks about CVs and photos; a backup gets its own sentence. */
+  const tooLarge = (err: unknown): unknown =>
+    err instanceof AppError && err.code === 'FILE_TOO_LARGE' ? new AppError('FILE_TOO_LARGE', 'backup is larger than 1 GB', 'backupTooLarge') : err;
 
   app.post('/api/backups/restore-upload', async (req) => {
     if (!req.isMultipart()) throw new AppError('BAD_REQUEST', 'expected multipart/form-data');
     let part;
     try {
-      part = await req.file({ limits: { fileSize: MAX_UNPACKED_BYTES, files: 1 } });
+      part = await req.file({ limits: { fileSize: maxUpload, files: 1 } });
     } catch (err) {
-      throw mapUploadError(err);
+      throw tooLarge(mapUploadError(err));
     }
     if (!part) throw new AppError('BAD_REQUEST', 'the request contains no file');
     if (!/\.zip$/i.test(part.filename)) {
       part.file.resume();
-      throw new AppError('BAD_REQUEST', 'only a .zip backup can be restored');
+      throw new AppError('BAD_REQUEST', 'only a .zip backup can be restored', 'backupNotZip');
     }
     await fs.promises.mkdir(d.paths.tmp, { recursive: true });
     const target = path.join(d.paths.tmp, `upload-${Date.now()}.zip`);
@@ -121,9 +128,9 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
       try {
         await pipeline(part.file, fs.createWriteStream(target));
       } catch (err) {
-        throw mapUploadError(err);
+        throw tooLarge(mapUploadError(err));
       }
-      if (part.file.truncated) throw new AppError('FILE_TOO_LARGE', 'backup is larger than 1 GB');
+      if (part.file.truncated) throw new AppError('FILE_TOO_LARGE', 'backup is larger than 1 GB', 'backupTooLarge');
       return await restore(target);
     } finally {
       await fs.promises.rm(target, { force: true }).catch(() => {});

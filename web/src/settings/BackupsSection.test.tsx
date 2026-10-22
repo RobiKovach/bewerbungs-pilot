@@ -156,6 +156,60 @@ describe('BackupsSection', () => {
     expect((body.get('file') as File).name).toBe('my-backup.zip');
   });
 
+  it('a chosen file that is not a .zip is refused with a backup sentence, nothing is sent', async () => {
+    const f = setup({ 'POST /api/backups/restore-upload': () => ({ body: restored }) });
+    // "All files" in the file dialog lets a person pick anything.
+    const user = userEvent.setup({ applyAccept: false });
+    await user.upload(await screen.findByLabelText('Choose file…'), new File(['x'], 'notes.txt', { type: 'text/plain' }));
+    expect(await screen.findByText(/This is not a backup file\./)).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(f.mock.calls.some((c) => c[0] === '/api/backups/restore-upload')).toBe(false);
+  });
+
+  it('a chosen file over 1 GB is refused before upload', async () => {
+    const f = setup({ 'POST /api/backups/restore-upload': () => ({ body: restored }) });
+    const user = userEvent.setup();
+    const big = new File(['zip'], 'big.zip', { type: 'application/zip' });
+    Object.defineProperty(big, 'size', { value: 1024 * 1024 * 1024 + 1 });
+    await user.upload(await screen.findByLabelText('Choose file…'), big);
+    expect(await screen.findByText(/larger than 1 GB/)).toBeInTheDocument();
+    expect(screen.queryByText(/CV or document/)).toBeNull();
+    expect(f.mock.calls.some((c) => c[0] === '/api/backups/restore-upload')).toBe(false);
+  });
+
+  it('a too large upload refused by the server shows the backup sentence', async () => {
+    setup({ 'POST /api/backups/restore-upload': () => ({ status: 413, body: { error: { code: 'FILE_TOO_LARGE', detailsForLog: 'x', reason: 'backupTooLarge' } } }) });
+    const user = userEvent.setup();
+    await user.upload(await screen.findByLabelText('Choose file…'), new File(['zip'], 'b.zip', { type: 'application/zip' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByText(/larger than 1 GB/)).toBeInTheDocument();
+  });
+
+  it('a backup deleted meanwhile says so and the list reloads', async () => {
+    let lists = 0;
+    setup({
+      'GET /api/backups': () => { lists++; return { body: { dir: DIR, backups: lists === 1 ? [backup()] : [] } }; },
+      'POST /api/backups/restore': () => ({ status: 404, body: { error: { code: 'NOT_FOUND', detailsForLog: 'x', reason: 'backupGone' } } }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Restore' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByText(/no longer in the folder/)).toBeInTheDocument();
+    expect(await screen.findByText('No backups yet.')).toBeInTheDocument();
+  });
+
+  it('the list reloads after a failed restore (its "before restore" backup may exist)', async () => {
+    let lists = 0;
+    setup({
+      'GET /api/backups': () => { lists++; return { body: { dir: DIR, backups: lists === 1 ? [backup()] : [backup(), backup({ name: 'x.zip', kind: 'before-restore' })] } }; },
+      'POST /api/backups/restore': () => ({ status: 500, body: { error: { code: 'BACKUP_FAILED', detailsForLog: 'x' } } }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Restore' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByText(/before restore/)).toBeInTheDocument();
+  });
+
   it('shows an empty list', async () => {
     setup({}, []);
     expect(await screen.findByText('No backups yet.')).toBeInTheDocument();

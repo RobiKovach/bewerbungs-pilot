@@ -69,7 +69,7 @@ export interface AppDeps {
   /** Work in flight without its own job state (sends, a restore). */
   activity: Activity;
   /** Backups (spec 0.9.0): the data folder, the backup folder, re-reading every store after a restore, Explorer. */
-  backup: { paths: DataPaths; dir: () => Promise<string>; reload: () => void; openFolder: (dir: string) => void };
+  backup: { paths: DataPaths; dir: () => Promise<string>; reload: () => void; openFolder: (dir: string) => void; maxUploadBytes?: number };
   /** What the daily update check found (spec 0.9.0, 3.3). */
   updates: { available: () => AvailableUpdate | null };
 }

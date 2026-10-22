@@ -503,7 +503,10 @@
       "restoreBusySearch": "O căutare de locuri de muncă este în curs. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
       "restoreBusyPackage": "Se pregătește un pachet de candidatură. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
       "restoreBusyAi": "{{ai}} încă lucrează. Vă rugăm să așteptați până termină, apoi restaurați copia.",
-      "restoreBusySend": "Se trimite un e-mail. Vă rugăm să așteptați un moment, apoi restaurați copia."
+      "restoreBusySend": "Se trimite un e-mail. Vă rugăm să așteptați un moment, apoi restaurați copia.",
+      "backupTooLarge": "Această copie de rezervă are mai mult de 1 GB. BewerbungsPilot nu poate restaura un fișier atât de mare.",
+      "backupNotZip": "Acesta nu este un fișier de copie de rezervă. O copie BewerbungsPilot este un fișier .zip, de exemplu BewerbungsPilot-backup-2026-10-20-1030.zip.",
+      "backupGone": "Această copie de rezervă nu mai este în folder (a fost mutată sau ștearsă). Lista a fost actualizată."
     }
   },
   "vacancies": {

@@ -503,7 +503,10 @@
       "restoreBusySearch": "Gerade läuft eine Stellensuche. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
       "restoreBusyPackage": "Gerade wird eine Bewerbungsmappe erstellt. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
       "restoreBusyAi": "{{ai}} arbeitet noch. Bitte warten Sie, bis es fertig ist, und stellen Sie dann die Sicherung wieder her.",
-      "restoreBusySend": "Gerade wird eine E-Mail gesendet. Bitte warten Sie einen Moment und stellen Sie dann die Sicherung wieder her."
+      "restoreBusySend": "Gerade wird eine E-Mail gesendet. Bitte warten Sie einen Moment und stellen Sie dann die Sicherung wieder her.",
+      "backupTooLarge": "Diese Sicherung ist größer als 1 GB. So große Dateien kann BewerbungsPilot nicht wiederherstellen.",
+      "backupNotZip": "Das ist keine Sicherungsdatei. Eine BewerbungsPilot-Sicherung ist eine .zip-Datei, zum Beispiel BewerbungsPilot-backup-2026-10-20-1030.zip.",
+      "backupGone": "Diese Sicherung ist nicht mehr im Ordner (sie wurde verschoben oder gelöscht). Die Liste wurde aktualisiert."
     }
   },
   "vacancies": {

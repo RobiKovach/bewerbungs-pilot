@@ -11,8 +11,15 @@ const KIND_KEY: Record<BackupKind, string> = {
   'before-restore': 'settings.backups.kindBeforeRestore',
 };
 
-/** The restore waits for other work (search, package, AI, sending) or another restore: say exactly what, not "changed meanwhile". */
-const WAIT_REASONS = new Set(['restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreRunning']);
+/**
+ * Reasons whose own sentence is the whole message: the restore waits for other work (search, package, AI, sending) or
+ * another restore, or the file itself is the problem — say exactly that, not the generic "changed meanwhile" / CV size text.
+ */
+const OWN_REASONS = new Set([
+  'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
+]);
+/** Same limit as the server (unpacked ≤ 1 GB): refuse before sending a huge file. */
+const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
 
 type Target = { kind: 'name'; name: string } | { kind: 'file'; file: File };
 type Busy = null | 'saving' | 'restoring';
@@ -42,6 +49,8 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
   const [saved, setSaved] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Target | null>(null);
   const [done, setDone] = useState<{ beforeRestore: string; mailAgain: boolean } | null>(null);
+  /** A chosen file refused here before any request (not a .zip, too large). */
+  const [fileReason, setFileReason] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setListError(null);
@@ -58,6 +67,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
     setError(null);
     setSaved(null);
     setDone(null);
+    setFileReason(null);
     try {
       const info = await api.createBackup();
       setSaved(info.name);
@@ -75,6 +85,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
     setError(null);
     setSaved(null);
     setDone(null);
+    setFileReason(null);
     try {
       const result = target.kind === 'name' ? await api.restoreBackup(target.name) : await api.restoreBackupUpload(target.file);
       // The restored settings may hold a mailbox without its password or Google key (backups never contain them).
@@ -85,12 +96,21 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
       } catch { /* the note is only a hint */ }
       setDone({ beforeRestore: result.beforeRestore.name, mailAgain });
       await onRestored?.();
-      await load();
     } catch (err) {
       setError(err);
     } finally {
+      // Also after a failure: a failed restore may have left its "before restore" backup, or the file was gone.
+      await load();
       setBusy(null);
     }
+  };
+
+  const choose = (file: File) => {
+    setError(null);
+    setFileReason(null);
+    if (!/\.zip$/i.test(file.name)) setFileReason('backupNotZip');
+    else if (file.size > MAX_UPLOAD_BYTES) setFileReason('backupTooLarge');
+    else setConfirm({ kind: 'file', file });
   };
 
   const openFolder = async () => {
@@ -99,7 +119,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
   };
 
   const disabled = busy !== null || confirm !== null;
-  const waitReason = error instanceof ApiError && error.reason && WAIT_REASONS.has(error.reason) ? error.reason : null;
+  const ownReason = fileReason ?? (error instanceof ApiError && error.reason && OWN_REASONS.has(error.reason) ? error.reason : null);
 
   return (
     <>
@@ -114,7 +134,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
         <button type="button" className="btn ghost" disabled={disabled || !list} onClick={() => void openFolder()}>{t('settings.backups.openFolder')}</button>
         <label className="btn ghost" htmlFor={inputId} aria-disabled={disabled || undefined}>{t('settings.backups.chooseFile')}</label>
         <input id={inputId} type="file" accept=".zip,application/zip" className="visually-hidden" disabled={disabled}
-          onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) setConfirm({ kind: 'file', file }); }} />
+          onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) choose(file); }} />
       </div>
       {saved ? <p className="ok">{t('settings.backups.saved', { name: saved })}</p> : null}
       {busy === 'restoring' ? <p className="muted" role="status">{t('settings.backups.restoring')}</p> : null}
@@ -137,8 +157,8 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
           {done.mailAgain ? <p className="notice">{t('settings.backups.mailAgain')}</p> : null}
         </div>
       ) : null}
-      {waitReason ? (
-        <div className="error-banner" role="alert"><strong>{t(`errors.reasons.${waitReason}`)}</strong></div>
+      {ownReason ? (
+        <div className="error-banner" role="alert"><strong>{t(`errors.reasons.${ownReason}`)}</strong></div>
       ) : error ? <ErrorBanner error={error} /> : null}
 
       {listError ? <ErrorBanner error={listError} onRetry={() => void load()} /> : null}

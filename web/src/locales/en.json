@@ -503,7 +503,10 @@
       "restoreBusySearch": "A job search is running. Please wait until it is finished, then restore the backup.",
       "restoreBusyPackage": "An application package is being prepared. Please wait until it is finished, then restore the backup.",
       "restoreBusyAi": "{{ai}} is still working. Please wait until it is finished, then restore the backup.",
-      "restoreBusySend": "An email is being sent. Please wait a moment, then restore the backup."
+      "restoreBusySend": "An email is being sent. Please wait a moment, then restore the backup.",
+      "backupTooLarge": "This backup is larger than 1 GB. BewerbungsPilot cannot restore such a large file.",
+      "backupNotZip": "This is not a backup file. A BewerbungsPilot backup is a .zip file, for example BewerbungsPilot-backup-2026-10-20-1030.zip.",
+      "backupGone": "This backup is no longer in the folder (it was moved or deleted). The list has been updated."
     }
   },
   "vacancies": {
