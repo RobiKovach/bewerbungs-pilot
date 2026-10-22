@@ -1,5 +1,5 @@
 // Builds everything and packs release/BewerbungsPilot-v<version>.zip for GitHub Releases.
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -25,5 +25,9 @@ fs.copyFileSync(path.join(root, 'installer', 'install.bat'), path.join(out, 'ins
 
 const zip = `${out}.zip`;
 fs.rmSync(zip, { force: true });
-execSync(`powershell -NoProfile -Command "Compress-Archive -Path '${out}\\*' -DestinationPath '${zip}' -Force"`, { stdio: 'inherit' });
+// Paths go in through the environment, never into the command text (no quoting, no shell).
+execFileSync('powershell', ['-NoProfile', '-Command', 'Compress-Archive -Path (Join-Path $env:BP_RELEASE_DIR "*") -DestinationPath $env:BP_RELEASE_ZIP -Force'], {
+  stdio: 'inherit',
+  env: { ...process.env, BP_RELEASE_DIR: out, BP_RELEASE_ZIP: zip },
+});
 console.log(`Release ready: ${zip}`);
