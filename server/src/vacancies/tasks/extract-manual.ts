@@ -52,6 +52,7 @@ ${SCORING_RULES}`;
 
 export function extractManualTask(text: string, profile: Profile, language: Language): LlmTask {
   return {
+    id: 'extract-manual',
     prompt: [
       RULES,
       `The person's profile:\n${fenceUntrusted('profile', JSON.stringify(scoringProfile(profile), null, 1))}`,

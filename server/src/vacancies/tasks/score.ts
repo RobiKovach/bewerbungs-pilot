@@ -52,6 +52,7 @@ export function scoreTask(items: readonly ScoreInput[], profile: Profile, langua
     return `Offer id: ${id}\n${fenceUntrusted('vacancy', `${JSON.stringify(meta)}\n\n${text.slice(0, TEXT_FOR_CLAUDE)}`)}`;
   });
   return {
+    id: 'score',
     prompt: [RULES, `The person's profile:\n${fenceUntrusted('profile', JSON.stringify(scoringProfile(profile), null, 1))}`, ...offers].join('\n\n'),
     schema: SCHEMA,
     replyLanguage: language,

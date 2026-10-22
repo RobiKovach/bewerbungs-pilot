@@ -45,7 +45,7 @@ export function followUpTask(profile: Profile, language: Language): LlmTask {
     existingStories: profile.stories.map((s) => s.title),
     neverMention: profile.neverMention,
   }, noIds, 1);
-  return { prompt: `${RULES}\n\n${fenceUntrusted('profile', context)}`, schema: SCHEMA, replyLanguage: language };
+  return { id: 'follow-up', prompt: `${RULES}\n\n${fenceUntrusted('profile', context)}`, schema: SCHEMA, replyLanguage: language };
 }
 
 export function toQuestions(out: FollowUpOutput, newId: () => string): FollowUpQuestion[] {

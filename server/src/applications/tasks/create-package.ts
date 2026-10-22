@@ -64,6 +64,7 @@ export function offerBlock(vacancy: PackageVacancy, offerText: string): string {
 
 export function createPackageTask(ctx: PackageContext, vacancy: PackageVacancy, offerText: string): LlmTask {
   return {
+    id: 'create-package',
     prompt: [
       'You write a cover letter (Anschreiben) and the tailored parts of a CV (Lebenslauf) for one job application in Germany.',
       letterRules(ctx), cvRules(ctx), contextBlock(ctx), offerBlock(vacancy, offerText),

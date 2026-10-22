@@ -40,6 +40,7 @@ const DISALLOWED_TOOLS = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit',
 const AUTH_ERROR_RE = /not logged in|\/login|invalid api key|unauthori[sz]ed/i;
 const PROBE_TIMEOUT_MS = 60_000;
 const PROBE_TASK: LlmTask = {
+  id: 'probe',
   prompt: 'Answer with ok = true.',
   schema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] },
   replyLanguage: 'en',

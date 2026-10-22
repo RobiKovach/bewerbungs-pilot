@@ -3,6 +3,7 @@ import type { LlmTask } from '../llm/types.js';
 
 export function helloTask(language: Language): LlmTask {
   return {
+    id: 'hello',
     prompt: 'Greet the user of the BewerbungsPilot job-application app in one short, friendly sentence.',
     schema: {
       type: 'object',

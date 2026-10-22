@@ -40,7 +40,7 @@ export function structureStoriesTask(answers: AnsweredQuestion[], neverMention: 
     `Answers:\n${fenceUntrusted('answers', JSON.stringify(answers, null, 1))}`,
     `Never mention:\n${fenceUntrusted('never mention', JSON.stringify(neverMention))}`,
   ].join('\n\n');
-  return { prompt, schema: SCHEMA, replyLanguage: language };
+  return { id: 'structure-stories', prompt, schema: SCHEMA, replyLanguage: language };
 }
 
 export function toStories(out: StoriesOutput, newId: () => string): Story[] {

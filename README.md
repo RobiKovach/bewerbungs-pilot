@@ -221,6 +221,16 @@ npm test && npm run i18n:check
 npm run release           # builds release/BewerbungsPilot-v<version>.zip
 ```
 
+Test modes (command line or environment only — never from the app's settings):
+
+- `--fake-llm` / `BP_FAKE_LLM=1` — every AI task gets a scripted answer (`server/src/llm/fake-scripted.ts`): a fictional
+  CV (Max Mustermann), questions, stories, vacancy scores, a cover letter and CV parts that pass the app's checks.
+- `--fake-mail` / `BP_FAKE_MAIL=1` — nothing is sent: every mail (also the test mail when a mailbox is saved, SMTP or
+  Google) is written to `<data folder>/tmp/fake-mail/<time>-<n>.json` with attachment names and sizes.
+- `BP_DATA_DIR`, `BP_BACKUP_DIR`, `BP_UPDATE_URL` point the data, the backups and the update check somewhere else.
+
+The server log and the console say "FAKE MODE" when one of them is on.
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE) — free for personal and other noncommercial use;

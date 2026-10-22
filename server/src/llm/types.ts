@@ -5,7 +5,16 @@ export type { Availability, ProviderId };
 
 export type JsonSchema = Record<string, unknown>;
 
+/** Every kind of task the app sends to an AI helper. The scripted fake (fake-scripted.ts) answers each of them. */
+export const LLM_TASK_IDS = [
+  'probe', 'hello', 'extract-cv', 'follow-up', 'structure-stories', 'extract-manual', 'score',
+  'create-package', 'refresh-cv', 'revise-letter', 'offer-reply',
+] as const;
+export type LlmTaskId = typeof LLM_TASK_IDS[number];
+
 export interface LlmTask {
+  /** Which task this is (for the scripted fake); the real adapters send only prompt and schema. */
+  id: LlmTaskId;
   prompt: string;
   schema: JsonSchema;
   replyLanguage: Language;

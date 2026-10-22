@@ -12,11 +12,13 @@ import { SettingsStore } from './data/settings.js';
 import { ClaudeCodeProvider } from './llm/claude-code.js';
 import { CodexCliProvider, codexSearchRoots } from './llm/codex-cli.js';
 import { FakeProvider } from './llm/fake.js';
+import { scriptedResponse } from './llm/fake-scripted.js';
 import { InstallJob } from './llm/install.js';
 import { ProviderRegistry } from './llm/providers.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
+import { FakeFileMailer } from './mail/fake-file-mailer.js';
 import { GmailApiMailer } from './mail/gmail-api.js';
 import { LibraryGoogleAuth } from './mail/google-auth.js';
 import { SmtpMailer } from './mail/mailer.js';
@@ -41,7 +43,10 @@ import { VacancyStore } from './vacancies/store.js';
 
 const HOST = '127.0.0.1';
 const noOpen = process.argv.includes('--no-open') || process.env.BP_NO_OPEN === '1';
+// Test/demo modes, only from the command line or the environment (never from settings or a request):
+// --fake-llm answers every AI task from fake-scripted.ts; --fake-mail writes mails to <data>/tmp/fake-mail/ instead of sending.
 const fakeLlm = process.argv.includes('--fake-llm') || process.env.BP_FAKE_LLM === '1';
+const fakeMail = process.argv.includes('--fake-mail') || process.env.BP_FAKE_MAIL === '1';
 const WINNER_WAIT_MS = 15_000;
 const CLOSE_TIMEOUT_MS = 3000;
 
@@ -75,9 +80,9 @@ async function main(): Promise<void> {
   const profileStore = new ProfileStore(paths.profileFile, (event, data) => logger.warn(event, data));
   profileStore.load();
   const profileFiles = new ProfileFiles(paths.profileFiles);
-  const claude: LlmProvider = fakeLlm ? new FakeProvider(undefined, undefined, 'claude')
+  const claude: LlmProvider = fakeLlm ? new FakeProvider(undefined, scriptedResponse, 'claude')
     : new ClaudeCodeProvider({ tmpRoot: paths.tmp, timeoutMs: () => settings.get().llm.timeoutSec * 1000, logger });
-  const chatgpt: LlmProvider = fakeLlm ? new FakeProvider(undefined, undefined, 'chatgpt')
+  const chatgpt: LlmProvider = fakeLlm ? new FakeProvider(undefined, scriptedResponse, 'chatgpt')
     : new CodexCliProvider({ tmpRoot: paths.tmp, timeoutMs: () => settings.get().llm.timeoutSec * 1000, logger });
   const providers = new ProviderRegistry({ claude, chatgpt }, () => settings.get().llm.provider);
   const version = (JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version;
@@ -120,6 +125,8 @@ async function main(): Promise<void> {
   });
   applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
+  const fakeMailDir = path.join(paths.tmp, 'fake-mail');
+  const fileMailer = new FakeFileMailer(fakeMailDir);
   const updates = new UpdateChecker({
     url: process.env.BP_UPDATE_URL || UPDATE_URL, stateFile: path.join(paths.root, 'update-state.json'),
     currentVersion: version, enabled: () => settings.get().updates.check, logger,
@@ -132,7 +139,7 @@ async function main(): Promise<void> {
     onShutdown: () => void shutdown(),
     profileStore, profileFiles, vacancyStore, vacancySource, pageReader, searchJob,
     applicationStore, applicationJob, printer,
-    mailer: new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
+    mailer: fakeMail ? new MailRouter(fileMailer, fileMailer) : new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,
     session: { key, cookieName: cookieName(port) },
     activity: new Activity(),
@@ -160,7 +167,12 @@ async function main(): Promise<void> {
   await app.listen({ host: HOST, port });
   const info: ServerInfo = { port, pid: process.pid, startedAt: new Date().toISOString(), key };
   writeJsonAtomic(paths.server, info);
-  logger.info('started', { port, version, fakeLlm });
+  logger.info('started', { port, version, fakeLlm, fakeMail });
+  if (fakeLlm || fakeMail) {
+    logger.warn('fake_mode', { fakeLlm, fakeMail });
+    const what = [fakeLlm && 'AI answers are scripted (--fake-llm)', fakeMail && `mail is written to ${fakeMailDir}, nothing is sent (--fake-mail)`];
+    console.warn(`FAKE MODE — ${what.filter(Boolean).join('; ')}`);
+  }
   updates.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
   else openBrowser(openUrl(HOST, port, key));

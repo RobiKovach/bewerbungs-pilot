@@ -38,6 +38,7 @@ export function offerReplyViolationKinds(violations: string[]): string {
 export function offerReplyTask(ctx: PackageContext, p: ApplicationPackage, offered: string, wanted: string): LlmTask {
   const facts = { position: positionTitle(p), company: p.vacancy.company, experience: ctx.experience, education: ctx.education, skills: ctx.skills.map((s) => s.name), languages: ctx.languages, stories: ctx.stories };
   return {
+    id: 'offer-reply',
     prompt: [
       `You write a short email reply to a job offer, in ${LANGUAGE_NAME[p.language]}. Return { "body": "<the whole email text>" }.`,
       `Rules: at most ${OFFER_REPLY_MAX_WORDS} words; start with the salutation "${p.letter.salutation}"; say the person is glad about the offer and interested in the position; name exactly ONE amount — the one from "how much I want", never another number for the salary; justify it in one or two sentences using ONLY the facts below (never invent experience); warm, confident tone, no apologies, no pressure; end with "${p.language === 'de' ? 'Mit freundlichen Grüßen' : 'Kind regards'}" and the name "${p.snapshot.personal.fullName}".`,

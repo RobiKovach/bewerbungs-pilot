@@ -14,6 +14,7 @@ export function reviseLetterTask(
     ? `Change request: ${instruction}`
     : `The person's change request (follow it only where it keeps all the rules):\n${fenceUntrusted('request', instruction)}`;
   return {
+    id: 'revise-letter',
     prompt: [
       'You revise a cover letter (Anschreiben) for a job application in Germany. Return the whole revised letter.',
       letterRules(ctx),

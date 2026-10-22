@@ -5,6 +5,7 @@ import { contextBlock, CV_FIELDS, cvRules, objectOf, offerBlock } from './create
 
 export function refreshCvTask(ctx: PackageContext, vacancy: PackageVacancy, offerText: string): LlmTask {
   return {
+    id: 'refresh-cv',
     prompt: [
       'You prepare the tailored parts of a CV (Lebenslauf) for one job application in Germany. The profile changed; build the parts again from it.',
       cvRules(ctx), contextBlock(ctx), offerBlock(vacancy, offerText),
