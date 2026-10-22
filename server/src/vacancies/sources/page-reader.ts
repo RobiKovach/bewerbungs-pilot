@@ -11,7 +11,7 @@ export interface PageReader {
 }
 
 type Check = typeof checkPublicUrl;
-type Log = (event: string, data: { host: string; result: 'ok' | 'blocked' | 'failed' }) => void;
+type Log = (event: string, data: { host: string; result: 'ok' | 'blocked' | 'failed' | 'too-short' }) => void;
 
 const SKIPPED_TYPES = new Set(['image', 'media', 'font']);
 
@@ -61,8 +61,8 @@ const unreadable = (why: string) => new AppError('BAD_REQUEST', `page not readab
 /**
  * Opens a pasted vacancy link in the installed Edge/Chrome (spec, section 6a): a fresh temporary profile (no cookies,
  * no accounts, deleted afterwards), JavaScript on (career pages are drawn by it), every request filtered by
- * `allowRequest`, downloads and new windows refused, one read at a time, 25 s in total. The log gets only the host
- * and the result — never the page text or the full link.
+ * `allowRequest`, downloads and new windows refused, one read at a time, 25 s in total (address check included). The
+ * log gets only the host and the result, once per read — never the page text or the full link.
  */
 export class BrowserPageReader implements PageReader {
   private chain: Promise<unknown> = Promise.resolve();
@@ -73,6 +73,10 @@ export class BrowserPageReader implements PageReader {
 
   constructor(private readonly opts: {
     tmpRoot: string; find?: () => string | null; check?: Check; timeoutMs?: number; maxChars?: number;
+    /** Shorter page text is refused as unreadable (and logged as 'too-short'). */
+    minChars?: number;
+    /** Tests: a fake browser instead of puppeteer.launch. */
+    launch?: (options: ReturnType<typeof launchOptions>) => Promise<Browser>;
     warn?: (event: string, data: Record<string, unknown>) => void; log?: Log;
   }) {
     this.find = opts.find ?? (() => findBrowser());
@@ -92,14 +96,22 @@ export class BrowserPageReader implements PageReader {
     const executablePath = this.find();
     if (!executablePath) throw new AppError('BROWSER_MISSING', 'no Edge or Chrome found');
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
-    if (!(await this.check(url)).ok) {
+    // The whole read has one limit, starting before the address check (its DNS lookup can hang too).
+    const deadline = Date.now() + this.timeoutMs;
+    let checkTimer: NodeJS.Timeout | undefined;
+    const checkTimeout = new Promise<'timeout'>((resolve) => { checkTimer = setTimeout(() => resolve('timeout'), this.timeoutMs); });
+    const checked = await Promise.race([this.check(url), checkTimeout]).finally(() => clearTimeout(checkTimer));
+    if (checked === 'timeout') {
+      this.opts.log?.('vacancy.pageRead', { host, result: 'failed' });
+      throw unreadable('timeout');
+    }
+    if (!checked.ok) {
       this.opts.log?.('vacancy.pageRead', { host, result: 'blocked' });
       throw unreadable('blocked address');
     }
+    let text: string;
     try {
-      const text = await this.browse(executablePath, url, signal);
-      this.opts.log?.('vacancy.pageRead', { host, result: 'ok' });
-      return text;
+      text = await this.browse(executablePath, url, signal, Math.max(1, deadline - Date.now()));
     } catch (err) {
       // Only the browser's short error code goes on: its messages carry the full link (with its query string).
       const code = /net::ERR_[A-Z_]+/.exec(String(err))?.[0] ?? (err instanceof Error ? err.name : 'Error');
@@ -109,9 +121,15 @@ export class BrowserPageReader implements PageReader {
       if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
       throw unreadable(code);
     }
+    if (text.length < (this.opts.minChars ?? 0)) {
+      this.opts.log?.('vacancy.pageRead', { host, result: 'too-short' });
+      throw unreadable('too short');
+    }
+    this.opts.log?.('vacancy.pageRead', { host, result: 'ok' });
+    return text;
   }
 
-  private async browse(executablePath: string, url: string, signal: AbortSignal): Promise<string> {
+  private async browse(executablePath: string, url: string, signal: AbortSignal, timeoutMs: number): Promise<string> {
     fs.mkdirSync(this.opts.tmpRoot, { recursive: true });
     // `pdf-` prefix on purpose: BrowserPrinter's sweep removes such folders left behind by a crash.
     const profile = fs.mkdtempSync(path.join(this.opts.tmpRoot, 'pdf-read-'));
@@ -119,11 +137,11 @@ export class BrowserPageReader implements PageReader {
     let reachedPrivate = false;
     let timedOut = false;
     const stop = () => { void browser?.close().catch(() => { browser?.process()?.kill(); }); };
-    const timer = setTimeout(() => { timedOut = true; stop(); }, this.timeoutMs);
+    const timer = setTimeout(() => { timedOut = true; stop(); }, timeoutMs);
     signal.addEventListener('abort', stop);
     try {
       try {
-        browser = await puppeteer.launch(launchOptions(executablePath, profile, this.timeoutMs));
+        browser = await (this.opts.launch ?? ((o) => puppeteer.launch(o)))(launchOptions(executablePath, profile, timeoutMs));
       } catch (err) {
         throw new AppError('BROWSER_MISSING', `browser did not start: ${String(err).slice(0, 300)}`);
       }
@@ -146,7 +164,7 @@ export class BrowserPageReader implements PageReader {
         const ip = res.remoteAddress().ip?.replace(/^\[|\]$/g, '');
         if (ip && !isPublicAddress(ip)) reachedPrivate = true;
       });
-      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: this.timeoutMs });
+      const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: timeoutMs });
       if (!response || !response.ok()) throw unreadable(`status ${response?.status() ?? 'none'}`);
       await page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000 }).catch(() => undefined);
       const raw = await page.evaluate('document.body ? document.body.innerText : ""');

@@ -186,11 +186,11 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     let offerText = text;
     let stored = rawText;
     if (text.length < MANUAL_TEXT_MIN && url) {
+      // No AI helper chosen: say so now, not after reading the page for up to 25 s.
+      d.queue.current();
       offerText = stored = await d.pageReader.read(url, signal);
-      if (offerText.length < MANUAL_TEXT_MIN) {
-        d.logger.info('vacancy.pageRead', { host: new URL(url).hostname, result: 'too-short' });
-        throw new AppError('BAD_REQUEST', `page text has ${offerText.length} characters`, 'pageUnreadable');
-      }
+      // The browser reader refuses (and logs) a too short page itself; this only guards other readers.
+      if (offerText.length < MANUAL_TEXT_MIN) throw new AppError('BAD_REQUEST', `page text has ${offerText.length} characters`, 'pageUnreadable');
     } else if (text.length < MANUAL_TEXT_MIN) {
       throw new AppError('BAD_REQUEST', `pasted text has ${text.length} characters`, 'pastedTooShort', { min: MANUAL_TEXT_MIN });
     }

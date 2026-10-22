@@ -207,3 +207,13 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     expect(ctx.pageReader.calls).toEqual([]);
   });
 });
+
+describe('link without text and no AI helper chosen', () => {
+  it('answers LLM_NOT_CHOSEN at once, without opening the page', async () => {
+    const reader = new FakePageReader(() => 'Stellenangebot '.repeat(40));
+    const ctx = await makeApp({ chosen: null, pageReader: reader });
+    const res = await ctx.app.inject({ method: 'POST', url: '/api/vacancies/manual', headers: H, payload: { text: '', url: 'https://jobs.example.de/stelle/1' } });
+    expect([res.statusCode, res.json().error.code]).toEqual([409, 'LLM_NOT_CHOSEN']);
+    expect(reader.calls).toEqual([]);
+  });
+});
