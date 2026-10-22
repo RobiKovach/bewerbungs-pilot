@@ -43,11 +43,12 @@ walks you through signing in; you can switch at any time in Settings. Only one h
 ## Security
 
 - Every start of the app creates a new launch key. Only the shortcut opens the app with it; a bookmark or a typed
-  address shows "Open BewerbungsPilot with its shortcut" instead. The key stops other programs and other Windows users on
-  this PC from reading your data through the app.
+  address shows "Open BewerbungsPilot with its shortcut" instead. The key stops other Windows users on this PC, and
+  websites or programs that cannot read your files, from reading your data through the app. A program running under
+  your own Windows account can read the key file, see the next point.
 - It does not protect against an administrator of the PC or malware running under your own Windows account. If you
   moved your data folder with `BP_DATA_DIR`, it is only as private as that folder's permissions.
-- Close the app before installing an older version: installers before 0.8.3 cannot stop the running app.
+- Close the app before installing an older version: installers before 0.8.3 may not stop the running app.
 - The installer is not signed yet, so Windows SmartScreen may warn you: click **More info → Run anyway**.
 - The new-version notice only ever links to this repository's Releases page; any other link in the version file is
   ignored, so a broken website cannot send you to a foreign download.
@@ -55,8 +56,8 @@ walks you through signing in; you can switch at any time in Settings. Only one h
 
 ## Privacy
 
-The developer receives none of your data. The app talks only to the services you use through it (job board, AI
-helper, email provider) — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
+The developer receives none of your data. Apart from the daily version check below, the app talks only to the services
+you use through it (job board, AI helper, email provider) — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
 
 Once a day the app asks the BewerbungsPilot website (GitHub Pages) whether a newer version exists. GitHub sees your IP
 address, as with any website; nothing about you or your data is sent. You can switch it off in **Settings → Updates**.
@@ -149,8 +150,8 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 
 ## What's new in 0.8.3
 
-- **Launch key.** The app opens only through its shortcut; other programs and other Windows users on this PC can no
-  longer read your data through it. A bookmark or a typed address shows "Open BewerbungsPilot with its shortcut".
+- **Launch key.** The app opens only through its shortcut; other Windows users on this PC, and programs that cannot
+  read your files, can no longer read your data through it. A bookmark or a typed address shows "Open BewerbungsPilot with its shortcut".
 - **Personal-data warning.** If a letter, CV or email contains personal data that is not in your profile (another
   email address, phone number, IBAN, tax ID, birth date, address or link), a yellow note above "Approve" or "Send"
   names it and where it is. It is only a warning — you can still approve and send.
@@ -221,12 +222,17 @@ npm test && npm run i18n:check
 npm run release           # builds release/BewerbungsPilot-v<version>.zip
 ```
 
+In development open the dashboard on port 5173: take the `http://127.0.0.1:4280/open?key=…` address the server prints
+and open it as `http://localhost:5173/open?key=…` (the dev server passes it on). The launch key changes every time the
+server restarts (also on a file change), so open the new address after a restart.
+
 Test modes (command line or environment only — never from the app's settings):
 
 - `--fake-llm` / `BP_FAKE_LLM=1` — every AI task gets a scripted answer (`server/src/llm/fake-scripted.ts`): a fictional
   CV (Max Mustermann), questions, stories, vacancy scores, a cover letter and CV parts that pass the app's checks.
 - `--fake-mail` / `BP_FAKE_MAIL=1` — nothing is sent: every mail (also the test mail when a mailbox is saved, SMTP or
-  Google) is written to `<data folder>/tmp/fake-mail/<time>-<n>.json` with attachment names and sizes.
+  Google) is written to `<data folder>/tmp/fake-mail/<time>-<n>.json` with attachment names and sizes. "Sign in with
+  Google" and disconnecting still talk to Google for real — only sending is faked.
 - `BP_DATA_DIR`, `BP_BACKUP_DIR`, `BP_UPDATE_URL` point the data, the backups and the update check somewhere else.
 
 The server log and the console say "FAKE MODE" when one of them is on.
