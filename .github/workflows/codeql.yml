@@ -8,6 +8,7 @@ on:
 permissions:
   security-events: write
   contents: read
+  actions: read
 jobs:
   analyze:
     runs-on: ubuntu-latest
