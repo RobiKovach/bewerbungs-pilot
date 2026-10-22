@@ -1,6 +1,9 @@
 import { AppError } from '../errors.js';
 import type { LlmProvider, LlmTask, ProviderId } from './types.js';
 
+/** Builds the task for the provider whose turn it is. */
+export type TaskFor = (provider: LlmProvider) => LlmTask | Promise<LlmTask>;
+
 // One AI process at a time, first come first served. The provider is resolved when a task's turn
 // starts (not when it is queued), so switching the AI helper affects every request that has not started yet.
 export class LlmQueue {
@@ -30,12 +33,16 @@ export class LlmQueue {
     for (const ctrl of this.active) ctrl.abort();
   }
 
-  run<T>(task: LlmTask, signal: AbortSignal): Promise<T> {
+  /**
+   * `task` may be a function of the provider that actually runs it (its turn decides, see above): a CV is a file for
+   * Claude but text for ChatGPT, and the helper may change while the task waits.
+   */
+  run<T>(task: LlmTask | TaskFor, signal: AbortSignal): Promise<T> {
     return this.runTagged<T>(task, signal).then((r) => r.value);
   }
 
   /** Like run(), but also says which provider actually did the work. */
-  runTagged<T>(task: LlmTask, signal: AbortSignal): Promise<{ value: T; provider: ProviderId }> {
+  runTagged<T>(task: LlmTask | TaskFor, signal: AbortSignal): Promise<{ value: T; provider: ProviderId }> {
     const ctrl = new AbortController();
     const forward = () => ctrl.abort();
     if (signal.aborted) ctrl.abort();
@@ -51,7 +58,8 @@ export class LlmQueue {
       const provider = this.resolve();
       this.running = true;
       try {
-        return { value: await provider.run<T>(task, ctrl.signal), provider: provider.id };
+        const t = typeof task === 'function' ? await task(provider) : task;
+        return { value: await provider.run<T>(t, ctrl.signal), provider: provider.id };
       } finally {
         this.running = false;
       }

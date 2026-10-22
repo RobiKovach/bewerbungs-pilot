@@ -3,13 +3,14 @@ import type { FastifyInstance } from 'fastify';
 import type { CvResult, CvSectionId, StoredFile, StoryAnswer } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
+import type { LlmProvider } from '../llm/types.js';
 import { docxToText } from './docx.js';
 import { removeQuietly } from './files.js';
 import { countLetters, MIN_PDF_LETTERS, pdfToText } from './pdf-text.js';
 import type { ProfileRouteDeps } from './routes.js';
 import { CV_SECTION_IDS, LIMITS } from './schema.js';
 import { applyExtraction, type ExtractionOutcome } from './sections.js';
-import { extractCvTask, MIN_CV_TEXT_CHARS, toSectionData, type CvSource, type ExtractedCv } from './tasks/extract-cv.js';
+import { extractCvTask, MIN_CV_TEXT_CHARS, toSectionData, type ExtractedCv } from './tasks/extract-cv.js';
 import { followUpTask, toQuestions, type FollowUpOutput } from './tasks/follow-up.js';
 import { structureStoriesTask, toStories, type StoriesOutput } from './tasks/structure-stories.js';
 import { receiveUpload } from './upload.js';
@@ -38,20 +39,24 @@ export async function registerClaudeRoutes(app: FastifyInstance, d: ProfileRoute
     let result: CvResult;
     try {
       const file = d.files.pathOf(stored);
-      let source: CvSource = { kind: 'file', path: file };
+      let docxText: string | null = null;
       if (stored.ext === '.docx') {
-        const text = (await docxToText(file)).trim();
-        if (text.length < MIN_CV_TEXT_CHARS) {
-          throw new AppError('CV_UNREADABLE', `docx has only ${text.length} characters of text`, 'cvTooLittleText', { chars: text.length });
+        docxText = (await docxToText(file)).trim();
+        if (docxText.length < MIN_CV_TEXT_CHARS) {
+          throw new AppError('CV_UNREADABLE', `docx has only ${docxText.length} characters of text`, 'cvTooLittleText', { chars: docxText.length });
         }
-        source = { kind: 'text', text };
-      } else if (!d.queue.current().readsFiles) {
+      }
+      const language = d.language();
+      // Decided by the helper that actually runs the task (it may change while the CV waits in the queue).
+      const task = async (provider: LlmProvider) => {
+        if (docxText !== null) return extractCvTask({ kind: 'text', text: docxText }, language);
+        if (provider.readsFiles) return extractCvTask({ kind: 'file', path: file }, language);
         // ChatGPT never gets files: the app reads the PDF itself. A scan has no letters to read.
         const text = (await pdfToText(file)).trim();
         if (countLetters(text) < MIN_PDF_LETTERS) throw new AppError('CV_NO_TEXT', `pdf has only ${countLetters(text)} letters`);
-        source = { kind: 'text', text };
-      }
-      const out = await d.queue.run<ExtractedCv>(extractCvTask(source, d.language()), signal);
+        return extractCvTask({ kind: 'text', text }, language);
+      };
+      const out = await d.queue.run<ExtractedCv>(task, signal);
       if (!out.readable) throw new AppError('CV_UNREADABLE', 'Claude found no CV content', 'cvNoContent');
       const data = toSectionData(out, newId);
       oldCv = d.store.get().cv;

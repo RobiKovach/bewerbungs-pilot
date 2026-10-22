@@ -155,6 +155,22 @@ describe('provider ids', () => {
   });
 });
 
+describe('LlmQueue task built for the provider that runs it', () => {
+  it('passes the provider of the turn to the task function', async () => {
+    const provider = new FakeProvider({ ok: true }, () => ({ ok: 1 }), 'chatgpt');
+    const q = new LlmQueue(provider);
+    const seen: string[] = [];
+    await q.run(async (p) => { seen.push(p.id); return helloTask('en'); }, new AbortController().signal);
+    expect(seen).toEqual(['chatgpt']);
+    expect(provider.calls.map((t) => t.id)).toEqual(['hello']);
+  });
+  it('a throw while building the task rejects that task only', async () => {
+    const q = new LlmQueue(new FakeProvider());
+    await expect(q.run(() => { throw new AppError('CV_NO_TEXT', 'scan'); }, new AbortController().signal)).rejects.toMatchObject({ code: 'CV_NO_TEXT' });
+    await expect(q.run(helloTask('en'), new AbortController().signal)).resolves.toBeDefined();
+  });
+});
+
 describe('LlmQueue with a provider resolver', () => {
   it('resolves the provider at the start of each turn and tags the result', async () => {
     const claude = new FakeProvider({ ok: true }, () => ({ v: 'c' }), 'claude');

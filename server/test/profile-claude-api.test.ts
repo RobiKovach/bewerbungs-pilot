@@ -49,6 +49,25 @@ describe('POST /api/profile/cv', () => {
     const fx = (n: string) => fs.readFileSync(new URL(`./fixtures/${n}`, import.meta.url));
     const cvAnswer = () => new FakeProvider({ ok: true }, () => SAMPLE_CV, 'chatgpt');
 
+    it('switching Claude -> ChatGPT while the CV waits in the queue sends text to ChatGPT (decided at its turn)', async () => {
+      const chatgpt = cvAnswer();
+      let release!: () => void;
+      const gate = new Promise<void>((r) => { release = r; });
+      const claude = new FakeProvider({ ok: true }, async () => { await gate; return { greeting: 'hi' }; });
+      const { app, settings } = await makeApp({ provider: claude, chatgpt });
+      const first = app.inject({ method: 'POST', url: '/api/llm/test', headers: H, payload: { language: 'en' } });
+      await tick();
+      const cv = uploadCv(app, 'cv.pdf', fx('cv-text.pdf'));
+      await tick(50);
+      settings.patch({ llm: { provider: 'chatgpt' } });
+      release();
+      expect((await first).statusCode).toBe(200);
+      expect((await cv).statusCode).toBe(200);
+      expect(claude.calls.map((t) => t.id)).toEqual(['hello']);
+      expect(chatgpt.calls[0].files).toBeUndefined();
+      expect(chatgpt.calls[0].prompt).toContain('Max Mustermann');
+    });
+
     it('sends the PDF text fenced, not the file', async () => {
       const chatgpt = cvAnswer();
       const { app } = await makeApp({ chosen: 'chatgpt', chatgpt });
