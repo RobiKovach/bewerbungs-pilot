@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build": "npm run build -w web && npm run build -w server",
-    "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web && tsc -p e2e/tsconfig.json",
     "test": "npm run test -w server && npm run test -w web",
     "lint": "eslint .",
     "i18n:check": "node web/scripts/i18n-check.mjs",
@@ -20,10 +20,12 @@
     "check:arbeitsagentur": "node scripts/check-arbeitsagentur.mjs",
     "check:pdf": "npm run check:pdf -w server",
     "check:codex": "node scripts/check-codex.mjs",
-    "check:version-json": "node scripts/check-version-json.mjs docs/version.json"
+    "check:version-json": "node scripts/check-version-json.mjs docs/version.json",
+    "e2e": "playwright test -c e2e/playwright.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.64.0",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "typescript": "^5.9.3",

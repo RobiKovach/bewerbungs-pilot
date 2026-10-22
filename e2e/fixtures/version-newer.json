@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "latest": "99.0.0",
+  "released": "2026-10-22",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v99.0.0",
+  "notes": {
+    "en": "End-to-end test version: backups, update notice.",
+    "de": "Testversion für den End-to-End-Test: Sicherungen, Update-Hinweis."
+  }
+}

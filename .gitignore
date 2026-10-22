@@ -3,3 +3,4 @@ dist/
 release/
 coverage/
 *.log
+e2e/.out/
