@@ -27,7 +27,7 @@ h2 { font-size: 1.15rem; margin: 0 0 0.4rem; }
 .nav a { padding: 0.4rem 0.8rem; border-radius: 999px; color: var(--muted); text-decoration: none; }
 .nav a.active, .nav a:hover { background: var(--bg); color: var(--text); }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
-.content { max-width: 880px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.content { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow); margin: 1rem 0; }
 .btn { display: inline-flex; align-items: center; gap: 0.4rem; border: 0; border-radius: 10px; padding: 0.55rem 1.1rem;
@@ -177,11 +177,18 @@ label.btn { cursor: pointer; }
 .create-package { margin-top: 0.75rem; }
 .create-package__languages { border: 0; padding: 0; display: flex; gap: 1rem; flex-wrap: wrap; }
 .create-package__blocked { margin-top: 0.75rem; }
-.letter-tab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
-@media (max-width: 900px) { .letter-tab { grid-template-columns: 1fr; } }
+/* The preview gets room for the A4 page at full size (frame 814 px + border); the fields take what is left. */
+.letter-tab { display: grid; grid-template-columns: minmax(18rem, 1fr) minmax(0, 836px); gap: 1rem; align-items: start; }
+@media (max-width: 1150px) { .letter-tab { grid-template-columns: 1fr; } }
+.preview-col { min-width: 0; }
+.preview-tools { display: flex; justify-content: flex-end; margin-bottom: 0.4rem; }
 /* The page itself stays white (it is paper); only its frame follows the theme. */
 .preview-wrap { width: 100%; height: 80vh; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
 .preview-frame { border: 0; display: block; }
+.preview-overlay { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem; background: rgba(15, 20, 28, 0.85); }
+.preview-overlay__bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; max-width: 814px; color: #fff; }
+.preview-overlay__frame { flex: 1; min-height: 0; max-width: 100%; background: #fff; border-radius: 4px; }
 fieldset.plain { border: 0; padding: 0; margin: 0; }
 .error-text { color: #b42318; font-weight: 600; }
 .app-actions { margin-top: 1rem; }
