@@ -51,14 +51,14 @@ describe('AppError', () => {
   ] as const)('maps package code %s to HTTP %i', (code, status) => {
     expect(httpStatusFor(code)).toBe(status);
   });
-});
 
-describe('provider-neutral AI codes', () => {
-  it('maps the provider-neutral AI codes', () => {
-    expect(httpStatusFor('LLM_NOT_INSTALLED')).toBe(503);
-    expect(httpStatusFor('LLM_NOT_LOGGED_IN')).toBe(503);
-    expect(httpStatusFor('LLM_LIMIT')).toBe(429);
-    expect(httpStatusFor('LLM_NOT_CHOSEN')).toBe(409);
-    expect(httpStatusFor('CV_NO_TEXT')).toBe(422);
+  describe('provider-neutral AI codes', () => {
+    it('maps the provider-neutral AI codes', () => {
+      expect(httpStatusFor('LLM_NOT_INSTALLED')).toBe(503);
+      expect(httpStatusFor('LLM_NOT_LOGGED_IN')).toBe(503);
+      expect(httpStatusFor('LLM_LIMIT')).toBe(429);
+      expect(httpStatusFor('LLM_NOT_CHOSEN')).toBe(409);
+      expect(httpStatusFor('CV_NO_TEXT')).toBe(422);
+    });
   });
 });

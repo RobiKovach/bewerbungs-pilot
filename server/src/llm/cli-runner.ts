@@ -14,7 +14,7 @@ export interface RunCliOptions {
   /** Built after the input files are staged, so the prompt can list them. */
   stdin: (inputs: string[]) => string;
   files?: readonly string[];
-  /** Parent of the per-run working folders. Must NOT be os.tmpdir() (8.3 short paths are blocked by Claude Code). */
+  /** Parent of the per-run working folders. Must NOT be os.tmpdir() (its 8.3 short path is blocked by the AI CLIs). */
   tmpRoot: string;
   timeoutMs: number;
   signal: AbortSignal;

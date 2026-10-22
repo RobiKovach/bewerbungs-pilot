@@ -116,6 +116,8 @@ export function parseCodexOutput(stdout: string, stderr: string, exitCode: numbe
 /**
  * OpenAI strict structured outputs (what Codex's --output-schema uses) need every object to have
  * additionalProperties: false and to list ALL its properties in `required`. One line per problem; [] = strict.
+ * Walks only `properties` and `items`: objects inside `$defs`, `oneOf`, `allOf` or `anyOf` are not checked (task schemas
+ * use these only for plain values, e.g. `anyOf: [string, null]`).
  */
 export function strictProblems(schema: JsonSchema, at = '$'): string[] {
   const out: string[] = [];

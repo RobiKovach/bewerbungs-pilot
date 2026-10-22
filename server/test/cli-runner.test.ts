@@ -90,12 +90,15 @@ describe('runCli', () => {
     });
     const started = Date.now();
     await expect(promise).rejects.toMatchObject({ code: 'LLM_TIMEOUT' });
-    expect(Date.now() - started).toBeLessThan(100 + 300 + 2000);
+    expect(Date.now() - started).toBeLessThan(100 + 300 + 2000); // settled via the grace timer, not by waiting on 'close'
+    // The process our fake "kill" pretended to stop is still genuinely alive, so its run folder is
+    // still on disk (Windows keeps a live process's cwd locked) — the accepted trade-off for not
+    // hanging the queue. Once it actually dies, cleanup still runs and the folder disappears.
     expect(orphan).toBeDefined();
     const closed = new Promise<void>((res) => orphan?.once('close', () => res()));
     orphan?.kill();
     await closed;
-    await new Promise((res) => setTimeout(res, 100));
+    await new Promise((res) => setTimeout(res, 100)); // let the retried fs.rmSync in the close handler run
     expect(fs.readdirSync(tmpRoot)).toEqual([]);
   });
   it('reports a spawn-time setup failure (e.g. an invalid file path) as an AppError without leaking the run folder', async () => {
