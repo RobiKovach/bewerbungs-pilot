@@ -29,7 +29,10 @@ export class InstallJob {
   start(id: ProviderId): InstallStatus {
     if (this.state.state === 'running') throw new AppError('CONFLICT', 'an install is already running');
     const logger = this.o.logger ?? nullLogger;
-    const cmd = (this.o.commands ?? INSTALL_COMMANDS)[id]();
+    const commands = this.o.commands ?? INSTALL_COMMANDS;
+    // The route schema already allows only known ids; this keeps the lookup safe for any other caller too.
+    if (!Object.hasOwn(commands, id)) throw new AppError('BAD_REQUEST', 'unknown provider');
+    const cmd = commands[id]();
     this.state = { state: 'running', provider: id };
     let out = '';
     let finished = false;

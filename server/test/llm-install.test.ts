@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { INSTALL_COMMANDS, InstallJob } from '../src/llm/install.js';
+import type { ProviderId } from '@bp/shared';
 import { CODEX_VERIFIED_VERSION } from '../src/llm/codex-cli.js';
 
 const FAKE = fileURLToPath(new URL('./fixtures/fake-install.mjs', import.meta.url));
@@ -45,6 +46,13 @@ describe('InstallJob', () => {
     await new Promise((r) => setTimeout(r, 300));
     expect(job.status().state).toBe('failed');
     expect(job.start('claude')).toMatchObject({ state: 'failed', provider: 'claude' });
+  });
+  it('an id that is not a provider is refused before anything runs', () => {
+    const job = new InstallJob({ commands: cmds('ok') });
+    for (const id of ['__proto__', 'constructor', 'toString']) {
+      expect(() => job.start(id as ProviderId)).toThrow(expect.objectContaining({ code: 'BAD_REQUEST' }));
+    }
+    expect(job.status()).toMatchObject({ state: 'idle' });
   });
   it('the built-in table uses no shell and fixed arguments', () => {
     const g = INSTALL_COMMANDS.chatgpt();
