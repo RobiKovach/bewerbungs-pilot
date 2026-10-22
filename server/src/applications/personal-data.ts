@@ -14,20 +14,37 @@ interface Hit extends Span { kind: PersonalKind; value: string; key: string }
 // EMAIL and the bare-domain LINK start only where a token starts (look-behind), so a long run of letters, digits or
 // dots is scanned once, not once per position — otherwise a long pasted text takes seconds (CodeQL polynomial regex).
 const EMAIL = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
-const IBAN = /\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){2,7}(?:\s?[A-Z0-9]{1,4})?\b/g;
-const TAX_ID = /(?<!\d)[1-9]\d(?:\s?\d{3}){3}(?!\d)/g;
-const SOCIAL = /\b\d{2}\s?\d{6}\s?[A-Z]\s?\d{3}\b/g;
+const IBAN = /\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){2,7}(?:\s?[A-Z0-9]{1,4})?\b/gi;
+/** Not after "+": "+43123456789" is an international phone even when its digits pass the checksum. */
+const TAX_ID = /(?<![\d+])[1-9]\d(?:\s?\d{3}){3}(?!\d)/g;
+const SOCIAL = /\b\d{2}\s?\d{6}\s?[A-Z]\s?\d{3}\b/gi;
 const REFERENCE = /\b\d{5}-\d{10}-S\b/g;
-const DATE = /(?<!\d)(?:\d{1,2}\.\d{1,2}\.\d{4}|\d{4}-\d{2}-\d{2})(?!\d)/g;
+const MONTHS: Record<string, number> = {
+  januar: 1, jänner: 1, january: 1, februar: 2, february: 2, märz: 3, maerz: 3, march: 3, april: 4, mai: 5, may: 5,
+  juni: 6, june: 6, juli: 7, july: 7, august: 8, september: 9, oktober: 10, october: 10, november: 11, dezember: 12, december: 12,
+};
+const MONTH = Object.keys(MONTHS).join('|');
+/** "01.02.1990", "1.2.90", "01/02/1990", "1990-02-01", "1. Februar 1990", "February 1, 1990". */
+const DATE = new RegExp(
+  '(?<!\\d)(?:\\d{1,2}\\.\\d{1,2}\\.(?:\\d{4}|\\d{2})|\\d{1,2}/\\d{1,2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})(?!\\d)'
+  + `|(?<!\\d)\\d{1,2}\\.?\\s?(?:${MONTH})\\s\\d{4}(?!\\d)|(?<!\\p{L})(?:${MONTH})\\s\\d{1,2},?\\s\\d{4}(?!\\d)`,
+  'giu',
+);
 const BIRTH_WORD = /(?<!\p{L})(?:geboren|geb\.|geburtsdatum|born|date of birth)/giu;
 const POSTAL = /\b\d{5}\s+\p{Lu}\p{L}+/gu;
-const PHONE = /\+?\(?\d[\d\s/()-]{5,}\d/g;
+/** Spaces inside a number, but never a line break: two numbers on two lines are two numbers. */
+const PHONE = /\+?\(?\d[\d \t\u00a0\u202f/()-]{5,}\d/g;
 const LINK = /https?:\/\/[^\s<>"')]+|www\.[^\s<>"')]+|(?<![a-z0-9-]|[a-z0-9-]\.)\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:de|com|net|org|io|eu|dev|app)\b(?:\/[^\s<>"')]*)?/gi;
 const YEAR_RANGE = /^(?:19|20)\d{2}\s*[-/]\s*(?:19|20)\d{2}$/;
 const MONEY_AFTER = /^\s{0,3}(?:€|EUR|Euro)/;
-const MONEY_BEFORE = /(?:€|EUR|Euro)\s{0,3}$/;
-/** "12000 Kunden" is a count, not a postal address. */
-const COUNT_WORDS = new Set(['mitarbeiter', 'mitarbeitende', 'kunden', 'jahre', 'stunden', 'nutzer', 'euro']);
+/** "€ 55000", "EUR brutto 55000", "Euro ca. 55000". */
+const MONEY_BEFORE = /(?:€|EUR|Euro)\s{0,3}(?:(?:brutto|netto|ca\.|etwa|rund)\s{1,3})?$/i;
+const moneyBefore = (text: string, start: number): boolean => MONEY_BEFORE.test(text.slice(Math.max(0, start - 20), start));
+/** "12000 Kunden" / "12000 Customers" is a count, not a postal address. */
+const COUNT_WORDS = new Set([
+  'mitarbeiter', 'mitarbeitende', 'kunden', 'jahre', 'stunden', 'nutzer', 'euro', 'besucher', 'projekte', 'menschen',
+  'customers', 'clients', 'employees', 'users', 'years', 'hours', 'visitors', 'projects', 'people', 'members', 'downloads',
+]);
 
 export const normEmail = (s: string): string => s.trim().toLowerCase();
 export function normPhone(s: string): string {
@@ -46,12 +63,23 @@ function trimEndChars(s: string, chars: string): string {
   return s.slice(0, end);
 }
 const TRAILING_PUNCT = '.,;:!?';
-/** `DD.MM.YYYY`, `D.M.YYYY` or `YYYY-MM-DD` → `YYYY-MM-DD`; anything else → ''. */
-export function normDate(s: string): string {
-  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s.trim());
+/** Any form DATE matches (day first; a two-digit year is in the past century when it is later than this year) → `YYYY-MM-DD`; anything else → ''. */
+export function normDate(s: string, now = new Date()): string {
+  const t = s.trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
   if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-  const de = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(s.trim());
-  return de ? `${de[3]}-${de[2].padStart(2, '0')}-${de[1].padStart(2, '0')}` : '';
+  const ymd = (y: string, m: number | string, d: string): string => {
+    const yy = Number(y), thisYear = now.getFullYear() % 100;
+    const year = y.length === 2 ? (yy > thisYear ? 1900 : 2000) + yy : yy;
+    return `${year}-${String(m).padStart(2, '0')}-${d.padStart(2, '0')}`;
+  };
+  const num = /^(\d{1,2})[./](\d{1,2})[./](\d{4}|\d{2})$/.exec(t);
+  if (num) return ymd(num[3], num[2], num[1]);
+  const dayFirst = /^(\d{1,2})\.?\s?(\p{L}+)\s(\d{4})$/u.exec(t);
+  if (dayFirst && MONTHS[dayFirst[2].toLowerCase()]) return ymd(dayFirst[3], MONTHS[dayFirst[2].toLowerCase()], dayFirst[1]);
+  const monthFirst = /^(\p{L}+)\s(\d{1,2}),?\s(\d{4})$/u.exec(t);
+  if (monthFirst && MONTHS[monthFirst[1].toLowerCase()]) return ymd(monthFirst[3], MONTHS[monthFirst[1].toLowerCase()], monthFirst[2]);
+  return '';
 }
 
 function matches(re: RegExp, text: string): (Span & { value: string })[] {
@@ -60,7 +88,7 @@ function matches(re: RegExp, text: string): (Span & { value: string })[] {
 const overlaps = (a: Span, spans: Span[]): boolean => spans.some((b) => a.start < b.end && b.start < a.end);
 
 function ibanValid(raw: string): boolean {
-  const s = raw.replace(/\s/g, '');
+  const s = raw.replace(/\s/g, '').toUpperCase();
   const moved = (s.slice(4) + s.slice(0, 4)).replace(/[A-Z]/g, (c) => String(c.charCodeAt(0) - 55));
   let rest = 0;
   for (const ch of moved) rest = (rest * 10 + Number(ch)) % 97;
@@ -86,7 +114,7 @@ function phoneCandidates(text: string, blocked: Span[]): (Span & { value: string
     if (m.value.replace(/\D/g, '').length < 7) return false;
     if (overlaps(m, blocked)) return false;
     if (YEAR_RANGE.test(m.value)) return false;
-    if (MONEY_AFTER.test(text.slice(m.end, m.end + 7)) || MONEY_BEFORE.test(text.slice(Math.max(0, m.start - 7), m.start))) return false;
+    if (MONEY_AFTER.test(text.slice(m.end, m.end + 7)) || moneyBefore(text, m.start)) return false;
     return true;
   });
 }
@@ -100,11 +128,11 @@ function scan(text: string, allowed: AllowedData): Hit[] {
 
   const ibanShaped = matches(IBAN, text);
   const ibans = ibanShaped.filter((m) => ibanValid(m.value));
-  for (const m of ibans) add('iban', m, m.value.replace(/\s/g, ''));
+  for (const m of ibans) add('iban', m, m.value.replace(/\s/g, '').toUpperCase());
   const taxIds = matches(TAX_ID, text).filter((m) => !overlaps(m, ibans) && taxIdValid(m.value));
   for (const m of taxIds) add('taxId', m, m.value.replace(/\s/g, ''));
   const socials = matches(SOCIAL, text).filter((m) => !overlaps(m, ibans));
-  for (const m of socials) add('socialSecurity', m, m.value.replace(/\s/g, ''));
+  for (const m of socials) add('socialSecurity', m, m.value.replace(/\s/g, '').toUpperCase());
 
   const dates = matches(DATE, text);
   for (const word of matches(BIRTH_WORD, text)) {
@@ -118,7 +146,9 @@ function scan(text: string, allowed: AllowedData): Hit[] {
 
   const postals = matches(POSTAL, text).filter((m) => {
     const digitsEnd = m.start + 5;
-    if (MONEY_AFTER.test(text.slice(digitsEnd, digitsEnd + 7)) || MONEY_BEFORE.test(text.slice(Math.max(0, m.start - 7), m.start))) return false;
+    // An amount never starts with 0, so "Euro 01067 Dresden" is still an address.
+    const amount = m.value[0] !== '0' && (MONEY_AFTER.test(text.slice(digitsEnd, digitsEnd + 7)) || moneyBefore(text, m.start));
+    if (amount) return false;
     return !COUNT_WORDS.has(m.value.slice(5).trim().toLowerCase());
   });
   for (const m of postals) if (!allowed.postalCodes.includes(m.value.slice(0, 5))) add('postalCode', m, m.value.slice(0, 5));

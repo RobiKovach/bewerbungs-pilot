@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { TextPlace } from '@bp/shared';
-import { allowedFor, findPersonalData, packageTexts, type AllowedData } from '../src/applications/personal-data.js';
+import { allowedFor, findPersonalData, normDate, packageTexts, type AllowedData } from '../src/applications/personal-data.js';
 import { pkg, readyPackageProfile } from './helpers/applications.js';
 
 const P2: TextPlace = { part: 'letter', field: 'paragraph', index: 2 };
@@ -178,5 +178,57 @@ describe('long adversarial text is checked quickly (no polynomial regex)', () =>
   });
   it('a dotted host is one link, not one per label', () => {
     expect(find('Siehe a.b.evil.de/x').map((f) => f.value)).toEqual(['a.b.evil.de/x']);
+  });
+});
+
+describe('detector rules (0.9.0)', () => {
+  it('a lowercase IBAN is an IBAN, not a phone', () => {
+    expect(find('konto de89 3704 0044 0532 0130 00').map((f) => f.kind)).toEqual(['iban']);
+  });
+  it('a lowercase Sozialversicherungsnummer is one, not a phone', () => {
+    expect(find('SV-Nummer 12 150385 m 123').map((f) => f.kind)).toEqual(['socialSecurity']);
+  });
+  it.each([
+    ['1. Februar 1990', '1990-02-01'],
+    ['1 Februar 1990', '1990-02-01'],
+    ['01.02.90', '1990-02-01'],
+    ['1.2.05', '2005-02-01'],
+    ['01/02/1990', '1990-02-01'],
+    ['February 1, 1990', '1990-02-01'],
+    ['3. März 1991', '1991-03-03'],
+  ])('birth date "%s" after a birth word; allowed when it is the profile one', (date, iso) => {
+    expect(find(`geboren am ${date} in Kyjiw`)).toEqual([{ kind: 'birthDate', value: date, where: P2 }]);
+    expect(find(`geboren am ${date}`, allowed({ birthDates: [iso] }))).toEqual([]);
+  });
+  it('normDate reads a two-digit year as the past century when it is later than this year', () => {
+    expect(normDate('01.02.90', new Date('2026-10-22'))).toBe('1990-02-01');
+    expect(normDate('01.02.26', new Date('2026-10-22'))).toBe('2026-02-01');
+  });
+  it('a numeric date with no birth word is still not flagged', () => {
+    expect(find('Ich kann ab 1. Februar 2027 anfangen.')).toEqual([]);
+  });
+  it('a date with slashes is not a phone', () => {
+    expect(find('Verfügbar ab 01/02/2027.')).toEqual([]);
+  });
+  it('an international phone after "+" is never a Steuer-ID', () => {
+    // 86095742719 passes the Steuer-ID checksum.
+    expect(find('Mobil +86095742719').map((f) => f.kind)).toEqual(['phone']);
+  });
+  it('company phone in the vacancy text does not merge with the next line', () => {
+    const profile = readyPackageProfile();
+    const a = allowedFor(pkg({}, profile), profile, 'Tel. 0351 987654\n12345 Bewerbungen bis Ende Mai');
+    expect(find('Ihre Nummer 0351 987654 habe ich.', a)).toEqual([]);
+  });
+  it('a postal code with a leading zero after "Euro" is still an address', () => {
+    expect(find('Gehalt in Euro 01067 Dresden').map((f) => [f.kind, f.value])).toEqual([['postalCode', '01067 Dresden']]);
+  });
+  it.each([
+    ['EUR brutto 55000 Jahresgehalt'],
+    ['Euro ca. 55000 Jahresgehalt'],
+  ])('an amount with a word between currency and number: "%s"', (text) => {
+    expect(find(text)).toEqual([]);
+  });
+  it.each([['12000 Customers'], ['3000 Users'], ['15000 Visitors']])('an English count "%s" is not a postal code', (text) => {
+    expect(find(`Software for ${text} built.`)).toEqual([]);
   });
 });
