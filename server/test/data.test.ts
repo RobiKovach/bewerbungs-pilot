@@ -166,7 +166,7 @@ describe('settings v2 — llm.provider', () => {
   it('a v1 file with completed onboarding becomes claude', () => {
     const dir = tmpDir();
     write(dir, { schemaVersion: 1, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180 } });
-    expect(load(dir)).toMatchObject({ schemaVersion: 2, llm: { timeoutSec: 180, provider: 'claude' } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 3, llm: { timeoutSec: 180, provider: 'claude' } });
   });
   it('a v1 file without completed onboarding gets null', () => {
     const dir = tmpDir();
@@ -209,5 +209,51 @@ describe('settings v2 — llm.provider', () => {
     s.load();
     expect(s.patch({ llm: { provider: 'chatgpt' } }).llm).toEqual({ timeoutSec: 180, provider: 'chatgpt' });
     expect(new SettingsStore(path.join(dir, 'settings.json')).load().llm.provider).toBe('chatgpt');
+  });
+});
+
+describe('settings v3 — updates', () => {
+  const write = (dir: string, doc: unknown) => fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify(doc));
+  const load = (dir: string) => new SettingsStore(path.join(dir, 'settings.json')).load();
+  const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-set3-'));
+
+  it('defaults to checking, nothing dismissed', () => {
+    expect(DEFAULT_SETTINGS.schemaVersion).toBe(3);
+    expect(DEFAULT_SETTINGS.updates).toEqual({ check: true, dismissedVersion: null });
+  });
+  it('a v2 file becomes v3 with the check on; provider and the rest unchanged', () => {
+    const dir = tmpDir();
+    const mail = { kind: 'google', address: 'a@x.de', senderName: 'Max', provider: 'gmail' };
+    write(dir, { schemaVersion: 2, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' }, vacancies: { publishedWithinDays: 7 }, mail });
+    expect(load(dir)).toEqual({
+      schemaVersion: 3, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' },
+      vacancies: { publishedWithinDays: 7 }, mail, updates: { check: true, dismissedVersion: null },
+    });
+    // v2 with completed onboarding and no provider stays null — the v1 rule applies to neither v2 nor v3.
+    write(dir, { schemaVersion: 2, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } });
+    expect(load(dir).llm.provider).toBeNull();
+    write(dir, { schemaVersion: 3, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } });
+    expect(load(dir).llm.provider).toBeNull();
+  });
+  it('a v1 file goes straight to v3 (provider rule as before)', () => {
+    const dir = tmpDir();
+    write(dir, { schemaVersion: 1, onboarding: { currentStep: null, completed: true } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 3, llm: { provider: 'claude' }, updates: { check: true, dismissedVersion: null } });
+  });
+  it('a v3 file keeps its values; broken values fall back', () => {
+    const dir = tmpDir();
+    write(dir, { schemaVersion: 3, updates: { check: false, dismissedVersion: '0.9.1' } });
+    expect(load(dir).updates).toEqual({ check: false, dismissedVersion: '0.9.1' });
+    write(dir, { schemaVersion: 3, updates: { check: 'no', dismissedVersion: '<b>' } });
+    expect(load(dir).updates).toEqual({ check: true, dismissedVersion: null });
+  });
+  it('patch({ updates: { check: false } }) persists and keeps the dismissed version', () => {
+    const dir = tmpDir();
+    const s = new SettingsStore(path.join(dir, 'settings.json'));
+    s.load();
+    s.dismissUpdate('0.9.1');
+    expect(s.patch({ updates: { check: false } }).updates).toEqual({ check: false, dismissedVersion: '0.9.1' });
+    expect(load(dir).updates).toEqual({ check: false, dismissedVersion: '0.9.1' });
+    expect(s.patch({ language: 'de' }).updates).toEqual({ check: false, dismissedVersion: '0.9.1' });
   });
 });

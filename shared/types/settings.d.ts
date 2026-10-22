@@ -14,12 +14,14 @@ export interface MailSettingsView { mail: MailSettings | null; passwordSaved: bo
 export type ProviderId = 'claude' | 'chatgpt';
 
 export interface Settings {
-  schemaVersion: 2;
+  schemaVersion: 3;
   language: Language | null;
   onboarding: { currentStep: string | null; completed: boolean };
   llm: { timeoutSec: number; provider: ProviderId | null };
   vacancies: { publishedWithinDays: PublishedWithinDays };
   mail: MailSettings | null;
+  /** Daily look at our version.json (spec 0.9.0); dismissedVersion = the version whose banner was closed with ×. */
+  updates: { check: boolean; dismissedVersion: string | null };
 }
 
 export interface SettingsPatch {
@@ -27,7 +29,11 @@ export interface SettingsPatch {
   onboarding?: Partial<Settings['onboarding']>;
   vacancies?: { publishedWithinDays: PublishedWithinDays };
   llm?: { provider: ProviderId };
+  updates?: { check: boolean };
 }
+
+/** GET /api/updates: notes already in the UI language (English fallback); available null = no banner. */
+export interface UpdatesView { current: string; available: { version: string; url: string; notes: string } | null }
 
 export interface Availability { ok: boolean; reason?: 'not-installed' | 'not-logged-in' | 'error'; detail?: string }
 /** provider null = none chosen yet (availability is then { ok: false, reason: 'error' }). */

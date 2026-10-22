@@ -19,12 +19,13 @@ export const ONBOARDING_STEP_ORDER = ['welcome', 'claude', 'profile', 'email', '
 const STEPS_AFTER_CLAUDE: readonly string[] = ONBOARDING_STEP_ORDER.slice(ONBOARDING_STEP_ORDER.indexOf('claude') + 1);
 
 export const DEFAULT_SETTINGS: Settings = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   language: null,
   onboarding: { currentStep: null, completed: false },
   llm: { timeoutSec: 180, provider: null },
   vacancies: { publishedWithinDays: 14 },
   mail: null,
+  updates: { check: true, dismissedVersion: null },
 };
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
@@ -59,18 +60,21 @@ export class SettingsStore {
       onboarding: { ...this.current.onboarding, ...p.onboarding },
       llm: { ...this.current.llm, ...(p.llm ?? {}) },
       vacancies: { ...this.current.vacancies, ...p.vacancies },
+      updates: { ...this.current.updates, ...(p.updates ?? {}) },
     };
-    try {
-      writeJsonAtomic(this.file, next);
-    } catch (err) {
-      throw new AppError('DATA_WRITE_FAILED', String(err));
-    }
-    this.current = next;
-    return this.get();
+    return this.save(next);
   }
 
   setMail(mail: MailSettings | null): Settings {
-    const next: Settings = { ...this.current, mail: mail ? { ...mail } : null };
+    return this.save({ ...this.current, mail: mail ? { ...mail } : null });
+  }
+
+  /** × on the update banner: hidden for this version only, the next one shows again. */
+  dismissUpdate(version: string): Settings {
+    return this.save({ ...this.current, updates: { ...this.current.updates, dismissedVersion: version } });
+  }
+
+  private save(next: Settings): Settings {
     try {
       writeJsonAtomic(this.file, next);
     } catch (err) {
@@ -105,15 +109,17 @@ function normalize(raw: unknown): Settings {
     llm?: { timeoutSec?: unknown; provider?: unknown };
     vacancies?: { publishedWithinDays?: unknown };
     mail?: unknown;
+    updates?: { check?: unknown; dismissedVersion?: unknown };
   };
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
   const provider: ProviderId | null = PROVIDER_IDS.find((id) => id === r.llm?.provider)
-    // v1 files predate the choice: everyone who finished onboarding — or got past the Claude step — used Claude.
-    ?? (r.schemaVersion !== 2 && (r.onboarding?.completed === true
+    // v1 files (schemaVersion missing or 1) predate the choice: everyone who finished onboarding — or got past the Claude step — used Claude.
+    ?? (r.schemaVersion !== 2 && r.schemaVersion !== 3 && (r.onboarding?.completed === true
       || (typeof r.onboarding?.currentStep === 'string' && STEPS_AFTER_CLAUDE.includes(r.onboarding.currentStep))) ? 'claude' : null);
+  const dismissed = r.updates?.dismissedVersion;
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     language: lang,
     onboarding: {
       currentStep: typeof r.onboarding?.currentStep === 'string' ? r.onboarding.currentStep : null,
@@ -124,5 +130,10 @@ function normalize(raw: unknown): Settings {
       publishedWithinDays: PUBLISHED_WITHIN_DAYS.find((n) => n === r.vacancies?.publishedWithinDays) ?? d.vacancies.publishedWithinDays,
     },
     mail: normalizeMail(r.mail),
+    // v2 → v3: the check is on unless someone switched it off.
+    updates: {
+      check: r.updates?.check !== false,
+      dismissedVersion: typeof dismissed === 'string' && /^\d+\.\d+\.\d+$/.test(dismissed) ? dismissed : null,
+    },
   };
 }

@@ -19,7 +19,8 @@
     "release": "node scripts/release.mjs",
     "check:arbeitsagentur": "node scripts/check-arbeitsagentur.mjs",
     "check:pdf": "npm run check:pdf -w server",
-    "check:codex": "node scripts/check-codex.mjs"
+    "check:codex": "node scripts/check-codex.mjs",
+    "check:version-json": "node scripts/check-version-json.mjs docs/version.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

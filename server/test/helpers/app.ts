@@ -20,6 +20,7 @@ import { MemorySecretStore } from '../../src/mail/secret.js';
 import { ProfileFiles } from '../../src/profile/files.js';
 import { ProfileStore } from '../../src/profile/store.js';
 import { Activity } from '../../src/runtime/activity.js';
+import type { AvailableUpdate } from '../../src/updates/checker.js';
 import { SearchJob } from '../../src/vacancies/search-job.js';
 import { VacancyStore } from '../../src/vacancies/store.js';
 import { FakePrinter } from './applications.js';
@@ -33,7 +34,7 @@ export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
  * `autoKey` (default true): every `app.inject` carries the launch key unless the test sets its own `x-bp-key`
  * or cookie, so tests about other things need not repeat it. Launch-key tests pass `autoKey: false`.
  */
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -104,6 +105,8 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
         searchJob.init(); applicationJob.init();
       },
     },
+    // `update`: what the daily check found; `updateSource` when a test changes it later.
+    updates: { available: opts.updateSource ?? (() => opts.update ?? null) },
   });
   if (opts.autoKey !== false) {
     const inject = app.inject.bind(app) as (o: InjectOptions | string) => Promise<LightMyRequestResponse>;

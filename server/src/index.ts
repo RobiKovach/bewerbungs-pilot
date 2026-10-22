@@ -35,6 +35,8 @@ import { findFreePort } from './runtime/port.js';
 import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
 import { BrowserPageReader } from './vacancies/sources/page-reader.js';
 import { SearchJob } from './vacancies/search-job.js';
+import { UpdateChecker } from './updates/checker.js';
+import { UPDATE_URL } from './updates/version-file.js';
 import { VacancyStore } from './vacancies/store.js';
 
 const HOST = '127.0.0.1';
@@ -118,6 +120,10 @@ async function main(): Promise<void> {
   });
   applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
+  const updates = new UpdateChecker({
+    url: process.env.BP_UPDATE_URL || UPDATE_URL, stateFile: path.join(paths.root, 'update-state.json'),
+    currentVersion: version, enabled: () => settings.get().updates.check, logger,
+  });
   const key = newLaunchKey();
   const app = await buildApp({
     settings, providers, install, queue, logger, version,
@@ -138,10 +144,11 @@ async function main(): Promise<void> {
         searchJob.init(); applicationJob.init();
       },
     },
+    updates,
   });
 
   const shutdown = createShutdown({
-    abortAll: () => { searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
+    abortAll: () => { updates.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
     close: () => app.close(),
     releaseLock: () => lock.release(),
     serverFile: paths.server,
@@ -154,6 +161,7 @@ async function main(): Promise<void> {
   const info: ServerInfo = { port, pid: process.pid, startedAt: new Date().toISOString(), key };
   writeJsonAtomic(paths.server, info);
   logger.info('started', { port, version, fakeLlm });
+  updates.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
   else openBrowser(openUrl(HOST, port, key));
 }

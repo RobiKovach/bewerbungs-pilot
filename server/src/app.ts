@@ -30,6 +30,8 @@ import type { VacancyStore } from './vacancies/store.js';
 import { registerBackupRoutes } from './backup/routes.js';
 import type { DataPaths } from './data/paths.js';
 import type { Activity } from './runtime/activity.js';
+import type { AvailableUpdate } from './updates/checker.js';
+import { registerUpdateRoutes } from './updates/routes.js';
 
 export interface AppDeps {
   settings: SettingsStore;
@@ -68,6 +70,8 @@ export interface AppDeps {
   activity: Activity;
   /** Backups (spec 0.9.0): the data folder, the backup folder, re-reading every store after a restore, Explorer. */
   backup: { paths: DataPaths; dir: () => Promise<string>; reload: () => void; openFolder: (dir: string) => void };
+  /** What the daily update check found (spec 0.9.0, 3.3). */
+  updates: { available: () => AvailableUpdate | null };
 }
 
 /**
@@ -100,6 +104,10 @@ const settingsPatchSchema = {
       additionalProperties: false,
       required: ['publishedWithinDays'],
       properties: { publishedWithinDays: { type: 'integer', enum: [...PUBLISHED_WITHIN_DAYS] } },
+    },
+    updates: {
+      type: 'object', additionalProperties: false, required: ['check'],
+      properties: { check: { type: 'boolean' } },
     },
   },
 } as const;
@@ -263,6 +271,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     activity: deps.activity, settings: deps.settings, secrets: deps.secrets, googleAuth: deps.googleAuth, logger: deps.logger,
     revokeTimeoutMs: deps.revokeTimeoutMs,
   });
+
+  await registerUpdateRoutes(app, { settings: deps.settings, version: deps.version, available: () => deps.updates.available() });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });
