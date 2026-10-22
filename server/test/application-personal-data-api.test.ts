@@ -72,6 +72,9 @@ describe('POST /api/applications/:id/check-text', () => {
     await get(ctx, `/api/applications/${id}`);
     await send(ctx, 'POST', `/api/applications/${id}/check-text`, { subject: 'a', body: `Konto ${IBAN}` });
     await send(ctx, 'POST', `/api/applications/${id}/check-text`, { subject: 'a', body: `Konto ${IBAN}`, extra: 1 });
+    await send(ctx, 'POST', `/api/applications/${id}/check-package`, { letter: { paragraphs: [`Konto ${IBAN}`] }, profil: `Konto ${IBAN}` });
+    // The package job logs too (it got the same logger): its lines are checked as well.
+    expect(lines.some((l) => l.includes('application'))).toBe(true);
     expect(lines.length).toBeGreaterThan(0);
     expect(lines.join('\n')).not.toContain(IBAN);
   });

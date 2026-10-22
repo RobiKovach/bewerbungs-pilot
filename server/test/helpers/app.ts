@@ -58,8 +58,10 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   vacancyStore.load();
   const source = opts.source ?? fakeSource();
   const pageReader = opts.pageReader ?? new FakePageReader();
+  // One logger for the routes and the jobs: a test that spies on it sees everything the app would log.
+  const logger = opts.logger ?? nullLogger;
   const searchJob = new SearchJob({
-    store: vacancyStore, source, queue, logger: nullLogger, profile: () => profileStore.get(),
+    store: vacancyStore, source, queue, logger, profile: () => profileStore.get(),
     language: () => settings.get().language ?? 'en', publishedWithinDays: () => settings.get().vacancies.publishedWithinDays,
     stateFile: path.join(dir, 'vacancies', 'search-state.json'), pauseMs: 0,
   });
@@ -68,12 +70,11 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const applicationStore = new ApplicationStore(path.join(dir, 'applications'));
   applicationStore.load();
   const applicationJob = new ApplicationJob({
-    store: applicationStore, vacancies: vacancyStore, queue, printer, logger: nullLogger,
+    store: applicationStore, vacancies: vacancyStore, queue, printer, logger,
     profile: () => profileStore.get(), photo: (p) => profilePhoto(p, profileFiles),
     stateFile: path.join(dir, 'applications', 'job-state.json'),
   });
   applicationJob.init();
-  const logger = opts.logger ?? nullLogger;
   const mailer = new FakeMailer();
   const googleAuth = new FakeGoogleAuth();
   const secrets = new MemorySecretStore();
@@ -113,7 +114,8 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     app.inject = ((o: InjectOptions | string) => {
       if (typeof o !== 'object') return inject(o);
       const headers: Record<string, unknown> = { ...(o.headers ?? {}) };
-      if (!('x-bp-key' in headers) && !('cookie' in headers)) headers['x-bp-key'] = TEST_KEY;
+      // Header names are case-insensitive: a test's own 'X-BP-Key' or 'Cookie' must win, not get a second key added.
+      if (!Object.keys(headers).some((k) => ['x-bp-key', 'cookie'].includes(k.toLowerCase()))) headers['x-bp-key'] = TEST_KEY;
       return inject({ ...o, headers } as InjectOptions);
     }) as unknown as typeof app.inject;
   }

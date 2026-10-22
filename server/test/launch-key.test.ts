@@ -44,6 +44,12 @@ describe('API needs the launch key', () => {
     expect((await app.inject({ method: 'GET', url: '/api/profile', headers: { cookie: `bp_key_80=${TEST_KEY}` } })).statusCode).toBe(200);
     expect((await app.inject({ method: 'GET', url: '/api/profile', headers: { 'x-bp-key': TEST_KEY } })).statusCode).toBe(200);
   });
+  it('the test helper adds its key only when the test sends none, whatever the header case', async () => {
+    const { app } = await makeApp();
+    expect((await app.inject({ method: 'GET', url: '/api/profile', headers: { 'X-BP-Key': 'wrong' } })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/profile', headers: { Cookie: 'other=1' } })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'GET', url: '/api/profile' })).statusCode).toBe(200);
+  });
   it('refuses a wrong key', async () => {
     const { app } = await keyless();
     expect((await app.inject({ method: 'GET', url: '/api/profile', headers: { 'x-bp-key': 'nope' } })).statusCode).toBe(401);
@@ -67,6 +73,11 @@ describe('API needs the launch key', () => {
     const { app } = await keyless();
     const res = await app.inject({ method: 'GET', url: '/api/does-not-exist' });
     expect(res.statusCode).not.toBe(200);
+  });
+  it('an unknown API path without a key is 401 NO_SESSION (the key is checked before "not found")', async () => {
+    const { app } = await keyless();
+    const res = await app.inject({ method: 'POST', url: '/api/nope', headers: C, payload: {} });
+    expect([res.statusCode, res.json().error.code]).toEqual([401, 'NO_SESSION']);
   });
   it('every registered route except the public ones answers 401 NO_SESSION without a key', async () => {
     const { app } = await keyless();
@@ -110,6 +121,14 @@ describe('API needs the launch key', () => {
     const { app } = await makeApp({ webDist: web, autoKey: false });
     expect((await app.inject({ method: 'GET', url: '/' })).statusCode).toBe(200);
     expect((await app.inject({ method: 'GET', url: '/assets/a.js' })).statusCode).toBe(200);
+  });
+  it('a deep link of the app (GET /applications) without a key still gets index.html — the page shows "open via the shortcut"', async () => {
+    const web = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-web-'));
+    fs.writeFileSync(path.join(web, 'index.html'), '<!doctype html><title>BP</title>');
+    const { app } = await makeApp({ webDist: web, autoKey: false });
+    const res = await app.inject({ method: 'GET', url: '/applications' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain('<title>BP</title>');
   });
 });
 
