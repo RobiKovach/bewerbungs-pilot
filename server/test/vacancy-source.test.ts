@@ -183,4 +183,15 @@ describe('htmlToText', () => {
     expect(htmlToText('Kontakt: <jobs@muster.example> oder <https://muster.example/karriere>\nGehalt < 50.000 EUR, Team > 5 Personen'))
       .toBe('Kontakt: <jobs@muster.example> oder <https://muster.example/karriere>\nGehalt < 50.000 EUR, Team > 5 Personen');
   });
+
+  it('nested script or tag halves cannot rebuild a tag', () => {
+    expect(htmlToText('A<scr<script>x</script>ipt>alert(1)</script>B')).not.toMatch(/<script/i);
+    expect(htmlToText('A<<b>p>B')).toBe('AB');
+  });
+
+  it('deep nesting stays fast', () => {
+    const t0 = performance.now();
+    htmlToText('<'.repeat(20_000) + 'b>'.repeat(20_000));
+    expect(performance.now() - t0).toBeLessThan(1000);
+  });
 });
