@@ -29,6 +29,12 @@ describe('ApplicationEditor — letter', () => {
     expect(frame.getAttribute('src')).toBe('/api/applications/app1/preview/letter?v=2026-09-29T10%3A00%3A00.000Z');
   });
 
+  it('names the helper that wrote the package next to the title', async () => {
+    setup({}, appView({}, { writtenBy: 'chatgpt' }));
+    const heading = await screen.findByRole('heading', { name: 'Muster GmbH — Webentwickler (m/w/d)' });
+    expect(within(heading.parentElement as HTMLElement).getByText('Written by: ChatGPT')).toBeInTheDocument();
+  });
+
   it('saves only the changed fields and shows the new server version', async () => {
     const saved = appView({}, { updatedAt: '2026-09-29T11:00:00.000Z', letter: { ...appView().application.letter, subject: 'Neuer Betreff' } });
     const { f, user } = setup({ 'PATCH /api/applications/app1/letter': () => ({ body: saved }) });

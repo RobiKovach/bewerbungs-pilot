@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
@@ -157,6 +157,8 @@ describe('api', () => {
     expect(r.json()).toMatchObject({ state: 'running', provider: 'chatgpt' });
     expect((await app.inject({ method: 'GET', url: '/api/llm/install', headers: H })).json()).toMatchObject({ state: 'running', provider: 'chatgpt' });
     expect((await app.inject({ method: 'POST', url: '/api/llm/install', headers: H, payload: { provider: 'claude' } })).statusCode).toBe(409);
+    // The hanging fake is stopped by the install time limit before the test ends, never left running.
+    await vi.waitFor(async () => expect((await app.inject({ method: 'GET', url: '/api/llm/install', headers: H })).json()).toMatchObject({ state: 'failed', detail: expect.stringContaining('timeout') }), { timeout: 5000, interval: 100 });
   });
   it('PATCH /api/settings switches the provider for the next request', async () => {
     const { app, chatgpt, provider } = await makeApp();
