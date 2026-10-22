@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ChildProcess } from 'node:child_process';
-import { runCli, AvailabilityCache, type RunCliOptions } from '../src/llm/cli-runner.js';
+import { runCli, AvailabilityCache, taskkillPath, type RunCliOptions } from '../src/llm/cli-runner.js';
 import { AppError } from '../src/errors.js';
 
 const FAKE = fileURLToPath(new URL('./fixtures/fake-claude.mjs', import.meta.url));
@@ -59,6 +59,11 @@ describe('runCli', () => {
     await run('ok', { FAKE_CLAUDE_RECORD: record }, { args: ['--a', 'b'] }).promise;
     expect(JSON.parse(fs.readFileSync(record, 'utf8')).args).toEqual(['--a', 'b']);
   });
+  it('taskkill is called by its full System32 path, not looked up on PATH', () => {
+    expect(path.isAbsolute(taskkillPath())).toBe(true);
+    expect(taskkillPath().toLowerCase().endsWith(path.join('system32', 'taskkill.exe'))).toBe(true);
+  });
+
   it('kills a hanging process on timeout', async () => {
     const started = Date.now();
     await expect(run('hang', {}, { timeoutMs: 400 }).promise).rejects.toMatchObject({ code: 'LLM_TIMEOUT' });

@@ -50,10 +50,13 @@ export function stageInputFiles(runDir: string, files: readonly string[]): strin
 }
 
 // On Windows child.kill() would leave grandchildren running; taskkill /T kills the whole tree.
+/** By full path, never looked up on PATH (a folder early in PATH could hold another taskkill.exe). */
+export const taskkillPath = (): string => path.join(process.env.SystemRoot ?? 'C:\Windows', 'System32', 'taskkill.exe');
+
 export function killTree(child: ChildProcess, logger: Logger = nullLogger): void {
   if (!child.pid) return;
   if (process.platform === 'win32') {
-    const tk = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
+    const tk = spawn(taskkillPath(), ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true });
     tk.on('error', (err) => logger.warn('taskkill_failed', { message: err.message }));
     tk.on('close', (code) => {
       if (code !== 0) logger.warn('taskkill_nonzero', { code });

@@ -100,7 +100,7 @@ async function main(): Promise<void> {
           searched: id === 'chatgpt' ? codexSearchRoots() : (process.env.PATH ?? process.env.Path ?? '').split(path.delimiter).filter(Boolean),
         });
       }
-    }).catch(() => undefined),
+    }).catch((err: unknown) => logger.warn('ai_install_recheck_failed', { provider: id, message: err instanceof Error ? err.message : String(err) })),
   });
   const queue = new LlmQueue(() => providers.current());
   const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));

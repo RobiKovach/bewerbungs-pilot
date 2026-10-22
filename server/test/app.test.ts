@@ -87,6 +87,12 @@ describe('api', () => {
     const r = await app.inject({ method: 'GET', url: '/api/llm/check?provider=chatgpt', headers: H });
     expect(r.json()).toMatchObject({ provider: 'chatgpt', availability: { ok: false, reason: 'not-installed' } });
   });
+  it('an unknown provider name is refused (400), not answered for the current helper', async () => {
+    const { app, provider } = await makeApp();
+    expect((await app.inject({ method: 'GET', url: '/api/llm/check?provider=gemini', headers: H })).statusCode).toBe(400);
+    expect((await app.inject({ method: 'POST', url: '/api/llm/open-login', headers: H, payload: { provider: 'gemini' } })).statusCode).toBe(400);
+    expect(provider.loginOpened).toBe(0);
+  });
   it('GET /api/llm/check without a param uses the current provider (claude in test apps)', async () => {
     const { app } = await makeApp();
     expect((await app.inject({ method: 'GET', url: '/api/llm/check', headers: H })).json()).toMatchObject({ provider: 'claude' });

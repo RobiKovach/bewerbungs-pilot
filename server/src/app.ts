@@ -202,7 +202,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     deps.settings.patch(req.body as SettingsPatch),
   );
 
-  const providerOf = (raw: unknown): ProviderId | null => PROVIDER_IDS.find((id) => id === raw) ?? null;
+  /** No `provider` (or empty) = the current helper; an unknown name is a mistake, never silently the current one. */
+  const providerOf = (raw: unknown): ProviderId | null => {
+    if (raw === undefined || raw === '') return null;
+    const id = PROVIDER_IDS.find((x) => x === raw);
+    if (!id) throw new AppError('BAD_REQUEST', 'unknown provider');
+    return id;
+  };
 
   app.get('/api/llm/check', async (req): Promise<LlmCheck> => {
     const q = req.query as { refresh?: string; provider?: string };
