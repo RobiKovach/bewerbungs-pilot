@@ -49,18 +49,28 @@ export async function resolveBackupFolder(chosen: string | null, o: FolderOption
   else if (chosen) dir = chosen;
   else if (!documentsInOneDrive) dir = path.join(docs, 'BewerbungsPilot', 'Backups');
   else dir = path.join(env.USERPROFILE ?? os.homedir(), 'BewerbungsPilot', 'Backups');
-  return { dir, automatic: !env.BP_BACKUP_DIR && !chosen, inOneDrive: inOneDrive(dir, env), documentsInOneDrive };
+  return { dir, automatic: !env.BP_BACKUP_DIR && !chosen, inOneDrive: inOneDrive(dir, env), documentsInOneDrive, available: await usable(dir) };
 }
 
-/** The backup folder (created). */
-export async function backupFolder(chosen: string | null, o: FolderOptions = {}): Promise<BackupFolderView> {
-  const view = await resolveBackupFolder(chosen, o);
+/**
+ * Whether backups can go there now, without creating anything: the folder exists, or it is missing but its drive is
+ * there (it is created on the first write). False for a USB stick that is not plugged in or a drive letter that is gone,
+ * or when a file stands where the folder should be.
+ */
+async function usable(dir: string): Promise<boolean> {
+  const stat = await fs.promises.stat(dir).catch(() => null);
+  if (stat) return stat.isDirectory();
+  return fs.promises.stat(path.parse(path.resolve(dir)).root).then(() => true, () => false);
+}
+
+/** Creates the backup folder before writing to it (save, the "before restore" copy, opening it in Explorer). */
+export async function createFolder(dir: string): Promise<string> {
   try {
-    await fs.promises.mkdir(view.dir, { recursive: true });
+    await fs.promises.mkdir(dir, { recursive: true });
   } catch (err) {
-    throw new AppError('BACKUP_FAILED', String(err));
+    throw new AppError('BACKUP_FAILED', String(err), 'backupFolderUnavailable');
   }
-  return view;
+  return dir;
 }
 
 /**

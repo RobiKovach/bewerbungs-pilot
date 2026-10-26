@@ -27,7 +27,7 @@ import { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { DpapiSecretStore } from './mail/secret.js';
 import { ProfileFiles } from './profile/files.js';
 import { ProfileStore } from './profile/store.js';
-import { backupFolder } from './backup/folder.js';
+import { resolveBackupFolder } from './backup/folder.js';
 import { Activity } from './runtime/activity.js';
 import { openBrowser, openFolder } from './runtime/browser.js';
 import { findRunningInstance, waitForRunningInstance, type RunningInstance, type ServerInfo } from './runtime/instance.js';
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
     session: { key, cookieName: cookieName(port) },
     activity: new Activity(),
     backup: {
-      paths, folder: (chosen) => backupFolder(chosen), openFolder,
+      paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
       // After a restore every store reads its files again (synchronous: nothing can start in between).
       reload: () => {
         settings.load(); profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();

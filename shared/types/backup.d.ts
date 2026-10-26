@@ -28,6 +28,8 @@ export interface BackupFolderView {
   automatic: boolean;
   inOneDrive: boolean;
   documentsInOneDrive: boolean;
+  /** False when backups cannot go there right now (a USB stick that is not plugged in, a drive letter that is gone). */
+  available: boolean;
 }
 
 export interface BackupListView extends BackupFolderView {

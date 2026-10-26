@@ -33,7 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
 /** A chosen backup folder as stored: an absolute path on a drive letter (off Windows, where tests run: any absolute path). */
 const isLocalAbsolute = (p: string) => DRIVE_PATH.test(p) || (process.platform !== 'win32' && path.isAbsolute(p));
 
-type Warn =(event: string, data: Record<string, unknown>) => void;
+type Warn = (event: string, data: Record<string, unknown>) => void;
 
 export class SettingsStore {
   private current: Settings = structuredClone(DEFAULT_SETTINGS);

@@ -8,7 +8,7 @@ import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
 import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
-import { backupFolder } from '../../src/backup/folder.js';
+import { resolveBackupFolder } from '../../src/backup/folder.js';
 import { dataPaths } from '../../src/data/paths.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
@@ -104,7 +104,7 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     session: { key: TEST_KEY, cookieName: 'bp_key_80' },
     activity,
     backup: {
-      paths: dataPaths(dir), folder: (chosen) => backupFolder(chosen, { env: backupEnv, documents: async () => documents }),
+      paths: dataPaths(dir), folder: (chosen) => resolveBackupFolder(chosen, { env: backupEnv, documents: async () => documents }),
       openFolder: (d) => { openedFolders.push(d); }, maxUploadBytes: opts.maxBackupUploadBytes,
       reload: () => {
         settings.load(); profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();

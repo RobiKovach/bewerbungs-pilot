@@ -89,4 +89,5 @@ export type ErrorReason =
   // The backup folder chosen in Settings (0.9.0): not an absolute local path / inside the app data / not writable.
   | 'backupFolderInvalid'
   | 'backupFolderInData'
-  | 'backupFolderNotWritable';
+  | 'backupFolderNotWritable'
+  | 'backupFolderUnavailable';

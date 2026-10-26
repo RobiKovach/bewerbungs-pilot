@@ -1,12 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { backupFolder, checkChosenFolder, inOneDrive, resolveBackupFolder } from '../src/backup/folder.js';
+import { checkChosenFolder, createFolder, inOneDrive, resolveBackupFolder } from '../src/backup/folder.js';
 import { SettingsStore } from '../src/data/settings.js';
 import { AppError } from '../src/errors.js';
+import { nullLogger } from '../src/log.js';
 import { H, makeApp } from './helpers/app.js';
 
 // Spaces + Cyrillic on purpose, like the other data tests.
@@ -44,24 +45,45 @@ describe('inOneDrive', () => {
 describe('resolveBackupFolder', () => {
   it('Robert\'s PC: automatic goes to the local profile folder, not OneDrive', async () => {
     const view = await resolveBackupFolder(null, { env: ROBERT.env, documents: async () => ROBERT.documents });
-    expect(view).toEqual({
+    expect(view).toMatchObject({
       dir: path.join('C:\\Users\\dd-00-kovrob1', 'BewerbungsPilot', 'Backups'), automatic: true, inOneDrive: false, documentsInOneDrive: true,
     });
   });
   it('Documents outside OneDrive: Documents\\BewerbungsPilot\\Backups', async () => {
     const view = await resolveBackupFolder(null, { env: { USERPROFILE: 'C:\\Users\\me' }, documents: async () => 'C:\\Users\\me\\Documents' });
-    expect(view).toEqual({ dir: path.join('C:\\Users\\me\\Documents', 'BewerbungsPilot', 'Backups'), automatic: true, inOneDrive: false, documentsInOneDrive: false });
+    expect(view).toMatchObject({ dir: path.join('C:\\Users\\me\\Documents', 'BewerbungsPilot', 'Backups'), automatic: true, inOneDrive: false, documentsInOneDrive: false });
+  });
+  it('available: an existing folder, or a missing one on a drive that is there; never creates anything', async () => {
+    const root = tempRoot();
+    const missing = path.join(root, 'not yet', 'Backups');
+    expect((await resolveBackupFolder(root, { env: {}, documents: async () => root })).available).toBe(true);
+    expect((await resolveBackupFolder(missing, { env: {}, documents: async () => root })).available).toBe(true);
+    expect(fs.existsSync(path.join(root, 'not yet'))).toBe(false);
+    fs.writeFileSync(path.join(root, 'a file'), 'x');
+    expect((await resolveBackupFolder(path.join(root, 'a file'), { env: {}, documents: async () => root })).available).toBe(false);
+  });
+  it.skipIf(!windows)('available is false on a drive letter that does not exist (USB stick not plugged in)', async () => {
+    const free = [...'QRSTUVWXYZ'].find((l) => !fs.existsSync(`${l}:\\`));
+    if (!free) return;
+    const view = await resolveBackupFolder(`${free}:\\Sicherung`, { env: {}, documents: async () => tempRoot() });
+    expect(view).toMatchObject({ dir: `${free}:\\Sicherung`, available: false });
   });
   it('a chosen folder wins over the automatic one; a chosen OneDrive folder is reported', async () => {
     const opts = { env: ROBERT.env, documents: async () => ROBERT.documents };
     expect(await resolveBackupFolder('D:\\Sicherung', opts)).toMatchObject({ dir: 'D:\\Sicherung', automatic: false, inOneDrive: false });
     expect(await resolveBackupFolder(`${ROBERT.documents}\\Kopien`, opts)).toMatchObject({ automatic: false, inOneDrive: true, documentsInOneDrive: true });
   });
-  it('BP_BACKUP_DIR wins over everything (tests, e2e) and is created by backupFolder', async () => {
+  it('BP_BACKUP_DIR wins over everything (tests, e2e); createFolder creates it', async () => {
     const want = path.join(tempRoot(), 'my backups');
-    const view = await backupFolder('D:\\Sicherung', { env: { BP_BACKUP_DIR: want }, documents: async () => ROBERT.documents });
+    const view = await resolveBackupFolder('D:\\Sicherung', { env: { BP_BACKUP_DIR: want }, documents: async () => ROBERT.documents });
     expect(view).toMatchObject({ dir: path.resolve(want), automatic: false });
+    expect(await createFolder(view.dir)).toBe(view.dir);
     expect(fs.statSync(want).isDirectory()).toBe(true);
+  });
+  it('createFolder: a folder that cannot be created → BACKUP_FAILED with its own sentence', async () => {
+    const parent = tempRoot();
+    fs.writeFileSync(path.join(parent, 'a file'), 'x');
+    expect(await reasonOf(createFolder(path.join(parent, 'a file', 'Backups')))).toBe('backupFolderUnavailable');
   });
 });
 
@@ -178,6 +200,49 @@ describe('backup folder API', { timeout: 30_000 }, () => {
     expect(JSON.parse(fs.readFileSync(path.join(ctx.dir, 'settings.json'), 'utf8')).backups.folder).toBe(chosen);
     // The "before restore" copy went to the chosen folder too.
     expect(fs.readdirSync(chosen).filter((n) => n.endsWith('.zip'))).toHaveLength(2);
+  });
+
+  it('a restore that succeeded stays a success when keeping the folder cannot be written (logged instead)', async () => {
+    const warnings: string[] = [];
+    const ctx = await makeApp({ logger: { ...nullLogger, warn: (event: string) => { warnings.push(event); } } });
+    const made = (await ctx.app.inject({ method: 'POST', url: '/api/backups', headers: H })).json() as { name: string };
+    const chosen = path.join(tempRoot(), 'chosen');
+    await put(ctx, chosen);
+    fs.copyFileSync(path.join(ctx.backupDir, made.name), path.join(chosen, made.name));
+    vi.spyOn(ctx.settings, 'setBackupFolder').mockImplementation(() => { throw new AppError('DATA_WRITE_FAILED', 'disk full'); });
+
+    const res = await ctx.app.inject({ method: 'POST', url: '/api/backups/restore', headers: H, payload: { name: made.name } });
+    expect(res.statusCode).toBe(200);
+    expect(warnings).toContain('backup_folder_keep_failed');
+  });
+
+  it('a chosen folder that is gone (USB stick unplugged): GET still answers, saving says why', async () => {
+    const ctx = await makeApp();
+    const stick = path.join(tempRoot(), 'stick');
+    await put(ctx, stick);
+    // The stick is gone: where the folder was, something else now stands (a missing drive cannot be faked portably).
+    fs.rmSync(stick, { recursive: true });
+    fs.writeFileSync(stick, 'not a folder');
+
+    const res = await ctx.app.inject({ method: 'GET', url: '/api/backups', headers: H });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ dir: stick, automatic: false, available: false, backups: [] });
+
+    const save = await ctx.app.inject({ method: 'POST', url: '/api/backups', headers: H });
+    expect(save.statusCode).toBe(500);
+    expect(save.json().error).toMatchObject({ code: 'BACKUP_FAILED', reason: 'backupFolderUnavailable' });
+
+    // Choosing another folder (or automatic) still works.
+    expect((await put(ctx, null)).json()).toMatchObject({ dir: ctx.backupDir, automatic: true, available: true });
+  });
+
+  it('GET does not create a missing automatic folder; the first backup does', async () => {
+    const ctx = await makeApp();
+    fs.rmSync(ctx.backupDir, { recursive: true });
+    expect((await list(ctx))).toMatchObject({ dir: ctx.backupDir, available: true, backups: [] });
+    expect(fs.existsSync(ctx.backupDir)).toBe(false);
+    expect((await ctx.app.inject({ method: 'POST', url: '/api/backups', headers: H })).statusCode).toBe(200);
+    expect(fs.readdirSync(ctx.backupDir)).toHaveLength(1);
   });
 });
 

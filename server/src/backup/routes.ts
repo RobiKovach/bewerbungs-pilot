@@ -16,7 +16,7 @@ import { mapUploadError } from '../profile/upload.js';
 import type { Activity } from '../runtime/activity.js';
 import type { SearchJob } from '../vacancies/search-job.js';
 import { createBackup } from './create.js';
-import { checkChosenFolder } from './folder.js';
+import { checkChosenFolder, createFolder } from './folder.js';
 import { listBackups } from './extract.js';
 import { MAX_UNPACKED_BYTES } from './format.js';
 import { restoreBackup } from './restore.js';
@@ -24,7 +24,7 @@ import { restoreBackup } from './restore.js';
 export interface BackupRouteDeps {
   paths: DataPaths;
   version: string;
-  /** The backup folder (created) for the folder chosen in Settings (null = automatic): backup/folder.ts `backupFolder`. */
+  /** Where backups go for the folder chosen in Settings (null = automatic), nothing created: backup/folder.ts `resolveBackupFolder`. */
   folder: (chosen: string | null) => Promise<BackupFolderView>;
   /** Re-reads every store from disk after a restore. */
   reload: () => void;
@@ -59,8 +59,12 @@ const folderBody = {
 
 export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteDeps): Promise<void> {
   const where = () => d.folder(d.settings.get().backups.folder);
+  /** For writing: the folder, created now; a missing USB stick or drive → BACKUP_FAILED with its own sentence. */
+  const writeDir = async () => createFolder((await where()).dir);
+  // Reading never creates the folder and never fails because it is gone: the card must stay usable to choose another.
   const listView = async (): Promise<BackupListView> => {
     const folder = await where();
+    if (!folder.available) return { ...folder, backups: [] };
     const backups: BackupInfo[] = await listBackups(folder.dir, {
       appVersion: d.version,
       onSkip: (file, err) => d.logger.warn('backup_skipped', { name: path.basename(file), code: err instanceof AppError ? err.code : 'UNKNOWN' }),
@@ -85,7 +89,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
       // chosen) must not move where the next backups go — nor where the installer puts its own.
       const chosenFolder = d.settings.get().backups.folder;
       const result = await restoreBackup(file, {
-        paths: d.paths, appVersion: d.version, backupDir: (await where()).dir, busy, reload: d.reload,
+        paths: d.paths, appVersion: d.version, backupDir: await writeDir(), busy, reload: d.reload,
         warn: (event, data) => d.logger.warn(event, data),
         mail: {
           before: d.settings.get().mail,
@@ -94,7 +98,13 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
           revoke: (key) => revokeToken(d, key, 'restore'),
         },
       });
-      if (d.settings.get().backups.folder !== chosenFolder) d.settings.setBackupFolder(chosenFolder);
+      if (d.settings.get().backups.folder !== chosenFolder) {
+        // The restore itself succeeded: a failed write here must not turn it into an error (the next one tries again
+        // via Settings; the installer then follows the restored file).
+        try { d.settings.setBackupFolder(chosenFolder); } catch (err) {
+          d.logger.warn('backup_folder_keep_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+        }
+      }
       d.logger.info('backup_restored', { appVersion: result.restored.appVersion, kind: result.restored.kind });
       return result;
     } finally {
@@ -107,6 +117,8 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   /** Settings → Backups → "Change folder" / "Back to automatic"; answers with the list from the new folder. */
   app.put('/api/backups/folder', { schema: { body: folderBody } }, async (req) => {
     const { folder } = req.body as { folder: string | null };
+    // A restore re-applies the folder it started with; changing it meanwhile would be lost.
+    d.activity.refuseDuringRestore();
     const next = folder === null || folder.trim() === '' ? null : await checkChosenFolder(folder, d.paths.root);
     d.settings.setBackupFolder(next);
     d.logger.info('backup_folder_set', { automatic: next === null });
@@ -114,7 +126,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   });
 
   app.post('/api/backups', async () => {
-    const info = await createBackup(d.paths.root, { dir: (await where()).dir, kind: 'manual', appVersion: d.version });
+    const info = await createBackup(d.paths.root, { dir: await writeDir(), kind: 'manual', appVersion: d.version });
     d.logger.info('backup_created', { kind: info.kind, sizeBytes: info.sizeBytes });
     return info;
   });
@@ -162,7 +174,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   });
 
   app.post('/api/backups/open-folder', async () => {
-    d.openFolder((await where()).dir);
+    d.openFolder(await writeDir());
     return { ok: true };
   });
 }

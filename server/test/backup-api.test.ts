@@ -203,6 +203,7 @@ describe('backup API', { timeout: 30_000 }, () => {
       ['DELETE', '/api/mail/settings'],
       ['POST', '/api/mail/google/save', { senderName: 'Max', language: 'de' }],
       ['POST', '/api/backups/restore', { name: made.name }],
+      ['PUT', '/api/backups/folder', { folder: null }],
     ];
     for (const [method, url, payload] of calls) {
       const res = await ctx.app.inject({ method: method as 'POST', url, headers: H, ...(payload ? { payload: payload as object } : {}) });
