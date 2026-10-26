@@ -64,7 +64,7 @@ describe('toScores', () => {
 describe('extractManualTask / toManualFields', () => {
   const TEXT = 'Frontend Developer (m/w/d) bei der Muster GmbH in Dresden. Ihre Ansprechpartnerin: Frau Erika Beispiel, bewerbung@muster.example. ' + 'Details. '.repeat(30);
   const out = (over: Partial<ManualOutput> = {}): ManualOutput => ({
-    isVacancy: true, title: 'Frontend Developer (m/w/d)', company: 'Muster GmbH', city: 'Dresden', remote: 'unknown', employment: ['fulltime'],
+    isVacancy: true, initiative: false, title: 'Frontend Developer (m/w/d)', company: 'Muster GmbH', city: 'Dresden', remote: 'unknown', employment: ['fulltime'],
     salaryText: '', contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' }, score: 77, why: ['React'], missing: [], ...over,
   });
 
@@ -88,5 +88,34 @@ describe('extractManualTask / toManualFields', () => {
     const f = toManualFields(out({ title: '  ' + 'T'.repeat(400), city: ' ' }), TEXT);
     expect(f.title).toHaveLength(300);
     expect(f.locations).toEqual([]);
+  });
+});
+
+describe('0.9.0: the person\'s note and initiative applications', () => {
+  const PAGE = 'Jobs und Karriere bei der Muster GmbH. Werkstudent*in Softwareentwicklung. Initiativbewerbung. ' + 'Mehr. '.repeat(30);
+  const answer: ManualOutput = {
+    isVacancy: true, initiative: true, title: 'Initiativbewerbung – Softwareentwickler', company: 'Muster GmbH', city: 'Dresden', remote: 'unknown',
+    employment: [], salaryText: '', contact: { email: '', salutation: '', name: '' }, score: 60, why: ['Web'], missing: [],
+  };
+  it('the note is fenced as data in its own block, with rules to follow it; without a note neither appears', () => {
+    const withNote = extractManualTask(PAGE, maxProfile(), 'de', 'Initiativbewerbung bitte').prompt;
+    expect(withNote).toMatch(/<<<UNTRUSTED_PERSON_NOTE_[0-9a-f]{16}>>>\nInitiativbewerbung bitte\n<<<END_UNTRUSTED_PERSON_NOTE_/);
+    expect(withNote).toContain('never pick another');
+    const without = extractManualTask(PAGE, maxProfile(), 'de').prompt;
+    expect(without).not.toContain('PERSON_NOTE');
+    expect(without).not.toContain('never pick another');
+  });
+  it('the schema requires initiative (strict for OpenAI) and the rules explain it', () => {
+    const task = extractManualTask(PAGE, maxProfile(), 'de');
+    expect((task.schema as { required: string[] }).required).toContain('initiative');
+    expect(validateOutput(task.schema, answer).ok).toBe(true);
+    const { initiative: _drop, ...noInitiative } = answer;
+    expect(validateOutput(task.schema, noInitiative).ok).toBe(false);
+    expect(task.prompt).toContain('Initiativbewerbung – Softwareentwickler');
+    expect(task.prompt).toContain('Never list missing concrete requirements');
+  });
+  it('toManualFields passes initiative through', () => {
+    expect(toManualFields(answer, PAGE).initiative).toBe(true);
+    expect(toManualFields({ ...answer, initiative: false }, PAGE).initiative).toBe(false);
   });
 });

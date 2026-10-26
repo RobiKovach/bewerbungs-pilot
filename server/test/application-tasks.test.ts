@@ -208,3 +208,25 @@ describe('offer reply checks', () => {
     expect(t.schema).toMatchObject({ required: ['body'] });
   });
 });
+
+describe('0.9.0: initiative applications (Initiativbewerbung)', () => {
+  it('the letter rules say so only for an initiative vacancy, in create and revise', () => {
+    const normal = createPackageTask(ctx(), VAC, 'Wir suchen dich.').prompt;
+    expect(normal).toContain('"Bewerbung als <job title>"');
+    expect(normal).not.toContain('unsolicited application');
+    const c = packageContext(readyPackageProfile(), 'de', false, true);
+    const create = createPackageTask(c, { ...VAC, initiative: true }, 'Jobs und Karriere. Werkstudent*in. Initiativbewerbung.').prompt;
+    expect(create).toContain('"Initiativbewerbung als <job title>"');
+    expect(create).toContain('Never refer to a job ad');
+    expect(create).toContain('Ihre Stellenanzeige');
+    const revise = reviseLetterTask(c, { ...VAC, initiative: true }, 'x', pkg().letter, 'kürzer').prompt;
+    expect(revise).toContain('unsolicited application (Initiativbewerbung)');
+  });
+  it('English documents get the English wording', () => {
+    const c = packageContext(readyPackageProfile(), 'en', false, true);
+    expect(createPackageTask(c, VAC, 'x').prompt).toContain('"Unsolicited application as <job title>"');
+  });
+  it('packageContext defaults to no initiative', () => {
+    expect(ctx().initiative).toBe(false);
+  });
+});

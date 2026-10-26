@@ -91,9 +91,12 @@ function manual(task: LlmTask) {
   const company = lines.find((l) => /\b(GmbH|AG|KG|SE|UG|e\.\s?V\.)(\s|$)/.test(l)) ?? 'Beispiel GmbH';
   const city = /\b\d{5}\s+([\p{Lu}][\p{L}-]+)/u.exec(text)?.[1] ?? '';
   const email = /[^\s@<>()]+@[^\s@<>()]+\.[a-z]{2,}/i.exec(text)?.[0] ?? '';
+  // The person's note (a short text next to a link) asking for an unsolicited application.
+  const initiative = /initiativ/i.test(fenced(task.prompt, 'person note')[0] ?? '');
   return {
     isVacancy: lines.length > 0,
-    title: lines[0] ?? '', company, city, remote: 'unknown', employment: ['fulltime'], salaryText: '',
+    initiative,
+    title: initiative ? 'Initiativbewerbung' : lines[0] ?? '', company, city, remote: 'unknown', employment: ['fulltime'], salaryText: '',
     contact: { email, salutation: '', name: '' },
     score: 72, why: ['Fits the wished job title (fake AI answer).'], missing: [],
   };

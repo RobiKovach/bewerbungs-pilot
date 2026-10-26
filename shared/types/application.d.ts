@@ -74,6 +74,8 @@ export interface PackageVacancy {
   remote: RemoteKind;
   contact: VacancyContact | null;
   url: string;
+  /** An unsolicited application (Initiativbewerbung). Absent = false (packages before 0.9.0). */
+  initiative?: boolean;
 }
 
 export interface ApplicationPackage {

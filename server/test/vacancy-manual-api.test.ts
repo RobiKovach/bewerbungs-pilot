@@ -6,7 +6,7 @@ import { details, fakeSource, FakePageReader, hit, scoringClaude, vacancy } from
 
 const TEXT = 'Frontend Developer (m/w/d) bei der Muster GmbH in Dresden. Wir bieten Homeoffice. Ansprechpartnerin: Frau Erika Beispiel, bewerbung@muster.example. ' + 'Aufgaben und Profil. '.repeat(12);
 const MANUAL = {
-  isVacancy: true, title: 'Frontend Developer (m/w/d)', company: 'Muster GmbH', city: 'Dresden', remote: 'partial', employment: ['fulltime'],
+  isVacancy: true, initiative: false, title: 'Frontend Developer (m/w/d)', company: 'Muster GmbH', city: 'Dresden', remote: 'partial', employment: ['fulltime'],
   salaryText: '', contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' }, score: 82, why: ['React'], missing: ['Deutsch C1'],
 };
 type Ctx = Awaited<ReturnType<typeof makeApp>>;
@@ -165,11 +165,44 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     expect(ctx.provider.calls).toHaveLength(1);
   });
 
-  it('text that is too short counts as no text: the page is read', async () => {
+  it('text that is too short is the person\'s note: the page is read, the AI gets both, the card keeps both', async () => {
     const reader = new FakePageReader(() => TEXT);
     const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader });
-    expect((await paste(ctx, { url: LINK, text: 'Frontend' })).statusCode).toBe(200);
+    const res = await paste(ctx, { url: LINK, text: '  Frontend, bitte die Stelle in Dresden  ' });
+    expect(res.statusCode).toBe(200);
     expect(reader.calls).toEqual([LINK]);
+    const prompt = ctx.provider.calls[0].prompt;
+    expect(prompt).toMatch(/<<<UNTRUSTED_PERSON_NOTE_[0-9a-f]{16}>>>\nFrontend, bitte die Stelle in Dresden\n/);
+    expect(prompt).toMatch(/<<<UNTRUSTED_PASTED_VACANCY_[0-9a-f]{16}>>>\nFrontend Developer \(m\/w\/d\) bei der Muster GmbH/);
+    expect(prompt).toContain('never pick another');
+    const v = res.json().vacancy as Vacancy;
+    expect(ctx.vacancyStore.readText(v.id)).toBe(`Notiz: Frontend, bitte die Stelle in Dresden\n\n${TEXT}`);
+    expect(v.initiative).toBeUndefined();
+  });
+
+  it('no note → no note block and no note rules; the stored text is the page alone', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: new FakePageReader(() => TEXT) });
+    const v = (await paste(ctx, { url: LINK, text: '   ' })).json().vacancy as Vacancy;
+    expect(ctx.provider.calls[0].prompt).not.toContain('UNTRUSTED_PERSON_NOTE');
+    expect(ctx.provider.calls[0].prompt).not.toContain('never pick another');
+    expect(ctx.vacancyStore.readText(v.id)).toBe(TEXT);
+  });
+
+  it('0.9.0: an initiative application is a card (not NOT_A_VACANCY), marked initiative', async () => {
+    const OVERVIEW = 'Jobs und Karriere bei der Muster GmbH. Werkstudent*in Softwareentwicklung. Initiativbewerbung. ' + 'Wir freuen uns auf dich. '.repeat(10);
+    const answer = { ...MANUAL, isVacancy: false, initiative: true, title: 'Initiativbewerbung – Softwareentwickler', contact: { email: '', salutation: '', name: '' } };
+    const ctx = await makeApp({ provider: scoringClaude({ manual: answer }), pageReader: new FakePageReader(() => OVERVIEW) });
+    const res = await paste(ctx, { url: LINK, text: 'Initiativbewerbung als Softwareentwickler' });
+    expect(res.statusCode).toBe(200);
+    const v = res.json().vacancy as Vacancy;
+    expect(v).toMatchObject({ title: 'Initiativbewerbung – Softwareentwickler', initiative: true, addedManually: true });
+    expect(ctx.vacancyStore.get(v.id)?.initiative).toBe(true);
+  });
+
+  it('a vacancy that is no initiative application is stored without the field', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }) });
+    const v = (await paste(ctx, { text: TEXT })).json().vacancy as Vacancy;
+    expect(Object.hasOwn(ctx.vacancyStore.get(v.id) ?? {}, 'initiative')).toBe(false);
   });
 
   it('link and enough text → the pasted text wins, the page is not opened', async () => {

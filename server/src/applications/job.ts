@@ -48,7 +48,7 @@ export function touchDraft(p: ApplicationPackage, now: Date): void {
 }
 
 export function toPackageVacancy(v: Vacancy): PackageVacancy {
-  return { id: v.id, title: v.title, company: v.company, locations: [...v.locations], remote: v.remote, contact: v.contact ? { ...v.contact } : null, url: v.url };
+  return { id: v.id, title: v.title, company: v.company, locations: [...v.locations], remote: v.remote, contact: v.contact ? { ...v.contact } : null, url: v.url, ...(v.initiative ? { initiative: true } : {}) };
 }
 
 /** The Claude-written letter fields, trimmed; the server-built parts of `base` stay as they are. */
@@ -156,7 +156,7 @@ export class ApplicationJob {
     // Recreate works from the package's own copy (the vacancy may be hidden or compacted by now).
     const vacancy = previous ? previous.vacancy : toPackageVacancy(this.d.vacancies.require(vacancyId));
     const text = previous ? this.d.store.readVacancyText(previous.id) : (this.d.vacancies.readText(vacancyId) ?? '');
-    const ctx = packageContext(profile, language, mentionHomeOffice(profile, vacancy));
+    const ctx = packageContext(profile, language, mentionHomeOffice(profile, vacancy), vacancy.initiative === true);
     const out = await this.ask<CreateOutput>(createPackageTask(ctx, vacancy, text), (o) => mergeChecks(checkLetter(o, ctx), checkCv(o, ctx)), signal);
     const now = this.now().toISOString();
     const pkg: ApplicationPackage = {
@@ -193,7 +193,7 @@ export class ApplicationJob {
 
   private async revise(existing: ApplicationPackage, instruction: string, profile: Profile, signal: AbortSignal): Promise<string> {
     const text = this.d.store.readVacancyText(existing.id);
-    const ctx = packageContext(profile, existing.language, mentionHomeOffice(profile, existing.vacancy));
+    const ctx = packageContext(profile, existing.language, mentionHomeOffice(profile, existing.vacancy), existing.vacancy.initiative === true);
     const out = await this.ask<LetterOutput>(reviseLetterTask(ctx, existing.vacancy, text, existing.letter, instruction), (o) => checkLetter(o, ctx), signal);
     const next = structuredClone(existing);
     next.letter = withLetterFields(next.letter, out);
@@ -208,7 +208,7 @@ export class ApplicationJob {
     let cv = existing.cv;
     if (cvNeedsClaude(existing, snapshot)) {
       const text = this.d.store.readVacancyText(existing.id);
-      const ctx = packageContext(profile, existing.language, mentionHomeOffice(profile, existing.vacancy));
+      const ctx = packageContext(profile, existing.language, mentionHomeOffice(profile, existing.vacancy), existing.vacancy.initiative === true);
       const out = await this.ask<CvOutput>(refreshCvTask(ctx, existing.vacancy, text), (o) => checkCv(o, ctx), signal);
       const fresh = toCv(out);
       const keepP = keepProfil && existing.cv.profilEditedByHand;

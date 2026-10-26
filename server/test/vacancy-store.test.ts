@@ -206,3 +206,15 @@ describe('0.8.0: a malformed v1 file is set aside, never emptied', () => {
     expect(fs.readFileSync(path.join(dir, aside[0]), 'utf8')).toBe(original);
   });
 });
+
+describe('0.9.0: initiative flag', () => {
+  it('is optional: kept after a restart when set, absent on other cards', () => {
+    const { paths, store } = setup();
+    store.add(vacancy({ id: 'i1', initiative: true }), 'Initiativbewerbung.');
+    store.add(vacancy({ id: 'n1', title: 'Andere Stelle' }), 'Wir suchen Sie.');
+    const again = new VacancyStore(paths);
+    again.load();
+    expect(again.get('i1')?.initiative).toBe(true);
+    expect(Object.hasOwn(again.get('n1') ?? {}, 'initiative')).toBe(false);
+  });
+});

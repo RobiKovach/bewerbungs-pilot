@@ -5,6 +5,8 @@ export interface PackageContext {
   language: DocLanguage;
   city: string;
   mentionHomeOffice: boolean;
+  /** An unsolicited application (Initiativbewerbung): there is no job ad to refer to. */
+  initiative: boolean;
   education: { id: string; kind: string; degree: string; institution: string; city: string; country: string; from: string; to: string; description: string }[];
   experience: { id: string; jobTitle: string; employer: string; city: string; country: string; from: string; to: string; description: string }[];
   skills: { id: string; name: string }[];
@@ -29,12 +31,13 @@ export type CreateOutput = LetterOutput & CvOutput;
  * stories that may be told, "never mention". Never name, e-mail, phone, street, postal code, birth date, nationality,
  * work permit, driving licence, photo or untellable/unconfirmed stories — the server fills the letter's contact parts.
  */
-export function packageContext(profile: Profile, language: DocLanguage, mentionHomeOffice: boolean): PackageContext {
+export function packageContext(profile: Profile, language: DocLanguage, mentionHomeOffice: boolean, initiative = false): PackageContext {
   const s = profile.sections;
   return {
     language,
     city: s.personal.data.city,
     mentionHomeOffice,
+    initiative,
     education: s.education.data.items.map((e) => ({ id: e.id, kind: e.kind, degree: e.degree, institution: e.institution, city: e.city, country: e.country, from: e.from, to: e.to, description: e.description })),
     experience: s.experience.data.items.map((e) => ({ id: e.id, jobTitle: e.jobTitle, employer: e.employer, city: e.city, country: e.country, from: e.from, to: e.to, description: e.description })),
     skills: s.skills.data.items.map((k) => ({ id: k.id, name: k.name })),

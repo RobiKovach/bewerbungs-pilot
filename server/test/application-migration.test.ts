@@ -240,3 +240,12 @@ describe('0.8.0: a malformed v1 applications.json is set aside and rebuilt, neve
     expect(fs.readFileSync(path.join(dir, aside[0]), 'utf8')).toBe(original);
   });
 });
+
+describe('0.9.0: initiative flag on the package\'s vacancy copy', () => {
+  it('optional: packages without it stay valid, a boolean is valid, anything else is refused', () => {
+    expect(validatePackage(pkg())).toBeNull();
+    const base = pkg();
+    expect(validatePackage({ ...base, vacancy: { ...base.vacancy, initiative: true } })).toBeNull();
+    expect(validatePackage({ ...base, vacancy: { ...base.vacancy, initiative: 'yes' } })).not.toBeNull();
+  });
+});

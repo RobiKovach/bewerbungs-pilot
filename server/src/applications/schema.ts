@@ -59,8 +59,9 @@ const L = PACKAGE_LIMITS;
 const V = VACANCY_LIMITS;
 const str = (maxLength: number): JsonSchema => ({ type: 'string', maxLength });
 const nullable = (s: JsonSchema): JsonSchema => ({ anyOf: [s, { type: 'null' }] });
-function obj(properties: Record<string, JsonSchema>): JsonSchema {
-  return { type: 'object', additionalProperties: false, required: Object.keys(properties), properties };
+/** `optional`: fields older files may lack (not in `required`). */
+function obj(properties: Record<string, JsonSchema>, optional: Record<string, JsonSchema> = {}): JsonSchema {
+  return { type: 'object', additionalProperties: false, required: Object.keys(properties), properties: { ...properties, ...optional } };
 }
 const ID = { type: 'string', pattern: APPLICATION_ID.source };
 const TIMESTAMP = str(40);
@@ -88,6 +89,9 @@ const PACKAGE = obj({
     remote: { enum: ['yes', 'partial', 'no', 'unknown'] },
     contact: nullable(obj({ email: str(V.email), salutation: { enum: ['', 'Frau', 'Herr'] }, name: str(V.name) })),
     url: { type: 'string', maxLength: V.url, pattern: '^(https?://.+)?$' },
+  }, {
+    // 0.9.0: packages from before have no `initiative` (= false), so no migration is needed.
+    initiative: { type: 'boolean' },
   }),
   letter: obj({
     recipient: { type: 'array', maxItems: L.recipientLines, items: str(L.line) },

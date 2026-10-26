@@ -45,6 +45,8 @@ const manualBody = {
   type: 'object', additionalProperties: false,
   properties: { text: { type: 'string', maxLength: MANUAL_TEXT_MAX }, url: { type: 'string', maxLength: VACANCY_LIMITS.url, pattern: HTTP_URL } },
 };
+/** Marks the person's own note in front of a read page's text (the card's text and later the letter see both). */
+export const NOTE_LABEL = 'Notiz:';
 const isHttpUrl = (s: string) => { try { return ['http:', 'https:'].includes(new URL(s).protocol); } catch { return false; } };
 
 const ALLOWED: Record<VacancyStatus, readonly VacancyStatus[]> = {
@@ -183,25 +185,30 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     }
 
     // A link without (enough) pasted text: the app opens the page itself; pasted text always wins (spec, section 6a).
+    // A short text next to the link is the person's note (e.g. which position on the page, or "Initiativbewerbung"):
+    // the AI gets it with the page, and the card keeps it in front of the page text.
     let offerText = text;
+    let note = '';
     let stored = rawText;
     if (text.length < MANUAL_TEXT_MIN && url) {
       // No AI helper chosen: say so now, not after reading the page for up to 25 s.
       d.queue.current();
-      offerText = stored = await d.pageReader.read(url, signal);
+      offerText = await d.pageReader.read(url, signal);
       // The browser reader refuses (and logs) a too short page itself; this only guards other readers.
       if (offerText.length < MANUAL_TEXT_MIN) throw new AppError('BAD_REQUEST', `page text has ${offerText.length} characters`, 'pageUnreadable');
+      note = text;
+      stored = note ? `${NOTE_LABEL} ${note}\n\n${offerText}` : offerText;
     } else if (text.length < MANUAL_TEXT_MIN) {
       throw new AppError('BAD_REQUEST', `pasted text has ${text.length} characters`, 'pastedTooShort', { min: MANUAL_TEXT_MIN });
     }
     const language = d.language();
-    const { value: out, provider } = await d.queue.runTagged<ManualOutput>(extractManualTask(offerText, d.profile(), language), signal);
-    const fields = toManualFields(out, offerText);
-    if (!out.isVacancy || !fields.title) throw new AppError('NOT_A_VACANCY', 'Claude found no job offer in the pasted text');
+    const { value: out, provider } = await d.queue.runTagged<ManualOutput>(extractManualTask(offerText, d.profile(), language, note), signal);
+    const { initiative, ...fields } = toManualFields(out, note ? `${note}\n${offerText}` : offerText);
+    if ((!out.isVacancy && !initiative) || !fields.title) throw new AppError('NOT_A_VACANCY', 'the AI helper found no job offer in the pasted text');
     const twin = findDuplicate(d.store.list(), { sourceId: null, title: fields.title, company: fields.company });
     if (twin) throw duplicateError(twin);
     return view(d.store.add({
-      ...base, ...fields, source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
+      ...base, ...fields, ...(initiative ? { initiative: true } : {}), source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
       score: toScore(out, new Date().toISOString(), provider, language),
     }, stored));
   });

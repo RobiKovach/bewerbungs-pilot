@@ -43,8 +43,9 @@ const L = VACANCY_LIMITS;
 const str = (maxLength: number): JsonSchema => ({ type: 'string', maxLength });
 const TIMESTAMP = str(40);
 const nullable = (s: JsonSchema): JsonSchema => ({ anyOf: [s, { type: 'null' }] });
-function obj(properties: Record<string, JsonSchema>): JsonSchema {
-  return { type: 'object', additionalProperties: false, required: Object.keys(properties), properties };
+/** `optional`: fields older files may lack (not in `required`). */
+function obj(properties: Record<string, JsonSchema>, optional: Record<string, JsonSchema> = {}): JsonSchema {
+  return { type: 'object', additionalProperties: false, required: Object.keys(properties), properties: { ...properties, ...optional } };
 }
 const points = { type: 'array', maxItems: L.points, items: str(L.point) };
 
@@ -68,6 +69,9 @@ const VACANCY = obj({
   scoreState: { enum: ['pending', 'scored', 'failed', 'notScored'] },
   score: nullable(obj({ value: { type: 'integer', minimum: 0, maximum: 100 }, why: points, missing: points, scoredAt: TIMESTAMP, provider: { enum: [...PROVIDER_IDS] }, language: nullable({ enum: [...SUPPORTED_LANGUAGES] }) })),
   hiddenAt: nullable(TIMESTAMP),
+}, {
+  // 0.9.0: cards from before have no `initiative` (= false), so no migration is needed.
+  initiative: { type: 'boolean' },
 });
 
 const FILE = obj({ schemaVersion: { const: VACANCIES_SCHEMA_VERSION }, vacancies: { type: 'array', items: VACANCY } });

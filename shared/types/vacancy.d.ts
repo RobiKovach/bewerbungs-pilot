@@ -45,6 +45,8 @@ export interface Vacancy {
   scoreState: ScoreState;
   score: VacancyScore | null;
   hiddenAt: string | null;
+  /** Only on cards added by hand: an unsolicited application (Initiativbewerbung). Absent = false (cards before 0.9.0). */
+  initiative?: boolean;
 }
 
 export type SearchRunState = 'idle' | 'running' | 'done' | 'stopped' | 'interrupted' | 'failed';

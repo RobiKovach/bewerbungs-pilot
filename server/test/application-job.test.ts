@@ -394,3 +394,23 @@ describe('0.8.0: who wrote it, and AI errors that are never retried', () => {
     expect(t.store.list()).toEqual([]);
   });
 });
+
+describe('0.9.0: initiative application', () => {
+  it('the package copies the flag from the card and the letter task is told', async () => {
+    const t = setup();
+    t.vacancies.add(vacancy({ id: 'ini1', status: 'favorite', company: 'Itora GmbH', locations: ['Berlin'], initiative: true }), 'Jobs und Karriere. Initiativbewerbung.');
+    t.job.start({ kind: 'create', vacancyId: 'ini1', language: 'de' });
+    await t.job.whenIdle();
+    const p = t.store.require('app1');
+    expect(p.vacancy.initiative).toBe(true);
+    expect(t.provider.calls[0].prompt).toContain('unsolicited application (Initiativbewerbung)');
+    expect(t.provider.calls[0].prompt).toContain('"Initiativbewerbung als <job title>"');
+  });
+  it('a normal card gives a package without the field and a letter task without the initiative rule', async () => {
+    const t = setup();
+    t.job.start({ kind: 'create', vacancyId: 'fav1', language: 'de' });
+    await t.job.whenIdle();
+    expect(Object.hasOwn(t.store.require('app1').vacancy, 'initiative')).toBe(false);
+    expect(t.provider.calls[0].prompt).not.toContain('unsolicited application');
+  });
+});
