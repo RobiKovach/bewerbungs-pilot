@@ -1,5 +1,5 @@
 import type {
-  ApplicationJobState, ApplicationListView, BackupInfo, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
+  ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
@@ -101,7 +101,9 @@ export const api = {
   installStatus: () => request<InstallStatus>('GET', '/api/llm/install'),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
 
-  listBackups: () => request<{ dir: string; backups: BackupInfo[] }>('GET', '/api/backups'),
+  listBackups: () => request<BackupListView>('GET', '/api/backups'),
+  /** null = back to the automatic folder; answers with the list from the new folder. */
+  setBackupFolder: (folder: string | null) => request<BackupListView>('PUT', '/api/backups/folder', { folder }),
   createBackup: () => request<BackupInfo>('POST', '/api/backups', {}),
   restoreBackup: (name: string) => request<{ restored: BackupMeta; beforeRestore: BackupInfo }>('POST', '/api/backups/restore', { name }),
   restoreBackupUpload: (file: File) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>('/api/backups/restore-upload', file, fileName(file, 'backup.zip')),

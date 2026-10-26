@@ -215,3 +215,76 @@ describe('BackupsSection', () => {
     expect(await screen.findByText('No backups yet.')).toBeInTheDocument();
   });
 });
+
+describe('BackupsSection — backup folder', () => {
+  const LOCAL = 'C:\\Users\\x\\BewerbungsPilot\\Backups';
+  const view = (over: Record<string, unknown> = {}) => ({ dir: LOCAL, automatic: true, inOneDrive: false, documentsInOneDrive: false, backups: [], ...over });
+
+  it('explains the local folder when Documents is in OneDrive; no warning, no "back to automatic"', async () => {
+    setup({ 'GET /api/backups': () => ({ body: view({ documentsInOneDrive: true }) }) });
+    expect(await screen.findByText(LOCAL)).toBeInTheDocument();
+    expect(screen.getByText(/Your Documents folder is synced with OneDrive, so backups are kept on this PC instead/)).toBeInTheDocument();
+    expect(screen.queryByText(/will also be uploaded to that cloud/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Back to automatic' })).not.toBeInTheDocument();
+  });
+
+  it('warns when the backup folder itself is in OneDrive', async () => {
+    setup({ 'GET /api/backups': () => ({ body: view({ dir: 'C:\\Users\\x\\OneDrive\\Kopien', automatic: false, inOneDrive: true, documentsInOneDrive: true }) }) });
+    expect(await screen.findByText(/every backup — your CV, profile, applications and letters — will also be uploaded to that cloud/)).toBeInTheDocument();
+    expect(screen.queryByText(/so backups are kept on this PC instead/)).not.toBeInTheDocument();
+  });
+
+  it('"Change folder" saves the typed path and shows the list from the new folder', async () => {
+    const chosen = 'D:\\Sicherung';
+    let sent: unknown = null;
+    const f = setup({
+      'GET /api/backups': () => ({ body: view({ backups: [backup()] }) }),
+      'PUT /api/backups/folder': (init) => { sent = JSON.parse(String(init?.body)); return { body: view({ dir: chosen, automatic: false }) }; },
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Change folder' }));
+    // While the form is open the other buttons wait.
+    expect(screen.getByRole('button', { name: 'Save backup' })).toBeDisabled();
+    const input = screen.getByLabelText('Folder for backups');
+    expect(input).toHaveValue(LOCAL);
+    await user.clear(input);
+    await user.type(input, chosen);
+    await user.click(screen.getByRole('button', { name: 'Use this folder' }));
+    expect(await screen.findByText(chosen)).toBeInTheDocument();
+    expect(sent).toEqual({ folder: chosen });
+    expect(screen.queryByLabelText('Folder for backups')).not.toBeInTheDocument();
+    expect(screen.getByText('No backups yet.')).toBeInTheDocument();
+    expect(f.mock.calls.filter((c) => c[0] === '/api/backups/folder')).toHaveLength(1);
+  });
+
+  it('a refused folder shows its own sentence and keeps the form open', async () => {
+    setup({
+      'GET /api/backups': () => ({ body: view() }),
+      'PUT /api/backups/folder': () => ({ status: 400, body: { error: { code: 'BAD_REQUEST', detailsForLog: 'x', reason: 'backupFolderInvalid' } } }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Change folder' }));
+    const input = screen.getByLabelText('Folder for backups');
+    await user.clear(input);
+    await user.type(input, 'Backups');
+    await user.click(screen.getByRole('button', { name: 'Use this folder' }));
+    expect(await screen.findByText(/Please enter a full path on this PC that starts with a drive letter/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Folder for backups')).toHaveValue('Backups');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByLabelText('Folder for backups')).not.toBeInTheDocument();
+    expect(screen.queryByText(/starts with a drive letter/)).not.toBeInTheDocument();
+  });
+
+  it('"Back to automatic" sends null', async () => {
+    let sent: unknown = null;
+    setup({
+      'GET /api/backups': () => ({ body: view({ dir: 'D:\\Sicherung', automatic: false }) }),
+      'PUT /api/backups/folder': (init) => { sent = JSON.parse(String(init?.body)); return { body: view() }; },
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Back to automatic' }));
+    expect(await screen.findByText(LOCAL)).toBeInTheDocument();
+    expect(sent).toEqual({ folder: null });
+    expect(screen.queryByRole('button', { name: 'Back to automatic' })).not.toBeInTheDocument();
+  });
+});

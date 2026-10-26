@@ -3,8 +3,8 @@ import type { RouteHandler } from './fetchMock';
 
 export function baseSettings(over: Partial<Settings> = {}): Settings {
   return {
-    schemaVersion: 3, language: 'en', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: 'claude' },
-    vacancies: { publishedWithinDays: 14 }, mail: null, updates: { check: true, dismissedVersion: null }, ...over,
+    schemaVersion: 4, language: 'en', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: 'claude' },
+    vacancies: { publishedWithinDays: 14 }, mail: null, updates: { check: true, dismissedVersion: null }, backups: { folder: null }, ...over,
   };
 }
 

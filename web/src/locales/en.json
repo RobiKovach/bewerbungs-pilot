@@ -156,6 +156,14 @@
     "backups": {
       "intro": "A backup holds your profile, job offers and applications with all files. Your email password or Google key is never included.",
       "folder": "Folder:",
+      "localBecauseOneDrive": "Your Documents folder is synced with OneDrive, so backups are kept on this PC instead. They hold personal data and should not end up in a cloud by themselves.",
+      "inOneDrive": "This folder is synced with OneDrive: every backup — your CV, profile, applications and letters — will also be uploaded to that cloud.",
+      "changeFolder": "Change folder",
+      "automaticFolder": "Back to automatic",
+      "newFolder": "Folder for backups",
+      "newFolderHint": "A full path on this PC, for example D:\\Backups\\BewerbungsPilot or a USB stick. The folder is created if it does not exist.",
+      "saveFolder": "Use this folder",
+      "savingFolder": "Checking…",
       "save": "Save backup",
       "saving": "Saving…",
       "saved": "Saved: {{name}}",
@@ -508,7 +516,10 @@
       "restoreBusySend": "An email is being sent. Please wait a moment, then restore the backup.",
       "backupTooLarge": "This backup is larger than 1 GB. BewerbungsPilot cannot restore such a large file.",
       "backupNotZip": "This is not a backup file. A BewerbungsPilot backup is a .zip file, for example BewerbungsPilot-backup-2026-10-20-1030.zip.",
-      "backupGone": "This backup is no longer in the folder (it was moved or deleted). The list has been updated."
+      "backupGone": "This backup is no longer in the folder (it was moved or deleted). The list has been updated.",
+      "backupFolderInvalid": "Please enter a full path on this PC that starts with a drive letter, for example D:\\Backups. Network folders (\\\\server\\…) are not possible.",
+      "backupFolderInData": "This folder is inside the BewerbungsPilot data itself. Please choose a folder outside it.",
+      "backupFolderNotWritable": "BewerbungsPilot cannot create or write to this folder. Please choose another one (for example on drive D: or a USB stick)."
     }
   },
   "vacancies": {

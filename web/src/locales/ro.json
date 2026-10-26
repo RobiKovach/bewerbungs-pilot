@@ -156,6 +156,14 @@
     "backups": {
       "intro": "O copie de rezervă conține profilul dumneavoastră, ofertele de muncă și candidaturile cu toate fișierele. Parola de e-mail sau cheia Google nu sunt incluse niciodată.",
       "folder": "Folder:",
+      "localBecauseOneDrive": "Folderul dvs. „Documente” este sincronizat cu OneDrive, de aceea copiile de rezervă sunt păstrate în schimb pe acest PC. Ele conțin date personale și nu ar trebui să ajungă singure într-un cloud.",
+      "inOneDrive": "Acest folder este sincronizat cu OneDrive: fiecare copie de rezervă — CV-ul, profilul, candidaturile și scrisorile — va fi încărcată și în acel cloud.",
+      "changeFolder": "Schimbați folderul",
+      "automaticFolder": "Înapoi la automat",
+      "newFolder": "Folder pentru copiile de rezervă",
+      "newFolderHint": "O cale completă pe acest PC, de exemplu D:\\Copii\\BewerbungsPilot sau un stick USB. Dacă folderul nu există, va fi creat.",
+      "saveFolder": "Folosiți acest folder",
+      "savingFolder": "Se verifică…",
       "save": "Salvați copia",
       "saving": "Se salvează…",
       "saved": "Salvat: {{name}}",
@@ -508,7 +516,10 @@
       "restoreBusySend": "Se trimite un e-mail. Vă rugăm să așteptați un moment, apoi restaurați copia.",
       "backupTooLarge": "Această copie de rezervă are mai mult de 1 GB. BewerbungsPilot nu poate restaura un fișier atât de mare.",
       "backupNotZip": "Acesta nu este un fișier de copie de rezervă. O copie BewerbungsPilot este un fișier .zip, de exemplu BewerbungsPilot-backup-2026-10-20-1030.zip.",
-      "backupGone": "Această copie de rezervă nu mai este în folder (a fost mutată sau ștearsă). Lista a fost actualizată."
+      "backupGone": "Această copie de rezervă nu mai este în folder (a fost mutată sau ștearsă). Lista a fost actualizată.",
+      "backupFolderInvalid": "Introduceți o cale completă pe acest PC care începe cu o literă de unitate, de exemplu D:\\Copii. Folderele de rețea (\\\\server\\…) nu sunt posibile.",
+      "backupFolderInData": "Acest folder se află chiar în datele BewerbungsPilot. Alegeți un folder din afara lor.",
+      "backupFolderNotWritable": "BewerbungsPilot nu poate crea acest folder sau nu poate scrie în el. Alegeți altul (de exemplu pe unitatea D: sau pe un stick USB)."
     }
   },
   "vacancies": {

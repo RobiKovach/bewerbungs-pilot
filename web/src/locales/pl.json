@@ -156,6 +156,14 @@
     "backups": {
       "intro": "Kopia zapasowa zawiera Twój profil, oferty pracy i aplikacje ze wszystkimi plikami. Hasło do poczty ani klucz Google nigdy się w niej nie znajdują.",
       "folder": "Folder:",
+      "localBecauseOneDrive": "Twój folder „Dokumenty” jest synchronizowany z OneDrive, dlatego kopie zapasowe są zamiast tego zapisywane na tym komputerze. Zawierają dane osobowe i nie powinny same trafiać do chmury.",
+      "inOneDrive": "Ten folder jest synchronizowany z OneDrive: każda kopia zapasowa — CV, profil, aplikacje i listy — zostanie też wysłana do tej chmury.",
+      "changeFolder": "Zmień folder",
+      "automaticFolder": "Wróć do automatycznego",
+      "newFolder": "Folder na kopie zapasowe",
+      "newFolderHint": "Pełna ścieżka na tym komputerze, na przykład D:\\Kopie\\BewerbungsPilot albo pendrive. Jeśli folderu nie ma, zostanie utworzony.",
+      "saveFolder": "Użyj tego folderu",
+      "savingFolder": "Sprawdzam…",
       "save": "Zapisz kopię",
       "saving": "Zapisywanie…",
       "saved": "Zapisano: {{name}}",
@@ -508,7 +516,10 @@
       "restoreBusySend": "Trwa wysyłanie e-maila. Poczekaj chwilę, potem przywróć kopię.",
       "backupTooLarge": "Ta kopia zapasowa ma więcej niż 1 GB. Tak dużego pliku BewerbungsPilot nie może przywrócić.",
       "backupNotZip": "To nie jest plik kopii zapasowej. Kopia BewerbungsPilot to plik .zip, na przykład BewerbungsPilot-backup-2026-10-20-1030.zip.",
-      "backupGone": "Tej kopii zapasowej nie ma już w folderze (została przeniesiona lub usunięta). Lista została odświeżona."
+      "backupGone": "Tej kopii zapasowej nie ma już w folderze (została przeniesiona lub usunięta). Lista została odświeżona.",
+      "backupFolderInvalid": "Podaj pełną ścieżkę na tym komputerze, zaczynającą się od litery dysku, na przykład D:\\Kopie. Foldery sieciowe (\\\\server\\…) nie są możliwe.",
+      "backupFolderInData": "Ten folder leży wewnątrz danych samego BewerbungsPilot. Wybierz folder poza nimi.",
+      "backupFolderNotWritable": "BewerbungsPilot nie może utworzyć tego folderu ani w nim zapisywać. Wybierz inny (na przykład na dysku D: albo pendrivie)."
     }
   },
   "vacancies": {

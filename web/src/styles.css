@@ -277,6 +277,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 
 /* Settings → Backups */
 .backup-dir { word-break: break-all; }
+.backup-folder-form { margin: 0.6rem 0; }
 .backup-list { list-style: none; padding: 0; margin: 1rem 0 0; }
 .backup-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--border); }
 .backup-row p { margin: 0.2rem 0 0; }

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { formatDay } from '../applications/format';
 import { ErrorBanner } from '../components/ErrorBanner';
-import type { BackupInfo, BackupKind } from '../types';
+import type { BackupKind, BackupListView } from '../types';
 
 const KIND_KEY: Record<BackupKind, string> = {
   manual: 'settings.backups.kindManual',
@@ -17,12 +17,13 @@ const KIND_KEY: Record<BackupKind, string> = {
  */
 const OWN_REASONS = new Set([
   'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
+  'backupFolderInvalid', 'backupFolderInData', 'backupFolderNotWritable',
 ]);
 /** Same limit as the server (unpacked ≤ 1 GB): refuse before sending a huge file. */
 const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
 
 type Target = { kind: 'name'; name: string } | { kind: 'file'; file: File };
-type Busy = null | 'saving' | 'restoring';
+type Busy = null | 'saving' | 'restoring' | 'folder';
 
 const time = (iso: string) => {
   const d = new Date(iso);
@@ -42,7 +43,10 @@ const localDay = (iso: string) => {
 export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void> | void }) {
   const { t, i18n } = useTranslation();
   const inputId = useId();
-  const [list, setList] = useState<{ dir: string; backups: BackupInfo[] } | null>(null);
+  const folderInputId = useId();
+  const [list, setList] = useState<BackupListView | null>(null);
+  /** The "Change folder" form: null = closed, otherwise the typed path. */
+  const [folderDraft, setFolderDraft] = useState<string | null>(null);
   const [listError, setListError] = useState<unknown>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<unknown>(null);
@@ -113,19 +117,63 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
     else setConfirm({ kind: 'file', file });
   };
 
+  /** null = back to the automatic folder. The list then comes from the new folder. */
+  const setFolder = async (folder: string | null) => {
+    setBusy('folder');
+    setError(null);
+    setSaved(null);
+    setDone(null);
+    setFileReason(null);
+    try {
+      setList(await api.setBackupFolder(folder));
+      setFolderDraft(null);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const openFolder = async () => {
     setError(null);
     try { await api.openBackupFolder(); } catch (err) { setError(err); }
   };
 
-  const disabled = busy !== null || confirm !== null;
+  const disabled = busy !== null || confirm !== null || folderDraft !== null;
   const ownReason = fileReason ?? (error instanceof ApiError && error.reason && OWN_REASONS.has(error.reason) ? error.reason : null);
 
   return (
     <>
       <p className="muted">{t('settings.backups.intro')}</p>
       {list ? (
-        <p>{t('settings.backups.folder')} <code className="backup-dir">{list.dir}</code></p>
+        <>
+          <p>{t('settings.backups.folder')} <code className="backup-dir">{list.dir}</code></p>
+          {list.automatic && list.documentsInOneDrive ? <p className="muted">{t('settings.backups.localBecauseOneDrive')}</p> : null}
+          {list.inOneDrive ? <p className="notice">{t('settings.backups.inOneDrive')}</p> : null}
+          {folderDraft === null ? (
+            <div className="btn-row">
+              <button type="button" className="btn ghost" disabled={disabled} onClick={() => setFolderDraft(list.dir)}>{t('settings.backups.changeFolder')}</button>
+              {list.automatic ? null : (
+                <button type="button" className="btn ghost" disabled={disabled} onClick={() => void setFolder(null)}>{t('settings.backups.automaticFolder')}</button>
+              )}
+            </div>
+          ) : (
+            <form className="backup-folder-form" onSubmit={(e) => { e.preventDefault(); void setFolder(folderDraft); }}>
+              <div className="field">
+                <label className="field-head" htmlFor={folderInputId}>{t('settings.backups.newFolder')}</label>
+                <input id={folderInputId} type="text" value={folderDraft} maxLength={400} spellCheck={false} autoComplete="off"
+                  disabled={busy !== null} onChange={(e) => setFolderDraft(e.target.value)} />
+                <p className="field-hint">{t('settings.backups.newFolderHint')}</p>
+              </div>
+              <div className="btn-row">
+                <button type="submit" className="btn" disabled={busy !== null || folderDraft.trim() === ''}>
+                  {busy === 'folder' ? t('settings.backups.savingFolder') : t('settings.backups.saveFolder')}
+                </button>
+                <button type="button" className="btn ghost" disabled={busy !== null} onClick={() => { setFolderDraft(null); setError(null); }}>{t('common.cancel')}</button>
+              </div>
+            </form>
+          )}
+        </>
       ) : null}
       <div className="btn-row">
         <button type="button" className="btn" disabled={disabled} onClick={() => void save()}>
