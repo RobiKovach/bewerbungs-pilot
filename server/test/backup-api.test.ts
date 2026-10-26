@@ -38,7 +38,9 @@ function snapshot(root: string): Record<string, string> {
 
 const stagingLeft = (root: string) => fs.existsSync(path.join(root, 'tmp')) ? fs.readdirSync(path.join(root, 'tmp')).filter((n) => n.startsWith('restore-')) : [];
 
-describe('backup API', () => {
+// Each test zips and unzips real data folders: ~0.2 s alone, but over 5 s when the full suite runs the
+// Edge and PowerShell tests alongside on the same cores.
+describe('backup API', { timeout: 30_000 }, () => {
   it('POST /api/backups then GET lists it', async () => {
     const ctx = await makeApp();
     const made = await save(ctx);
