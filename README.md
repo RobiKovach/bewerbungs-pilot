@@ -23,8 +23,10 @@ offers you choose, sends it from your own email, keeps track of the status of ev
 3. Start the app any time with the **BewerbungsPilot** shortcut on your desktop.
 
 Your data stays on your PC in `%LOCALAPPDATA%\BewerbungsPilot`. Updating = run the new
-installer; your data is kept. Before an update the installer saves a backup of your data to
-`Documents\BewerbungsPilot\Backups` and keeps the three newest of its own backups (your manual backups are never deleted).
+installer; your data is kept. Before an update the installer saves a backup of your data to the backup folder
+(`Documents\BewerbungsPilot\Backups`, or `%USERPROFILE%\BewerbungsPilot\Backups` when Documents is synced with OneDrive,
+or the folder you chose in Settings → Backups) and keeps the three newest of its own backups (your manual backups are
+never deleted).
 
 ## AI helper
 
@@ -141,7 +143,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 ## What's new in 0.9.0
 
 - **Backups.** **Settings → Backups** saves all your data as one zip file to `Documents\BewerbungsPilot\Backups`
-  and restores it (from the list or from a file you choose). Before restoring, the app saves a backup of the current
+  and restores it (from the list or from a file you choose). If Documents is synced with OneDrive, backups go to
+  `%USERPROFILE%\BewerbungsPilot\Backups` on your PC instead, so personal data does not end up in a cloud by itself;
+  you can choose another folder there (with a warning if it is a OneDrive folder). Before restoring, the app saves a backup of the current
   state; a backup from a newer app version asks you to update first.
 - **Installer backup.** Before an update the installer saves a backup of your data and keeps its three newest backups;
   your own backups are never deleted.
