@@ -150,7 +150,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - **Applied tab.** Job offers you applied to get their own tab with the date of sending; offers you added yourself
   are never "weak" and come first.
 - **Bigger preview.** Wider pages, the letter and CV preview close to real A4 size, and a "Full screen" button.
-- **Faster and safer.** The personal-data check no longer slows the app down on long texts; dependency warnings fixed;
+- **Fair search with several job titles.** The 50 new offers of one search are shared between all your job titles
+  instead of the first title taking every slot.
+- **Faster and safer.** The personal-data check no longer slows the app down on long texts; dependency updates;
   many small fixes from 0.8.x.
 
 ## What's new in 0.8.5
