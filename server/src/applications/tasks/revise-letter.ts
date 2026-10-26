@@ -17,7 +17,7 @@ export function reviseLetterTask(
     id: 'revise-letter',
     prompt: [
       'You revise a cover letter (Anschreiben) for a job application in Germany. Return the whole revised letter.',
-      letterRules(ctx),
+      letterRules(ctx, vacancy),
       `The current letter:\n${fenceUntrusted('letter', JSON.stringify(letter, null, 1))}`,
       request, contextBlock(ctx), offerBlock(vacancy, offerText),
     ].join('\n\n'),
