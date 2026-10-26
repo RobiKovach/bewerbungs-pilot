@@ -42,10 +42,13 @@ export interface BackupRouteDeps {
   maxUploadBytes?: number;
 }
 
-/** A file name from the list: no folders, no tricks — it is resolved inside the backup folder only. */
+/**
+ * A file name from the list — any name the list shows ("… - Kopie.zip", "…(1).zip", Cyrillic): only folder separators,
+ * Windows-reserved and control characters are refused, and the handler still resolves it inside the backup folder only.
+ */
 const restoreBody = {
   type: 'object', additionalProperties: false, required: ['name'],
-  properties: { name: { type: 'string', maxLength: 200, pattern: '^[\\w.-]+\\.zip$' } },
+  properties: { name: { type: 'string', maxLength: 255, pattern: '^[^\\\\/:*?"<>|\\u0000-\\u001f]+\\.[zZ][iI][pP]$' } },
 } as const;
 
 export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteDeps): Promise<void> {

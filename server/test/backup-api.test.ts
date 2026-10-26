@@ -48,6 +48,20 @@ describe('backup API', () => {
     expect(backups.map((b) => b.name)).toEqual([made.name]);
   });
 
+  it('restores any name the list shows: spaces, "(1)", " - Kopie", Cyrillic, upper-case .ZIP', async () => {
+    const ctx = await makeApp();
+    await setName(ctx, 'Max Mustermann');
+    const made = await save(ctx);
+    const names = ['Моя копія - Kopie (1).zip', 'backup 2026.ZIP'];
+    for (const name of names) fs.copyFileSync(path.join(ctx.backupDir, made.name), path.join(ctx.backupDir, name));
+    const listed = (await list(ctx)).backups.map((b) => b.name);
+    for (const name of names) {
+      expect(listed).toContain(name);
+      const res = await restore(ctx, name);
+      expect([name, res.statusCode]).toEqual([name, 200]);
+    }
+  });
+
   it('restore replaces data and keeps a before-restore copy', async () => {
     const ctx = await makeApp();
     await setName(ctx, 'Max Mustermann');
@@ -141,7 +155,7 @@ describe('backup API', () => {
 
   it('restore name cannot escape the folder', async () => {
     const ctx = await makeApp();
-    for (const name of ['..\\x.zip', 'a/b.zip', '../x.zip', 'x.txt']) {
+    for (const name of ['..\\x.zip', 'a/b.zip', '../x.zip', 'x.txt', 'C:x.zip', '..', 'a\u0000.zip']) {
       const res = await restore(ctx, name);
       expect([name, res.statusCode]).toEqual([name, 400]);
     }
