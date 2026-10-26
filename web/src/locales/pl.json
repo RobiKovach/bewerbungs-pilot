@@ -158,6 +158,7 @@
       "folder": "Folder:",
       "localBecauseOneDrive": "Twój folder „Dokumenty” jest synchronizowany z OneDrive, dlatego kopie zapasowe są zamiast tego zapisywane na tym komputerze. Zawierają dane osobowe i nie powinny same trafiać do chmury.",
       "inOneDrive": "Ten folder jest synchronizowany z OneDrive: każda kopia zapasowa — CV, profil, aplikacje i listy — zostanie też wysłana do tej chmury.",
+      "unavailable": "Ten folder jest teraz niedostępny (na przykład pendrive nie jest podłączony). Podłącz go albo wybierz inny folder.",
       "changeFolder": "Zmień folder",
       "automaticFolder": "Wróć do automatycznego",
       "newFolder": "Folder na kopie zapasowe",
@@ -517,9 +518,10 @@
       "backupTooLarge": "Ta kopia zapasowa ma więcej niż 1 GB. Tak dużego pliku BewerbungsPilot nie może przywrócić.",
       "backupNotZip": "To nie jest plik kopii zapasowej. Kopia BewerbungsPilot to plik .zip, na przykład BewerbungsPilot-backup-2026-10-20-1030.zip.",
       "backupGone": "Tej kopii zapasowej nie ma już w folderze (została przeniesiona lub usunięta). Lista została odświeżona.",
-      "backupFolderInvalid": "Podaj pełną ścieżkę na tym komputerze, zaczynającą się od litery dysku, na przykład D:\\Kopie. Foldery sieciowe (\\\\server\\…) nie są możliwe.",
+      "backupFolderInvalid": "Podaj pełną ścieżkę na tym komputerze, zaczynającą się od litery dysku, na przykład D:\\Kopie. Ścieżki zaczynające się od \\\\ (jak \\\\server\\share) nie są możliwe.",
       "backupFolderInData": "Ten folder leży wewnątrz danych samego BewerbungsPilot. Wybierz folder poza nimi.",
-      "backupFolderNotWritable": "BewerbungsPilot nie może utworzyć tego folderu ani w nim zapisywać. Wybierz inny (na przykład na dysku D: albo pendrivie)."
+      "backupFolderNotWritable": "BewerbungsPilot nie może utworzyć tego folderu ani w nim zapisywać. Wybierz inny (na przykład na dysku D: albo pendrivie).",
+      "backupFolderUnavailable": "Folder na kopie zapasowe jest teraz niedostępny (na przykład pendrive nie jest podłączony). Podłącz go albo wybierz inny folder w Ustawieniach → Kopie zapasowe."
     }
   },
   "vacancies": {

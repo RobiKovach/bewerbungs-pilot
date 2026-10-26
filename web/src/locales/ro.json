@@ -158,6 +158,7 @@
       "folder": "Folder:",
       "localBecauseOneDrive": "Folderul dvs. „Documente” este sincronizat cu OneDrive, de aceea copiile de rezervă sunt păstrate în schimb pe acest PC. Ele conțin date personale și nu ar trebui să ajungă singure într-un cloud.",
       "inOneDrive": "Acest folder este sincronizat cu OneDrive: fiecare copie de rezervă — CV-ul, profilul, candidaturile și scrisorile — va fi încărcată și în acel cloud.",
+      "unavailable": "Acest folder nu este disponibil acum (de exemplu stick-ul USB nu este conectat). Conectați-l sau alegeți alt folder.",
       "changeFolder": "Schimbați folderul",
       "automaticFolder": "Înapoi la automat",
       "newFolder": "Folder pentru copiile de rezervă",
@@ -517,9 +518,10 @@
       "backupTooLarge": "Această copie de rezervă are mai mult de 1 GB. BewerbungsPilot nu poate restaura un fișier atât de mare.",
       "backupNotZip": "Acesta nu este un fișier de copie de rezervă. O copie BewerbungsPilot este un fișier .zip, de exemplu BewerbungsPilot-backup-2026-10-20-1030.zip.",
       "backupGone": "Această copie de rezervă nu mai este în folder (a fost mutată sau ștearsă). Lista a fost actualizată.",
-      "backupFolderInvalid": "Introduceți o cale completă pe acest PC care începe cu o literă de unitate, de exemplu D:\\Copii. Folderele de rețea (\\\\server\\…) nu sunt posibile.",
+      "backupFolderInvalid": "Introduceți o cale completă pe acest PC care începe cu o literă de unitate, de exemplu D:\\Copii. Căile care încep cu \\\\ (precum \\\\server\\share) nu sunt posibile.",
       "backupFolderInData": "Acest folder se află chiar în datele BewerbungsPilot. Alegeți un folder din afara lor.",
-      "backupFolderNotWritable": "BewerbungsPilot nu poate crea acest folder sau nu poate scrie în el. Alegeți altul (de exemplu pe unitatea D: sau pe un stick USB)."
+      "backupFolderNotWritable": "BewerbungsPilot nu poate crea acest folder sau nu poate scrie în el. Alegeți altul (de exemplu pe unitatea D: sau pe un stick USB).",
+      "backupFolderUnavailable": "Folderul pentru copiile de rezervă nu este disponibil acum (de exemplu stick-ul USB nu este conectat). Conectați-l sau alegeți alt folder în Setări → Copii de rezervă."
     }
   },
   "vacancies": {

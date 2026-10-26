@@ -17,7 +17,7 @@ const KIND_KEY: Record<BackupKind, string> = {
  */
 const OWN_REASONS = new Set([
   'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
-  'backupFolderInvalid', 'backupFolderInData', 'backupFolderNotWritable',
+  'backupFolderInvalid', 'backupFolderInData', 'backupFolderNotWritable', 'backupFolderUnavailable',
 ]);
 /** Same limit as the server (unpacked ≤ 1 GB): refuse before sending a huge file. */
 const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
@@ -140,6 +140,8 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
   };
 
   const disabled = busy !== null || confirm !== null || folderDraft !== null;
+  /** The folder is gone (USB stick unplugged): saving and opening wait; choosing another folder stays possible. */
+  const unavailable = list?.available === false;
   const ownReason = fileReason ?? (error instanceof ApiError && error.reason && OWN_REASONS.has(error.reason) ? error.reason : null);
 
   return (
@@ -150,6 +152,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
           <p>{t('settings.backups.folder')} <code className="backup-dir">{list.dir}</code></p>
           {list.automatic && list.documentsInOneDrive ? <p className="muted">{t('settings.backups.localBecauseOneDrive')}</p> : null}
           {list.inOneDrive ? <p className="notice">{t('settings.backups.inOneDrive')}</p> : null}
+          {list.available === false ? <p className="notice">{t('settings.backups.unavailable')}</p> : null}
           {folderDraft === null ? (
             <div className="btn-row">
               <button type="button" className="btn ghost" disabled={disabled} onClick={() => setFolderDraft(list.dir)}>{t('settings.backups.changeFolder')}</button>
@@ -176,10 +179,10 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
         </>
       ) : null}
       <div className="btn-row">
-        <button type="button" className="btn" disabled={disabled} onClick={() => void save()}>
+        <button type="button" className="btn" disabled={disabled || unavailable} onClick={() => void save()}>
           {busy === 'saving' ? t('settings.backups.saving') : t('settings.backups.save')}
         </button>
-        <button type="button" className="btn ghost" disabled={disabled || !list} onClick={() => void openFolder()}>{t('settings.backups.openFolder')}</button>
+        <button type="button" className="btn ghost" disabled={disabled || !list || unavailable} onClick={() => void openFolder()}>{t('settings.backups.openFolder')}</button>
         <label className="btn ghost" htmlFor={inputId} aria-disabled={disabled || undefined}>{t('settings.backups.chooseFile')}</label>
         <input id={inputId} type="file" accept=".zip,application/zip" className="visually-hidden" disabled={disabled}
           onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ''; if (file) choose(file); }} />

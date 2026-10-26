@@ -158,6 +158,7 @@
       "folder": "Ordner:",
       "localBecauseOneDrive": "Ihr Ordner „Dokumente“ wird mit OneDrive synchronisiert, deshalb liegen die Sicherungen stattdessen auf diesem PC. Sie enthalten persönliche Daten und sollen nicht von selbst in einer Cloud landen.",
       "inOneDrive": "Dieser Ordner wird mit OneDrive synchronisiert: Jede Sicherung — Lebenslauf, Profil, Bewerbungen und Anschreiben — wird auch in diese Cloud hochgeladen.",
+      "unavailable": "Dieser Ordner ist gerade nicht erreichbar (zum Beispiel ist der USB-Stick nicht eingesteckt). Schließen Sie ihn an oder wählen Sie einen anderen Ordner.",
       "changeFolder": "Ordner ändern",
       "automaticFolder": "Zurück zu automatisch",
       "newFolder": "Ordner für Sicherungen",
@@ -517,9 +518,10 @@
       "backupTooLarge": "Diese Sicherung ist größer als 1 GB. So große Dateien kann BewerbungsPilot nicht wiederherstellen.",
       "backupNotZip": "Das ist keine Sicherungsdatei. Eine BewerbungsPilot-Sicherung ist eine .zip-Datei, zum Beispiel BewerbungsPilot-backup-2026-10-20-1030.zip.",
       "backupGone": "Diese Sicherung ist nicht mehr im Ordner (sie wurde verschoben oder gelöscht). Die Liste wurde aktualisiert.",
-      "backupFolderInvalid": "Bitte geben Sie einen vollständigen Pfad auf diesem PC an, der mit einem Laufwerksbuchstaben beginnt, zum Beispiel D:\\Sicherungen. Netzwerkordner (\\\\server\\…) sind nicht möglich.",
+      "backupFolderInvalid": "Bitte geben Sie einen vollständigen Pfad auf diesem PC an, der mit einem Laufwerksbuchstaben beginnt, zum Beispiel D:\\Sicherungen. Pfade, die mit \\\\ beginnen (wie \\\\server\\freigabe), sind nicht möglich.",
       "backupFolderInData": "Dieser Ordner liegt in den Daten von BewerbungsPilot selbst. Bitte wählen Sie einen Ordner außerhalb davon.",
-      "backupFolderNotWritable": "BewerbungsPilot kann diesen Ordner nicht anlegen oder nicht hineinschreiben. Bitte wählen Sie einen anderen (zum Beispiel auf Laufwerk D: oder einem USB-Stick)."
+      "backupFolderNotWritable": "BewerbungsPilot kann diesen Ordner nicht anlegen oder nicht hineinschreiben. Bitte wählen Sie einen anderen (zum Beispiel auf Laufwerk D: oder einem USB-Stick).",
+      "backupFolderUnavailable": "Der Sicherungsordner ist gerade nicht erreichbar (zum Beispiel ist der USB-Stick nicht eingesteckt). Schließen Sie ihn an oder wählen Sie unter Einstellungen → Sicherungen einen anderen Ordner."
     }
   },
   "vacancies": {

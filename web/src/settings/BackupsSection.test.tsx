@@ -218,7 +218,7 @@ describe('BackupsSection', () => {
 
 describe('BackupsSection — backup folder', () => {
   const LOCAL = 'C:\\Users\\x\\BewerbungsPilot\\Backups';
-  const view = (over: Record<string, unknown> = {}) => ({ dir: LOCAL, automatic: true, inOneDrive: false, documentsInOneDrive: false, backups: [], ...over });
+  const view = (over: Record<string, unknown> = {}) => ({ dir: LOCAL, automatic: true, inOneDrive: false, documentsInOneDrive: false, available: true, backups: [], ...over });
 
   it('explains the local folder when Documents is in OneDrive; no warning, no "back to automatic"', async () => {
     setup({ 'GET /api/backups': () => ({ body: view({ documentsInOneDrive: true }) }) });
@@ -226,6 +226,34 @@ describe('BackupsSection — backup folder', () => {
     expect(screen.getByText(/Your Documents folder is synced with OneDrive, so backups are kept on this PC instead/)).toBeInTheDocument();
     expect(screen.queryByText(/will also be uploaded to that cloud/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Back to automatic' })).not.toBeInTheDocument();
+  });
+
+  it('an unavailable folder (USB stick unplugged): says so, saving waits, the folder can still be changed or reset', async () => {
+    let sent: unknown = null;
+    setup({
+      'GET /api/backups': () => ({ body: view({ dir: 'E:\\Sicherung', automatic: false, available: false }) }),
+      'PUT /api/backups/folder': (init) => { sent = JSON.parse(String(init?.body)); return { body: view() }; },
+    });
+    expect(await screen.findByText(/This folder is not available right now \(for example the USB stick is not plugged in\)/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save backup' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Open folder' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Change folder' })).toBeEnabled();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Back to automatic' }));
+    expect(await screen.findByText(LOCAL)).toBeInTheDocument();
+    expect(sent).toEqual({ folder: null });
+    expect(screen.queryByText(/not available right now/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save backup' })).toBeEnabled();
+  });
+
+  it('saving into a folder that is gone shows its own sentence', async () => {
+    setup({
+      'GET /api/backups': () => ({ body: view() }),
+      'POST /api/backups': () => ({ status: 500, body: { error: { code: 'BACKUP_FAILED', detailsForLog: 'x', reason: 'backupFolderUnavailable' } } }),
+    });
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Save backup' }));
+    expect(await screen.findByText(/The backup folder is not available right now/)).toBeInTheDocument();
   });
 
   it('warns when the backup folder itself is in OneDrive', async () => {

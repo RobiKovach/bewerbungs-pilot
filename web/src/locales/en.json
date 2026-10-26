@@ -158,6 +158,7 @@
       "folder": "Folder:",
       "localBecauseOneDrive": "Your Documents folder is synced with OneDrive, so backups are kept on this PC instead. They hold personal data and should not end up in a cloud by themselves.",
       "inOneDrive": "This folder is synced with OneDrive: every backup — your CV, profile, applications and letters — will also be uploaded to that cloud.",
+      "unavailable": "This folder is not available right now (for example the USB stick is not plugged in). Connect it, or choose another folder.",
       "changeFolder": "Change folder",
       "automaticFolder": "Back to automatic",
       "newFolder": "Folder for backups",
@@ -517,9 +518,10 @@
       "backupTooLarge": "This backup is larger than 1 GB. BewerbungsPilot cannot restore such a large file.",
       "backupNotZip": "This is not a backup file. A BewerbungsPilot backup is a .zip file, for example BewerbungsPilot-backup-2026-10-20-1030.zip.",
       "backupGone": "This backup is no longer in the folder (it was moved or deleted). The list has been updated.",
-      "backupFolderInvalid": "Please enter a full path on this PC that starts with a drive letter, for example D:\\Backups. Network folders (\\\\server\\…) are not possible.",
+      "backupFolderInvalid": "Please enter a full path on this PC that starts with a drive letter, for example D:\\Backups. Paths that start with \\\\ (like \\\\server\\share) are not possible.",
       "backupFolderInData": "This folder is inside the BewerbungsPilot data itself. Please choose a folder outside it.",
-      "backupFolderNotWritable": "BewerbungsPilot cannot create or write to this folder. Please choose another one (for example on drive D: or a USB stick)."
+      "backupFolderNotWritable": "BewerbungsPilot cannot create or write to this folder. Please choose another one (for example on drive D: or a USB stick).",
+      "backupFolderUnavailable": "The backup folder is not available right now (for example the USB stick is not plugged in). Connect it, or choose another folder under Settings → Backups."
     }
   },
   "vacancies": {
