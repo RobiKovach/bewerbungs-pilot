@@ -109,7 +109,8 @@ describe('0.9.0: the person\'s note and initiative applications', () => {
     const task = extractManualTask(PAGE, maxProfile(), 'de');
     expect((task.schema as { required: string[] }).required).toContain('initiative');
     expect(validateOutput(task.schema, answer).ok).toBe(true);
-    const { initiative: _drop, ...noInitiative } = answer;
+    const noInitiative: Partial<ManualOutput> = { ...answer };
+    delete noInitiative.initiative;
     expect(validateOutput(task.schema, noInitiative).ok).toBe(false);
     expect(task.prompt).toContain('Initiativbewerbung – Softwareentwickler');
     expect(task.prompt).toContain('Never list missing concrete requirements');
