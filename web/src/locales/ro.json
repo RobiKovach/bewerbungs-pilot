@@ -607,7 +607,7 @@
       "counter": "{{count}} / cel puțin {{min}} caractere",
       "link": "Link (opțional)",
       "linkHint": "Dacă lipiți doar un link, BewerbungsPilot încearcă să deschidă singur pagina și să citească anunțul (adresele interne, cum ar fi routerul dvs., nu sunt deschise niciodată). Unele site-uri, de ex. StepStone, Indeed sau LinkedIn, nu permit acest lucru — atunci lipiți textul anunțului în câmpul de mai sus.",
-      "noteHint": "Un text scurt împreună cu un link este nota ta: BewerbungsPilot citește pagina și ia exact ce ai scris, de exemplu postul la care te referi sau „Initiativbewerbung”.",
+      "noteHint": "Un text scurt împreună cu un link este nota dvs.: BewerbungsPilot citește pagina și ia exact ce ați scris, de exemplu postul la care vă referiți sau „Initiativbewerbung”.",
       "add": "Adăugați",
       "working": "{{ai}} citește oferta…",
       "duplicate": "Această ofertă se află deja în lista dumneavoastră.",

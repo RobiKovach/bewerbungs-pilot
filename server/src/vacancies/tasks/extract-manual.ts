@@ -43,11 +43,12 @@ const RULES = `A job seeker pasted the text of a job offer they found themselves
 1. Read the offer's facts:
 - isVacancy: false if the text is neither a job offer nor a company the person wants to apply to on their own
   initiative (then leave everything else empty and score 0).
-- initiative: true for an unsolicited application (Initiativbewerbung): the person's note says they want to apply on
-  their own initiative, or the text only invites unsolicited applications and names no concrete position for the
-  person. An initiative application is a valid card (isVacancy true). Otherwise false.
+- initiative: true for an unsolicited application (Initiativbewerbung): the person says — in their note or anywhere in
+  the pasted text — that they want to apply on their own initiative, or the text is a company's "Initiativbewerbung" /
+  unsolicited-application section or only invites unsolicited applications without a concrete position for the person.
+  An initiative application is a valid card (isVacancy true), even without a concrete job offer. Otherwise false.
 - title and company exactly as written in the text, without translating them. For an initiative application the title
-  is "Initiativbewerbung", followed by " – " and the role the person wants if their note or their wished job titles
+  is "Initiativbewerbung", followed by " – " and the role the person wants if the text, their note or their wished job titles
   ("jobTitles" in the profile) name one, e.g. "Initiativbewerbung – Softwareentwickler".
 - city: the main work place, "" if none. remote: yes (fully remote), partial (some home office), no, unknown.
 - employment: fulltime, parttime, minijob, apprenticeship, internship — only what the text says.

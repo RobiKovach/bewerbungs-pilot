@@ -250,3 +250,34 @@ describe('link without text and no AI helper chosen', () => {
     expect(reader.calls).toEqual([]);
   });
 });
+
+describe('0.9.0: note with an Arbeitsagentur link; initiative in a long pasted text', () => {
+  const LINK = 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-4444444444-S';
+  const h = hit({ sourceId: '10000-4444444444-S', title: 'Webentwickler (m/w/d)', company: 'Beispiel AG' });
+
+  it('a short note next to an Arbeitsagentur link is scored with the offer (inside the offer fence) and stored in front of it', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 64 }), source: fakeSource({ details: () => details(h, 'API-Text') }) });
+    const v = (await paste(ctx, { url: LINK, text: 'Bitte die Teilzeitstelle' })).json().vacancy as Vacancy;
+    expect(ctx.vacancyStore.readText(v.id)).toBe('Notiz: Bitte die Teilzeitstelle\n\nAPI-Text');
+    expect(ctx.provider.calls[0].prompt).toMatch(/<<<UNTRUSTED_VACANCY_[0-9a-f]{16}>>>[^<]*Notiz: Bitte die Teilzeitstelle\n\nAPI-Text/);
+    expect(ctx.provider.calls[0].prompt).toContain('begins with the person\'s own short note');
+  });
+
+  it('without a note the Arbeitsagentur text is stored as is', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 64 }), source: fakeSource({ details: () => details(h, 'API-Text') }) });
+    const v = (await paste(ctx, { url: LINK })).json().vacancy as Vacancy;
+    expect(ctx.vacancyStore.readText(v.id)).toBe('API-Text');
+  });
+
+  it('a long pasted text (no link) asking for an initiative application → an initiative card, not NOT_A_VACANCY', async () => {
+    const LONG = 'Ich möchte mich initiativ bei der Muster GmbH in Dresden bewerben, als Softwareentwickler. '
+      + 'Die Muster GmbH entwickelt Software für den Schienengüterverkehr. '.repeat(5);
+    const answer = { ...MANUAL, isVacancy: false, initiative: true, title: 'Initiativbewerbung – Softwareentwickler', contact: { email: '', salutation: '', name: '' } };
+    const ctx = await makeApp({ provider: scoringClaude({ manual: answer }) });
+    const res = await paste(ctx, { text: LONG });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().vacancy).toMatchObject({ title: 'Initiativbewerbung – Softwareentwickler', initiative: true });
+    expect(ctx.provider.calls[0].prompt).toContain('in their note or anywhere in');
+    expect(ctx.provider.calls[0].prompt).not.toContain('UNTRUSTED_PERSON_NOTE');
+  });
+});

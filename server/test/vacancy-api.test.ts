@@ -167,3 +167,16 @@ describe('0.8.0: score again remembers which AI scored it', () => {
     expect(none.vacancyStore.get('b')).toEqual(before);
   });
 });
+
+describe('0.9.0: score again on an initiative card', () => {
+  it('the score task gets the initiative flag and its rule; an ordinary card has no flag', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 61 }) });
+    ctx.vacancyStore.add(vacancy({ id: 'ini', source: 'manual', sourceId: null, initiative: true }), 'Notiz: Initiativbewerbung\n\nJobs und Karriere.');
+    ctx.vacancyStore.add(vacancy({ id: 'n', title: 'Andere Stelle' }), 'Wir suchen Sie.');
+    expect((await post(ctx, '/api/vacancies/ini/score')).statusCode).toBe(200);
+    expect(ctx.provider.calls[0].prompt).toContain('"initiative":true');
+    expect(ctx.provider.calls[0].prompt).toContain('An offer with "initiative": true is an unsolicited application');
+    expect((await post(ctx, '/api/vacancies/n/score')).statusCode).toBe(200);
+    expect(ctx.provider.calls[1].prompt).not.toContain('"initiative":true');
+  });
+});

@@ -120,3 +120,13 @@ describe('0.9.0: the person\'s note and initiative applications', () => {
     expect(toManualFields({ ...answer, initiative: false }, PAGE).initiative).toBe(false);
   });
 });
+
+describe('0.9.0: scoreTask initiative flag', () => {
+  it('an initiative input carries the flag in its offer data; the rules say how to judge it', () => {
+    const base = { id: 'a', title: 'Initiativbewerbung', company: 'X GmbH', locations: [], remote: 'unknown' as const, employment: [], salaryText: '', text: 'Jobs.' };
+    const t = scoreTask([{ ...base, initiative: true }, { ...base, id: 'b' }], maxProfile(), 'de');
+    expect(t.prompt).toContain('"initiative":true');
+    expect(t.prompt.match(/"initiative":true/g)).toHaveLength(1);
+    expect(t.prompt).toContain('Never mark it down for missing concrete requirements');
+  });
+});

@@ -14,7 +14,7 @@ import type { PageReader } from './sources/page-reader.js';
 import type { SourceDetails, VacancySource } from './sources/types.js';
 import type { VacancyStore } from './store.js';
 import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, type ManualOutput } from './tasks/extract-manual.js';
-import { scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
+import { NOTE_LABEL, scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
   store: VacancyStore; source: VacancySource; pageReader: PageReader; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
@@ -45,8 +45,6 @@ const manualBody = {
   type: 'object', additionalProperties: false,
   properties: { text: { type: 'string', maxLength: MANUAL_TEXT_MAX }, url: { type: 'string', maxLength: VACANCY_LIMITS.url, pattern: HTTP_URL } },
 };
-/** Marks the person's own note in front of a read page's text (the card's text and later the letter see both). */
-export const NOTE_LABEL = 'Notiz:';
 const isHttpUrl = (s: string) => { try { return ['http:', 'https:'].includes(new URL(s).protocol); } catch { return false; } };
 
 const ALLOWED: Record<VacancyStatus, readonly VacancyStatus[]> = {
@@ -134,7 +132,7 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     // text file (readText returns null) means there is nothing to send to Claude.
     if (text === null) throw new AppError('CONFLICT', 'no text to score');
     const language = d.language();
-    const task = scoreTask([{ id, title: v.title, company: v.company, locations: v.locations, remote: v.remote, employment: v.employment, salaryText: v.salaryText, text }], d.profile(), language);
+    const task = scoreTask([{ id, title: v.title, company: v.company, locations: v.locations, remote: v.remote, employment: v.employment, salaryText: v.salaryText, text, ...(v.initiative ? { initiative: true } : {}) }], d.profile(), language);
     const r = await d.queue.runTagged<ScoreOutput>(task, abortOnClose(reply));
     const score = toScores(r.value, [id], new Date().toISOString(), r.provider, language).get(id);
     return view(d.store.update(id, (x) => { x.score = score ?? x.score; x.scoreState = score ? 'scored' : 'failed'; }));
@@ -173,15 +171,19 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
         remote: found.remote, employment: found.employment, salaryText: found.salaryText, publishedAt: found.publishedAt,
         url: found.url, contact: null, scoreState: 'failed', score: null,
       };
+      // A short text next to the link is the person's note: it goes in front of the offer text (scored and stored).
+      // Longer pasted text is ignored here — the API's own text is the offer.
+      const note = text.length < MANUAL_TEXT_MIN ? text : '';
+      const offerText = note ? `${NOTE_LABEL} ${note}\n\n${found.text}` : found.text;
       const language = d.language();
-      const r = await d.queue.runTagged<ScoreOutput>(scoreTask([{ ...card, text: found.text }], d.profile(), language), signal);
+      const r = await d.queue.runTagged<ScoreOutput>(scoreTask([{ ...card, text: offerText }], d.profile(), language), signal);
       const score = toScores(r.value, [card.id], new Date().toISOString(), r.provider, language).get(card.id);
       // Re-check right before adding: the Claude call above waits in the shared queue (behind a running
       // search's batches, potentially minutes), and that search is quite likely to add this very offer
       // in the meantime. Without this, both cards would land in the store with the same sourceId.
       const raceTwin = findDuplicate(d.store.list(), found);
       if (raceTwin) throw duplicateError(raceTwin);
-      return view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, found.text));
+      return view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, offerText));
     }
 
     // A link without (enough) pasted text: the app opens the page itself; pasted text always wins (spec, section 6a).
