@@ -4,7 +4,7 @@ A local assistant for job applications in Germany. It will find job offers that 
 write your cover letter and a tailored CV, send the applications you approved from your own email
 and help you keep track of every answer — all on your own Windows PC.
 
-**Status: v0.8 — foundation, profile, job offers, application packages, sending, statuses, reminders and statistics.** The app installs, runs,
+**Status: v0.9 — foundation, profile, job offers, application packages, sending, statuses, reminders, statistics, backups and update notices.** The app installs, runs,
 speaks six languages, walks you through the first steps, talks to an AI helper (Claude or ChatGPT), builds your profile from your CV and your own
 stories, finds job offers that fit your profile, writes an application package (cover letter + tailored CV) for the
 offers you choose, sends it from your own email, keeps track of the status of every application, reminds you to follow up and helps you answer.
@@ -97,6 +97,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
   the same way. Some sites (e.g. StepStone, Indeed, LinkedIn) do not let the app read the page; then paste the text.
   Behind a company or system proxy, reading links may fail for every site (the proxy address looks internal, so it
   is blocked); then paste the text as well.
+- Offers you applied to (package sent, or marked "submitted on the website") move to their own **Applied** tab
+  with the date; open the package from there or hide the offer. Offers you added yourself are never shown as a weak
+  match and come first in **New**.
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. The job search only talks to
   `rest.arbeitsagentur.de`. A pasted link (not Arbeitsagentur) is opened only when you give no text, in a separate
@@ -134,6 +137,21 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## What's new in 0.9.0
+
+- **Backups.** **Settings → Backups** saves all your data as one zip file to `DocumentsBewerbungsPilotBackups`
+  and restores it (from the list or from a file you choose). Before restoring, the app saves a backup of the current
+  state; a backup from a newer app version asks you to update first.
+- **Installer backup.** Before an update the installer saves a backup of your data and keeps its three newest backups;
+  your own backups are never deleted.
+- **New-version notice.** A bar under the menu says when a new version exists ("What's new", "Download", "×" hides
+  it for that version). The check is once a day and can be switched off in **Settings → Updates** (see Privacy).
+- **Applied tab.** Job offers you applied to get their own tab with the date of sending; offers you added yourself
+  are never "weak" and come first.
+- **Bigger preview.** Wider pages, the letter and CV preview close to real A4 size, and a "Full screen" button.
+- **Faster and safer.** The personal-data check no longer slows the app down on long texts; dependency warnings fixed;
+  many small fixes from 0.8.x.
 
 ## What's new in 0.8.5
 
