@@ -152,6 +152,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - **Bigger preview.** Wider pages, the letter and CV preview close to real A4 size, and a "Full screen" button.
 - **Fair search with several job titles.** The 50 new offers of one search are shared between all your job titles
   instead of the first title taking every slot.
+- **Your note next to a link counts.** A short text next to a pasted link is your note (for example which position on
+  the page you mean); the card keeps it. **Initiativbewerbung**: write it in the note and the app makes an initiative
+  application card and an unsolicited cover letter.
 - **Faster and safer.** The personal-data check no longer slows the app down on long texts; dependency updates;
   many small fixes from 0.8.x.
 
