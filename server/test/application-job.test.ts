@@ -404,7 +404,7 @@ describe('0.9.0: initiative application', () => {
     const p = t.store.require('app1');
     expect(p.vacancy.initiative).toBe(true);
     expect(t.provider.calls[0].prompt).toContain('unsolicited application (Initiativbewerbung)');
-    expect(t.provider.calls[0].prompt).toContain('"Initiativbewerbung als <job title>"');
+    expect(t.provider.calls[0].prompt).toMatch(/"Initiativbewerbung als (?!Initiativbewerbung)[^"<]+"/);
   });
   it('a normal card gives a package without the field and a letter task without the initiative rule', async () => {
     const t = setup();
