@@ -1,4 +1,5 @@
 import type { ApplicationPackage, DocLanguage, Language } from '@bp/shared';
+import { initiativeRole, isInitiative } from '../applications/initiative.js';
 
 const TEST_MAIL: Record<Language, { subject: string; text: string }> = {
   en: {
@@ -48,6 +49,11 @@ const APPLICATION_BODY: Record<DocLanguage, (title: string) => string> = {
   de: (title) => `anbei sende ich Ihnen meine Bewerbung als ${title} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
   en: (title) => `please find attached my application for the position of ${title}, with my cover letter and CV. I look forward to hearing from you.`,
 };
+/** Unsolicited applications (Task 10c): no advertised position; the role is the card title without its prefix. */
+const INITIATIVE_APPLICATION_BODY: Record<DocLanguage, (role: string) => string> = {
+  de: (role) => `anbei sende ich Ihnen meine Initiativbewerbung${role ? ` als ${role}` : ''} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
+  en: (role) => `please find attached my unsolicited application${role ? ` as ${role}` : ''}, with my cover letter and CV. I look forward to hearing from you.`,
+};
 const CLOSING: Record<DocLanguage, string> = { de: 'Mit freundlichen Grüßen', en: 'Kind regards' };
 
 /** The suggested email to the employer; the person can edit it in the send dialog. */
@@ -55,7 +61,8 @@ export function applicationEmail(p: ApplicationPackage): { subject: string; text
   const lang = p.language;
   const { fullName, phone, email } = p.snapshot.personal;
   const signature = [fullName, phone, email].filter((l) => l !== '');
-  const text = [p.letter.salutation, '', APPLICATION_BODY[lang](positionTitle(p)), '', CLOSING[lang], ...signature].join('\n');
+  const body = isInitiative(p.vacancy) ? INITIATIVE_APPLICATION_BODY[lang](initiativeRole(p.vacancy.title)) : APPLICATION_BODY[lang](positionTitle(p));
+  const text = [p.letter.salutation, '', body, '', CLOSING[lang], ...signature].join('\n');
   return { subject: p.letter.subject, text };
 }
 
@@ -82,6 +89,15 @@ const REJECTION_BODY: Record<DocLanguage, (title: string, company: string) => st
   en: (title, company) => `thank you for your reply and for the time you spent on my application for the position of ${title}. Although it did not work out this time, I am still interested in ${company} and would be glad if you kept me in mind for suitable positions. If you could briefly tell me what made the difference, I would be very grateful.`,
 };
 
+const INITIATIVE_FOLLOW_UP_BODY: Record<DocLanguage, (role: string, day: string, company: string) => string> = {
+  de: (role, day, company) => `ich wollte mich nach dem Stand meiner Initiativbewerbung${role ? ` als ${role}` : ''} vom ${day} erkundigen. Ich bin weiterhin sehr an einer Mitarbeit bei ${company} interessiert und würde mich über eine kurze Rückmeldung freuen.`,
+  en: (role, day, company) => `I would like to ask about the status of my unsolicited application${role ? ` as ${role}` : ''}, sent on ${day}. I am still very interested in working at ${company} and would appreciate a short update.`,
+};
+const INITIATIVE_REJECTION_BODY: Record<DocLanguage, (role: string, company: string) => string> = {
+  de: (role, company) => `vielen Dank für Ihre Rückmeldung und die Zeit, die Sie sich für meine Initiativbewerbung${role ? ` als ${role}` : ''} genommen haben. Auch wenn es diesmal nicht geklappt hat, bin ich weiterhin an ${company} interessiert und würde mich freuen, wenn Sie mich bei passenden Stellen berücksichtigen. Falls Sie mir kurz sagen können, was den Ausschlag gegeben hat, wäre ich Ihnen sehr dankbar.`,
+  en: (role, company) => `thank you for your reply and for the time you spent on my unsolicited application${role ? ` as ${role}` : ''}. Although it did not work out this time, I am still interested in ${company} and would be glad if you kept me in mind for suitable positions. If you could briefly tell me what made the difference, I would be very grateful.`,
+};
+
 function replyLayout(p: ApplicationPackage, body: string): string {
   const { fullName, phone, email } = p.snapshot.personal;
   const signature = [fullName, phone, email].filter((l) => l !== '');
@@ -90,10 +106,16 @@ function replyLayout(p: ApplicationPackage, body: string): string {
 
 /** The reminder ("write again"): same salutation as the application, no Claude. */
 export function followUpEmail(p: ApplicationPackage): { subject: string; text: string } {
-  return { subject: replySubject(p), text: replyLayout(p, FOLLOW_UP_BODY[p.language](positionTitle(p), sentDay(p))) };
+  const body = isInitiative(p.vacancy)
+    ? INITIATIVE_FOLLOW_UP_BODY[p.language](initiativeRole(p.vacancy.title), sentDay(p), p.vacancy.company)
+    : FOLLOW_UP_BODY[p.language](positionTitle(p), sentDay(p));
+  return { subject: replySubject(p), text: replyLayout(p, body) };
 }
 
 /** A polite answer to a rejection (template, no Claude). */
 export function rejectionReply(p: ApplicationPackage): { subject: string; text: string } {
-  return { subject: replySubject(p), text: replyLayout(p, REJECTION_BODY[p.language](positionTitle(p), p.vacancy.company)) };
+  const body = isInitiative(p.vacancy)
+    ? INITIATIVE_REJECTION_BODY[p.language](initiativeRole(p.vacancy.title), p.vacancy.company)
+    : REJECTION_BODY[p.language](positionTitle(p), p.vacancy.company);
+  return { subject: replySubject(p), text: replyLayout(p, body) };
 }

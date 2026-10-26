@@ -84,3 +84,42 @@ describe('reminder and rejection reply', () => {
     }
   });
 });
+
+describe('0.9.0: initiative applications in the emails', () => {
+  const initiative = (title: string, flag = true, language: 'de' | 'en' = 'de') => {
+    const p = pkg({ language });
+    p.vacancy = { ...p.vacancy, title, company: 'ITORA GmbH', ...(flag ? { initiative: true } : {}) };
+    p.status = 'rejected';
+    p.history = [{ kind: 'sent', at: '2026-10-05T10:00:00.000Z' }, { kind: 'rejected', at: '2026-10-08T10:00:00.000Z' }];
+    return p;
+  };
+
+  it('DE: application, reminder and rejection reply speak of an Initiativbewerbung with the role, no advertised position', () => {
+    const p = initiative('Initiativbewerbung – Softwareentwickler');
+    expect(applicationEmail(p).text).toContain('anbei sende ich Ihnen meine Initiativbewerbung als Softwareentwickler mit Anschreiben und Lebenslauf.');
+    expect(followUpEmail(p).text).toContain('meiner Initiativbewerbung als Softwareentwickler vom 05.10.2026 erkundigen. Ich bin weiterhin sehr an einer Mitarbeit bei ITORA GmbH interessiert');
+    expect(rejectionReply(p).text).toContain('für meine Initiativbewerbung als Softwareentwickler genommen haben');
+    for (const text of [applicationEmail(p).text, followUpEmail(p).text, rejectionReply(p).text]) {
+      expect(text).not.toContain('als Initiativbewerbung');
+      expect(text).not.toContain('an der Stelle');
+    }
+  });
+
+  it('EN wording, and a title without a role', () => {
+    const p = initiative('Initiativbewerbung', true, 'en');
+    expect(applicationEmail(p).text).toContain('please find attached my unsolicited application, with my cover letter and CV.');
+    expect(followUpEmail(p).text).toContain('my unsolicited application, sent on 5 October 2026. I am still very interested in working at ITORA GmbH');
+    expect(rejectionReply(p).text).toContain('my unsolicited application. Although');
+  });
+
+  it('a title starting with "Initiativbewerbung als" counts even without the flag; ordinary cards are unchanged', () => {
+    expect(applicationEmail(initiative('Initiativbewerbung als Webentwickler', false)).text).toContain('meine Initiativbewerbung als Webentwickler mit');
+    const ordinary = initiative('Webentwickler (m/w/d)', false);
+    expect(applicationEmail(ordinary).text).toContain('meine Bewerbung als Webentwickler (m/w/d) mit');
+    expect(followUpEmail(ordinary).text).toContain('an der Stelle interessiert');
+  });
+
+  it('the stored flag makes a plain role title an initiative application', () => {
+    expect(applicationEmail(initiative('Softwareentwickler')).text).toContain('meine Initiativbewerbung als Softwareentwickler mit');
+  });
+});
