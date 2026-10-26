@@ -134,7 +134,7 @@ describe('SearchJob', () => {
     expect(ids).toHaveLength(MAX_NEW_PER_SEARCH);
     expect(ids).toEqual(expect.arrayContaining(['B-0', 'B-1', 'C-0']));
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids.filter((id) => id.startsWith('A-'))).toHaveLength(47);
+    expect(ids.filter((id) => id?.startsWith('A-'))).toHaveLength(47);
   });
 
     it('one failing query → warning; all failing → failed with the code', async () => {
