@@ -36,6 +36,7 @@
     "mammoth": {
       "argparse": "2.0.1"
     },
-    "rolldown": "1.2.13"
+    "rolldown": "1.2.13",
+    "modern-tar": "0.8.5"
   }
 }
