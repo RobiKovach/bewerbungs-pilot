@@ -575,6 +575,7 @@
     "card": {
       "scoreTitle": "Wie gut das Angebot zu Ihrem Profil passt (0–100)",
       "manual": "manuell hinzugefügt",
+      "initiative": "Initiativbewerbung",
       "sentOn": "Gesendet am {{date}}",
       "submittedOn": "Über die Website eingereicht am {{date}}",
       "published": "veröffentlicht am {{date}}",
@@ -606,6 +607,7 @@
       "counter": "{{count}} / mindestens {{min}} Zeichen",
       "link": "Link (optional)",
       "linkHint": "Wenn Sie nur einen Link einfügen, versucht BewerbungsPilot, die Seite selbst zu öffnen und das Angebot zu lesen (interne Adressen wie Ihr Router werden nie geöffnet). Manche Seiten, z. B. StepStone, Indeed oder LinkedIn, lassen das nicht zu — fügen Sie dann den Text des Angebots oben ein.",
+      "noteHint": "Ein kurzer Text zusammen mit einem Link ist Ihre Notiz: BewerbungsPilot liest die Seite und nimmt genau das, was Sie geschrieben haben, zum Beispiel die gemeinte Stelle oder „Initiativbewerbung“.",
       "add": "Hinzufügen",
       "working": "{{ai}} liest das Angebot…",
       "duplicate": "Dieses Angebot steht schon in Ihrer Liste.",

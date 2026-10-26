@@ -55,6 +55,7 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
         <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} disabled={call.state.kind === 'running'} />
       </label>
       <p className="muted">{t('vacancies.manual.linkHint')}</p>
+      {webLink && trimmed !== '' && trimmed.length < MIN ? <p className="muted">{t('vacancies.manual.noteHint')}</p> : null}
       {call.state.kind === 'running' ? <ClaudeWorking textKey="vacancies.manual.working" onCancel={call.cancel} /> : (
         <div className="btn-row">
           <button type="button" className="btn" disabled={!canAdd} onClick={() => void add()}>{t('vacancies.manual.add')}</button>

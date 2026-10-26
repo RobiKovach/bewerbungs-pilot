@@ -145,3 +145,27 @@ describe('ManualEdit', () => {
     expect(within(article).queryByRole('button', { name: 'Edit' })).toBeNull();
   });
 });
+
+describe('0.9.0: note and initiative application', () => {
+  it('a short text next to a web link is explained as a note; no hint without a link or with enough text', async () => {
+    const { user } = setup([], {});
+    const panel = await open(user);
+    const hint = /A short text next to a link is your note/;
+    await user.type(within(panel).getByLabelText('Text of the offer'), 'Initiativbewerbung');
+    expect(within(panel).queryByText(hint)).toBeNull();
+    await user.type(within(panel).getByLabelText('Link (optional)'), 'https://www.itora.example/jobs');
+    expect(within(panel).getByText(hint)).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Add' })).toBeEnabled();
+  });
+
+  it('an initiative card shows its badge; other cards do not', async () => {
+    setup([
+      vac({ id: 'i1', source: 'manual', sourceId: null, addedManually: true, title: 'Initiativbewerbung – Softwareentwickler', company: 'Itora GmbH', url: '', initiative: true }),
+      vac({ id: 'n1', title: 'Webentwickler (m/w/d)', company: 'Beispiel AG' }),
+    ], {});
+    const ini = (await screen.findByRole('heading', { name: 'Initiativbewerbung – Softwareentwickler' })).closest('article') as HTMLElement;
+    expect(within(ini).getByText('initiative application')).toBeInTheDocument();
+    const other = screen.getByRole('heading', { name: 'Webentwickler (m/w/d)' }).closest('article') as HTMLElement;
+    expect(within(other).queryByText('initiative application')).toBeNull();
+  });
+});

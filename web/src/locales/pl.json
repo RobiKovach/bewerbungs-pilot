@@ -575,6 +575,7 @@
     "card": {
       "scoreTitle": "Jak dobrze oferta pasuje do Twojego profilu (0–100)",
       "manual": "dodane ręcznie",
+      "initiative": "aplikacja z własnej inicjatywy",
       "sentOn": "Wysłano {{date}}",
       "submittedOn": "Złożono przez stronę {{date}}",
       "published": "opublikowano {{date}}",
@@ -606,6 +607,7 @@
       "counter": "{{count}} / potrzeba co najmniej {{min}} znaków",
       "link": "Link (opcjonalnie)",
       "linkHint": "Jeśli wkleisz tylko link, BewerbungsPilot spróbuje sam otworzyć stronę i przeczytać ofertę (adresy wewnętrzne, np. Twój router, nigdy nie są otwierane). Niektóre strony, np. StepStone, Indeed czy LinkedIn, na to nie pozwalają — wtedy wklej tekst oferty w pole powyżej.",
+      "noteHint": "Krótki tekst razem z linkiem to Twoja notatka: BewerbungsPilot przeczyta stronę i weźmie dokładnie to, co napisałeś, na przykład właściwe stanowisko albo „Initiativbewerbung”.",
       "add": "Dodaj",
       "working": "{{ai}} czyta ofertę…",
       "duplicate": "Ta oferta jest już na Waszej liście.",

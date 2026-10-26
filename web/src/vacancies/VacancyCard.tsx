@@ -62,6 +62,7 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, 
           <h3>{v.title}</h3>
           <p className="muted">
             {v.company}{v.addedManually ? <> <span className="badge">{t('vacancies.card.manual')}</span></> : null}
+            {v.initiative ? <> <span className="badge">{t('vacancies.card.initiative')}</span></> : null}
           </p>
           {facts ? <p className="muted">{facts}</p> : null}
           {submitted ? (

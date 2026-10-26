@@ -575,6 +575,7 @@
     "card": {
       "scoreTitle": "How well the offer fits your profile (0–100)",
       "manual": "added by hand",
+      "initiative": "initiative application",
       "sentOn": "Sent {{date}}",
       "submittedOn": "Submitted on the website {{date}}",
       "published": "published {{date}}",
@@ -606,6 +607,7 @@
       "counter": "{{count}} / at least {{min}} characters",
       "link": "Link (optional)",
       "linkHint": "If you paste only a link, BewerbungsPilot tries to open the page and read the offer itself (internal addresses such as your router are never opened). Some sites, e.g. StepStone, Indeed or LinkedIn, do not allow this — then paste the text of the offer above.",
+      "noteHint": "A short text next to a link is your note: BewerbungsPilot reads the page and takes exactly what you wrote, for example the position you mean or \"Initiativbewerbung\".",
       "add": "Add",
       "working": "{{ai}} is reading the offer…",
       "duplicate": "This offer is already in your list.",
