@@ -18,3 +18,18 @@ export interface BackupInfo extends BackupMeta {
   /** Made by a newer app version than the one running: listed, but restoring it is refused (BACKUP_NEWER). */
   newer: boolean;
 }
+
+/**
+ * Where backups go (GET /api/backups, PUT /api/backups/folder). automatic = no folder chosen in Settings: Documents,
+ * or a local folder when Documents is synced with OneDrive. inOneDrive = this folder is (in) a OneDrive folder.
+ */
+export interface BackupFolderView {
+  dir: string;
+  automatic: boolean;
+  inOneDrive: boolean;
+  documentsInOneDrive: boolean;
+}
+
+export interface BackupListView extends BackupFolderView {
+  backups: BackupInfo[];
+}

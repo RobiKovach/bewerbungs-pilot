@@ -27,8 +27,7 @@ import type { PageReader } from './vacancies/sources/page-reader.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
 import type { VacancyStore } from './vacancies/store.js';
-import { registerBackupRoutes } from './backup/routes.js';
-import type { DataPaths } from './data/paths.js';
+import { registerBackupRoutes, type BackupRouteDeps } from './backup/routes.js';
 import type { Activity } from './runtime/activity.js';
 import type { AvailableUpdate } from './updates/checker.js';
 import { registerUpdateRoutes } from './updates/routes.js';
@@ -69,7 +68,7 @@ export interface AppDeps {
   /** Work in flight without its own job state (sends, a restore). */
   activity: Activity;
   /** Backups (spec 0.9.0): the data folder, the backup folder, re-reading every store after a restore, Explorer. */
-  backup: { paths: DataPaths; dir: () => Promise<string>; reload: () => void; openFolder: (dir: string) => void; maxUploadBytes?: number };
+  backup: Pick<BackupRouteDeps, 'paths' | 'folder' | 'reload' | 'openFolder' | 'maxUploadBytes'>;
   /** What the daily update check found (spec 0.9.0, 3.3). */
   updates: { available: () => AvailableUpdate | null };
 }

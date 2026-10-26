@@ -5,7 +5,6 @@ import path from 'node:path';
 import yauzl from 'yauzl';
 import { createBackup } from '../src/backup/create.js';
 import { extractBackup, inspectBackup, listBackups } from '../src/backup/extract.js';
-import { backupDir } from '../src/backup/folder.js';
 import { MAX_ENTRIES, MAX_UNPACKED_BYTES } from '../src/backup/format.js';
 import { dataPaths, ensureDataDirs } from '../src/data/paths.js';
 import { AppError } from '../src/errors.js';
@@ -212,13 +211,5 @@ describe('listBackups', () => {
 
   it('an absent folder is an empty list', async () => {
     expect(await listBackups(path.join(tempRoot(), 'nope'), { appVersion: '0.9.0' })).toEqual([]);
-  });
-});
-
-describe('backupDir', () => {
-  it('uses BP_BACKUP_DIR and creates it', async () => {
-    const want = path.join(tempRoot(), 'my backups');
-    expect(await backupDir({ BP_BACKUP_DIR: want })).toBe(path.resolve(want));
-    expect(fs.statSync(want).isDirectory()).toBe(true);
   });
 });

@@ -85,4 +85,8 @@ export type ErrorReason =
   // Backup files (spec 0.9.0, section 3.1).
   | 'backupTooLarge'
   | 'backupNotZip'
-  | 'backupGone';
+  | 'backupGone'
+  // The backup folder chosen in Settings (0.9.0): not an absolute local path / inside the app data / not writable.
+  | 'backupFolderInvalid'
+  | 'backupFolderInData'
+  | 'backupFolderNotWritable';

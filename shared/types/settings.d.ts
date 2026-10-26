@@ -14,7 +14,7 @@ export interface MailSettingsView { mail: MailSettings | null; passwordSaved: bo
 export type ProviderId = 'claude' | 'chatgpt';
 
 export interface Settings {
-  schemaVersion: 3;
+  schemaVersion: 4;
   language: Language | null;
   onboarding: { currentStep: string | null; completed: boolean };
   llm: { timeoutSec: number; provider: ProviderId | null };
@@ -22,6 +22,8 @@ export interface Settings {
   mail: MailSettings | null;
   /** Daily look at our version.json (spec 0.9.0); dismissedVersion = the version whose banner was closed with ×. */
   updates: { check: boolean; dismissedVersion: string | null };
+  /** folder null = automatic (Documents, or a local folder when Documents is in OneDrive); set via PUT /api/backups/folder. */
+  backups: { folder: string | null };
 }
 
 export interface SettingsPatch {

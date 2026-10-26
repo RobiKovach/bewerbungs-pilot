@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import type { FastifyInstance } from 'fastify';
-import type { BackupInfo } from '@bp/shared';
+import type { BackupFolderView, BackupInfo, BackupListView } from '@bp/shared';
 import type { ApplicationJob } from '../applications/job.js';
 import type { DataPaths } from '../data/paths.js';
 import type { SettingsStore } from '../data/settings.js';
@@ -16,6 +16,7 @@ import { mapUploadError } from '../profile/upload.js';
 import type { Activity } from '../runtime/activity.js';
 import type { SearchJob } from '../vacancies/search-job.js';
 import { createBackup } from './create.js';
+import { checkChosenFolder } from './folder.js';
 import { listBackups } from './extract.js';
 import { MAX_UNPACKED_BYTES } from './format.js';
 import { restoreBackup } from './restore.js';
@@ -23,8 +24,8 @@ import { restoreBackup } from './restore.js';
 export interface BackupRouteDeps {
   paths: DataPaths;
   version: string;
-  /** The backup folder (created); BP_BACKUP_DIR or Documents\BewerbungsPilot\Backups in production. */
-  dir: () => Promise<string>;
+  /** The backup folder (created) for the folder chosen in Settings (null = automatic): backup/folder.ts `backupFolder`. */
+  folder: (chosen: string | null) => Promise<BackupFolderView>;
   /** Re-reads every store from disk after a restore. */
   reload: () => void;
   /** Shows the folder in Explorer. */
@@ -51,7 +52,21 @@ const restoreBody = {
   properties: { name: { type: 'string', maxLength: 255, pattern: '^[^\\\\/:*?"<>|\\u0000-\\u001f]+\\.[zZ][iI][pP]$' } },
 } as const;
 
+const folderBody = {
+  type: 'object', additionalProperties: false, required: ['folder'],
+  properties: { folder: { type: ['string', 'null'], maxLength: 400 } },
+} as const;
+
 export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteDeps): Promise<void> {
+  const where = () => d.folder(d.settings.get().backups.folder);
+  const listView = async (): Promise<BackupListView> => {
+    const folder = await where();
+    const backups: BackupInfo[] = await listBackups(folder.dir, {
+      appVersion: d.version,
+      onSkip: (file, err) => d.logger.warn('backup_skipped', { name: path.basename(file), code: err instanceof AppError ? err.code : 'UNKNOWN' }),
+    });
+    return { ...folder, backups };
+  };
   const busy = (): ErrorReason | null => {
     if (d.searchJob.state().state === 'running') return 'restoreBusySearch';
     if (d.applicationJob.state().state === 'running') return 'restoreBusyPackage';
@@ -66,8 +81,11 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     d.activity.refuseDuringRestore();
     const end = d.activity.begin('restore');
     try {
+      // The backup folder belongs to this PC, not to the data: a backup from elsewhere (or from before the folder was
+      // chosen) must not move where the next backups go — nor where the installer puts its own.
+      const chosenFolder = d.settings.get().backups.folder;
       const result = await restoreBackup(file, {
-        paths: d.paths, appVersion: d.version, backupDir: await d.dir(), busy, reload: d.reload,
+        paths: d.paths, appVersion: d.version, backupDir: (await where()).dir, busy, reload: d.reload,
         warn: (event, data) => d.logger.warn(event, data),
         mail: {
           before: d.settings.get().mail,
@@ -76,6 +94,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
           revoke: (key) => revokeToken(d, key, 'restore'),
         },
       });
+      if (d.settings.get().backups.folder !== chosenFolder) d.settings.setBackupFolder(chosenFolder);
       d.logger.info('backup_restored', { appVersion: result.restored.appVersion, kind: result.restored.kind });
       return result;
     } finally {
@@ -83,24 +102,26 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     }
   };
 
-  app.get('/api/backups', async () => {
-    const dir = await d.dir();
-    const backups: BackupInfo[] = await listBackups(dir, {
-      appVersion: d.version,
-      onSkip: (file, err) => d.logger.warn('backup_skipped', { name: path.basename(file), code: err instanceof AppError ? err.code : 'UNKNOWN' }),
-    });
-    return { dir, backups };
+  app.get('/api/backups', async () => listView());
+
+  /** Settings → Backups → "Change folder" / "Back to automatic"; answers with the list from the new folder. */
+  app.put('/api/backups/folder', { schema: { body: folderBody } }, async (req) => {
+    const { folder } = req.body as { folder: string | null };
+    const next = folder === null || folder.trim() === '' ? null : await checkChosenFolder(folder, d.paths.root);
+    d.settings.setBackupFolder(next);
+    d.logger.info('backup_folder_set', { automatic: next === null });
+    return listView();
   });
 
   app.post('/api/backups', async () => {
-    const info = await createBackup(d.paths.root, { dir: await d.dir(), kind: 'manual', appVersion: d.version });
+    const info = await createBackup(d.paths.root, { dir: (await where()).dir, kind: 'manual', appVersion: d.version });
     d.logger.info('backup_created', { kind: info.kind, sizeBytes: info.sizeBytes });
     return info;
   });
 
   app.post('/api/backups/restore', { schema: { body: restoreBody } }, async (req) => {
     const { name } = req.body as { name: string };
-    const dir = await d.dir();
+    const { dir } = await where();
     const file = path.resolve(dir, name);
     if (path.dirname(file) !== path.resolve(dir)) throw new AppError('BAD_REQUEST', 'backup name outside the backup folder');
     if (!fs.existsSync(file)) throw new AppError('NOT_FOUND', 'no such backup', 'backupGone');
@@ -141,7 +162,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   });
 
   app.post('/api/backups/open-folder', async () => {
-    d.openFolder(await d.dir());
+    d.openFolder((await where()).dir);
     return { ok: true };
   });
 }

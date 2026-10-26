@@ -166,7 +166,7 @@ describe('settings v2 — llm.provider', () => {
   it('a v1 file with completed onboarding becomes claude', () => {
     const dir = tmpDir();
     write(dir, { schemaVersion: 1, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180 } });
-    expect(load(dir)).toMatchObject({ schemaVersion: 3, llm: { timeoutSec: 180, provider: 'claude' } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 4, llm: { timeoutSec: 180, provider: 'claude' } });
   });
   it('a v1 file without completed onboarding gets null', () => {
     const dir = tmpDir();
@@ -218,7 +218,7 @@ describe('settings v3 — updates', () => {
   const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-set3-'));
 
   it('defaults to checking, nothing dismissed', () => {
-    expect(DEFAULT_SETTINGS.schemaVersion).toBe(3);
+    expect(DEFAULT_SETTINGS.schemaVersion).toBe(4);
     expect(DEFAULT_SETTINGS.updates).toEqual({ check: true, dismissedVersion: null });
   });
   it('a v2 file becomes v3 with the check on; provider and the rest unchanged', () => {
@@ -226,8 +226,8 @@ describe('settings v3 — updates', () => {
     const mail = { kind: 'google', address: 'a@x.de', senderName: 'Max', provider: 'gmail' };
     write(dir, { schemaVersion: 2, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' }, vacancies: { publishedWithinDays: 7 }, mail });
     expect(load(dir)).toEqual({
-      schemaVersion: 3, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' },
-      vacancies: { publishedWithinDays: 7 }, mail, updates: { check: true, dismissedVersion: null },
+      schemaVersion: 4, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' },
+      vacancies: { publishedWithinDays: 7 }, mail, updates: { check: true, dismissedVersion: null }, backups: { folder: null },
     });
     // v2 with completed onboarding and no provider stays null — the v1 rule applies to neither v2 nor v3.
     write(dir, { schemaVersion: 2, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } });
@@ -238,7 +238,7 @@ describe('settings v3 — updates', () => {
   it('a v1 file goes straight to v3 (provider rule as before)', () => {
     const dir = tmpDir();
     write(dir, { schemaVersion: 1, onboarding: { currentStep: null, completed: true } });
-    expect(load(dir)).toMatchObject({ schemaVersion: 3, llm: { provider: 'claude' }, updates: { check: true, dismissedVersion: null } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 4, llm: { provider: 'claude' }, updates: { check: true, dismissedVersion: null } });
   });
   it('a v3 file keeps its values; broken values fall back', () => {
     const dir = tmpDir();

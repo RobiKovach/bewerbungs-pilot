@@ -8,6 +8,7 @@ import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
 import { profilePhoto } from '../../src/applications/views.js';
 import { buildApp } from '../../src/app.js';
+import { backupFolder } from '../../src/backup/folder.js';
 import { dataPaths } from '../../src/data/paths.js';
 import { SettingsStore } from '../../src/data/settings.js';
 import { FakeProvider } from '../../src/llm/fake.js';
@@ -34,7 +35,7 @@ export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
  * `autoKey` (default true): every `app.inject` carries the launch key unless the test sets its own `x-bp-key`
  * or cookie, so tests about other things need not repeat it. Launch-key tests pass `autoKey: false`.
  */
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null; maxBackupUploadBytes?: number } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null; maxBackupUploadBytes?: number; documents?: string; backupEnv?: NodeJS.ProcessEnv } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -81,8 +82,12 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
   sentUnsaved.load();
   const activity = new Activity();
-  // Outside the data folder, like Documents: a backup never contains the backups.
-  const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp backups-'));
+  // Outside the data folder, like Documents: a backup never contains the backups. The real folder rules run against a
+  // stand-in Documents folder and an environment without OneDrive (opts.backupEnv / opts.documents change both).
+  const documents = opts.documents ?? fs.mkdtempSync(path.join(os.tmpdir(), 'bp documents-'));
+  const backupEnv: NodeJS.ProcessEnv = opts.backupEnv ?? { USERPROFILE: fs.mkdtempSync(path.join(os.tmpdir(), 'bp home-')) };
+  const backupDir = path.join(documents, 'BewerbungsPilot', 'Backups');
+  fs.mkdirSync(backupDir, { recursive: true });
   const openedFolders: string[] = [];
   // Never the real installers: the fake one only prints / fails / hangs.
   const fakeInstall = fileURLToPath(new URL('../fixtures/fake-install.mjs', import.meta.url));
@@ -99,7 +104,7 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     session: { key: TEST_KEY, cookieName: 'bp_key_80' },
     activity,
     backup: {
-      paths: dataPaths(dir), dir: async () => { fs.mkdirSync(backupDir, { recursive: true }); return backupDir; },
+      paths: dataPaths(dir), folder: (chosen) => backupFolder(chosen, { env: backupEnv, documents: async () => documents }),
       openFolder: (d) => { openedFolders.push(d); }, maxUploadBytes: opts.maxBackupUploadBytes,
       reload: () => {
         settings.load(); profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();
@@ -119,5 +124,5 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
       return inject({ ...o, headers } as InjectOptions);
     }) as unknown as typeof app.inject;
   }
-  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved, activity, backupDir, openedFolders };
+  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved, activity, backupDir, documents, openedFolders };
 }

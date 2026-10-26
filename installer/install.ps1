@@ -96,15 +96,35 @@ function Install-PortableNode {
 }
 
 # Backups before an update (spec 0.9.0, section 3.2): the same zip format the app writes (server/src/backup/format.ts),
-# kind "installer", into Documents\BewerbungsPilot\Backups. These lists must match format.ts — a test compares them.
+# kind "installer", into the app's backup folder. These lists must match format.ts — a test compares them.
 $BackupFiles = @('settings.json')
 $BackupFolders = @('profile', 'vacancies', 'applications')
 $BackupSetAside = '\.(corrupt|invalid)-\d+\.json$'
 $BackupMaxEntries = 20000
 $BackupMaxBytes = [int64]1024 * 1024 * 1024
-function Get-BpBackupDir {
+function Test-BpInOneDrive([string]$Path) {
+  # Same rule as inOneDrive() in server/src/backup/folder.ts — a test runs both on the same paths.
+  $norm = { param([string]$p) $p.Replace('/', '\').TrimEnd('\').ToLowerInvariant() }
+  $target = & $norm $Path
+  foreach ($root in @($env:OneDrive, $env:OneDriveCommercial, $env:OneDriveConsumer)) {
+    if (-not $root) { continue }
+    $r = & $norm $root
+    if ($r -and ($target -eq $r -or $target.StartsWith("$r\", [StringComparison]::Ordinal))) { return $true }
+  }
+  foreach ($segment in $target.Split('\')) { if ($segment.StartsWith('onedrive', [StringComparison]::Ordinal)) { return $true } }
+  return $false
+}
+function Get-BpBackupDir([string]$DataDir, [string]$Documents) {
+  # The same order as resolveBackupFolder() in server/src/backup/folder.ts: BP_BACKUP_DIR, the folder chosen in the
+  # app's settings, Documents unless it is synced with OneDrive, else a local folder in the user profile.
   if ($env:BP_BACKUP_DIR) { return [IO.Path]::GetFullPath($env:BP_BACKUP_DIR) }
-  return Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'BewerbungsPilot\Backups'
+  try {
+    $chosen = (Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $DataDir 'settings.json') -ErrorAction Stop | ConvertFrom-Json).backups.folder
+    if ($chosen -is [string] -and $chosen -match '^[A-Za-z]:[\\/]') { return [IO.Path]::GetFullPath($chosen) }
+  } catch { }
+  if (-not $Documents) { $Documents = Join-Path $env:USERPROFILE 'Documents' }
+  if (-not (Test-BpInOneDrive $Documents)) { return Join-Path $Documents 'BewerbungsPilot\Backups' }
+  return Join-Path $env:USERPROFILE 'BewerbungsPilot\Backups'
 }
 function Get-InstalledVersion([string]$Dir) {
   # The version of the app being replaced: it wrote the data this backup holds.
@@ -273,7 +293,7 @@ if ($MyInvocation.InvocationName -ne '.') {
   # 3b. Back up the person's data before anything is replaced (spec 0.9.0, 3.2). The three newest installer backups
   # are kept; if the backup fails we ask instead of silently risking the data.
   if (Test-Path -LiteralPath $DataDir) {
-    $BackupDir = Get-BpBackupDir
+    $BackupDir = Get-BpBackupDir -DataDir $DataDir -Documents ([Environment]::GetFolderPath('MyDocuments'))
     Say 'backingUp'
     $backup = $null
     try {

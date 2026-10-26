@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Language, MailSettings, ProviderId, PublishedWithinDays, Settings, SettingsPatch } from '@bp/shared';
+import { DRIVE_PATH } from '../backup/folder.js';
 import { AppError } from '../errors.js';
 import { CorruptJsonError, readJson, writeJsonAtomic } from './atomic.js';
 
@@ -19,16 +20,20 @@ export const ONBOARDING_STEP_ORDER = ['welcome', 'claude', 'profile', 'email', '
 const STEPS_AFTER_CLAUDE: readonly string[] = ONBOARDING_STEP_ORDER.slice(ONBOARDING_STEP_ORDER.indexOf('claude') + 1);
 
 export const DEFAULT_SETTINGS: Settings = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   language: null,
   onboarding: { currentStep: null, completed: false },
   llm: { timeoutSec: 180, provider: null },
   vacancies: { publishedWithinDays: 14 },
   mail: null,
   updates: { check: true, dismissedVersion: null },
+  backups: { folder: null },
 };
 
-type Warn = (event: string, data: Record<string, unknown>) => void;
+/** A chosen backup folder as stored: an absolute path on a drive letter (off Windows, where tests run: any absolute path). */
+const isLocalAbsolute = (p: string) => DRIVE_PATH.test(p) || (process.platform !== 'win32' && path.isAbsolute(p));
+
+type Warn =(event: string, data: Record<string, unknown>) => void;
 
 export class SettingsStore {
   private current: Settings = structuredClone(DEFAULT_SETTINGS);
@@ -67,6 +72,11 @@ export class SettingsStore {
 
   setMail(mail: MailSettings | null): Settings {
     return this.save({ ...this.current, mail: mail ? { ...mail } : null });
+  }
+
+  /** null = automatic (see backup/folder.ts); the route checks the folder before it is saved. */
+  setBackupFolder(folder: string | null): Settings {
+    return this.save({ ...this.current, backups: { folder } });
   }
 
   /** × on the update banner: hidden for this version only, the next one shows again. */
@@ -110,16 +120,18 @@ function normalize(raw: unknown): Settings {
     vacancies?: { publishedWithinDays?: unknown };
     mail?: unknown;
     updates?: { check?: unknown; dismissedVersion?: unknown };
+    backups?: { folder?: unknown };
   };
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
   const provider: ProviderId | null = PROVIDER_IDS.find((id) => id === r.llm?.provider)
     // v1 files (schemaVersion missing or 1) predate the choice: everyone who finished onboarding — or got past the Claude step — used Claude.
-    ?? (r.schemaVersion !== 2 && r.schemaVersion !== 3 && (r.onboarding?.completed === true
+    ?? (r.schemaVersion !== 2 && r.schemaVersion !== 3 && r.schemaVersion !== 4 && (r.onboarding?.completed === true
       || (typeof r.onboarding?.currentStep === 'string' && STEPS_AFTER_CLAUDE.includes(r.onboarding.currentStep))) ? 'claude' : null);
   const dismissed = r.updates?.dismissedVersion;
+  const folder = r.backups?.folder;
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     language: lang,
     onboarding: {
       currentStep: typeof r.onboarding?.currentStep === 'string' ? r.onboarding.currentStep : null,
@@ -135,5 +147,7 @@ function normalize(raw: unknown): Settings {
       check: r.updates?.check !== false,
       dismissedVersion: typeof dismissed === 'string' && /^\d+\.\d+\.\d+$/.test(dismissed) ? dismissed : null,
     },
+    // v3 → v4: automatic. A hand-edited relative or network path is dropped too (the installer ignores it the same way).
+    backups: { folder: typeof folder === 'string' && isLocalAbsolute(folder) ? folder : null },
   };
 }
