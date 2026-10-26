@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "latest": "0.9.0",
+  "released": "2026-10-26",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.9.0",
+  "notes": {
+    "uk": "Резервні копії (зберегти й відновити в Налаштуваннях), копія перед кожним оновленням, повідомлення про нові версії, вкладка «Подано», ініціативні заявки й примітка до вакансії, пошук чергує всі професії, більший перегляд листа й CV.",
+    "en": "Backups (save and restore in Settings), a backup before every update, new-version notices, an \"Applied\" tab, initiative applications and a note for a vacancy, search takes turns between all job titles, a bigger letter and CV preview.",
+    "de": "Sicherungen (speichern und wiederherstellen in den Einstellungen), Sicherung vor jedem Update, Hinweis auf neue Versionen, Tab „Beworben“, Initiativbewerbungen und Notiz zur Stelle, Suche wechselt zwischen allen Berufen, größere Vorschau.",
+    "ru": "Резервные копии (сохранить и восстановить в Настройках), копия перед каждым обновлением, уведомления о новых версиях, вкладка «Подано», инициативные заявки и заметка к вакансии, поиск чередует все профессии, крупнее просмотр письма и резюме.",
+    "pl": "Kopie zapasowe (zapisz i przywróć w Ustawieniach), kopia przed każdą aktualizacją, powiadomienia o nowych wersjach, karta „Wysłane”, aplikacje z własnej inicjatywy i notatka do oferty, wyszukiwanie na zmianę dla wszystkich zawodów, większy podgląd.",
+    "ro": "Copii de siguranță (salvare și restaurare în Setări), o copie înainte de fiecare actualizare, anunțuri despre versiuni noi, fila „Trimise”, candidaturi spontane și o notă la ofertă, căutarea alternează toate meseriile, previzualizare mai mare."
+  }
+}
