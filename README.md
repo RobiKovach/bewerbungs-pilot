@@ -140,7 +140,7 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 
 ## What's new in 0.9.0
 
-- **Backups.** **Settings → Backups** saves all your data as one zip file to `DocumentsBewerbungsPilotBackups`
+- **Backups.** **Settings → Backups** saves all your data as one zip file to `Documents\BewerbungsPilot\Backups`
   and restores it (from the list or from a file you choose). Before restoring, the app saves a backup of the current
   state; a backup from a newer app version asks you to update first.
 - **Installer backup.** Before an update the installer saves a backup of your data and keeps its three newest backups;
