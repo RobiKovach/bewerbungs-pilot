@@ -39,6 +39,26 @@ export function planQueries(w: WishesData, publishedWithinDays: number): { queri
   return { queries: all.slice(0, MAX_QUERIES), truncated: all.length > MAX_QUERIES };
 }
 
+/**
+ * The new offers one search takes: round-robin over the job titles (1st title's first offer, 2nd title's first, …),
+ * so with several titles the first one cannot fill every slot. A title with fewer offers drops out of the rotation;
+ * within one title the order stays as the source returned it. `titleOf` is the title whose query found the offer first.
+ */
+export function takeFairly<T>(passed: readonly T[], titleOf: (h: T) => string, titles: readonly string[], limit: number): T[] {
+  const groups = new Map<string, T[]>(titles.map((t) => [t, []]));
+  for (const h of passed) {
+    const t = titleOf(h);
+    if (!groups.has(t)) groups.set(t, []);
+    groups.get(t)!.push(h);
+  }
+  const lists = [...groups.values()];
+  const out: T[] = [];
+  for (let i = 0; out.length < limit && lists.some((l) => i < l.length); i++) {
+    for (const l of lists) if (i < l.length && out.length < limit) out.push(l[i]);
+  }
+  return out;
+}
+
 export function idleState(): SearchState {
   return {
     state: 'idle', phase: null, found: 0, filteredOut: {}, afterFilter: 0, toScore: 0, scored: 0, moreAvailable: 0,
@@ -128,11 +148,14 @@ export class SearchJob {
     const { queries, truncated } = planQueries(wishes, this.d.publishedWithinDays());
     if (truncated) warnings.add('tooManyQueries');
     const hits = new Map<string, SourceHit>();
+    const titleOf = new Map<string, string>();
     let failures = 0;
     let lastError: unknown = null;
     for (const q of queries) {
       try {
-        for (const h of await this.d.source.search(q, signal)) if (!hits.has(h.sourceId)) hits.set(h.sourceId, h);
+        for (const h of await this.d.source.search(q, signal)) {
+          if (!hits.has(h.sourceId)) { hits.set(h.sourceId, h); titleOf.set(h.sourceId, q.jobTitle); }
+        }
       } catch (err) {
         if (isCancel(err, signal)) throw err;
         failures++;
@@ -147,7 +170,8 @@ export class SearchJob {
     const { passed, rejected } = filterHits([...hits.values()], profile, this.d.store.list());
     const filteredOut: Partial<Record<FilterReason, number>> = {};
     for (const r of rejected) filteredOut[r.reason] = (filteredOut[r.reason] ?? 0) + 1;
-    const take = passed.slice(0, MAX_NEW_PER_SEARCH);
+    const titles = [...new Set(queries.map((q) => q.jobTitle))];
+    const take = takeFairly(passed, (h) => titleOf.get(h.sourceId) ?? '', titles, MAX_NEW_PER_SEARCH);
     let toScore = take.length;
     this.set({ found: hits.size, filteredOut, afterFilter: passed.length, toScore, moreAvailable: passed.length - take.length, warnings: [...warnings] });
 

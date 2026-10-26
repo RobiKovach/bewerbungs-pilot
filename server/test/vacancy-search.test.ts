@@ -6,7 +6,7 @@ import type { Profile, SearchState } from '@bp/shared';
 import { AppError } from '../src/errors.js';
 import { LlmQueue } from '../src/llm/queue.js';
 import { nullLogger } from '../src/log.js';
-import { MAX_NEW_PER_SEARCH, MAX_QUERIES, planQueries, SearchJob } from '../src/vacancies/search-job.js';
+import { MAX_NEW_PER_SEARCH, MAX_QUERIES, planQueries, SearchJob, takeFairly } from '../src/vacancies/search-job.js';
 import type { SearchQuery } from '../src/vacancies/sources/types.js';
 import { VacancyStore } from '../src/vacancies/store.js';
 import { fakeSource, hit, profileWithWishes, scoringClaude, vacancy, type FakeSource } from './helpers/vacancies.js';
@@ -60,6 +60,20 @@ describe('planQueries', () => {
   });
 });
 
+describe('takeFairly', () => {
+  const t = (s: string) => s[0]!;
+  it('interleaves titles, keeps the order within a title, lets a short title drop out', () => {
+    expect(takeFairly(['a1', 'a2', 'a3', 'a4', 'b1', 'c1', 'c2'], t, ['a', 'b', 'c'], 6)).toEqual(['a1', 'b1', 'c1', 'a2', 'c2', 'a3']);
+  });
+  it('one title → the same as taking the first N', () => {
+    const xs = ['a1', 'a2', 'a3', 'a4'];
+    expect(takeFairly(xs, t, ['a'], 3)).toEqual(xs.slice(0, 3));
+  });
+  it('fewer offers than the limit → all of them; titles without offers are skipped', () => {
+    expect(takeFairly(['b1', 'b2'], t, ['a', 'b'], 50)).toEqual(['b1', 'b2']);
+  });
+});
+
 describe('SearchJob', () => {
   it('refuses to start without complete wishes', () => {
     const { job } = setup({ profile: profileWithWishes({ jobTitles: ['A'] }) });
@@ -106,7 +120,24 @@ describe('SearchJob', () => {
     expect(provider.calls).toHaveLength(5);
   });
 
-  it('one failing query → warning; all failing → failed with the code', async () => {
+  it('several job titles share the 50 new offers round-robin; an offer found by two titles counts once, for the first', async () => {
+    const p3 = profileWithWishes({ ...WISHES, jobTitles: ['A', 'B', 'C'] });
+    const byTitle: Record<string, ReturnType<typeof hit>[]> = {
+      A: Array.from({ length: 60 }, (_, i) => hit({ sourceId: `A-${i}` })),
+      B: [hit({ sourceId: 'B-0' }), hit({ sourceId: 'B-1' })],
+      C: [hit({ sourceId: 'A-0' }), hit({ sourceId: 'C-0' })],
+    };
+    const { job, store } = setup({ profile: p3, source: fakeSource({ search: (q) => byTitle[q.jobTitle] ?? [] }) });
+    const s = await run(job);
+    expect(s).toMatchObject({ found: 63, afterFilter: 63, toScore: MAX_NEW_PER_SEARCH, moreAvailable: 13 });
+    const ids = store.list().map((v) => v.sourceId);
+    expect(ids).toHaveLength(MAX_NEW_PER_SEARCH);
+    expect(ids).toEqual(expect.arrayContaining(['B-0', 'B-1', 'C-0']));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.filter((id) => id.startsWith('A-'))).toHaveLength(47);
+  });
+
+    it('one failing query → warning; all failing → failed with the code', async () => {
     const p2 = profileWithWishes({ ...WISHES, locations: ['Dresden', 'Leipzig'] });
     const half = setup({ profile: p2, source: fakeSource({ search: (q) => { if (q.location === 'Leipzig') throw new AppError('SOURCE_UNAVAILABLE', 'x'); return [hit()]; } }) });
     expect(await run(half.job)).toMatchObject({ state: 'done', warnings: ['someQueriesFailed'], toScore: 1 });
