@@ -75,7 +75,7 @@ describe('BackupsSection', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Restore' }));
     const dialog = screen.getByRole('dialog');
-    expect(within(dialog).getByText('Current data will be replaced. Before that the app saves them as a separate backup.')).toBeInTheDocument();
+    expect(within(dialog).getByText(/Current data will be replaced. Before that the app saves them as a separate backup. Applications sent after this backup was made will look unsent again/)).toBeInTheDocument();
     expect(f.mock.calls.some((c) => c[0] === '/api/backups/restore')).toBe(false);
     await user.click(within(dialog).getByRole('button', { name: 'Restore' }));
     expect(await screen.findByText(/Backup restored\./)).toBeInTheDocument();

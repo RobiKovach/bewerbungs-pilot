@@ -171,7 +171,7 @@
       "restore": "Restaurați",
       "restoring": "Se restaurează…",
       "confirmTitle": "Restaurați această copie?",
-      "confirmText": "Datele actuale vor fi înlocuite. Înainte de aceasta, programul le salvează ca o copie separată.",
+      "confirmText": "Datele actuale vor fi înlocuite. Înainte de aceasta, programul le salvează ca o copie separată. Candidaturile trimise după realizarea acestei copii vor apărea din nou ca netrimise — nu le trimiteți a doua oară.",
       "restored": "Copia a fost restaurată. Datele dumneavoastră de dinainte au fost salvate ca {{name}}.",
       "mailAgain": "Vă rugăm să conectați din nou e-mailul la „E-mail pentru trimitere\": o copie nu conține niciodată parola sau cheia Google."
     },

@@ -171,7 +171,7 @@
       "restore": "Restore",
       "restoring": "Restoring…",
       "confirmTitle": "Restore this backup?",
-      "confirmText": "Current data will be replaced. Before that the app saves them as a separate backup.",
+      "confirmText": "Current data will be replaced. Before that the app saves them as a separate backup. Applications sent after this backup was made will look unsent again — do not send them a second time.",
       "restored": "Backup restored. Your data from before was saved as {{name}}.",
       "mailAgain": "Please connect your email again under \"Email for sending\": a backup never contains the password or the Google key."
     },

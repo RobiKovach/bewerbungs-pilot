@@ -171,7 +171,7 @@
       "restore": "Wiederherstellen",
       "restoring": "Wird wiederhergestellt…",
       "confirmTitle": "Diese Sicherung wiederherstellen?",
-      "confirmText": "Die aktuellen Daten werden ersetzt. Vorher speichert das Programm sie als eigene Sicherung.",
+      "confirmText": "Die aktuellen Daten werden ersetzt. Vorher speichert das Programm sie als eigene Sicherung. Bewerbungen, die nach dieser Sicherung verschickt wurden, erscheinen wieder als nicht verschickt — senden Sie sie nicht ein zweites Mal.",
       "restored": "Sicherung wiederhergestellt. Ihre bisherigen Daten wurden als {{name}} gespeichert.",
       "mailAgain": "Bitte verbinden Sie Ihre E-Mail unter „E-Mail zum Versenden\" erneut: Eine Sicherung enthält nie das Passwort oder den Google-Schlüssel."
     },

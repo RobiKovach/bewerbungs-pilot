@@ -171,7 +171,7 @@
       "restore": "Przywróć",
       "restoring": "Przywracanie…",
       "confirmTitle": "Przywrócić tę kopię?",
-      "confirmText": "Obecne dane zostaną zastąpione. Wcześniej program zapisze je jako osobną kopię.",
+      "confirmText": "Obecne dane zostaną zastąpione. Wcześniej program zapisze je jako osobną kopię. Aplikacje wysłane po utworzeniu tej kopii znów będą wyglądać na niewysłane — nie wysyłaj ich drugi raz.",
       "restored": "Kopia przywrócona. Twoje wcześniejsze dane zapisano jako {{name}}.",
       "mailAgain": "Połącz pocztę ponownie w sekcji \"E-mail do wysyłania\": kopia nigdy nie zawiera hasła ani klucza Google."
     },
