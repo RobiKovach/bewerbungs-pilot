@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { MissingList } from '../applications/CreatePackageDialog';
-import { packageLinks, submittedByVacancy } from '../applications/format';
+import { packageLinks, submittedByVacancy, type SubmittedPackage } from '../applications/format';
 import { PackageButton, READINESS_NOTE_ID } from '../applications/PackageButton';
 import { ManualAdd } from '../vacancies/ManualAdd';
 import { ManualEdit } from '../vacancies/ManualEdit';
 import { SearchProgress } from '../vacancies/SearchProgress';
 import { SearchStrip } from '../vacancies/SearchStrip';
-import { tabOf, type SubmittedMap, type Tab } from '../vacancies/sort';
+import { tabOf, type Tab } from '../vacancies/sort';
 import { useSearchStatus } from '../vacancies/useSearchStatus';
 import { useVacancies, VacanciesProvider } from '../vacancies/VacanciesContext';
 import { VacancyList } from '../vacancies/VacancyList';
@@ -29,7 +29,7 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
     return () => { alive = false; };
   }, []);
   const [packages, setPackages] = useState<Map<string, { id: string; editable: boolean }>>(new Map());
-  const [submitted, setSubmitted] = useState<SubmittedMap>(new Map());
+  const [submitted, setSubmitted] = useState<ReadonlyMap<string, SubmittedPackage>>(new Map());
   useEffect(() => {
     let alive = true;
     api.listApplications().then((l) => {
@@ -45,6 +45,7 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
   const complete = wishesComplete(wishes);
   const status = useSearchStatus({ onTick: () => void reload(), pollMs });
   const searching = status.state?.state === 'running';
+  const submittedPackage = (v: Vacancy) => (v.status !== 'hidden' ? submitted.get(v.id)?.applicationId ?? null : null);
   const showCard = (v: { id: string; status: VacancyStatus }) => { setTab(tabOf(v, submitted)); setFocusId(v.id); };
   return (
     <section>
@@ -69,7 +70,9 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
         <VacancyList tab={tab} onTab={setTab} focusId={focusId} toastMs={toastMs} submitted={submitted}
           renderExtra={(v) => (
             <>
-              {v.status === 'favorite' ? <PackageButton vacancy={v} existing={packages.get(v.id) ?? null} readiness={readiness} pollMs={pollMs} /> : null}
+              {/* In "Submitted" every card opens the package the badge is about, whatever the vacancy's stored status. */}
+              {submittedPackage(v) ? <div className="btn-row"><a className="btn" href={`#/applications/${submittedPackage(v)}`}>{t('applications.open')}</a></div>
+                : v.status === 'favorite' ? <PackageButton vacancy={v} existing={packages.get(v.id) ?? null} readiness={readiness} pollMs={pollMs} /> : null}
               {manualExtra(v)}
             </>
           )} />

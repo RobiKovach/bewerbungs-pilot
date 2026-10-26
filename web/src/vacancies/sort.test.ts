@@ -53,11 +53,11 @@ describe('sort', () => {
   });
   it('9b: several packages for one vacancy → the earliest submission; never-sent packages do not count', () => {
     const map = submittedByVacancy([
-      { vacancyId: 'v1', submitted: { via: 'mail', at: '2026-10-05T09:00:00.000Z' } },
-      { vacancyId: 'v1', submitted: { via: 'site', at: '2026-10-02T09:00:00.000Z' } },
-      { vacancyId: 'v1', submitted: null },
-      { vacancyId: 'v2', submitted: null },
+      { id: 'a1', vacancyId: 'v1', submitted: { via: 'mail', at: '2026-10-05T09:00:00.000Z' } },
+      { id: 'a2', vacancyId: 'v1', submitted: { via: 'site', at: '2026-10-02T09:00:00.000Z' } },
+      { id: 'a3', vacancyId: 'v1', submitted: null },
+      { id: 'a4', vacancyId: 'v2', submitted: null },
     ]);
-    expect([...map]).toEqual([['v1', { via: 'site', at: '2026-10-02T09:00:00.000Z' }]]);
+    expect([...map]).toEqual([['v1', { via: 'site', at: '2026-10-02T09:00:00.000Z', applicationId: 'a2' }]]);
   });
 });

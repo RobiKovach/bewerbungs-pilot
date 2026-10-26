@@ -23,12 +23,15 @@ export function packageLinks(list: readonly { id: string; vacancyId: string; sta
   return new Map([...best].map(([v, a]) => [v, { id: a.id, editable: !isFrozen(a.status) }]));
 }
 
+/** A submission plus the package it came from (the one the "Submitted" tab's "Open package" leads to). */
+export type SubmittedPackage = SubmittedInfo & { applicationId: string };
+
 /** Vacancy id → its earliest submission (by mail or on the company's site), for the vacancies' "Submitted" tab. */
-export function submittedByVacancy(list: readonly { vacancyId: string; submitted: SubmittedInfo | null }[]): Map<string, SubmittedInfo> {
-  const out = new Map<string, SubmittedInfo>();
+export function submittedByVacancy(list: readonly { id: string; vacancyId: string; submitted: SubmittedInfo | null }[]): Map<string, SubmittedPackage> {
+  const out = new Map<string, SubmittedPackage>();
   for (const a of list) {
     const cur = out.get(a.vacancyId);
-    if (a.submitted && (!cur || a.submitted.at < cur.at)) out.set(a.vacancyId, a.submitted);
+    if (a.submitted && (!cur || a.submitted.at < cur.at)) out.set(a.vacancyId, { ...a.submitted, applicationId: a.id });
   }
   return out;
 }

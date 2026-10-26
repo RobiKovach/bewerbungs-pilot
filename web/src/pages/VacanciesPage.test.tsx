@@ -7,7 +7,7 @@ import { mockFetch } from '../test/fetchMock';
 import { emptyProfile } from '../test/profileFixtures';
 import { readyProfile, vac, vacancyServer } from '../test/vacancyFixtures';
 import { viewOf } from '../test/profileFixtures';
-import type { WishesData } from '../types';
+import type { Vacancy, WishesData } from '../types';
 import { VacanciesPage } from './VacanciesPage';
 
 const renderPage = () => render(<SettingsProvider><VacanciesPage /></SettingsProvider>);
@@ -103,6 +103,56 @@ describe('VacanciesPage — strip and empty states', () => {
     expect(cards[0]).toHaveTextContent('Submitted on the website 03.10.2026');
     expect(cards[1]).toHaveTextContent('Sent 02.10.2026');
     expect(screen.queryByRole('button', { name: /Interesting/ })).toBeNull();
+  });
+
+  it('9c: every card in "Applied" opens the package the badge is about, whatever the stored status', async () => {
+    const asNew = vac({ title: 'Stored as new' });
+    const asStale = vac({ title: 'Stored as stale', status: 'stale' });
+    const asFav = vac({ title: 'Stored as favourite', status: 'favorite' });
+    mockFetch({
+      ...vacancyServer({ list: [asNew, asStale, asFav] }).routes,
+      'GET /api/applications': () => ({ body: { applications: [
+        appSummary({ id: 'n1', vacancyId: asNew.id, status: 'sent', submitted: { via: 'mail', at: '2026-10-01T09:00:00.000Z' } }),
+        appSummary({ id: 's1', vacancyId: asStale.id, status: 'submitted', submitted: { via: 'site', at: '2026-10-02T09:00:00.000Z' } }),
+        appSummary({ id: 'f1', vacancyId: asFav.id, status: 'rejected', submitted: { via: 'mail', at: '2026-10-03T09:00:00.000Z' } }),
+        appSummary({ id: 'f2', vacancyId: asFav.id, status: 'draft', createdAt: '2026-10-04T09:00:00.000Z' }),
+      ] } }),
+    });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('tab', { name: 'Applied 3' }));
+    const links = screen.getAllByRole('article').map((c) => [c.querySelector('h3')?.textContent, [...c.querySelectorAll('a')].filter((a) => a.textContent === 'Open package').map((a) => a.getAttribute('href'))]);
+    expect(links).toEqual([
+      ['Stored as favourite', ['#/applications/f1']],
+      ['Stored as stale', ['#/applications/s1']],
+      ['Stored as new', ['#/applications/n1']],
+    ]);
+  });
+
+  it('9c: "Hide" in "Applied" moves the vacancy to Hidden; "Undo" brings it back to Applied', async () => {
+    const v = vac({ title: 'Applied once', status: 'favorite' });
+    const posted: unknown[] = [];
+    mockFetch({
+      ...vacancyServer({ list: [v] }).routes,
+      'GET /api/applications': () => ({ body: { applications: [
+        appSummary({ id: 'a1', vacancyId: v.id, status: 'sent', submitted: { via: 'mail', at: '2026-10-02T09:00:00.000Z' } }),
+      ] } }),
+      [`POST /api/vacancies/${v.id}/status`]: (init) => {
+        const { status } = JSON.parse(String(init?.body)) as { status: Vacancy['status'] };
+        posted.push(status);
+        return { body: { vacancy: { ...v, status } } };
+      },
+    });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('tab', { name: 'Applied 1' }));
+    await user.click(screen.getByRole('button', { name: 'Hide' }));
+    expect(await screen.findByRole('tab', { name: 'Hidden 1' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Applied 0' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(await screen.findByRole('tab', { name: 'Applied 1' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Hidden 0' })).toBeInTheDocument();
+    expect(posted).toEqual(['hidden', 'new']);
   });
 
   it('9b: if the applications list does not load, vacancies stay where they are', async () => {
