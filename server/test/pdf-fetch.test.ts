@@ -15,9 +15,11 @@ const SCAN_PDF = fixture('cv-scan.pdf');
 const TEST_HOST = 'pdf.test';
 const check = (url: string) => (new URL(url).hostname === TEST_HOST ? Promise.resolve({ ok: true as const }) : checkPublicUrl(url));
 const isPublic = (ip: string) => ip === '127.0.0.1' || isPublicAddress(ip);
-const lookup = async (host: string) => (host === TEST_HOST ? ['127.0.0.1'] : host === 'evil.test' ? ['10.0.0.1'] : []);
+// `rebind.test` resolves to the test server itself, but with the real address rule 127.0.0.1 is not public.
+const lookup = async (host: string) => (host === TEST_HOST ? ['127.0.0.1'] : host === 'evil.test' ? ['10.0.0.1'] : host === 'rebind.test' ? ['127.0.0.1'] : []);
 
 let server: http.Server;
+let connections = 0;
 let base = '';
 
 beforeAll(async () => {
@@ -50,6 +52,7 @@ beforeAll(async () => {
     }
     res.writeHead(404); res.end();
   });
+  server.on('connection', () => { connections++; });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   base = `http://${TEST_HOST}:${port()}`;
 });
@@ -104,6 +107,14 @@ describe('HttpPdfFetcher', () => {
     // The URL check is told the name is fine (as a rebinding DNS would answer first); the pinned connect lookup refuses.
     const f = new HttpPdfFetcher({ check: async () => ({ ok: true }), lookup, isPublic });
     expect(await f.fetch(`http://evil.test:${port()}/cv.pdf`, signal())).toEqual({ ok: false, host: 'evil.test', why: 'blocked' });
+  });
+
+  it('never opens a socket to a private address, even when the URL check passed', async () => {
+    // A rebinding DNS: the name passed the URL check, but at connect time it points at this machine (the test server).
+    const f = new HttpPdfFetcher({ check: async () => ({ ok: true }), lookup, isPublic: isPublicAddress });
+    const before = connections;
+    expect(await f.fetch(`http://rebind.test:${port()}/cv.pdf`, signal())).toEqual({ ok: false, host: 'rebind.test', why: 'blocked' });
+    expect(connections).toBe(before);
   });
 
   it('blocks a redirect to a name that resolves to a private address', async () => {
