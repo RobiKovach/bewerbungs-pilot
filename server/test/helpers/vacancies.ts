@@ -4,6 +4,7 @@ import { AppError } from '../../src/errors.js';
 import { FakeProvider } from '../../src/llm/fake.js';
 import type { LlmTask } from '../../src/llm/types.js';
 import type { PageReader } from '../../src/vacancies/sources/page-reader.js';
+import type { PdfFetcher, PdfResult } from '../../src/vacancies/sources/pdf-fetch.js';
 import type { SearchQuery, SourceDetails, SourceHit, VacancySource } from '../../src/vacancies/sources/types.js';
 
 let n = 0;
@@ -107,5 +108,16 @@ export class FakePageReader implements PageReader {
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
     this.calls.push(url);
     return this.read_(url);
+  }
+}
+
+/** Stands in for the PDF download: `fetch_` decides what a link "contains"; by default nothing is a PDF. */
+export class FakePdfFetcher implements PdfFetcher {
+  calls: Array<{ url: string; budgetMs?: number }> = [];
+  constructor(private readonly fetch_: (url: string) => PdfResult | Promise<PdfResult> = (url) => ({ ok: false, host: new URL(url).hostname, why: 'not-pdf' })) {}
+  async fetch(url: string, signal: AbortSignal, budgetMs?: number): Promise<PdfResult> {
+    if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
+    this.calls.push({ url, budgetMs });
+    return this.fetch_(url);
   }
 }

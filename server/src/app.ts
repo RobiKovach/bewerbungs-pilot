@@ -24,6 +24,7 @@ import { registerMailRoutes } from './mail/routes.js';
 import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
 import type { PageReader } from './vacancies/sources/page-reader.js';
+import type { PdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
 import type { VacancyStore } from './vacancies/store.js';
@@ -50,6 +51,8 @@ export interface AppDeps {
   vacancySource: VacancySource;
   /** Opens pasted vacancy links that are not Arbeitsagentur (spec, section 6a). */
   pageReader: PageReader;
+  /** Downloads PDFs behind pasted links (link field and the note, spec 0.9.1 A). */
+  pdfFetcher: PdfFetcher;
   searchJob: SearchJob;
   applicationStore: ApplicationStore;
   applicationJob: ApplicationJob;
@@ -256,7 +259,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerVacancyRoutes(app, {
-    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
+    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, pdfFetcher: deps.pdfFetcher, queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
     profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
   });
 

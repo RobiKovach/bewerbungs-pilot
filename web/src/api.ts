@@ -1,6 +1,6 @@
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
-  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
+  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
@@ -145,7 +145,7 @@ export const api = {
     request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/status`, { status }, signal),
   scoreVacancy: (id: string, signal?: AbortSignal) => request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/score`, {}, signal),
   editVacancy: (id: string, edit: ManualEdit) => request<VacancyView>('PATCH', `/api/vacancies/${encodeURIComponent(id)}`, edit),
-  addManualVacancy: (input: ManualInput, signal?: AbortSignal) => request<VacancyView>('POST', '/api/vacancies/manual', input, signal),
+  addManualVacancy: (input: ManualInput, signal?: AbortSignal) => request<ManualAddView>('POST', '/api/vacancies/manual', input, signal),
   startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
   stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),

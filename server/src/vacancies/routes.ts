@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import type { Language, ManualEdit, ManualInput, Profile, Vacancy, VacancyStatus, VacancyView } from '@bp/shared';
+import type { Language, ManualEdit, ManualInput, ManualNotice, Profile, Vacancy, VacancyStatus, VacancyView } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
 import type { LlmQueue } from '../llm/queue.js';
@@ -10,18 +10,23 @@ import { findDuplicate } from './dedup.js';
 import { VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
 import { jobdetailRefnr } from './sources/arbeitsagentur.js';
+import { isPdfPath, MAX_STORED_TEXT, noteUrls, readLinkPdf, readNotePdfs, withPdfBlocks } from './pdf-links.js';
 import type { PageReader } from './sources/page-reader.js';
+import type { PdfFetcher } from './sources/pdf-fetch.js';
 import type { SourceDetails, VacancySource } from './sources/types.js';
 import type { VacancyStore } from './store.js';
 import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, type ManualOutput } from './tasks/extract-manual.js';
 import { NOTE_LABEL, scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
-  store: VacancyStore; source: VacancySource; pageReader: PageReader; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
+  store: VacancyStore; source: VacancySource; pageReader: PageReader; pdfFetcher: PdfFetcher; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
   profile: () => Profile; language: () => Language;
 }
 
 const L = VACANCY_LIMITS;
+/** One download budget for the note's PDF links, and the most a whole "add by link" may wait for links (spec 0.9.1, A3). */
+const PDF_BUDGET_MS = 25_000;
+const MANUAL_ADD_BUDGET_MS = 60_000;
 const HTTP_URL = '^(https?://.+)?$';
 const idParams = { type: 'object', required: ['id'], properties: { id: { type: 'string', pattern: '^[A-Za-z0-9_-]{1,64}$' } } };
 const statusBody = { type: 'object', additionalProperties: false, required: ['status'], properties: { status: { enum: ['new', 'favorite', 'hidden'] } } };
@@ -192,14 +197,21 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     let offerText = text;
     let note = '';
     let stored = rawText;
+    let notices: ManualNotice[] = [];
     if (text.length < MANUAL_TEXT_MIN && url) {
       // No AI helper chosen: say so now, not after reading the page for up to 25 s.
       d.queue.current();
-      offerText = await d.pageReader.read(url, signal);
-      // The browser reader refuses (and logs) a too short page itself; this only guards other readers.
-      if (offerText.length < MANUAL_TEXT_MIN) throw new AppError('BAD_REQUEST', `page text has ${offerText.length} characters`, 'pageUnreadable');
+      const started = Date.now();
+      offerText = await readLink(url, signal);
       note = text;
-      stored = note ? `${NOTE_LABEL} ${note}\n\n${offerText}` : offerText;
+      // PDF links in the note (spec 0.9.1, A2) share one budget, so adding a card never waits much over a minute.
+      const urls = note ? noteUrls(note, url) : [];
+      const budget = Math.min(PDF_BUDGET_MS, MANUAL_ADD_BUDGET_MS - (Date.now() - started));
+      const pdfs = urls.length ? await readNotePdfs(d.pdfFetcher, urls, signal, budget) : { blocks: [], notices: [] };
+      notices = pdfs.notices;
+      const combined = withPdfBlocks(offerText, pdfs.blocks);
+      offerText = combined.forAi;
+      stored = note ? `${NOTE_LABEL} ${note}\n\n${combined.stored}` : combined.stored;
     } else if (text.length < MANUAL_TEXT_MIN) {
       throw new AppError('BAD_REQUEST', `pasted text has ${text.length} characters`, 'pastedTooShort', { min: MANUAL_TEXT_MIN });
     }
@@ -209,9 +221,34 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     if ((!out.isVacancy && !initiative) || !fields.title) throw new AppError('NOT_A_VACANCY', 'the AI helper found no job offer in the pasted text');
     const twin = findDuplicate(d.store.list(), { sourceId: null, title: fields.title, company: fields.company });
     if (twin) throw duplicateError(twin);
-    return view(d.store.add({
+    const added = view(d.store.add({
       ...base, ...fields, ...(initiative ? { initiative: true } : {}), source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
       score: toScore(out, new Date().toISOString(), provider, language),
     }, stored));
+    return notices.length ? { ...added, notices } : added;
   });
+
+  /**
+   * The text behind the link field: a link ending in .pdf is downloaded as a PDF; any other link is opened in the
+   * browser, and only if that page cannot be read is the link tried once as a PDF (servers that send a PDF without
+   * the extension). A PDF that is a scan → `pdfNoText`; otherwise the page reader's own error.
+   */
+  async function readLink(url: string, signal: AbortSignal): Promise<string> {
+    if (isPdfPath(url)) {
+      const text = await readLinkPdf(d.pdfFetcher, url, signal);
+      if (text === null) throw new AppError('BAD_REQUEST', 'pdf link not readable', 'pageUnreadable');
+      return text.slice(0, MAX_STORED_TEXT);
+    }
+    try {
+      const page = await d.pageReader.read(url, signal);
+      // The browser reader refuses (and logs) a too short page itself; this only guards other readers.
+      if (page.length < MANUAL_TEXT_MIN) throw new AppError('BAD_REQUEST', `page text has ${page.length} characters`, 'pageUnreadable');
+      return page;
+    } catch (err) {
+      if (!(err instanceof AppError && err.reason === 'pageUnreadable')) throw err;
+      const text = await readLinkPdf(d.pdfFetcher, url, signal);
+      if (text === null) throw err;
+      return text.slice(0, MAX_STORED_TEXT);
+    }
+  }
 }

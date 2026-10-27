@@ -80,5 +80,9 @@ export interface VacancyView { vacancy: Vacancy }
 export interface VacancyTextView { text: string }
 /** POST /api/vacancies/manual. At least one of them. */
 export interface ManualInput { text?: string; url?: string }
+/** A PDF link in the person's note could not be read / is a scan — the vacancy was added without it (0.9.1). */
+export type ManualNotice = 'notePdfUnreadable' | 'notePdfNoText';
+/** Answer of POST /api/vacancies/manual: the card, plus notices about the note's PDF links (omitted when none). */
+export interface ManualAddView extends VacancyView { notices?: ManualNotice[] }
 /** PATCH /api/vacancies/:id — only for source "manual". */
 export interface ManualEdit { title: string; company: string; locations: string[]; url: string; contact: VacancyContact | null }

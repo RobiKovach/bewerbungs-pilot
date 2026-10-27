@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Vacancy } from '@bp/shared';
 import { AppError } from '../src/errors.js';
 import { H, makeApp } from './helpers/app.js';
-import { details, fakeSource, FakePageReader, hit, scoringClaude, vacancy } from './helpers/vacancies.js';
+import { details, fakeSource, FakePageReader, FakePdfFetcher, hit, scoringClaude, vacancy } from './helpers/vacancies.js';
 
 const TEXT = 'Frontend Developer (m/w/d) bei der Muster GmbH in Dresden. Wir bieten Homeoffice. Ansprechpartnerin: Frau Erika Beispiel, bewerbung@muster.example. ' + 'Aufgaben und Profil. '.repeat(12);
 const MANUAL = {
@@ -279,5 +279,99 @@ describe('0.9.0: note with an Arbeitsagentur link; initiative in a long pasted t
     expect(res.json().vacancy).toMatchObject({ title: 'Initiativbewerbung – Softwareentwickler', initiative: true });
     expect(ctx.provider.calls[0].prompt).toContain('in their note or anywhere in');
     expect(ctx.provider.calls[0].prompt).not.toContain('UNTRUSTED_PERSON_NOTE');
+  });
+});
+
+describe('0.9.1: PDF links in the link field and in the note', () => {
+  const PAGE = 'https://www.itora.example/karriere';
+  const PDF = 'https://www.itora.example/files/Initiativbewerbung.pdf';
+  const PDF_TEXT = 'Initiativbewerbung bei ITORA. Wir suchen Softwareentwickler (m/w/d) für unsere Projekte in Dresden. ' + 'Ihre Aufgaben und Ihr Profil. '.repeat(8);
+  const pdfOk = (url: string) => ({ ok: true as const, host: new URL(url).hostname, text: PDF_TEXT });
+
+  it('ITORA: page + note with a PDF link → the PDF block is stored after the page and the AI reads it', async () => {
+    const fetcher = new FakePdfFetcher((url) => (url === PDF ? pdfOk(url) : { ok: false, host: 'x', why: 'not-pdf' }));
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: new FakePageReader(() => TEXT), pdfFetcher: fetcher });
+    const note = `Initiativbewerbung, siehe ${PDF}.`;
+    const res = await paste(ctx, { url: PAGE, text: note });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().notices).toBeUndefined();
+    expect(fetcher.calls.map((c) => c.url)).toEqual([PDF]);
+    expect(fetcher.calls[0].budgetMs).toBeLessThanOrEqual(25_000);
+    const v = res.json().vacancy as Vacancy;
+    expect(ctx.vacancyStore.readText(v.id)).toBe(`Notiz: ${note}\n\n${TEXT}\n\nPDF (www.itora.example):\n${PDF_TEXT.trim()}`);
+    expect(ctx.provider.calls[0].prompt).toContain('PDF (www.itora.example):');
+    expect(ctx.provider.calls[0].prompt).toContain('Initiativbewerbung bei ITORA');
+  });
+
+  it('a note PDF that cannot be read → the card is still added, with notePdfUnreadable', async () => {
+    const fetcher = new FakePdfFetcher(() => ({ ok: false, host: 'www.itora.example', why: 'failed' }));
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: new FakePageReader(() => TEXT), pdfFetcher: fetcher });
+    const res = await paste(ctx, { url: PAGE, text: `Bitte auch ${PDF} lesen` });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().notices).toEqual(['notePdfUnreadable']);
+    expect(ctx.vacancyStore.readText(res.json().vacancy.id)).not.toContain('PDF (');
+  });
+
+  it('a note PDF that is a scan → notePdfNoText; a note link that is no PDF is ignored without a notice', async () => {
+    const fetcher = new FakePdfFetcher((url) => (url === PDF ? { ok: false, host: 'www.itora.example', why: 'no-text' } : { ok: false, host: 'x', why: 'not-pdf' }));
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: new FakePageReader(() => TEXT), pdfFetcher: fetcher });
+    const res = await paste(ctx, { url: PAGE, text: `${PDF} und https://www.itora.example/team` });
+    expect(res.json().notices).toEqual(['notePdfNoText']);
+    expect(fetcher.calls.map((c) => c.url)).toEqual([PDF, 'https://www.itora.example/team']);
+  });
+
+  it('at most two note links, the link field itself is not read twice', async () => {
+    const fetcher = new FakePdfFetcher();
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: new FakePageReader(() => TEXT), pdfFetcher: fetcher });
+    await paste(ctx, { url: PAGE, text: `${PAGE} https://a.example/1.pdf, https://b.example/2.pdf; https://c.example/3.pdf` });
+    expect(fetcher.calls.map((c) => c.url)).toEqual(['https://a.example/1.pdf', 'https://b.example/2.pdf']);
+  });
+
+  it('link field ending in .pdf → the PDF text is the offer, the page is not opened', async () => {
+    const reader = new FakePageReader(() => 'never');
+    const fetcher = new FakePdfFetcher(pdfOk);
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader, pdfFetcher: fetcher });
+    const res = await paste(ctx, { url: PDF });
+    expect(res.statusCode).toBe(200);
+    expect(reader.calls).toEqual([]);
+    expect(ctx.vacancyStore.readText(res.json().vacancy.id)).toBe(PDF_TEXT);
+  });
+
+  it('link field PDF that is a scan → 400 pdfNoText; unreadable → pageUnreadable; no AI run', async () => {
+    const scan = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pdfFetcher: new FakePdfFetcher(() => ({ ok: false, host: 'x', why: 'no-text' })) });
+    expect((await paste(scan, { url: PDF })).json().error).toMatchObject({ code: 'BAD_REQUEST', reason: 'pdfNoText' });
+    const broken = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pdfFetcher: new FakePdfFetcher(() => ({ ok: false, host: 'x', why: 'failed' })) });
+    expect((await paste(broken, { url: PDF })).json().error).toMatchObject({ code: 'BAD_REQUEST', reason: 'pageUnreadable' });
+    expect(scan.provider.calls).toHaveLength(0);
+    expect(broken.provider.calls).toHaveLength(0);
+  });
+
+  it('a page the browser cannot read is tried once as a PDF (no .pdf in the address)', async () => {
+    const fetcher = new FakePdfFetcher(pdfOk);
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pdfFetcher: fetcher });
+    const res = await paste(ctx, { url: 'https://www.itora.example/download?id=7' });
+    expect(res.statusCode).toBe(200);
+    expect(fetcher.calls.map((c) => c.url)).toEqual(['https://www.itora.example/download?id=7']);
+    expect(ctx.vacancyStore.readText(res.json().vacancy.id)).toBe(PDF_TEXT);
+  });
+
+  it('a page the browser cannot read and that is no PDF either → the original pageUnreadable', async () => {
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pdfFetcher: new FakePdfFetcher() });
+    expect((await paste(ctx, { url: 'https://jobs.example.de/123' })).json().error).toMatchObject({ code: 'BAD_REQUEST', reason: 'pageUnreadable' });
+  });
+
+  it('Arbeitsagentur links never fetch PDFs from the note', async () => {
+    const h = hit({ sourceId: '10000-5555555555-S' });
+    const fetcher = new FakePdfFetcher(pdfOk);
+    const ctx = await makeApp({ provider: scoringClaude({ score: () => 50 }), source: fakeSource({ details: () => details(h, 'API-Text') }), pdfFetcher: fetcher });
+    await paste(ctx, { url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-5555555555-S', text: `siehe ${PDF}` });
+    expect(fetcher.calls).toEqual([]);
+  });
+
+  it('pasted text that is long enough wins: no page, no PDF', async () => {
+    const fetcher = new FakePdfFetcher(pdfOk);
+    const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pdfFetcher: fetcher });
+    expect((await paste(ctx, { url: PDF, text: TEXT })).statusCode).toBe(200);
+    expect(fetcher.calls).toEqual([]);
   });
 });
