@@ -510,6 +510,8 @@
       "followUpDone": "Przypomnienie dla tej aplikacji zostało już wysłane lub wyłączone.",
       "googleNotSignedIn": "Logowanie przez Google nie zostało jeszcze zakończone. Zaloguj się najpierw przez Google.",
       "pageUnreadable": "Nie udało się odczytać tej strony. Wklej tekst oferty w pole tekstowe.",
+
+      "pdfNoText": "Ten plik PDF nie zawiera tekstu (wygląda na skan). Wklej tekst oferty w pole tekstowe.",
       "restoreRunning": "Właśnie przywracana jest kopia zapasowa. Poczekaj, aż się zakończy, i spróbuj ponownie.",
       "restoreBusySearch": "Trwa wyszukiwanie ofert pracy. Poczekaj, aż się zakończy, potem przywróć kopię.",
       "restoreBusyPackage": "Trwa przygotowanie pakietu aplikacji. Poczekaj, aż się zakończy, potem przywróć kopię.",
@@ -624,7 +626,13 @@
       "add": "Dodaj",
       "working": "{{ai}} czyta ofertę…",
       "duplicate": "Ta oferta jest już na Waszej liście.",
-      "showIt": "Pokaż"
+      "showIt": "Pokaż",
+
+      "pdfHint": "Możesz dodać link do pliku PDF (np. opisu stanowiska) — BewerbungsPilot odczyta jego tekst.",
+
+      "notices": { "notePdfUnreadable": "Nie udało się odczytać pliku PDF z linku w notatce — oferta została dodana bez jego tekstu. W razie potrzeby wklej tekst PDF samodzielnie.", "notePdfNoText": "Plik PDF z linku w notatce nie zawiera tekstu (wygląda na skan) — oferta została dodana bez niego. W razie potrzeby wklej tekst samodzielnie." },
+
+      "closeNotice": "Zamknij"
     },
     "edit": {
       "open": "Edytuj",

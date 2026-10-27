@@ -9,10 +9,12 @@ $Launcher = Join-Path $AppDir 'installer\launch.vbs'
 $Messages = Get-Content -Raw -Encoding UTF8 (Join-Path $PSScriptRoot 'messages.json') | ConvertFrom-Json
 $Lang = (Get-Culture).TwoLetterISOLanguageName
 
-function Say([string]$Key) {
-  Write-Host $Messages.en.$Key
+# Arguments fill {0}, {1}, … in the message (e.g. the real backup folder); without them the text is printed as is.
+function Say([string]$Key, [object[]]$Arguments = @()) {
+  $fill = { param($text) if ($Arguments.Count -gt 0) { $text -f $Arguments } else { $text } }
+  Write-Host (& $fill $Messages.en.$Key)
   if ($Lang -ne 'en' -and ($Messages.PSObject.Properties.Name -contains $Lang)) {
-    Write-Host $Messages.$Lang.$Key -ForegroundColor Cyan
+    Write-Host (& $fill $Messages.$Lang.$Key) -ForegroundColor Cyan
   }
 }
 function Ask([string]$Key) {
@@ -294,7 +296,7 @@ if ($MyInvocation.InvocationName -ne '.') {
   # are kept; if the backup fails we ask instead of silently risking the data.
   if (Test-Path -LiteralPath $DataDir) {
     $BackupDir = Get-BpBackupDir -DataDir $DataDir -Documents ([Environment]::GetFolderPath('MyDocuments'))
-    Say 'backingUp'
+    Say 'backingUp' @($BackupDir)
     $backup = $null
     try {
       $backup = New-BpBackup -DataDir $DataDir -BackupDir $BackupDir -AppVersion (Get-InstalledVersion $AppDir)

@@ -510,6 +510,8 @@
       "followUpDone": "Für diese Bewerbung wurde bereits eine Erinnerung gesendet oder ausgeschaltet.",
       "googleNotSignedIn": "Die Anmeldung bei Google ist noch nicht abgeschlossen. Bitte melden Sie sich zuerst bei Google an.",
       "pageUnreadable": "Diese Seite konnte nicht gelesen werden. Fügen Sie den Text des Angebots in das Textfeld ein.",
+
+      "pdfNoText": "Diese PDF enthält keinen Text (wohl ein Scan). Fügen Sie den Text des Angebots in das Textfeld ein.",
       "restoreRunning": "Gerade wird eine Sicherung wiederhergestellt. Bitte warten Sie, bis sie fertig ist, und versuchen Sie es dann erneut.",
       "restoreBusySearch": "Gerade läuft eine Stellensuche. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
       "restoreBusyPackage": "Gerade wird eine Bewerbungsmappe erstellt. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
@@ -624,7 +626,13 @@
       "add": "Hinzufügen",
       "working": "{{ai}} liest das Angebot…",
       "duplicate": "Dieses Angebot steht schon in Ihrer Liste.",
-      "showIt": "Anzeigen"
+      "showIt": "Anzeigen",
+
+      "pdfHint": "Sie können einen Link zu einer PDF hinzufügen (z. B. zur Stellenbeschreibung) — BewerbungsPilot liest ihren Text.",
+
+      "notices": { "notePdfUnreadable": "Die PDF aus dem Link in Ihrer Notiz konnte nicht gelesen werden — das Angebot wurde ohne ihren Text hinzugefügt. Fügen Sie den PDF-Text bei Bedarf selbst ein.", "notePdfNoText": "Die PDF aus dem Link in Ihrer Notiz enthält keinen Text (wohl ein Scan) — das Angebot wurde ohne sie hinzugefügt. Fügen Sie den Text bei Bedarf selbst ein." },
+
+      "closeNotice": "Schließen"
     },
     "edit": {
       "open": "Bearbeiten",

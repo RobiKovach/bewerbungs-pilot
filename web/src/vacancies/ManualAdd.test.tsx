@@ -168,4 +168,38 @@ describe('0.9.0: note and initiative application', () => {
     const other = screen.getByRole('heading', { name: 'Webentwickler (m/w/d)' }).closest('article') as HTMLElement;
     expect(within(other).queryByText('initiative application')).toBeNull();
   });
+  it('0.9.1: a PDF from the note that could not be read → yellow notice after adding, closable; next add clears it', async () => {
+    const created = vac({ id: 'm2', source: 'manual', sourceId: null, addedManually: true, title: 'Initiativbewerbung ITORA', company: 'ITORA GmbH', url: 'https://itora.example/karriere' });
+    const { user } = setup([], { 'POST /api/vacancies/manual': () => ({ body: { vacancy: created, notices: ['notePdfUnreadable', 'notePdfNoText'] } }) });
+    const panel = await open(user);
+    await user.type(within(panel).getByLabelText('Link (optional)'), 'https://itora.example/karriere');
+    expect(within(panel).getByText(/You can add a link to a PDF/)).toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Add' }));
+    const notice = (await screen.findByText(/Could not read the PDF linked in your note/)).closest('.notice') as HTMLElement;
+    expect(notice).toHaveClass('notice-warn');
+    expect(within(notice).getByText(/has no text \(it looks like a scan\)/)).toBeInTheDocument();
+    await user.click(within(notice).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByText(/Could not read the PDF linked in your note/)).toBeNull();
+  });
+
+  it('0.9.1: no notice when everything was read', async () => {
+    const created = vac({ id: 'm3', source: 'manual', sourceId: null, addedManually: true, title: 'Alles gelesen', company: 'Muster GmbH', url: '' });
+    const { user } = setup([], { 'POST /api/vacancies/manual': () => ({ body: { vacancy: created } }) });
+    const panel = await open(user);
+    await user.click(within(panel).getByLabelText('Text of the offer'));
+    await user.paste(TEXT);
+    await user.click(within(panel).getByRole('button', { name: 'Add' }));
+    await screen.findByRole('heading', { name: 'Alles gelesen' });
+    expect(document.querySelector('.manual-notices')).toBeNull();
+  });
+
+  it('0.9.1: a PDF link without text (scan) → asks to paste the text, link kept', async () => {
+    const { user } = setup([], { 'POST /api/vacancies/manual': () => ({ status: 400, body: { error: { code: 'BAD_REQUEST', detailsForLog: 'x', reason: 'pdfNoText' } } }) });
+    const panel = await open(user);
+    const link = within(panel).getByLabelText('Link (optional)');
+    await user.type(link, 'https://jobs.example.de/stelle.pdf');
+    await user.click(within(panel).getByRole('button', { name: 'Add' }));
+    expect(await within(panel).findByRole('alert')).toHaveTextContent('This PDF has no text (it looks like a scan). Paste the text of the offer into the text field.');
+    expect(link).toHaveValue('https://jobs.example.de/stelle.pdf');
+  });
 });

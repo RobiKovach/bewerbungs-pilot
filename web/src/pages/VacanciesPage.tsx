@@ -13,12 +13,14 @@ import { useSearchStatus } from '../vacancies/useSearchStatus';
 import { useVacancies, VacanciesProvider } from '../vacancies/VacanciesContext';
 import { VacancyList } from '../vacancies/VacancyList';
 import { wishesComplete } from '../vacancies/wishes';
-import type { PackageReadiness, Vacancy, VacancyStatus } from '../types';
+import type { ManualNotice, PackageReadiness, Vacancy, VacancyStatus } from '../types';
 
 function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: number }) {
   const { t } = useTranslation();
   const { vacancies, wishes, reload } = useVacancies();
   const [adding, setAdding] = useState(false);
+  // What the last hand-added offer could not read (a PDF from the note) — shown until closed or the next add (0.9.1).
+  const [addNotices, setAddNotices] = useState<ManualNotice[]>([]);
   const [tab, setTab] = useState<Tab>('new');
   const [focusId, setFocusId] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; checkHint: boolean } | null>(null);
@@ -56,14 +58,20 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
           <a className="btn" href="#/profile">{t('vacancies.fillWishes')}</a>
         </div>
       ) : null}
-      <SearchStrip canSearch={complete} searching={searching} onSearch={() => void status.start()} onAdd={() => setAdding(true)} />
+      <SearchStrip canSearch={complete} searching={searching} onSearch={() => void status.start()} onAdd={() => { setAddNotices([]); setAdding(true); }} />
       <SearchProgress status={status} />
       {adding ? (
         <ManualAdd
           onClose={() => setAdding(false)}
-          onAdded={(v: Vacancy) => { setAdding(false); showCard(v); if (v.source === 'manual') setEditing({ id: v.id, checkHint: true }); }}
+          onAdded={(v: Vacancy, notices: ManualNotice[]) => { setAdding(false); setAddNotices(notices); showCard(v); if (v.source === 'manual') setEditing({ id: v.id, checkHint: true }); }}
           onShow={(v) => { setAdding(false); showCard(v); }}
         />
+      ) : null}
+      {addNotices.length > 0 ? (
+        <div className="card notice notice-warn manual-notices" role="status">
+          {addNotices.map((n) => <p key={n}>{t(`vacancies.manual.notices.${n}`)}</p>)}
+          <div className="btn-row"><button type="button" className="btn small ghost" onClick={() => setAddNotices([])}>{t('vacancies.manual.closeNotice')}</button></div>
+        </div>
       ) : null}
       {readiness && !readiness.ready && vacancies.some((v) => tabOf(v, submitted) === 'favorite' && !packages.get(v.id)?.editable) ? <div className="card readiness"><MissingList readiness={readiness} id={READINESS_NOTE_ID} /></div> : null}
       {vacancies.length === 0 ? <p className="muted">{t('vacancies.empty')}</p> : (

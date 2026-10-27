@@ -5,7 +5,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useCancellable } from '../profile/useCancellable';
 import { useReportUnsaved } from '../profile/unsaved';
-import type { Vacancy, VacancyStatus } from '../types';
+import type { ManualNotice, Vacancy, VacancyStatus } from '../types';
 import { useVacancies } from './VacanciesContext';
 
 // Character class kept identical to the server's jobdetailRefnr (server/src/vacancies/sources/arbeitsagentur.ts) —
@@ -15,7 +15,7 @@ const WEB_LINK = /^https?:\/\/\S+$/;
 const MIN = 200;
 const MAX = 30_000;
 
-export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; onAdded: (v: Vacancy) => void; onShow: (v: { id: string; status: VacancyStatus }) => void }) {
+export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; onAdded: (v: Vacancy, notices: ManualNotice[]) => void; onShow: (v: { id: string; status: VacancyStatus }) => void }) {
   const { t } = useTranslation();
   const { vacancies, put } = useVacancies();
   const [text, setText] = useState('');
@@ -32,7 +32,7 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
     const res = await call.run((signal) => api.addManualVacancy(input, signal));
     if (!res) return;
     put(res.vacancy);
-    onAdded(res.vacancy);
+    onAdded(res.vacancy, res.notices ?? []);
   };
 
   const error = call.state.kind === 'failed' ? call.state.error : null;
@@ -40,6 +40,8 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
   const duplicate = duplicateId ? vacancies.find((v) => v.id === duplicateId) : undefined;
   // The page behind a link could not be read (or there is no browser to read it): the way out is pasting the text.
   const pageUnreadable = error instanceof ApiError && (error.reason === 'pageUnreadable' || error.code === 'BROWSER_MISSING');
+  // A PDF link without text (a scan): same way out, its own sentence (0.9.1).
+  const pdfNoText = error instanceof ApiError && error.reason === 'pdfNoText';
 
   return (
     <section className="card manual-add" aria-labelledby="manual-add-title">
@@ -55,6 +57,7 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
         <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} disabled={call.state.kind === 'running'} />
       </label>
       <p className="muted">{t('vacancies.manual.linkHint')}</p>
+      <p className="muted">{t('vacancies.manual.pdfHint')}</p>
       {webLink && trimmed !== '' && trimmed.length < MIN ? <p className="muted">{t('vacancies.manual.noteHint')}</p> : null}
       {call.state.kind === 'running' ? <ClaudeWorking textKey="vacancies.manual.working" onCancel={call.cancel} /> : (
         <div className="btn-row">
@@ -67,6 +70,8 @@ export function ManualAdd({ onClose, onAdded, onShow }: { onClose: () => void; o
           <p>{t('vacancies.manual.duplicate')}</p>
           {duplicate ? <button type="button" className="btn small" onClick={() => onShow(duplicate)}>{t('vacancies.manual.showIt')}</button> : null}
         </div>
+      ) : pdfNoText ? (
+        <div className="notice" role="alert"><p>{t('errors.reasons.pdfNoText')}</p></div>
       ) : pageUnreadable ? (
         <div className="notice" role="alert"><p>{t('errors.reasons.pageUnreadable')}</p></div>
       ) : error ? <ErrorBanner error={error} /> : null}

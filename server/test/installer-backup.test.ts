@@ -132,4 +132,17 @@ describe.skipIf(!windows)('installer backup (PowerShell)', () => {
     const missing = path.join(tempRoot(), 'nothing here');
     expect(ps(`Get-InstalledVersion ${psString(app)}; Get-InstalledVersion ${psString(missing)}`).trim().split(/\r?\n/)).toEqual(['0.8.5', '0.0.0']);
   }, 60_000);
+
+  it('0.9.1: the backup message names the real backup folder, in English and the person\'s language', () => {
+    const dir = 'C:\\Users\\Ольга Коваль\\BewerbungsPilot\\Backups';
+    const out = ps(`$Lang = 'uk'; Say 'backingUp' @(${psString(dir)})`).trim().split(/\r?\n/);
+    expect(out).toEqual([`Saving a backup of your data (${dir})…`, `Зберігаємо резервну копію ваших даних (${dir})…`]);
+  }, 60_000);
+
+  it('0.9.1: every backingUp text has the folder placeholder; Say without arguments prints a text as is', () => {
+    const raw = fs.readFileSync(path.join(path.dirname(INSTALLER), 'messages.json'), 'utf8').replace(/^\uFEFF/, '');
+    const messages = JSON.parse(raw) as Record<string, Record<string, string>>;
+    for (const [lang, m] of Object.entries(messages)) expect(m.backingUp, lang).toContain('({0})');
+    expect(ps(`$Lang = 'en'; Say 'backingUp'`).trim()).toBe('Saving a backup of your data ({0})…');
+  }, 60_000);
 });
