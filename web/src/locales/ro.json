@@ -510,7 +510,7 @@
       "followUpDone": "Pentru această candidatură a fost deja trimisă o reamintire sau aceasta a fost dezactivată.",
       "googleNotSignedIn": "Autentificarea cu Google nu este încă finalizată. Vă rugăm să vă autentificați mai întâi cu Google.",
       "pageUnreadable": "Această pagină nu a putut fi citită. Lipiți textul anunțului în câmpul de text.",
-      "pdfNoText": "Acest PDF nu conține text (pare o scanare). Lipiți textul anunțului în câmpul de text.",
+      "pdfNoText": "Acest PDF nu conține text (pare o scanare). Lipiți manual textul anunțului în câmpul de text.",
       "restoreRunning": "Chiar acum se restaurează o copie de rezervă. Vă rugăm să așteptați până se termină, apoi încercați din nou.",
       "restoreBusySearch": "O căutare de locuri de muncă este în curs. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
       "restoreBusyPackage": "Se pregătește un pachet de candidatură. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
@@ -627,8 +627,11 @@
       "duplicate": "Această ofertă se află deja în lista dumneavoastră.",
       "showIt": "Afișați",
       "pdfHint": "Puteți adăuga un link către un PDF (de exemplu, descrierea postului) — BewerbungsPilot îi va citi textul.",
-      "notices": { "notePdfUnreadable": "PDF-ul din linkul din notă nu a putut fi citit — anunțul a fost adăugat fără textul lui. Dacă este nevoie, lipiți dumneavoastră textul PDF-ului.", "notePdfNoText": "PDF-ul din linkul din notă nu conține text (pare o scanare) — anunțul a fost adăugat fără el. Dacă este nevoie, lipiți dumneavoastră textul." },
-      "closeNotice": "Închide"
+      "notices": {
+        "notePdfUnreadable": "PDF-ul din linkul din notă nu a putut fi citit — anunțul a fost adăugat fără el, așa că evaluarea și scrisoarea se bazează doar pe pagină și pe nota dumneavoastră. Dacă PDF-ul contează, adăugați manual ideile principale în scrisoare când editați pachetul.",
+        "notePdfNoText": "PDF-ul din linkul din notă nu conține text (pare o scanare) — anunțul a fost adăugat fără el, așa că evaluarea și scrisoarea se bazează doar pe pagină și pe nota dumneavoastră. Dacă PDF-ul contează, adăugați manual ideile principale în scrisoare când editați pachetul."
+      },
+      "closeNotice": "Închideți"
     },
     "edit": {
       "open": "Editați",

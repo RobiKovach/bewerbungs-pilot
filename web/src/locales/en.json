@@ -510,7 +510,6 @@
       "followUpDone": "A reminder for this application was already sent or switched off.",
       "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first.",
       "pageUnreadable": "Could not read this page. Paste the text of the offer into the text field.",
-
       "pdfNoText": "This PDF has no text (it looks like a scan). Paste the text of the offer into the text field.",
       "restoreRunning": "A backup is being restored right now. Please wait until it is finished, then try again.",
       "restoreBusySearch": "A job search is running. Please wait until it is finished, then restore the backup.",
@@ -627,11 +626,11 @@
       "working": "{{ai}} is reading the offer…",
       "duplicate": "This offer is already in your list.",
       "showIt": "Show it",
-
       "pdfHint": "You can add a link to a PDF (for example the job description) — BewerbungsPilot will read its text.",
-
-      "notices": { "notePdfUnreadable": "Could not read the PDF linked in your note — the offer was added without its text. If needed, paste the PDF text yourself.", "notePdfNoText": "The PDF linked in your note has no text (it looks like a scan) — the offer was added without it. If needed, paste the text yourself." },
-
+      "notices": {
+        "notePdfUnreadable": "Could not read the PDF linked in your note — the offer was added without it, so its score and letter are based on the page and your note only. If the PDF matters, add its key points to the letter yourself when you edit the package.",
+        "notePdfNoText": "The PDF linked in your note has no text (it looks like a scan) — the offer was added without it, so its score and letter are based on the page and your note only. If the PDF matters, add its key points to the letter yourself when you edit the package."
+      },
       "closeNotice": "Close"
     },
     "edit": {
