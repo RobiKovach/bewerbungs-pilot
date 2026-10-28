@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "check:pdf": "tsx scripts/check-pdf.ts",
+    "check:aa-contact": "tsx scripts/check-aa-contact.ts",
     "dev": "tsx watch src/index.ts --no-open"
   },
   "devDependencies": {

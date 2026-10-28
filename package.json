@@ -19,6 +19,7 @@
     "release": "node scripts/release.mjs",
     "check:arbeitsagentur": "node scripts/check-arbeitsagentur.mjs",
     "check:pdf": "npm run check:pdf -w server",
+    "check:aa-contact": "npm run check:aa-contact -w server --",
     "check:codex": "node scripts/check-codex.mjs",
     "check:version-json": "node scripts/check-version-json.mjs docs/version.json",
     "e2e": "playwright test -c e2e/playwright.config.ts"
