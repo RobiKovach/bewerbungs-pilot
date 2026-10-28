@@ -1,4 +1,4 @@
-// Manual live check for the AA contact window (0.9.1 part B, gate B1). Run: npm run check:aa-contact -- <Referenznummer> [--block-images] [--timeout-s N]
+// Manual live check for the AA contact window (0.9.1 part B, gate B1). Run: npm run check:aa-contact -- <Referenznummer> [--block-images] [--assist] [--timeout-s N]
 // Opens the job page in a VISIBLE Edge/Chrome; the person solves the captcha. Prints only facts (never contact values);
 // the page text goes to a file under the system temp folder (holds real contact data — stays outside the repo).
 import fs from 'node:fs';
@@ -20,34 +20,87 @@ const POLL_MS = 2000;
 const STABLE_POLLS = 2;
 
 function usage(msg: string): never {
-  console.error(`${msg}\nUsage: npm run check:aa-contact -- <Referenznummer> [--block-images] [--timeout-s N]`);
+  console.error(`${msg}\nUsage: npm run check:aa-contact -- <Referenznummer> [--block-images] [--assist] [--timeout-s N]`);
   process.exit(1);
 }
 
 const args = process.argv.slice(2);
 const blockImages = args.includes('--block-images');
+const assistOn = args.includes('--assist');
 const tIdx = args.indexOf('--timeout-s');
 const timeoutS = tIdx >= 0 ? Number(args[tIdx + 1]) : 300;
 if (!Number.isInteger(timeoutS) || timeoutS < 1 || timeoutS > 3600) usage('--timeout-s must be a whole number of seconds (1-3600).');
-const rest = args.filter((a, i) => a !== '--block-images' && a !== '--timeout-s' && !(tIdx >= 0 && i === tIdx + 1));
+const rest = args.filter((a, i) => a !== '--block-images' && a !== '--assist' && a !== '--timeout-s' && !(tIdx >= 0 && i === tIdx + 1));
 if (rest.length !== 1 || !REFNR.test(rest[0])) usage('Expected exactly one valid Referenznummer.');
 const refnr = rest[0];
 const url = jobdetailUrl(refnr);
 
-interface FrameRead { url: string; text: string; hrefs: string[] }
-/** What could be a contact: emails, mailto:/tel: links, phone-like runs (7-15 digits). Values stay in memory only. */
-interface Signals { emails: Set<string>; hrefs: Set<string>; phones: Set<string> }
+/** A link that leaves the AA site (e.g. "Über Internetseite des Arbeitgebers"), with the nearest heading before it. */
+interface OutLink { text: string; href: string; section: string }
+interface FrameRead { url: string; text: string; hrefs: string[]; links: OutLink[] }
+/** What could be a contact: emails, mailto:/tel: links, phone-like runs (7-15 digits), links off the AA site. Values stay in memory only. */
+interface Signals { emails: Set<string>; hrefs: Set<string>; phones: Set<string>; links: Set<string> }
+
+const isAaHost = (host: string) => host === 'arbeitsagentur.de' || host.endsWith('.arbeitsagentur.de');
+const hostOf = (href: string) => { try { return new URL(href).hostname; } catch { return ''; } };
 
 async function readFrame(f: Frame): Promise<FrameRead | null> {
   try {
-    const r = await f.evaluate(() => ({
-      text: document.body ? document.body.innerText : '',
-      hrefs: [...document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')].map((a) => a.getAttribute('href') ?? ''),
-    }));
-    return { url: f.url(), ...r };
+    const r = await f.evaluate(() => {
+      // Headings and links in document order: each link gets the text of the last heading seen before it.
+      const links: { text: string; href: string; section: string }[] = [];
+      let section = '';
+      for (const el of document.querySelectorAll('h1, h2, h3, h4, a[href]')) {
+        if (el.tagName !== 'A') { section = (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 60); continue; }
+        const href = (el as HTMLAnchorElement).href;
+        if (/^https?:/i.test(href)) links.push({ text: ((el as HTMLElement).innerText ?? '').replace(/\s+/g, ' ').trim().slice(0, 80), href, section });
+      }
+      return {
+        text: document.body ? document.body.innerText : '',
+        hrefs: [...document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]')].map((a) => a.getAttribute('href') ?? ''),
+        links,
+      };
+    });
+    return { url: f.url(), ...r, links: r.links.filter((l) => { const h = hostOf(l.href); return h !== '' && !isAaHost(h); }) };
   } catch {
     return null;
   }
+}
+
+/**
+ * --assist: dismisses the cookie banner (reject / only necessary preferred; "akzeptieren" only when there is no
+ * other choice) and scrolls the application block into view. Never touches anything inside a captcha element or frame.
+ */
+async function assist(f: Frame): Promise<{ clicked: string | null; scrolled: boolean }> {
+  const clicked = await f.evaluate(() => {
+    const BUTTON = /^(Alle )?(akzeptieren|ablehnen|Nur notwendige|Auswahl bestätigen|Nur erforderliche)/i;
+    const REJECT = /ablehnen|Nur notwendige|Nur erforderliche|Auswahl bestätigen/i;
+    // The AA cookie banner is a web component: look into open shadow roots too.
+    const found: HTMLElement[] = [];
+    const roots: (Document | ShadowRoot)[] = [document];
+    while (roots.length) {
+      const root = roots.pop()!;
+      for (const el of root.querySelectorAll('*')) {
+        if (el.shadowRoot) roots.push(el.shadowRoot);
+        if (!el.matches('button, [role="button"], a')) continue;
+        if (el.closest('[id*="captcha" i], [class*="captcha" i]')) continue;
+        if (BUTTON.test(((el as HTMLElement).innerText ?? '').trim())) found.push(el as HTMLElement);
+      }
+    }
+    const target = found.find((b) => REJECT.test(b.innerText)) ?? found.find((b) => /akzeptieren/i.test(b.innerText)) ?? null;
+    if (!target) return null;
+    target.click();
+    return target.innerText.trim().slice(0, 60);
+  }).catch(() => null);
+  await new Promise((r) => setTimeout(r, 1000));
+  const scrolled = await f.evaluate(() => {
+    const heading = [...document.querySelectorAll('h1, h2, h3, h4, h5, h6')].find((h) => /Informationen zur Bewerbung/i.test(h.textContent ?? ''));
+    const target = heading ?? document.querySelector('[id*="captcha" i], [class*="captcha" i]');
+    if (!target) return false;
+    target.scrollIntoView({ block: 'center' });
+    return true;
+  }).catch(() => false);
+  return { clicked, scrolled };
 }
 
 /** The Referenznummer is removed first: it sits right after "Arbeitgeber" and looks like a long number. */
@@ -61,6 +114,7 @@ function signalsOf(frames: FrameRead[]): Signals {
   return {
     emails: new Set([...text.matchAll(EMAIL)].map((m) => m[0].toLowerCase())),
     hrefs: new Set(frames.flatMap((f) => f.hrefs)),
+    links: new Set(frames.flatMap((f) => f.links.map((l) => l.href))),
     phones,
   };
 }
@@ -125,6 +179,10 @@ async function main(): Promise<void> {
     // The page is drawn by scripts: the baseline must see the finished chrome, not a half-rendered page.
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000 }).catch(() => undefined);
     const webdriver = await page.evaluate(() => navigator.webdriver).catch(() => 'unknown');
+    if (assistOn) {
+      const a = await assist(page.mainFrame());
+      console.log(`Assist: cookie button ${a.clicked ? `clicked "${a.clicked}"` : 'not found'}; scrolled to the application block: ${a.scrolled ? 'yes' : 'no'}`);
+    }
     console.log(`Opened ${url} (navigator.webdriver = ${String(webdriver)}). Solve the captcha in the window; waiting up to ${timeoutS} s.`);
 
     const captchaKinds = new Set<string>();
@@ -137,7 +195,7 @@ async function main(): Promise<void> {
     let outcome = 'timeout';
     let last: FrameRead[] = [];
     let markers = new Set<string>();
-    let fresh = { emails: 0, hrefs: 0, phones: 0 };
+    let fresh = { emails: 0, hrefs: 0, phones: 0, links: 0 };
     // At least one poll even when loading the page used up a short --timeout-s.
     for (;;) {
       if (windowClosed) { outcome = 'window closed'; break; }
@@ -161,10 +219,10 @@ async function main(): Promise<void> {
         // The first read (before any captcha interaction) is the page chrome: footer emails, hotlines, addresses.
         if (!baseline) {
           baseline = now;
-          console.log(`Baseline: ${now.emails.size} emails, ${now.hrefs.size} mailto/tel links, ${now.phones.size} phone-like runs (ignored from now on)`);
+          console.log(`Baseline: ${now.emails.size} emails, ${now.hrefs.size} mailto/tel links, ${now.phones.size} phone-like runs, ${now.links.size} links off the AA site (ignored from now on)`);
         } else {
-          fresh = { emails: newOnes(now.emails, baseline.emails), hrefs: newOnes(now.hrefs, baseline.hrefs), phones: newOnes(now.phones, baseline.phones) };
-          if (firstNewAt === null && fresh.emails + fresh.hrefs + fresh.phones > 0) {
+          fresh = { emails: newOnes(now.emails, baseline.emails), hrefs: newOnes(now.hrefs, baseline.hrefs), phones: newOnes(now.phones, baseline.phones), links: newOnes(now.links, baseline.links) };
+          if (firstNewAt === null && fresh.emails + fresh.hrefs + fresh.phones + fresh.links > 0) {
             firstNewAt = secs();
             console.log(`New contact-like data after ${firstNewAt} s — waiting until the page is stable`);
           }
@@ -181,7 +239,9 @@ async function main(): Promise<void> {
 
     const out = path.join(root, `aa-contact-${refnr.replace(/[^A-Za-z0-9_-]/g, '_')}.txt`);
     if (last.length) {
-      fs.writeFileSync(out, last.map((f, i) => (i === 0 ? f.text : `--- frame ${i} ---\n${f.text}`)).join('\n\n'), 'utf8');
+      const pages = last.map((f, i) => (i === 0 ? f.text : `--- frame ${i} ---\n${f.text}`)).join('\n\n');
+      const links = last.flatMap((f) => f.links).map((l) => `${l.section} | ${l.text} | ${l.href}`).join('\n');
+      fs.writeFileSync(out, `${pages}\n\n--- links ---\n${links}\n`, 'utf8');
     }
     console.log('--- result ---');
     console.log(`captcha markers: ${captchaKinds.size ? [...captchaKinds].map((k) => `"${k}"`).join(', ') : 'none'}`);
@@ -190,7 +250,13 @@ async function main(): Promise<void> {
     console.log(`navigator.webdriver: ${String(webdriver)}`);
     console.log(`outcome: ${outcome}`);
     console.log(`markers: ${[...markers].join(', ') || 'none'}`);
-    console.log(`new vs baseline: ${fresh.emails} emails, ${fresh.hrefs} mailto/tel links, ${fresh.phones} phone-like runs`);
+    console.log(`new vs baseline: ${fresh.emails} emails, ${fresh.hrefs} mailto/tel links, ${fresh.phones} phone-like runs, ${fresh.links} links off the AA site`);
+    // Links off the AA site: section, link text and the host only (the full link is only in the dump file).
+    for (const l of last.flatMap((f) => f.links)) {
+      // A link text that is itself an address would show its path: print only its host.
+      const text = /^(https?:\/\/|www\.)/i.test(l.text) ? `<link to ${hostOf(l.text.startsWith('www.') ? `http://${l.text}` : l.text) || '?'}>` : l.text || '-';
+      console.log(`  link${baseline && !baseline.links.has(l.href) ? ' (new)' : ''}: [${l.section || '-'}] "${text}" -> ${hostOf(l.href)}`);
+    }
     console.log(`frames read: ${last.length}; popups closed: ${popups}; blocked requests: ${JSON.stringify(blocked)}`);
     console.log(last.length ? `page text: ${out}` : 'page text: nothing read');
   } finally {
