@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Browser } from 'puppeteer-core';
 import {
-  AaContactWindow, COOKIE_SCRIPT, contactLaunchOptions, READ_FRAME_SCRIPT, SCROLL_SCRIPT, withoutAaService,
+  AaContactWindow, applicationBlock, COOKIE_SCRIPT, contactLaunchOptions, READ_FRAME_SCRIPT, SCROLL_SCRIPT, withoutAaService,
 } from '../src/vacancies/sources/aa-contact-window.js';
 import type { checkPublicUrl } from '../src/vacancies/sources/safe-address.js';
 
@@ -179,9 +179,35 @@ describe('AaContactWindow', () => {
     expect(log).toHaveBeenCalledWith('vacancy.contactFind', { source: 'aa', result: 'ok' });
   });
 
-  it('an offer that shows the contact without any captcha finishes once it reads the same twice', async () => {
-    const { win } = setup({ polls: [[{ text: AFTER_CONTACT }]] });
+  it('an offer that shows the contact block without any captcha finishes, but only after the no-captcha wait', async () => {
+    const { win } = setup({ polls: [[{ text: AFTER_CONTACT }]] }, { noCaptchaWaitMs: 80 });
+    const started = Date.now();
     await expect(run(win)).resolves.toMatchObject({ text: expect.stringContaining('erika.musterfrau@example.de') });
+    expect(Date.now() - started).toBeGreaterThanOrEqual(80);
+  });
+
+  it('a contact in the description + a late captcha: the window waits for the captcha and the real block', async () => {
+    const desc = 'Fragen gern an info@beispiel.example\nBewerben Sie sich: über unser Portal';
+    const plain = `${desc}\nSoftwareentwickler (m/w/d)\nInformationen zur Bewerbung`;
+    const polls: FrameData[][] = [
+      ...Array.from({ length: 5 }, () => [{ text: plain }]),
+      ...Array.from({ length: 10 }, () => [{ text: `${desc}\n${BEFORE}` }]),
+      [{ text: `${desc}\n${AFTER_CONTACT}` }],
+    ];
+    const { win } = setup({ polls }, { noCaptchaWaitMs: 300 });
+    await expect(run(win)).resolves.toMatchObject({ text: expect.stringContaining('erika.musterfrau@example.de') });
+  });
+
+  it('without a captcha, a contact only in the description never ends the window (the block must hold it)', async () => {
+    const desc = 'Fragen gern an info@beispiel.example';
+    const { win } = setup({ polls: [[{ text: `${desc}\n${AFTER_LINK_ONLY.replace('Bewerben Sie sich:', 'Bewerbung:')}` }]] }, { noCaptchaWaitMs: 10, timeoutMs: 150 });
+    await expect(run(win)).rejects.toMatchObject({ reason: 'contactTimeout' });
+  });
+
+  it('applicationBlock: from the application heading to the next section', () => {
+    const page = 'Beschreibung\nmail@beispiel.example\nInformationen zur Bewerbung\nKontaktadresse\nE-Mail: a@b.example\nWebseiten\nHomepage';
+    expect(applicationBlock(page)).toBe('\nKontaktadresse\nE-Mail: a@b.example\n');
+    expect(applicationBlock('kein Block')).toBe('');
   });
 
   it('a malformed mailto: link is skipped, not fatal', async () => {

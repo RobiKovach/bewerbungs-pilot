@@ -136,6 +136,19 @@ export function withoutAaService(text: string): string {
   return text.split('\n').filter((l) => !AA_SERVICE_PHONE.test(l) && !AA_EMAIL.test(l)).join('\n');
 }
 
+const BLOCK_START = /^(?:Informationen zur Bewerbung|Kontaktadresse)\b/m;
+const BLOCK_END = /^(?:Referenz-Nr\.|Fußbereich|Webseiten|Weitere Informationen|Ähnliche Stellen)\b/m;
+const BLOCK_MAX = 1500;
+
+/** The application section of the offer page (from its heading to the next section, ≤ 1 500 chars), or ''. */
+export function applicationBlock(text: string): string {
+  const start = BLOCK_START.exec(text);
+  if (!start) return '';
+  const rest = text.slice(start.index + start[0].length);
+  const end = BLOCK_END.exec(rest);
+  return rest.slice(0, Math.min(end ? end.index : BLOCK_MAX, BLOCK_MAX));
+}
+
 /** Closes the browser; one that does not finish closing in time is killed, so the next window is never stuck. */
 async function closeBounded(b: Browser, ms: number): Promise<void> {
   let timer: NodeJS.Timeout | undefined;
@@ -167,6 +180,7 @@ export class AaContactWindow implements ContactWindow {
   private readonly settleMs: number;
   private readonly maxChars: number;
   private readonly closeTimeoutMs: number;
+  private readonly noCaptchaWaitMs: number;
 
   constructor(private readonly opts: {
     tmpRoot: string; find?: () => string | null; check?: Check;
@@ -174,6 +188,8 @@ export class AaContactWindow implements ContactWindow {
     timeoutMs?: number; pollMs?: number; settleMs?: number; maxChars?: number;
     /** How long closing the browser may take before its process is killed (default 5 s). */
     closeTimeoutMs?: number;
+    /** An offer without any captcha is accepted only this long after loading (default 20 s; live captchas came at 8–12 s). */
+    noCaptchaWaitMs?: number;
     /** Tests: a fake browser instead of puppeteer.launch. */
     launch?: (options: ReturnType<typeof contactLaunchOptions>) => Promise<Browser>;
     warn?: (event: string, data: Record<string, unknown>) => void; log?: Log;
@@ -185,6 +201,7 @@ export class AaContactWindow implements ContactWindow {
     this.settleMs = opts.settleMs ?? 1000;
     this.maxChars = opts.maxChars ?? 60_000;
     this.closeTimeoutMs = opts.closeTimeoutMs ?? 5000;
+    this.noCaptchaWaitMs = opts.noCaptchaWaitMs ?? 20_000;
   }
 
   readContact(refnr: string, signal: AbortSignal): Promise<ContactWindowResult> {
@@ -276,6 +293,7 @@ export class AaContactWindow implements ContactWindow {
       await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
       await sleep(this.settleMs);
       await page.mainFrame().evaluate(SCROLL_SCRIPT).catch(() => false);
+      const loadedAt = Date.now();
 
       let baseline: PageRead | null = null;
       let captchaSeen = false;
@@ -298,8 +316,11 @@ export class AaContactWindow implements ContactWindow {
             const c = parsed.contact;
             const newContact = (c.email !== '' && !base.text.includes(c.email)) || (c.phone !== '' && !base.text.includes(c.phone));
             const revealed = (captchaSeen && !now.captcha) || (REVEALED.test(now.text) && !REVEALED.test(base.text));
-            // Some offers show the contact without any captcha: it is in the first read already, so never "new".
-            const shownWithoutCaptcha = !captchaSeen && REVEALED.test(now.text) && (c.email !== '' || c.phone !== '');
+            // Some offers show the contact without any captcha: it is in the first read already, so never "new". Only
+            // the application block counts (not a contact in the description), and only after a late captcha had time.
+            const blockContact = !captchaSeen && Date.now() - loadedAt >= this.noCaptchaWaitMs
+              ? parseContact(withoutAaService(applicationBlock(now.text))).contact : null;
+            const shownWithoutCaptcha = blockContact !== null && (blockContact.email !== '' || blockContact.phone !== '');
             const known = new Set(base.links.map((l) => l.href));
             const fresh = now.links.filter((l) => !known.has(l.href));
             const links = [...new Set((fresh.length ? fresh : now.links.filter((l) => APPLICATION_SECTION.test(l.section))).map((l) => l.href))].slice(0, MAX_LINKS);
