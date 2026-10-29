@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Browser } from 'puppeteer-core';
 import {
-  AaContactWindow, COOKIE_SCRIPT, contactLaunchOptions, READ_FRAME_SCRIPT, SCROLL_SCRIPT, withoutBaselineContacts,
+  AaContactWindow, COOKIE_SCRIPT, contactLaunchOptions, READ_FRAME_SCRIPT, SCROLL_SCRIPT, withoutAaService,
 } from '../src/vacancies/sources/aa-contact-window.js';
 import type { checkPublicUrl } from '../src/vacancies/sources/safe-address.js';
 
@@ -20,16 +20,16 @@ interface Scenario { polls: FrameData[][]; onPoll?: (i: number, f: FakeBrowser) 
 
 const BEFORE = [
   'Softwareentwickler (m/w/d)', 'Beispiel GmbH', 'Informationen zur Bewerbung', 'Sicherheitsabfrage',
-  'Bitte bestätigen Sie, dass Sie kein Roboter sind.', 'Service der Bundesagentur: Telefon 0800 1234567',
+  'Bitte bestätigen Sie, dass Sie kein Roboter sind.', 'Service der Bundesagentur: Telefon 0800 4 5555 00',
 ].join('\n');
 const AFTER_CONTACT = [
   'Softwareentwickler (m/w/d)', 'Beispiel GmbH', 'Informationen zur Bewerbung', 'Kontaktadresse', 'Beispiel Personal GmbH',
   'Erika Musterfrau', 'E-Mail: erika.musterfrau@example.de', 'Bewerben Sie sich:', 'Über Internetseite des Arbeitgebers',
-  'Bitte bewerben Sie sich unter Angabe unserer internen Stellennummer: JN -1234567', 'Service der Bundesagentur: Telefon 0800 1234567',
+  'Bitte bewerben Sie sich unter Angabe unserer internen Stellennummer: JN -1234567', 'Service der Bundesagentur: Telefon 0800 4 5555 00',
 ].join('\n');
 const AFTER_LINK_ONLY = [
   'Softwareentwickler (m/w/d)', 'Beispiel GmbH', 'Informationen zur Bewerbung', 'Bewerben Sie sich:',
-  'Über Internetseite des Arbeitgebers', 'Service der Bundesagentur: Telefon 0800 1234567',
+  'Über Internetseite des Arbeitgebers', 'Service der Bundesagentur: Telefon 0800 4 5555 00',
 ].join('\n');
 const HOME = { href: 'https://www.beispiel.example/', section: 'Webseiten' };
 const AA_LINK = { href: 'https://www.arbeitsagentur.de/hilfe', section: 'Hilfe' };
@@ -144,7 +144,7 @@ describe('AaContactWindow', () => {
 
   it('data already in the first read (footer hotline) never counts as a contact', async () => {
     const clock = (i: number) => `${BEFORE}\nStand: 10:0${i % 10}`;
-    const { win, log } = setup({ polls: Array.from({ length: 30 }, (_, i) => [{ text: clock(i), hrefs: ['tel:08001234567'] }]) }, { timeoutMs: 150 });
+    const { win, log } = setup({ polls: Array.from({ length: 30 }, (_, i) => [{ text: clock(i), hrefs: ['tel:0800455500'] }]) }, { timeoutMs: 150 });
     await expect(run(win)).rejects.toMatchObject({ code: 'BAD_REQUEST', reason: 'contactTimeout' });
     expect(log).toHaveBeenCalledWith('vacancy.contactFind', { source: 'aa', result: 'timeout' });
   });
@@ -159,14 +159,51 @@ describe('AaContactWindow', () => {
     const r = await run(win);
     expect(r).toEqual({ text: expect.stringContaining('Über Internetseite des Arbeitgebers'), links: [APPLY.href] });
     // The AA service number was there before the captcha: it never reaches the parser as the employer's phone.
-    expect(r).toMatchObject({ text: expect.not.stringContaining('0800 1234567') });
+    expect(r).toMatchObject({ text: expect.not.stringContaining('Service der Bundesagentur') });
     expect(log).toHaveBeenCalledWith('vacancy.contactFind', { source: 'aa', result: 'none' });
   });
 
-  it('withoutBaselineContacts drops only old lines that hold an e-mail or phone', () => {
-    const base = 'Beispiel GmbH\nTelefon 0800 1234567\ninfo@arbeitsagentur.example';
-    const now = 'Beispiel GmbH\nKontaktadresse\nE-Mail: neu@beispiel.example\nTelefon 0800 1234567\ninfo@arbeitsagentur.example';
-    expect(withoutBaselineContacts(now, base)).toBe('Beispiel GmbH\nKontaktadresse\nE-Mail: neu@beispiel.example');
+  it('withoutAaService drops only the AA service number and AA e-mail lines', () => {
+    const now = [
+      'Beispiel GmbH', 'Bewerbungen an bewerbung@beispiel.example', 'Telefon 0800 4 5555 00', 'Arbeitgeber-Service: +49 800 4555520',
+      'Fragen: service@arbeitsagentur.de', 'Tel. 0351 1234567',
+    ].join('\n');
+    expect(withoutAaService(now)).toBe('Beispiel GmbH\nBewerbungen an bewerbung@beispiel.example\nTel. 0351 1234567');
+  });
+
+  it('an employer e-mail already in the offer description is kept when the block reveals only a link', async () => {
+    const desc = 'Bewerbungen bitte an bewerbung@beispiel.example';
+    const { win, log } = setup({ polls: [[{ text: `${desc}\n${BEFORE}`, links: [HOME] }], [{ text: `${desc}\n${AFTER_LINK_ONLY}`, links: [HOME, APPLY] }]] });
+    const r = await run(win);
+    expect(r).toMatchObject({ text: expect.stringContaining('bewerbung@beispiel.example'), links: [APPLY.href] });
+    expect(log).toHaveBeenCalledWith('vacancy.contactFind', { source: 'aa', result: 'ok' });
+  });
+
+  it('an offer that shows the contact without any captcha finishes once it reads the same twice', async () => {
+    const { win } = setup({ polls: [[{ text: AFTER_CONTACT }]] });
+    await expect(run(win)).resolves.toMatchObject({ text: expect.stringContaining('erika.musterfrau@example.de') });
+  });
+
+  it('a malformed mailto: link is skipped, not fatal', async () => {
+    const { win } = setup({ polls: [[{ text: BEFORE, hrefs: ['mailto:%E0%A4%A'] }], [{ text: AFTER_CONTACT, hrefs: ['mailto:%E0%A4%A'] }]] });
+    await expect(run(win)).resolves.toMatchObject({ text: expect.stringContaining('erika.musterfrau@example.de') });
+  });
+
+  it('a browser that never finishes closing is killed, and the next window still opens', async () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-contact-test-'));
+    tmpRoots.push(tmpRoot);
+    const kill = vi.fn();
+    const launch = vi.fn(async () => {
+      const b = new FakeBrowser({ polls: [[{ text: BEFORE }], [{ text: AFTER_CONTACT }]] });
+      b.close = () => new Promise<void>(() => undefined);
+      (b as unknown as { process: () => unknown }).process = () => ({ kill });
+      return b as unknown as Browser;
+    });
+    const win = new AaContactWindow({ tmpRoot, find: () => 'C:/edge.exe', check: publicCheck, launch, pollMs: 5, settleMs: 0, timeoutMs: 2000, closeTimeoutMs: 20 });
+    await run(win);
+    await run(win);
+    expect(launch).toHaveBeenCalledTimes(2);
+    expect(kill).toHaveBeenCalledTimes(2);
   });
 
   it('link-only offer without a new link: falls back to links in the application section, at most 3', async () => {
@@ -203,14 +240,18 @@ describe('AaContactWindow', () => {
   });
 
   it('requests: private addresses are refused, pictures and fonts allowed when public', async () => {
-    const check: Check = async (u) => (u.includes('10.0.0.1') ? { ok: false, why: 'private' } : { ok: true });
+    const check: Check = async (u) => {
+      if (u.includes('dns-fails')) throw new Error('lookup failed');
+      return u.includes('10.0.0.1') ? { ok: false, why: 'private' } : { ok: true };
+    };
     const { win, browser } = setup({
       polls: [[{ text: BEFORE }], [{ text: AFTER_CONTACT }]],
-      requests: [{ url: 'http://10.0.0.1/x', type: 'xhr' }, { url: 'https://cdn.example/captcha.png', type: 'image' }, { url: 'https://cdn.example/f.woff2', type: 'font' }, { url: 'data:image/png;base64,AA', type: 'image' }],
+      requests: [{ url: 'http://10.0.0.1/x', type: 'xhr' }, { url: 'https://dns-fails.example/x', type: 'script' },{ url: 'https://cdn.example/captcha.png', type: 'image' }, { url: 'https://cdn.example/f.woff2', type: 'font' }, { url: 'data:image/png;base64,AA', type: 'image' }],
     }, { check });
     await run(win);
     expect(browser.page.handled).toEqual([
       { url: 'http://10.0.0.1/x', outcome: 'abort:blockedbyclient' },
+      { url: 'https://dns-fails.example/x', outcome: 'abort:blockedbyclient' },
       { url: 'https://cdn.example/captcha.png', outcome: 'continue' },
       { url: 'https://cdn.example/f.woff2', outcome: 'continue' },
       { url: 'data:image/png;base64,AA', outcome: 'continue' },

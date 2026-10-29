@@ -110,9 +110,11 @@ async function readFrame(f: Frame): Promise<FrameRead | null> {
 
 /** All frames as one text; mailto:/tel: links become "E-Mail:"/"Tel.:" lines so the parser sees them. */
 function combine(frames: FrameRead[]): PageRead {
-  const extra = frames.flatMap((f) => f.hrefs).map((h) => {
-    const value = decodeURIComponent(h.replace(/^(mailto|tel):/i, '').split('?')[0] ?? '').trim();
-    return /^mailto:/i.test(h) ? `E-Mail: ${value}` : `Tel.: ${value}`;
+  const extra = frames.flatMap((f) => f.hrefs).flatMap((h) => {
+    let value: string;
+    // A malformed link ("mailto:%E0") is skipped, never the whole window.
+    try { value = decodeURIComponent(h.replace(/^(mailto|tel):/i, '').split('?')[0] ?? '').trim(); } catch { return []; }
+    return [/^mailto:/i.test(h) ? `E-Mail: ${value}` : `Tel.: ${value}`];
   });
   return {
     text: [...frames.map((f) => f.text), ...extra].join('\n'),
@@ -121,18 +123,25 @@ function combine(frames: FrameRead[]): PageRead {
   };
 }
 
+/** The Arbeitsagentur's own service numbers (0800 4 5555 00 / 20 …), with or without +49 / spaces. */
+const AA_SERVICE_PHONE = /(?:\+49|0049|\b0)\s*800\s*4\s*5555\s*\d{2}\b/;
+const AA_EMAIL = /@(?:[\w-]+\.)*arbeitsagentur\.de\b/i;
+
 /**
- * The text handed on: lines that were already on the page before the captcha and carry an e-mail or phone (a footer
- * hotline, the AA service number) are left out, so the parser can never take them for the employer's contact.
+ * The text handed on and parsed: the page as it is, minus lines that hold the Arbeitsagentur's own service number or
+ * e-mail address (site-wide footer / help), so the parser never takes them for the employer's contact. Everything
+ * else stays — an employer address in the offer description is a real contact.
  */
-export function withoutBaselineContacts(text: string, baseline: string): string {
-  const before = new Set(baseline.split('\n').map((l) => l.trim()).filter(Boolean));
-  return text.split('\n').filter((l) => {
-    const t = l.trim();
-    if (!before.has(t)) return true;
-    const found = parseContact(t).found;
-    return !found.includes('email') && !found.includes('phone');
-  }).join('\n');
+export function withoutAaService(text: string): string {
+  return text.split('\n').filter((l) => !AA_SERVICE_PHONE.test(l) && !AA_EMAIL.test(l)).join('\n');
+}
+
+/** Closes the browser; one that does not finish closing in time is killed, so the next window is never stuck. */
+async function closeBounded(b: Browser, ms: number): Promise<void> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<'late'>((resolve) => { timer = setTimeout(() => resolve('late'), ms); });
+  const result = await Promise.race([b.close().then(() => 'ok' as const, () => 'failed' as const), late]).finally(() => clearTimeout(timer));
+  if (result !== 'ok') b.process()?.kill();
 }
 
 const cancelledByUser = () => new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
@@ -142,10 +151,12 @@ const unreadable = (why: string) => new AppError('BAD_REQUEST', `offer page not 
  * The "find contact" window (spec 0.9.1 B): the installed Edge/Chrome opens exactly the Arbeitsagentur offer, visibly,
  * with a fresh temporary profile (deleted afterwards). The program dismisses the cookie banner with its
  * privacy-preserving button and scrolls to the application block — the person clicks and solves the captcha; the
- * program never touches it. Every 2 s it reads the page; the first read is the baseline, so footer addresses and
- * hotlines never count. It finishes when a new e-mail or phone reads the same twice in a row, or when the block was
- * revealed (captcha gone / "Bewerben Sie sich" new) and holds only links to the employer's site. Closing the window =
- * cancelled; 5 minutes = contactTimeout. One window at a time. The log gets only the result.
+ * program never touches it. Every 2 s it reads the page; the first read is the baseline, so data already there before
+ * the captcha does not end the wait (the AA's own service number and e-mail are never taken at all). It finishes when
+ * a new e-mail or phone reads the same twice in a row, when the block was revealed (captcha gone / "Bewerben Sie
+ * sich" new) and holds only links to the employer's site, or — on an offer without any captcha — when the application
+ * block shows an e-mail or phone. Closing the window = cancelled; 5 minutes = contactTimeout. One window at a time,
+ * and a browser that does not close is killed after 5 s. The log gets only the result.
  */
 export class AaContactWindow implements ContactWindow {
   private chain: Promise<unknown> = Promise.resolve();
@@ -155,11 +166,14 @@ export class AaContactWindow implements ContactWindow {
   private readonly pollMs: number;
   private readonly settleMs: number;
   private readonly maxChars: number;
+  private readonly closeTimeoutMs: number;
 
   constructor(private readonly opts: {
     tmpRoot: string; find?: () => string | null; check?: Check;
     /** Whole window (default 5 min), poll interval (2 s), pause after the cookie click (1 s), text limit (60 000). */
     timeoutMs?: number; pollMs?: number; settleMs?: number; maxChars?: number;
+    /** How long closing the browser may take before its process is killed (default 5 s). */
+    closeTimeoutMs?: number;
     /** Tests: a fake browser instead of puppeteer.launch. */
     launch?: (options: ReturnType<typeof contactLaunchOptions>) => Promise<Browser>;
     warn?: (event: string, data: Record<string, unknown>) => void; log?: Log;
@@ -170,6 +184,7 @@ export class AaContactWindow implements ContactWindow {
     this.pollMs = opts.pollMs ?? 2000;
     this.settleMs = opts.settleMs ?? 1000;
     this.maxChars = opts.maxChars ?? 60_000;
+    this.closeTimeoutMs = opts.closeTimeoutMs ?? 5000;
   }
 
   readContact(refnr: string, signal: AbortSignal): Promise<ContactWindowResult> {
@@ -239,7 +254,8 @@ export class AaContactWindow implements ContactWindow {
       page.on('request', (req) => {
         const u = req.url();
         if (u.startsWith('data:') || u.startsWith('blob:')) { void req.continue().catch(() => undefined); return; }
-        void this.check(u).then((c) => (c.ok ? req.continue() : req.abort('blockedbyclient'))).catch(() => undefined);
+        // A check that fails (DNS error) refuses the request instead of leaving it hanging.
+        void this.check(u).then((c) => (c.ok ? req.continue() : req.abort('blockedbyclient')), () => req.abort('blockedbyclient')).catch(() => undefined);
       });
       // Second line against DNS rebinding: an answer from an internal address ends the window, nothing is used.
       page.on('response', (res) => {
@@ -278,19 +294,22 @@ export class AaContactWindow implements ContactWindow {
             baseline = now;
           } else {
             const base = baseline;
-            const parsed = parseContact(now.text);
+            const parsed = parseContact(withoutAaService(now.text));
             const c = parsed.contact;
             const newContact = (c.email !== '' && !base.text.includes(c.email)) || (c.phone !== '' && !base.text.includes(c.phone));
             const revealed = (captchaSeen && !now.captcha) || (REVEALED.test(now.text) && !REVEALED.test(base.text));
+            // Some offers show the contact without any captcha: it is in the first read already, so never "new".
+            const shownWithoutCaptcha = !captchaSeen && REVEALED.test(now.text) && (c.email !== '' || c.phone !== '');
             const known = new Set(base.links.map((l) => l.href));
             const fresh = now.links.filter((l) => !known.has(l.href));
             const links = [...new Set((fresh.length ? fresh : now.links.filter((l) => APPLICATION_SECTION.test(l.section))).map((l) => l.href))].slice(0, MAX_LINKS);
-            if (newContact || revealed) {
+            const hasContact = newContact || shownWithoutCaptcha;
+            if (hasContact || revealed) {
               // Compared on what is used, not the whole text: a live clock on the page must not keep it "unstable".
-              const signature = JSON.stringify([newContact ? c : null, links]);
+              const signature = JSON.stringify([hasContact ? c : null, links]);
               stable = signature === lastSignature ? stable + 1 : 0;
               lastSignature = signature;
-              if (stable >= STABLE_POLLS) return { text: pageText(withoutBaselineContacts(now.text, base.text), this.maxChars), links };
+              if (stable >= STABLE_POLLS) return { text: pageText(withoutAaService(now.text), this.maxChars), links };
             } else {
               stable = 0;
               lastSignature = '';
@@ -306,10 +325,7 @@ export class AaContactWindow implements ContactWindow {
     } finally {
       clearTimeout(timer);
       signal.removeEventListener('abort', nudge);
-      if (browser) {
-        const b = browser;
-        await b.close().catch(() => { b.process()?.kill(); });
-      }
+      if (browser) await closeBounded(browser, this.closeTimeoutMs);
       removeProfileDir(profile, this.opts.warn);
     }
   }
