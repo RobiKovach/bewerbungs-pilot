@@ -262,7 +262,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerVacancyRoutes(app, {
-    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, pdfFetcher: deps.pdfFetcher, queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
+    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, pdfFetcher: deps.pdfFetcher, contactWindow: deps.contactWindow, queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
     profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
   });
 

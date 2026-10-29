@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import type { ApplicationPackage, DocLanguage, LetterPatch, OutcomeStatus, Profile } from '@bp/shared';
+import type { ApplicationPackage, DocLanguage, LetterPatch, OutcomeStatus, Profile, VacancyContact } from '@bp/shared';
 import type { SettingsStore } from '../data/settings.js';
 import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
@@ -11,13 +11,15 @@ import { applicationEmail, followUpEmail, rejectionReply, replySubject } from '.
 import type { Mailer } from '../mail/mailer.js';
 import type { SecretStore } from '../mail/secret.js';
 import type { ProfileFiles } from '../profile/files.js';
-import { VACANCY_ID } from '../vacancies/schema.js';
+import { normaliseContact } from '../vacancies/contact-find.js';
+import { CONTACT_BODY, VACANCY_ID } from '../vacancies/schema.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import type { Activity } from '../runtime/activity.js';
 import { touchDraft, type ApplicationJob } from './job.js';
 import { addEvent, addStatus, assertEditable, canUndo, dateToIso, isFrozen, undoLast } from './status.js';
 import { followUpOpen } from './follow-up.js';
 import { detectLanguage, englishBelowB2 } from './language.js';
+import { buildRecipient, buildSalutation } from './letter-parts.js';
 import { bundlePdfs, countPages, type BundlePart, type PdfPrinter } from './pdf.js';
 import { packageReadiness } from './readiness.js';
 import { applicationStats } from './stats.js';
@@ -226,6 +228,33 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     }
     notBusy(id);
     d.store.update(id, (p) => { p.letter = { ...p.letter, ...patch, pages: counted }; touchDraft(p, now()); });
+    return view(id);
+  });
+
+  // The employer contact the person checked and saved (0.9.1 B5): kept in the package and on the card, the letter's
+  // address block and salutation follow it, and an approved package becomes a draft again ("check the letter").
+  app.put('/api/applications/:id/contact', { schema: { params: idParams, body: CONTACT_BODY } }, async (req) => {
+    const { id } = req.params as { id: string };
+    editable(id);
+    notBusy(id);
+    const contact = normaliseContact(req.body as VacancyContact | null);
+    const draft = d.store.require(id);
+    draft.vacancy = { ...draft.vacancy, contact };
+    const letter = { recipient: buildRecipient(draft.vacancy), salutation: buildSalutation(contact, draft.language) };
+    draft.letter = { ...draft.letter, ...letter };
+    let counted = 0;
+    try {
+      counted = await countPages(await d.printer.print(letterHtml(draft, now())));
+    } catch {
+      // Same as a hand edit of the letter: never lost for want of a browser; approve recounts.
+    }
+    notBusy(id);
+    d.store.update(id, (p) => {
+      p.vacancy = { ...p.vacancy, contact };
+      p.letter = { ...p.letter, ...letter, pages: counted };
+      touchDraft(p, now());
+    });
+    if (d.vacancies.get(draft.vacancyId)) d.vacancies.update(draft.vacancyId, (v) => { v.contact = contact; });
     return view(id);
   });
 

@@ -80,6 +80,8 @@ export const CONTACT: JsonSchema = obj({
   email: str(L.email), salutation: { enum: ['', 'Frau', 'Herr'] }, name: str(L.name),
   phone: str(L.phone), street: str(L.street), postcode: str(L.postcode), city: str(L.city),
 });
+/** Request body of PUT …/contact (vacancy and package): the contact the person saves; null = no contact. */
+export const CONTACT_BODY: JsonSchema = { anyOf: [{ type: 'null' }, CONTACT] };
 
 const VACANCY = obj({
   id: { type: 'string', pattern: VACANCY_ID.source },

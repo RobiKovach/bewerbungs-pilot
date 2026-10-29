@@ -1,16 +1,19 @@
 import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import type { Language, ManualEdit, ManualInput, ManualNotice, Profile, Vacancy, VacancyStatus, VacancyView } from '@bp/shared';
+import type { ContactFindView, ContactProposal, ContactSource, Language, ManualEdit, ManualInput, ManualNotice, Profile, Vacancy, VacancyContact, VacancyStatus, VacancyView } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import type { Activity } from '../runtime/activity.js';
+import { isAaHost } from './aa-links.js';
+import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, resultOf, type ContactFindDeps } from './contact-find.js';
 import { findDuplicate } from './dedup.js';
-import { VACANCY_LIMITS } from './schema.js';
+import { CONTACT_BODY, VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
 import { jobdetailRefnr } from './sources/arbeitsagentur.js';
 import { isPdfPath, MAX_STORED_TEXT, noteUrls, readLinkPdf, readNotePdfs, withPdfBlocks } from './pdf-links.js';
+import type { ContactWindow } from './sources/aa-contact-window.js';
 import type { PageReader } from './sources/page-reader.js';
 import type { PdfFetcher } from './sources/pdf-fetch.js';
 import type { SourceDetails, VacancySource } from './sources/types.js';
@@ -19,7 +22,7 @@ import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, ty
 import { NOTE_LABEL, scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
-  store: VacancyStore; source: VacancySource; pageReader: PageReader; pdfFetcher: PdfFetcher; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
+  store: VacancyStore; source: VacancySource; pageReader: PageReader; pdfFetcher: PdfFetcher; contactWindow: ContactWindow; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
   profile: () => Profile; language: () => Language;
 }
 
@@ -49,6 +52,11 @@ const editBody = {
     },
   },
 };
+
+/** Pasted text for "find contact" (the fallback when the page could not be read). */
+export const CONTACT_PASTE_MAX = 20_000;
+const findBody = { type: 'object', additionalProperties: false, required: ['from'], properties: { from: { enum: ['aa', 'partner'] } } };
+const parseBody = { type: 'object', additionalProperties: false, required: ['text'], properties: { text: { type: 'string', minLength: 1, maxLength: CONTACT_PASTE_MAX } } };
 
 const manualBody = {
   type: 'object', additionalProperties: false,
@@ -158,6 +166,62 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       x.url = body.url.trim(); x.contact = body.contact;
     }));
   });
+
+  // "Find contact" (0.9.1 B5): a proposal only — nothing is saved until the person presses "Зберегти" (PUT …/contact).
+  const contactDeps: ContactFindDeps = { queue: d.queue, pageReader: d.pageReader, logger: d.logger, language: d.language };
+
+  app.post('/api/vacancies/:id/contact/find', { schema: { params: idParams, body: findBody } }, async (req, reply): Promise<ContactFindView> => {
+    const { id } = req.params as { id: string };
+    const { from } = req.body as { from: ContactSource };
+    const v = d.store.require(id);
+    const signal = abortOnClose(reply);
+    if (from === 'partner') {
+      if (!v.partnerUrl) throw new AppError('BAD_REQUEST', 'this offer has no partner page');
+      return readPage(v.partnerUrl, signal);
+    }
+    if (v.source !== 'arbeitsagentur' || !v.sourceId) throw new AppError('BAD_REQUEST', 'only Arbeitsagentur offers open the AA window');
+    // The window logs its own result (source 'aa'): only the follow-up page read is logged here.
+    const seen = await d.contactWindow.readContact(v.sourceId, signal);
+    if ('cancelled' in seen) return { cancelled: true };
+    const found = await proposalFromText(seen.text, contactDeps, signal);
+    if (resultOf(found) === 'ok') return found;
+    // Only a link to the employer's site after the captcha: read that page (the first link off the AA site).
+    const link = seen.links.find((l) => !isAaHost(l));
+    if (!link) return found;
+    try {
+      return await readPage(link, signal);
+    } catch (err) {
+      if (signal.aborted) throw err;
+      return found.found.length ? found : emptyProposal();
+    }
+  });
+
+  app.post('/api/vacancies/:id/contact/parse', { schema: { params: idParams, body: parseBody } }, async (req, reply): Promise<ContactProposal> => {
+    const { id } = req.params as { id: string };
+    d.store.require(id);
+    const found = await proposalFromText((req.body as { text: string }).text, contactDeps, abortOnClose(reply));
+    logFind(d.logger, 'paste', resultOf(found));
+    return found;
+  });
+
+  app.put('/api/vacancies/:id/contact', { schema: { params: idParams, body: CONTACT_BODY } }, async (req) => {
+    const { id } = req.params as { id: string };
+    d.store.require(id);
+    const contact = normaliseContact(req.body as VacancyContact | null);
+    return view(d.store.update(id, (x) => { x.contact = contact; }));
+  });
+
+  /** A page off the AA site with the headless reader; logged as 'partner' with its result. */
+  async function readPage(url: string, signal: AbortSignal): Promise<ContactProposal> {
+    try {
+      const found = await proposalFromPage(url, contactDeps, signal);
+      logFind(d.logger, 'partner', resultOf(found));
+      return found;
+    } catch (err) {
+      logFind(d.logger, 'partner', errorResult(err, signal));
+      throw err;
+    }
+  }
 
   app.post('/api/vacancies/manual', { schema: { body: manualBody } }, async (req, reply) => {
     const signal = abortOnClose(reply);

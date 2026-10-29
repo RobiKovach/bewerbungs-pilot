@@ -91,3 +91,14 @@ export type ManualNotice = 'notePdfUnreadable' | 'notePdfNoText';
 export interface ManualAddView extends VacancyView { notices?: ManualNotice[] }
 /** PATCH /api/vacancies/:id — only for source "manual". */
 export interface ManualEdit { title: string; company: string; locations: string[]; url: string; contact: VacancyContact | null }
+
+/** Where "find contact" looks (0.9.1 B): the Arbeitsagentur offer in a visible window, or the partner's page. */
+export type ContactSource = 'aa' | 'partner';
+/** POST /api/vacancies/:id/contact/find. */
+export interface ContactFindInput { from: ContactSource }
+/** POST /api/vacancies/:id/contact/parse — text the person copied from a page. */
+export interface ContactParseInput { text: string }
+/** A contact read from a page: only a proposal, nothing is saved. `found` = the fields that are not ''. */
+export interface ContactProposal { proposal: VacancyContact; found: Array<keyof VacancyContact> }
+/** Answer of …/contact/find: the proposal, or the person closed the window. */
+export type ContactFindView = ContactProposal | { cancelled: true };
