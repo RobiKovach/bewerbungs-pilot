@@ -618,3 +618,51 @@ describe('ApplicationEditor — personal-data block follows unsaved text', () =>
     expect(screen.getByText('There is personal data here that is not in your profile')).toBeInTheDocument();
   });
 });
+
+describe('ApplicationEditor — employer contact', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) };
+  const AA = 'https://www.arbeitsagentur.de/jobsuche/jobdetail/12345-ABC-S';
+  const withUrl = (url: string, over: Parameters<typeof appView>[1] = {}) => appView({}, { vacancy: { ...appView().application.vacancy, url, partnerUrl: '' }, ...over });
+
+  it('"Find contact" opens the dialog; the editor behind it is out of reach; AA button only for an AA offer link', async () => {
+    const { user } = setup(mail, withUrl(AA));
+    await user.click(await screen.findByRole('button', { name: 'Find contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Employer contact' });
+    expect(within(dialog).getByRole('button', { name: 'Open the offer page' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve' }).closest('[inert]')).not.toBeNull();
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Approve' }).closest('[inert]')).toBeNull();
+  });
+
+  it('a package of a pasted offer has no AA button (paste still works)', async () => {
+    const { user } = setup(mail, withUrl('https://firma.example.de/job'));
+    await user.click(await screen.findByRole('button', { name: 'Find contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Employer contact' });
+    expect(within(dialog).queryByRole('button', { name: 'Open the offer page' })).not.toBeInTheDocument();
+    expect(within(dialog).getByLabelText('or paste copied text')).toBeInTheDocument();
+  });
+
+  it('saving goes through the package; an approved letter back in draft says "approve again"', async () => {
+    const approved = withUrl(AA, { status: 'approved', approvedAt: '2026-09-29T12:00:00.000Z' });
+    const saved = withUrl(AA, { status: 'draft', updatedAt: '2026-09-29T13:00:00.000Z', letter: { ...appView().application.letter, salutation: 'Sehr geehrte Frau Musterfrau,' } });
+    const { f, user } = setup({ ...mail, 'PUT /api/applications/app1/contact': () => ({ body: saved }) }, approved);
+    await user.click(await screen.findByRole('button', { name: 'Find contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Employer contact' });
+    await user.selectOptions(within(dialog).getByLabelText('Salutation'), 'Frau');
+    await user.type(within(dialog).getByLabelText('Name'), 'Erika Musterfrau');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const put = f.mock.calls.find(([url, init]) => url === '/api/applications/app1/contact' && init?.method === 'PUT');
+    expect(JSON.parse(String(put![1]!.body))).toMatchObject({ salutation: 'Frau', name: 'Erika Musterfrau' });
+    expect(f.mock.calls.some(([url]) => String(url).endsWith('/api/vacancies/v1/contact'))).toBe(false);
+    expect(screen.getByText('Contact changed — check the letter and approve it again.')).toBeInTheDocument();
+    expect(screen.getByTitle('Preview of the letter').getAttribute('src')).toContain('13%3A00');
+  });
+
+  it('a sent package has no "Find contact"', async () => {
+    setup(mail, withUrl(AA, { status: 'sent', sentAt: '2026-09-29T12:00:00.000Z' }));
+    await screen.findByRole('heading', { name: 'Muster GmbH — Webentwickler (m/w/d)' });
+    expect(screen.queryByRole('button', { name: 'Find contact' })).not.toBeInTheDocument();
+  });
+});

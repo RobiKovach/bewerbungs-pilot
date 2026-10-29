@@ -6,6 +6,7 @@ export type {
   PersonalData, PersonalFinding, PersonalKind, Profile, ProviderId, ProfileDocument, ProfileLink, ProfileView, PublishedWithinDays, Readiness, RemoteKind, RemotePreference, Salutation,
   ScoreState, Section, SectionDataMap, SectionId, SearchPhase, SearchRunState, SearchState, SearchWarning, Settings, SettingsPatch, SubmittedInfo,
   SkillItem, SkillLevel, Story, StoryAnswer, StoryInput, StoryKind, StoredFile, Vacancy, VacancyContact, VacancyListView,
+  ContactFindView, ContactProposal, ContactSource,
   TextPlace, UnsavedPackageText, UpdatesView, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
 } from '@bp/shared';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
 import { appSummary } from '../test/applicationFixtures';
@@ -166,5 +166,33 @@ describe('VacanciesPage — strip and empty states', () => {
     mockFetch(vacancyServer({ list: [vac({ title: 'Frontend Developer (m/w/d)' })] }).routes);
     renderPage();
     expect(await screen.findByText('Frontend Developer (m/w/d)')).toBeInTheDocument();
+  });
+});
+
+describe('VacanciesPage — find contact (0.9.1)', () => {
+  it('an Arbeitsagentur favourite has "Find contact"; saving goes to the vacancy and the card shows it; one dialog at a time', async () => {
+    const a = vac({ title: 'AA favourite', status: 'favorite', partnerUrl: 'https://partner.example.de/job' });
+    const b = vac({ title: 'Other favourite', status: 'favorite' });
+    const manual = vac({ title: 'Pasted', status: 'favorite', source: 'manual', sourceId: null, url: '' });
+    const f = mockFetch({
+      ...vacancyServer({ list: [a, b, manual] }).routes,
+      ['PUT /api/vacancies/' + a.id + '/contact']: (init) => ({ body: { vacancy: { ...a, contact: JSON.parse(String(init?.body)) } } }),
+    });
+    renderPage();
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('tab', { name: 'Favourites 3' }));
+    const card = (title: string) => screen.getAllByRole('article').find((c) => c.querySelector('h3')?.textContent === title)!;
+    expect(card('Pasted').textContent).not.toContain('Find contact');
+    await user.click(within(card('AA favourite')).getByRole('button', { name: 'Find contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Employer contact' });
+    expect(within(dialog).getByRole('button', { name: 'Open the offer page' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: "Read the company's page" })).toBeInTheDocument();
+    expect(within(card('Other favourite')).getByRole('button', { name: 'Find contact' })).toBeDisabled();
+    await user.type(within(dialog).getByLabelText('Email'), 'hr@example.de');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(f.mock.calls.some(([url, init]) => url === `/api/vacancies/${a.id}/contact` && init?.method === 'PUT')).toBe(true);
+    expect(card('AA favourite')).toHaveTextContent('hr@example.de');
+    expect(within(card('Other favourite')).getByRole('button', { name: 'Find contact' })).toBeEnabled();
   });
 });

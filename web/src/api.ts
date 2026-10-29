@@ -1,7 +1,7 @@
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
-  CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
-  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyListView, VacancyTextView, VacancyView,
+  ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
+  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
 /** Password is optional: left out = keep the saved one. Language = the interface language of the test email. */
@@ -146,6 +146,10 @@ export const api = {
   scoreVacancy: (id: string, signal?: AbortSignal) => request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/score`, {}, signal),
   editVacancy: (id: string, edit: ManualEdit) => request<VacancyView>('PATCH', `/api/vacancies/${encodeURIComponent(id)}`, edit),
   addManualVacancy: (input: ManualInput, signal?: AbortSignal) => request<ManualAddView>('POST', '/api/vacancies/manual', input, signal),
+  // Employer contact (0.9.1 B): find/parse only propose; nothing is saved until saveVacancyContact / saveApplicationContact.
+  findContact: (id: string, from: ContactSource, signal?: AbortSignal) => request<ContactFindView>('POST', `/api/vacancies/${encodeURIComponent(id)}/contact/find`, { from }, signal),
+  parseContact: (id: string, text: string, signal?: AbortSignal) => request<ContactProposal>('POST', `/api/vacancies/${encodeURIComponent(id)}/contact/parse`, { text }, signal),
+  saveVacancyContact: (id: string, contact: VacancyContact | null) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/contact`, contact),
   startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
   stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),
@@ -181,6 +185,7 @@ export const api = {
   replyDraft: (id: string) => request<MailDraft>('GET', `/api/applications/${encodeURIComponent(id)}/reply-draft`),
   sendReply: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/reply/send`, mail),
   writeOfferReply: (id: string, body: { offered: string; wanted: string }, signal?: AbortSignal) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/offer-reply`, body, signal),
+  saveApplicationContact: (id: string, contact: VacancyContact | null) => request<ApplicationView>('PUT', `/api/applications/${encodeURIComponent(id)}/contact`, contact),
   saveOfferReply: (id: string, body: string) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/offer-reply`, { body }),
   checkText: (id: string, subject: string, body: string, signal?: AbortSignal) =>
     request<{ warnings: PersonalFinding[] }>('POST', `/api/applications/${encodeURIComponent(id)}/check-text`, { subject, body }, signal),

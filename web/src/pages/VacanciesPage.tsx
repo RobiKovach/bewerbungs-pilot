@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { ContactDialog } from '../applications/ContactDialog';
 import { MissingList } from '../applications/CreatePackageDialog';
 import { packageLinks, submittedByVacancy, type SubmittedPackage } from '../applications/format';
 import { PackageButton, READINESS_NOTE_ID } from '../applications/PackageButton';
@@ -17,7 +18,9 @@ import type { ManualNotice, PackageReadiness, Vacancy, VacancyStatus } from '../
 
 function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: number }) {
   const { t } = useTranslation();
-  const { vacancies, wishes, reload } = useVacancies();
+  const { vacancies, wishes, reload, put } = useVacancies();
+  // "Find contact" on an Arbeitsagentur favourite (0.9.1): one dialog at a time — the AA window is one at a time too.
+  const [contactFor, setContactFor] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   // What the last hand-added offer could not read (a PDF from the note) — shown until closed or the next add (0.9.1).
   const [addNotices, setAddNotices] = useState<ManualNotice[]>([]);
@@ -44,6 +47,13 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
   const manualExtra = (v: Vacancy) => (v.source !== 'manual' ? null : editing?.id === v.id
     ? <ManualEdit vacancy={v} checkHint={editing.checkHint} onDone={() => setEditing(null)} />
     : <div className="btn-row"><button type="button" className="btn small ghost" onClick={() => setEditing({ id: v.id, checkHint: false })}>{t('vacancies.edit.open')}</button></div>);
+  const contactExtra = (v: Vacancy) => (v.source !== 'arbeitsagentur' || v.status !== 'favorite' || submittedPackage(v) ? null : contactFor === v.id
+    ? (
+      <ContactDialog vacancyId={v.id} canAa={v.sourceId !== null} partnerUrl={v.partnerUrl ?? ''} initial={v.contact}
+        save={async (contact) => { put((await api.saveVacancyContact(v.id, contact)).vacancy); setContactFor(null); }}
+        onClose={() => setContactFor(null)} />
+    )
+    : <div className="btn-row"><button type="button" className="btn small ghost" disabled={contactFor !== null} onClick={() => setContactFor(v.id)}>{t('contact.find')}</button></div>);
   const complete = wishesComplete(wishes);
   const status = useSearchStatus({ onTick: () => void reload(), pollMs });
   const searching = status.state?.state === 'running';
@@ -82,6 +92,7 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
               {submittedPackage(v) ? <div className="btn-row"><a className="btn" href={`#/applications/${submittedPackage(v)}`}>{t('applications.open')}</a></div>
                 : v.status === 'favorite' ? <PackageButton vacancy={v} existing={packages.get(v.id) ?? null} readiness={readiness} pollMs={pollMs} /> : null}
               {manualExtra(v)}
+              {contactExtra(v)}
             </>
           )} />
       )}
