@@ -198,3 +198,53 @@ describe('contact-name task', () => {
     expect(withContactName(base, { salutation: 'Frau', name: '' }, window)).toEqual(base);
   });
 });
+
+const MENU_PAGE = `Startseite
+Über uns
+Kontakt
+Unsere Standorte
+Karriere
+
+Webentwickler (m/w/d) in Dresden
+Wir suchen Verstärkung für unser Team. Deine Aufgaben: Websites bauen und pflegen.
+${'Wir arbeiten agil, modern und mit viel Freude an guten Lösungen. '.repeat(12)}
+
+Kontakt
+Frau Erika Musterfrau
+Telefon: 0351 1234567
+E-Mail: erika.musterfrau@muster.example`;
+
+describe('partner pages with "Kontakt" in the menu', () => {
+  it('the menu heading is skipped; the footer block with the contact wins', () => {
+    expect(parseContact(MENU_PAGE).contact).toMatchObject({
+      salutation: 'Frau', name: 'Erika Musterfrau', phone: '0351 1234567', email: 'erika.musterfrau@muster.example',
+    });
+  });
+
+  it('"Unsere Standorte" is never a name, so the AI is asked', () => {
+    const page = MENU_PAGE.replace('Frau Erika Musterfrau\n', '');
+    const parsed = parseContact(page);
+    expect(parsed.contact.name).toBe('');
+    expect(needsName(parsed)).toBe(true);
+    // Even directly next to the e-mail it is a menu word, not a person.
+    expect(parseContact('Kontakt\nUnsere Standorte\nE-Mail: info@muster.example').contact.name).toBe('');
+  });
+
+  it('a bare name counts only next to the e-mail or phone, never elsewhere in the block', () => {
+    expect(parseContact('Kontakt\nErika Musterfrau\nE-Mail: jobs@muster.example').contact.name).toBe('Erika Musterfrau');
+    expect(parseContact('Kontakt\nErika Musterfrau\nMuster Software GmbH\nMusterweg 5\n01099 Dresden\nE-Mail: jobs@muster.example').contact.name).toBe('');
+  });
+});
+
+describe('long input stays fast (no polynomial regex)', () => {
+  it('a 60 000-character token without "@" and a 60 000-character mixed page parse in well under 100 ms', () => {
+    const token = 'a'.repeat(60_000);
+    const words = ['Webentwickler', 'Dresden', '01099', 'Tel', '0351', 'info.muster', 'GmbH', 'Kontakt', 'Frau', '3.500', '-', '/'];
+    const mixed = Array.from({ length: 9000 }, (_, i) => words[i % words.length] + (i % 13 === 0 ? '\n' : ' ')).join('').slice(0, 60_000);
+    for (const text of [token, `${token}@`, mixed, '0'.repeat(60_000), `Kontakt\n${'.'.repeat(60_000)}`]) {
+      const t0 = performance.now();
+      parseContact(text);
+      expect(performance.now() - t0).toBeLessThan(100);
+    }
+  });
+});

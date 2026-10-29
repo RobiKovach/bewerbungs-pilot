@@ -23,9 +23,10 @@ export const NAME_WINDOW_CHARS = 2000;
 const AA_START = /^Kontaktadresse\s*:?\s*$/im;
 const AA_END = /^(Bewerben Sie sich|Fußbereich|Referenz-Nr\.)/im;
 /** A heading line, optionally followed by the contact on the same line ("Ansprechpartnerin: Frau …"). */
-const HEADING = /^(?:Ihr(?:e)?\s+)?(?:Ansprechpartner(?:in)?(?:\/in)?|Ansprechperson|Kontaktperson|Kontakt(?:adresse)?|Contact(?: person)?)\b\s*(?::|$)/im;
+const HEADING = /^(?:Ihr(?:e)?\s+)?(?:Ansprechpartner(?:in)?(?:\/in)?|Ansprechperson|Kontaktperson|Kontakt(?:adresse)?|Contact(?: person)?)\b\s*(?::|$)/gim;
 
-const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+// Starts only where a token starts (look-behind): a long run without '@' is scanned once, not once per position.
+const EMAIL = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const SKIP_EMAIL = /^(?:no-?reply|do-?not-?reply|donotreply)@|@(?:[\w-]+\.)*arbeitsagentur\.de$/i;
 
 const PHONE = /(?:\+49|0049)\s*(?:\(0\)\s*)?\d[\d\s/()-]{4,}\d|\(?0\d[\d\s/()-]{4,}\d/g;
@@ -36,7 +37,7 @@ const NOT_PHONE_CONTEXT = /\b(?:Nr|Nummer|Stellennummer|Referenz|Kennziffer|ID|C
 const SALUTATION_NAME = /\b(Frau|Herrn?)[ \t]+((?:(?:Dr|Prof)\.[ \t]*)*[\p{Lu}][\p{L}'’-]+(?:[ \t]+[\p{Lu}][\p{L}'’-]+){0,2})/u;
 const NAME_LINE = /^[\p{Lu}][\p{Ll}'’-]+(?:-[\p{Lu}][\p{Ll}'’-]+)?(?:\s+(?:von|van|de|zu|der|den)\b)?(?:\s+[\p{Lu}][\p{Ll}'’-]+(?:-[\p{Lu}][\p{Ll}'’-]+)?){1,2}$/u;
 const COMPANY_WORD = /\b(?:GmbH|AG|KG|SE|UG|e\.\s?V\.|mbH|Gruppe|Group|Holding|Consulting|Personal|Service|Services|Team|Solutions|Systems|Technologies|Akademie|Universität|Stadt|Landkreis|Agentur|Bewerbung|Karriere|Jobs?)\b/i;
-const NON_NAME_WORDS = /\b(?:Kontakt|Ansprechpartner(?:in)?|Telefon|E-Mail|Bewerben|Stellenangebot|Informationen|Homepage|Webseite|Personalabteilung|Recruiting|Human Resources)\b/i;
+const NON_NAME_WORDS = /\b(?:Kontakt|Ansprechpartner(?:in)?|Telefon|E-Mail|Bewerben|Stellenangebot|Informationen|Homepage|Webseite|Personalabteilung|Recruiting|Human Resources|Unsere|Standorte?|Startseite|Impressum|Datenschutz|Leistungen|Produkte|Aktuelles|News|Presse|Referenzen|Downloads|Anfahrt|Öffnungszeiten)\b/i;
 
 const STREET = /^((?:[\p{L}][\p{L}ß.'’-]*\s)*[\p{L}ß.'’-]*(?:straße|strasse|str\.|weg|allee|platz|ring|gasse|damm|ufer|chaussee|promenade|steig|pfad|markt|hof)\s*\d{1,4}\s*[a-zA-Z]?(?:\s*[-–]\s*\d{1,4}\s*[a-zA-Z]?)?)$/iu;
 const POSTCODE_CITY = /^(\d{5})\s+([\p{Lu}][\p{L}.'’-]*(?:[\s-]+(?:[\p{Lu}][\p{L}.'’-]*|an der|am|im|bei|ob der|\(\p{L}+\)))*)$/u;
@@ -52,10 +53,11 @@ function findBlock(text: string): { block: string; start: number; aa: boolean } 
     const end = AA_END.exec(rest);
     return { block: rest.slice(0, end ? end.index : BLOCK_CHARS), start, aa: true };
   }
-  const h = HEADING.exec(text);
-  if (h) {
-    const start = h.index + h[0].length;
-    return { block: text.slice(start, start + BLOCK_CHARS), start, aa: false };
+  // A page often has "Kontakt" in its menu first: take the first heading whose part holds a real contact.
+  for (const h of text.matchAll(HEADING)) {
+    const start = (h.index ?? 0) + h[0].length;
+    const block = text.slice(start, start + BLOCK_CHARS);
+    if (firstEmail(block) || firstPhone(block) || SALUTATION_NAME.test(block)) return { block, start, aa: false };
   }
   return null;
 }
@@ -98,6 +100,16 @@ function nameWithSalutation(text: string): { salutation: Salutation; name: strin
 
 const lines = (s: string) => s.split('\n').map((l) => l.trim()).filter(Boolean);
 
+/** A bare name line (no Frau/Herr) directly before or after a line with the e-mail or phone. */
+function nameNextToContact(text: string): string {
+  const ls = lines(text);
+  for (let i = 0; i < ls.length; i++) {
+    if (!firstEmail(ls[i]) && !firstPhone(ls[i])) continue;
+    for (const n of [ls[i - 1], ls[i + 1]]) if (n !== undefined && !/@|\d/.test(n) && isNameLine(n)) return n;
+  }
+  return '';
+}
+
 /** A line that reads as a person's name ("Erika Musterfrau"), not a company, a heading or an address. */
 function isNameLine(line: string): boolean {
   return NAME_LINE.test(line) && !COMPANY_WORD.test(line) && !NON_NAME_WORDS.test(line) && !STREET.test(line);
@@ -133,13 +145,15 @@ export function parseContact(text: string): ParsedContact {
   const phone = (block && firstPhone(block)) || firstPhone(t);
 
   let salutation: Salutation = '';
-  let name = '';
+  let name: string;
   const withSal = (block && nameWithSalutation(block)) || (!found ? nameWithSalutation(t) : null);
   if (withSal) ({ salutation, name } = withSal);
-  else if (found) {
+  else if (found?.aa) {
     // AA layout: the first line after "Kontaktadresse" is the company, a person's name may follow.
-    const candidates = lines(block).slice(found.aa ? 1 : 0).filter((l) => !/@|\d/.test(l));
-    name = candidates.find(isNameLine) ?? '';
+    name = lines(block).slice(1).filter((l) => !/@|\d/.test(l)).find(isNameLine) ?? '';
+  } else {
+    // Elsewhere a bare name counts only right next to the e-mail or phone (never a menu item like "Unsere Standorte").
+    name = nameNextToContact(block || t);
   }
 
   const addr = found ? address(block, true) : address(t, false);
