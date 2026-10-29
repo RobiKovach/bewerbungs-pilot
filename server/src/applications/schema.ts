@@ -3,13 +3,24 @@ import { validateOutput } from '../llm/validate.js';
 import type { Migration } from '../data/migrate.js';
 import { PROVIDER_IDS } from '../data/settings.js';
 import { LIMITS, validateSectionData } from '../profile/schema.js';
-import { VACANCY_LIMITS } from '../vacancies/schema.js';
+import { isAaHost } from '../vacancies/aa-links.js';
+import { CONTACT, VACANCY_LIMITS, withContactFields } from '../vacancies/schema.js';
 
 export const APPLICATIONS_SCHEMA_VERSION = 2;
-export const PACKAGE_SCHEMA_VERSION = 5;
+export const PACKAGE_SCHEMA_VERSION = 6;
 
 /** migrations[n] turns package version n into n + 1 (applied on read; written back on the next save). */
 export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 6 (0.9.1): the contact gets phone and address. A link to the Arbeitsagentur home page (the old partner-link bug)
+  // is dropped: the package does not know the offer number to rebuild the offer link (the vacancy card does).
+  5: (doc) => {
+    const v = doc.vacancy;
+    if (!v || typeof v !== 'object') return doc;
+    const x = { ...(v as Record<string, unknown>) };
+    if (x.contact && typeof x.contact === 'object') x.contact = withContactFields(x.contact as Record<string, unknown>);
+    if (typeof x.url === 'string' && isAaHost(x.url) && !x.url.includes('/jobsuche/jobdetail/')) x.url = '';
+    return { ...doc, vacancy: x };
+  },
   // 5: who wrote the package (Claude was the only AI before 0.8.0).
   4: (doc) => ({ ...doc, writtenBy: 'claude' }),
   // 4: the answer to a job offer; history may hold events (reminders, replies).
@@ -47,7 +58,7 @@ export const APPLICATION_ID = /^[A-Za-z0-9_-]{1,64}$/;
 // Letter fields that copy vacancy or profile data are never tighter than their source, so a valid vacancy/profile
 // cannot fail saving after Claude has written the letter.
 export const PACKAGE_LIMITS = {
-  recipientLines: 6, line: Math.max(200, VACANCY_LIMITS.company, VACANCY_LIMITS.name),
+  recipientLines: 6, line: Math.max(200, VACANCY_LIMITS.company, VACANCY_LIMITS.name, VACANCY_LIMITS.street, VACANCY_LIMITS.postcode + 1 + VACANCY_LIMITS.city),
   subject: VACANCY_LIMITS.title + 100, salutation: VACANCY_LIMITS.name + 100,
   paragraphsMin: 1, paragraphsMax: 6, paragraph: 2000,
   closing: 100, signature: Math.max(200, LIMITS.name), hint: 300, profil: 800, description: 5000, instruction: 1000, attachments: 20,
@@ -87,11 +98,13 @@ const PACKAGE = obj({
   vacancy: obj({
     id: ID, title: str(V.title), company: str(V.company), locations: { type: 'array', maxItems: V.locations, items: str(V.location) },
     remote: { enum: ['yes', 'partial', 'no', 'unknown'] },
-    contact: nullable(obj({ email: str(V.email), salutation: { enum: ['', 'Frau', 'Herr'] }, name: str(V.name) })),
+    contact: nullable(CONTACT),
     url: { type: 'string', maxLength: V.url, pattern: '^(https?://.+)?$' },
   }, {
     // 0.9.0: packages from before have no `initiative` (= false), so no migration is needed.
     initiative: { type: 'boolean' },
+    // 0.9.1: copied from the vacancy when it has a partner page.
+    partnerUrl: { type: 'string', maxLength: V.url, pattern: '^(https?://.+)?$' },
   }),
   letter: obj({
     recipient: { type: 'array', maxItems: L.recipientLines, items: str(L.line) },

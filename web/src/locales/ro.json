@@ -645,6 +645,10 @@
       "email": "E-mail de contact",
       "salutation": "Formulă de adresare",
       "name": "Persoană de contact",
+      "phone": "Telefon de contact",
+      "street": "Strada și numărul",
+      "postcode": "Cod poștal",
+      "city": "Localitate",
       "save": "Salvați"
     }
   },

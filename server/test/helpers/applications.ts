@@ -39,7 +39,7 @@ let n = 0;
 export function pkg(over: Partial<ApplicationPackage> = {}, profile: Profile = readyPackageProfile()): ApplicationPackage {
   n++;
   return {
-    schemaVersion: 5, writtenBy: 'claude', id: `a${n}`, vacancyId: `v${n}`, language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 6, writtenBy: 'claude', id: `a${n}`, vacancyId: `v${n}`, language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     history: [], sentAt: null, sentEmail: null, offerReply: null,
     profileFingerprint: profileFingerprint(profile), snapshot: takeSnapshot(profile),
     vacancy: { id: `v${n}`, title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Berlin'], remote: 'partial', contact: null, url: '' },

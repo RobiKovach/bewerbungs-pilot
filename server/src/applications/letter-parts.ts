@@ -10,9 +10,14 @@ function titledLastName(name: string): string {
   return [...titles, rest[rest.length - 1] ?? ''].filter(Boolean).join(' ');
 }
 
+/** Company, contact person, then the contact's postal address when known — otherwise the first place of work. */
 export function buildRecipient(v: PackageVacancy): string[] {
-  const contact = v.contact && v.contact.name.trim() ? [v.contact.salutation, v.contact.name.trim()].filter(Boolean).join(' ') : '';
-  return [v.company.trim(), contact, v.locations[0]?.trim() ?? ''].filter(Boolean);
+  const c = v.contact;
+  const person = c && c.name.trim() ? [c.salutation, c.name.trim()].filter(Boolean).join(' ') : '';
+  const street = c?.street.trim() ?? '';
+  const place = c ? [c.postcode.trim(), c.city.trim()].filter(Boolean).join(' ') : '';
+  const address = street || place ? [street, place] : [v.locations[0]?.trim() ?? ''];
+  return [v.company.trim(), person, ...address].filter(Boolean);
 }
 
 export function buildSalutation(contact: VacancyContact | null, lang: DocLanguage): string {

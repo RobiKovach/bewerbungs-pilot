@@ -1,5 +1,6 @@
 import type { EmploymentType, RemoteKind } from '@bp/shared';
 import { AppError } from '../../errors.js';
+import { jobdetailUrl, partnerLink } from '../aa-links.js';
 import { VACANCY_LIMITS } from '../schema.js';
 import type { OfferKind, SearchQuery, SourceDetails, SourceHit, VacancySource, WorkTime } from './types.js';
 
@@ -17,9 +18,7 @@ const realSleep: Sleep = (ms, signal) => new Promise((resolve) => {
   signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
 });
 
-export function jobdetailUrl(refnr: string): string {
-  return `https://www.arbeitsagentur.de/jobsuche/jobdetail/${encodeURIComponent(refnr)}`;
-}
+export { jobdetailUrl };
 
 /**
  * The Referenznummer from a link the person pasted — only for exactly https://www.arbeitsagentur.de/jobsuche/jobdetail/<refnr>.
@@ -77,7 +76,6 @@ export function htmlToText(html: string): string {
 }
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
-const isHttpUrl = (v: string) => { try { return ['http:', 'https:'].includes(new URL(v).protocol); } catch { return false; } };
 
 /**
  * The live probe (2026-09-28) found `homeofficetyp` only ever `NACH_VEREINBARUNG` (degree left open) or
@@ -198,9 +196,9 @@ export class ArbeitsagenturSource implements VacancySource {
     const r = body as Record<string, unknown>;
     const hit = toHit({ ...r, referenznummer: str(r.referenznummer) || sourceId });
     if (!hit) return null; // an unusable Referenznummer in the answer — same as "not found"
-    const partner = str(r.allianzpartnerUrl);
-    const partnerOk = partner !== '' && partner.length <= L.url && isHttpUrl(partner);
-    return { ...hit, url: partnerOk ? partner : hit.url, text: htmlToText(str(r.stellenangebotsBeschreibung)) };
+    // The card always links to the offer on the Arbeitsagentur site; a partner page is kept beside it (0.9.1 — the
+    // API often names the Arbeitsagentur home page as the partner, which used to replace the link).
+    return { ...hit, partnerUrl: partnerLink(str(r.allianzpartnerUrl), L.url), text: htmlToText(str(r.stellenangebotsBeschreibung)) };
   }
 
   async isOnline(sourceId: string, signal: AbortSignal): Promise<boolean> {

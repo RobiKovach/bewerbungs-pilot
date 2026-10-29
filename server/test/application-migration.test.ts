@@ -29,7 +29,7 @@ describe('package v1 → v2', () => {
     store.load();
     const got = store.require(p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(5);
+    expect(got.schemaVersion).toBe(PACKAGE_SCHEMA_VERSION);
     expect(got.cv).toMatchObject({ headline: '', headlineEditedByHand: false, translations: {}, skillGroups: [{ name: '', skillIds: old.cv.skillOrder }] });
     expect(got.snapshot.personal.links).toEqual([]);
     expect(validatePackage(got)).toBeNull();
@@ -68,7 +68,7 @@ describe('package v2 → v3', () => {
     const p = pkg({ status: 'approved', approvedAt: '2026-10-01T08:00:00.000Z' });
     const { got, warnings } = loadOne(v2From(p), p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(5);
+    expect(got.schemaVersion).toBe(PACKAGE_SCHEMA_VERSION);
     expect(got.history).toEqual([{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }]);
     expect(got.sentAt).toBeNull();
     expect(got.sentEmail).toBeNull();
@@ -82,7 +82,7 @@ describe('package v2 → v3', () => {
     const p = pkg();
     const { got, warnings } = loadOne(v1From(p), p.id);
     expect(warnings).toEqual([]);
-    expect(got).toMatchObject({ schemaVersion: 5, history: [], sentAt: null, sentEmail: null });
+    expect(got).toMatchObject({ schemaVersion: PACKAGE_SCHEMA_VERSION, history: [], sentAt: null, sentEmail: null });
   });
 });
 
@@ -140,7 +140,7 @@ describe('package v3 → v4', () => {
     void _o;
     const { got, warnings } = loadOne({ ...v3, schemaVersion: 3 }, p.id);
     expect(warnings).toEqual([]);
-    expect(got.schemaVersion).toBe(5);
+    expect(got.schemaVersion).toBe(PACKAGE_SCHEMA_VERSION);
     expect(got.offerReply).toBeNull();
     expect(got.history).toEqual(history);
   });
@@ -150,7 +150,7 @@ describe('package v3 → v4', () => {
     void _h; void _s; void _e; void _o;
     const { got, warnings } = loadOne({ ...rest, schemaVersion: 2 }, p.id);
     expect(warnings).toEqual([]);
-    expect(got).toMatchObject({ schemaVersion: 5, offerReply: null, history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
+    expect(got).toMatchObject({ schemaVersion: PACKAGE_SCHEMA_VERSION, offerReply: null, history: [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }] });
   });
 });
 
@@ -177,7 +177,7 @@ function v4From(p: ReturnType<typeof pkg>) {
 describe('0.8.0: who wrote the package', () => {
   it('v4 -> v5: old packages were written by Claude', () => {
     const doc = migrate(v4From(pkg()), PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS);
-    expect(doc).toMatchObject({ schemaVersion: 5, writtenBy: 'claude' });
+    expect(doc).toMatchObject({ schemaVersion: PACKAGE_SCHEMA_VERSION, writtenBy: 'claude' });
     expect(validatePackage(doc)).toBeNull();
   });
 
@@ -206,7 +206,7 @@ describe('0.8.0: who wrote the package', () => {
     expect(store.list()[0].writtenBy).toBe('claude');
     expect(fs.readdirSync(dir).filter((f) => f.includes('invalid') || f.includes('corrupt'))).toEqual([]);
     // Nothing else changed: the migrated package equals the old one plus writtenBy.
-    expect(store.require(p.id)).toEqual({ ...old, schemaVersion: 5, writtenBy: 'claude' });
+    expect(store.require(p.id)).toEqual({ ...old, schemaVersion: PACKAGE_SCHEMA_VERSION, writtenBy: 'claude' });
     expect(JSON.parse(fs.readFileSync(path.join(dir, 'applications.json'), 'utf8'))).toMatchObject({ schemaVersion: 2, applications: [{ id: p.id, writtenBy: 'claude' }] });
   });
 
@@ -247,5 +247,37 @@ describe('0.9.0: initiative flag on the package\'s vacancy copy', () => {
     const base = pkg();
     expect(validatePackage({ ...base, vacancy: { ...base.vacancy, initiative: true } })).toBeNull();
     expect(validatePackage({ ...base, vacancy: { ...base.vacancy, initiative: 'yes' } })).not.toBeNull();
+  });
+});
+
+describe('0.9.1: package v5 → v6 (contact phone/address, AA home link)', () => {
+  function v5With(vacancy: Record<string, unknown>) {
+    const base = pkg();
+    return { ...base, schemaVersion: 5, vacancy: { ...base.vacancy, ...vacancy } };
+  }
+  const oldContact = { email: 'jobs@muster.example', salutation: 'Frau', name: 'Erika Beispiel' };
+
+  it('the contact gets empty phone/address; the Arbeitsagentur home page as the link is dropped', () => {
+    const doc = migrate(v5With({ contact: oldContact, url: 'http://www.arbeitsagentur.de' }), PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS) as unknown as ReturnType<typeof pkg>;
+    expect(doc.schemaVersion).toBe(6);
+    expect(doc.vacancy.contact).toEqual({ ...oldContact, phone: '', street: '', postcode: '', city: '' });
+    expect(doc.vacancy.url).toBe('');
+    expect(validatePackage(doc)).toBeNull();
+  });
+
+  it('an offer link, a company page and a missing contact stay as they are', () => {
+    const offer = 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-1111111111-S';
+    for (const url of [offer, 'https://primegate-consulting.de/', '']) {
+      const doc = migrate(v5With({ contact: null, url }), PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS) as unknown as ReturnType<typeof pkg>;
+      expect(doc.vacancy).toMatchObject({ contact: null, url });
+      expect(validatePackage(doc)).toBeNull();
+    }
+  });
+
+  it('a v6 contact without the new fields is invalid; partnerUrl is optional and must be http(s)', () => {
+    const base = pkg();
+    expect(validatePackage({ ...base, vacancy: { ...base.vacancy, contact: oldContact } })).not.toBeNull();
+    expect(validatePackage({ ...base, vacancy: { ...base.vacancy, partnerUrl: 'https://karriere.muster.example/1' } })).toBeNull();
+    expect(validatePackage({ ...base, vacancy: { ...base.vacancy, partnerUrl: 'ftp://x' } })).not.toBeNull();
   });
 });

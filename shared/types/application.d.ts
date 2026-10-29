@@ -74,12 +74,14 @@ export interface PackageVacancy {
   remote: RemoteKind;
   contact: VacancyContact | null;
   url: string;
+  /** The partner's page about the offer (copied from the vacancy). Absent/'' = none (0.9.1). */
+  partnerUrl?: string;
   /** An unsolicited application (Initiativbewerbung). Absent = false (packages before 0.9.0). */
   initiative?: boolean;
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 5;
+  schemaVersion: 6;
   id: string;
   vacancyId: string;
   language: DocLanguage;

@@ -48,7 +48,7 @@ export function touchDraft(p: ApplicationPackage, now: Date): void {
 }
 
 export function toPackageVacancy(v: Vacancy): PackageVacancy {
-  return { id: v.id, title: v.title, company: v.company, locations: [...v.locations], remote: v.remote, contact: v.contact ? { ...v.contact } : null, url: v.url, ...(v.initiative ? { initiative: true } : {}) };
+  return { id: v.id, title: v.title, company: v.company, locations: [...v.locations], remote: v.remote, contact: v.contact ? { ...v.contact } : null, url: v.url, ...(v.partnerUrl ? { partnerUrl: v.partnerUrl } : {}), ...(v.initiative ? { initiative: true } : {}) };
 }
 
 /** The Claude-written letter fields, trimmed; the server-built parts of `base` stay as they are. */

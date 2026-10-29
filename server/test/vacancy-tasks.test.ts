@@ -76,11 +76,11 @@ describe('extractManualTask / toManualFields', () => {
     expect(validateOutput(task.schema, out()).ok).toBe(true);
   });
   it('keeps contact data only when the text literally contains it', () => {
-    expect(toManualFields(out(), TEXT).contact).toEqual({ email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' });
+    expect(toManualFields(out(), TEXT).contact).toEqual({ email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel', phone: '', street: '', postcode: '', city: '' });
     const invented = toManualFields(out({ contact: { email: 'hr@muster.example', salutation: 'Herr', name: 'Hans Erfunden' } }), TEXT);
     expect(invented.contact).toBeNull();
     const halfTrue = toManualFields(out({ contact: { email: 'BEWERBUNG@muster.example', salutation: 'Herr', name: 'Hans Erfunden' } }), TEXT);
-    expect(halfTrue.contact).toEqual({ email: 'BEWERBUNG@muster.example', salutation: '', name: '' });
+    expect(halfTrue.contact).toEqual({ email: 'BEWERBUNG@muster.example', salutation: '', name: '', phone: '', street: '', postcode: '', city: '' });
     const notAnEmail = toManualFields(out({ contact: { email: 'Dresden', salutation: '', name: '' } }), TEXT);
     expect(notAnEmail.contact).toBeNull();
   });

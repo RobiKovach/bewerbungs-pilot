@@ -99,9 +99,17 @@ describe('allowedFor', () => {
   });
   it('vacancy contact email and vacancy url are allowed', () => {
     const profile = readyPackageProfile();
-    const p = pkg({ vacancy: { ...pkg().vacancy, contact: { email: 'Jobs@Firma.de', salutation: '', name: '' }, url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/123' } });
+    const p = pkg({ vacancy: { ...pkg().vacancy, contact: { email: 'Jobs@Firma.de', salutation: '', name: '', phone: '', street: '', postcode: '', city: '' }, url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/123' } });
     const a = allowedFor(p, profile, null);
     expect(find('an jobs@firma.de, Anzeige arbeitsagentur.de/jobsuche/jobdetail/123', a)).toEqual([]);
+  });
+  it('0.9.1: the saved employer contact (phone, postal code + city) and the partner page are allowed; another phone is not', () => {
+    const profile = readyPackageProfile();
+    const contact = { email: '', salutation: '' as const, name: '', phone: '+49 351 4445566', street: 'Nebenweg 2', postcode: '01309', city: 'Dresden' };
+    const p = pkg({ vacancy: { ...pkg().vacancy, contact, partnerUrl: 'https://karriere.firma.example/job/7' } });
+    const a = allowedFor(p, profile, null);
+    expect(find('Rückruf unter 0351 4445566, Büro 01309 Dresden, siehe karriere.firma.example/job/7', a)).toEqual([]);
+    expect(find('Rückruf unter 0351 9998877', a)).not.toEqual([]);
   });
   it('phones and postal codes from the vacancy text and recipient lines are allowed', () => {
     const profile = readyPackageProfile();

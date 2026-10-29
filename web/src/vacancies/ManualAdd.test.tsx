@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
@@ -68,7 +68,7 @@ describe('ManualAdd', () => {
 
   it('adds a pasted offer: card on the list, highlighted, edit form open with the check hint', async () => {
     const created = vac({ id: 'm1', source: 'manual', sourceId: null, addedManually: true, title: 'Frontend Developer (m/w/d)', company: 'Muster GmbH', url: '',
-      contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' } });
+      contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel', phone: '', street: '', postcode: '', city: '' } });
     const { user, f } = setup([], { 'POST /api/vacancies/manual': () => ({ body: { vacancy: created } }) });
     const panel = await open(user);
     const area = within(panel).getByLabelText('Text of the offer');
@@ -137,6 +137,25 @@ describe('ManualEdit', () => {
     await user.click(within(article).getByRole('button', { name: 'Save' }));
     expect(await screen.findByRole('heading', { name: 'Neu' })).toBeInTheDocument();
     expect(saved).toMatchObject({ title: 'Neu', company: 'Muster GmbH', url: 'https://muster.example/job' });
+  });
+
+  it('0.9.1: saves the contact phone and address; a contact with only an address is still a contact', async () => {
+    const m = vac({ id: 'm1', source: 'manual', sourceId: null, addedManually: true, title: 'Alt', company: 'Muster GmbH', url: '' });
+    let saved: unknown = null;
+    const { user } = setup([m], {
+      'PATCH /api/vacancies/m1': (init) => { saved = JSON.parse(String(init?.body)); return { body: { vacancy: { ...m, ...(saved as object) } } }; },
+    });
+    const article = (await screen.findByRole('heading', { name: 'Alt' })).closest('article') as HTMLElement;
+    await user.click(within(article).getByRole('button', { name: 'Edit' }));
+    await user.type(within(article).getByLabelText('Contact phone'), ' 0351 123456 ');
+    await user.type(within(article).getByLabelText('Street and number'), 'Musterweg 1');
+    await user.type(within(article).getByLabelText('Postal code'), '01067');
+    await user.type(within(article).getByLabelText('City'), 'Dresden');
+    await user.click(within(article).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(saved).not.toBeNull());
+    expect(saved).toMatchObject({
+      contact: { email: '', salutation: '', name: '', phone: '0351 123456', street: 'Musterweg 1', postcode: '01067', city: 'Dresden' },
+    });
   });
 
   it('cards from the job board have no Edit button', async () => {

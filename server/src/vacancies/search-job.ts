@@ -6,7 +6,7 @@ import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import { findDuplicate } from './dedup.js';
 import { filterHits } from './filter.js';
-import type { OfferKind, SearchQuery, SourceHit, VacancySource, WorkTime } from './sources/types.js';
+import type { OfferKind, SearchQuery, SourceDetails, SourceHit, VacancySource, WorkTime } from './sources/types.js';
 import type { VacancyStore } from './store.js';
 import { SCORE_BATCH, scoreTask, toScores, type ScoreInput, type ScoreOutput } from './tasks/score.js';
 
@@ -265,11 +265,12 @@ export class SearchJob {
     }
   }
 
-  private cardFrom(h: SourceHit): Vacancy {
+  private cardFrom(h: SourceDetails): Vacancy {
     return {
       id: this.newId(), source: 'arbeitsagentur', sourceId: h.sourceId, addedManually: false, title: h.title, company: h.company,
       locations: h.locations, remote: h.remote, employment: h.employment, salaryText: h.salaryText, publishedAt: h.publishedAt,
       foundAt: this.stamp(), url: h.url, contact: null, hasText: false, status: 'new', scoreState: 'pending', score: null, hiddenAt: null,
+      ...(h.partnerUrl ? { partnerUrl: h.partnerUrl } : {}),
     };
   }
 

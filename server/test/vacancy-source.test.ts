@@ -118,11 +118,14 @@ describe('ArbeitsagenturSource.search', () => {
 });
 
 describe('ArbeitsagenturSource.details / isOnline', () => {
-  it('asks by base64 number, returns plain text and the partner link', async () => {
+  it('asks by base64 number, returns plain text; the link is the offer page, the partner page is kept beside it', async () => {
     const f = fakeFetch([json(fixture('aa-details.json'))]);
     const d = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).details('10000-1111111111-S', signal());
     expect(f.calls[0].url).toBe(`https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobdetails/${Buffer.from('10000-1111111111-S').toString('base64')}`);
-    expect(d).toMatchObject({ sourceId: '10000-1111111111-S', title: 'Frontend Developer (m/w/d)', remote: 'no', url: 'https://karriere.muster.example/job/1' });
+    expect(d).toMatchObject({
+      sourceId: '10000-1111111111-S', title: 'Frontend Developer (m/w/d)', remote: 'no',
+      url: jobdetailUrl('10000-1111111111-S'), partnerUrl: 'https://karriere.muster.example/job/1',
+    });
     expect(d?.text).toBe('Wir suchen Sie & Ihr Team!\n\n- React\n- TypeScript\n\nKontakt: jobs@muster.example\nTel. 0351 000');
   });
   it('404 = gone', async () => {
@@ -131,10 +134,26 @@ describe('ArbeitsagenturSource.details / isOnline', () => {
     expect(await s.details('X-1', signal())).toBeNull();
     expect(await s.isOnline('X-1', signal())).toBe(false);
   });
-  it('a partner link that is not http(s) falls back to the Arbeitsagentur page', async () => {
+  it('a partner link that is not http(s) is dropped', async () => {
     const f = fakeFetch([json({ ...(fixture('aa-details.json') as object), allianzpartnerUrl: 'javascript:alert(1)' })]);
     const d = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).details('10000-1111111111-S', signal());
     expect(d?.url).toBe(jobdetailUrl('10000-1111111111-S'));
+    expect(d?.partnerUrl).toBe('');
+  });
+
+  // 0.9.1, found on Robert's PC: the API names the Arbeitsagentur itself as the partner, with just its home page.
+  it.each(['http://www.arbeitsagentur.de', 'https://www.arbeitsagentur.de/', 'https://jobboerse.arbeitsagentur.de/x', ''])(
+    'partner link %j is not a partner page: the card keeps the offer link, no partner page', async (allianzpartnerUrl) => {
+      const f = fakeFetch([json({ ...(fixture('aa-details.json') as object), allianzpartnerUrl, allianzpartnerName: 'arbeitsagentur.de' })]);
+      const d = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).details('10000-1111111111-S', signal());
+      expect(d?.url).toBe(jobdetailUrl('10000-1111111111-S'));
+      expect(d?.partnerUrl).toBe('');
+    },
+  );
+  it('a look-alike host is a real partner page (only arbeitsagentur.de and its subdomains are dropped)', async () => {
+    const f = fakeFetch([json({ ...(fixture('aa-details.json') as object), allianzpartnerUrl: 'https://arbeitsagentur.de.example.com/job' })]);
+    const d = await new ArbeitsagenturSource({ fetch: f.fn, sleep: noSleep }).details('10000-1111111111-S', signal());
+    expect(d?.partnerUrl).toBe('https://arbeitsagentur.de.example.com/job');
   });
 
   it('clips oversized title/company/locations, and a too-long partner link falls back to the Arbeitsagentur page', async () => {
@@ -152,6 +171,7 @@ describe('ArbeitsagenturSource.details / isOnline', () => {
     expect(d?.locations).toHaveLength(20);
     expect(d?.locations.every((l) => l.length <= 100)).toBe(true);
     expect(d?.url).toBe(jobdetailUrl('10000-1111111111-S'));
+    expect(d?.partnerUrl).toBe('');
   });
 });
 

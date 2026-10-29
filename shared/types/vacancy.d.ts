@@ -11,8 +11,11 @@ export type RemoteKind = 'yes' | 'partial' | 'no' | 'unknown';
 export type Salutation = '' | 'Frau' | 'Herr';
 export type PublishedWithinDays = 1 | 3 | 7 | 14 | 30;
 
-/** Only for pasted offers, and only what the pasted text literally contains (checked by code). */
-export interface VacancyContact { email: string; salutation: Salutation; name: string }
+/**
+ * The employer's contact person. From a pasted text only what it literally contains (checked by code); otherwise
+ * what the person saved. phone/street/postcode/city since 0.9.1 ('' = unknown).
+ */
+export interface VacancyContact { email: string; salutation: Salutation; name: string; phone: string; street: string; postcode: string; city: string }
 /**
  * `provider`: the AI helper that scored it (scores from before 0.8.0: 'claude').
  * `language`: the language `why`/`missing` are written in (scores from before 0.8.2: null = not known).
@@ -38,6 +41,8 @@ export interface Vacancy {
   foundAt: string;
   /** Where the person can read the original. "" = none. Always http(s). */
   url: string;
+  /** Arbeitsagentur offers: the partner's page about the offer (never an Arbeitsagentur address). Absent/'' = none (0.9.1). */
+  partnerUrl?: string;
   contact: VacancyContact | null;
   /** The full text is in texts/<id>.txt. */
   hasText: boolean;

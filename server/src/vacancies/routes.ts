@@ -39,8 +39,12 @@ const editBody = {
     url: { type: 'string', maxLength: L.url, pattern: HTTP_URL },
     contact: {
       anyOf: [{ type: 'null' }, {
-        type: 'object', additionalProperties: false, required: ['email', 'salutation', 'name'],
-        properties: { email: { type: 'string', maxLength: L.email }, salutation: { enum: ['', 'Frau', 'Herr'] }, name: { type: 'string', maxLength: L.name } },
+        type: 'object', additionalProperties: false, required: ['email', 'salutation', 'name', 'phone', 'street', 'postcode', 'city'],
+        properties: {
+          email: { type: 'string', maxLength: L.email }, salutation: { enum: ['', 'Frau', 'Herr'] }, name: { type: 'string', maxLength: L.name },
+          phone: { type: 'string', maxLength: L.phone }, street: { type: 'string', maxLength: L.street },
+          postcode: { type: 'string', maxLength: L.postcode }, city: { type: 'string', maxLength: L.city },
+        },
       }],
     },
   },
@@ -69,6 +73,8 @@ export function refill(v: Vacancy, d: SourceDetails): void {
   v.salaryText = d.salaryText;
   v.publishedAt = d.publishedAt;
   v.url = d.url;
+  if (d.partnerUrl) v.partnerUrl = d.partnerUrl;
+  else delete v.partnerUrl;
 }
 
 export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRouteDeps): Promise<void> {
@@ -174,7 +180,7 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       const card: Vacancy = {
         ...base, source: 'arbeitsagentur', sourceId: refnr, title: found.title, company: found.company, locations: found.locations,
         remote: found.remote, employment: found.employment, salaryText: found.salaryText, publishedAt: found.publishedAt,
-        url: found.url, contact: null, scoreState: 'failed', score: null,
+        url: found.url, contact: null, scoreState: 'failed', score: null, ...(found.partnerUrl ? { partnerUrl: found.partnerUrl } : {}),
       };
       // A short text next to the link is the person's note: it goes in front of the offer text (scored and stored).
       // Longer pasted text is ignored here — the API's own text is the offer.

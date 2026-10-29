@@ -3,7 +3,7 @@ import type { ApplicationJobState, ApplicationListView, ApplicationPackage, Appl
 const NOW = '2026-09-29T10:00:00.000Z';
 export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationPackage {
   return {
-    schemaVersion: 5, writtenBy: 'claude', id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
+    schemaVersion: 6, writtenBy: 'claude', id: 'app1', vacancyId: 'v1', language: 'de', status: 'draft', createdAt: NOW, updatedAt: NOW, approvedAt: null,
     history: [], sentAt: null, sentEmail: null, offerReply: null,
     profileFingerprint: '0'.repeat(64),
     snapshot: {

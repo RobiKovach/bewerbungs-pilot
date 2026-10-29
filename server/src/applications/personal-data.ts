@@ -204,7 +204,8 @@ export function packageTexts(p: ApplicationPackage): PlacedText[] {
 }
 
 /**
- * What may appear: the person's own data and own free profile texts (live profile and the package snapshot), the vacancy's contact email and url,
+ * What may appear: the person's own data and own free profile texts (live profile and the package snapshot), the vacancy's contact (email,
+ * phone, postal code) and its links,
  * and the company's phones and postal codes (vacancy text, recipient lines). Emails and links from the free vacancy
  * text are NOT allowed — that is how a poisoned offer would look.
  */
@@ -220,13 +221,13 @@ export function allowedFor(p: ApplicationPackage, profile: Profile, vacancyText:
       ...matches(EMAIL, ownText).map((m) => normEmail(m.value)),
     ]),
     phones: nonEmpty([
-      ...people.map((x) => normPhone(x.phone)),
+      ...people.map((x) => normPhone(x.phone)), normPhone(p.vacancy.contact?.phone ?? ''),
       ...matches(PHONE, `${companyText}\n${ownText}`).map((m) => normPhone(m.value)),
     ]),
-    postalCodes: nonEmpty([...people.map((x) => x.postalCode.trim()), ...fiveDigits(companyText), ...fiveDigits(ownText)]),
+    postalCodes: nonEmpty([...people.map((x) => x.postalCode.trim()), p.vacancy.contact?.postcode.trim() ?? '', ...fiveDigits(companyText), ...fiveDigits(ownText)]),
     birthDates: nonEmpty(people.map((x) => normDate(x.birthDate))),
     links: nonEmpty([
-      ...people.flatMap((x) => x.links.map((l) => normLink(l.url))), normLink(p.vacancy.url), ...TECH_NAMES,
+      ...people.flatMap((x) => x.links.map((l) => normLink(l.url))), normLink(p.vacancy.url), normLink(p.vacancy.partnerUrl ?? ''), ...TECH_NAMES,
       ...matches(LINK, ownText).map((m) => normLink(trimEndChars(m.value, TRAILING_PUNCT))),
     ]),
   };

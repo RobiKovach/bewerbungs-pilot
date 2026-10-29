@@ -140,7 +140,7 @@ describe('card endpoints', () => {
     const ctx = await makeApp();
     ctx.vacancyStore.add(vacancy({ id: 'm', source: 'manual', sourceId: null, addedManually: true }), 'T');
     ctx.vacancyStore.add(vacancy({ id: 'a' }), 'T');
-    const body = { title: 'Frontend Developer', company: 'Muster GmbH', locations: ['Dresden'], url: 'https://muster.example/job', contact: { email: 'hr@muster.example', salutation: 'Frau', name: 'Erika Beispiel' } };
+    const body = { title: 'Frontend Developer', company: 'Muster GmbH', locations: ['Dresden'], url: 'https://muster.example/job', contact: { email: 'hr@muster.example', salutation: 'Frau', name: 'Erika Beispiel', phone: '0351 123456', street: 'Musterweg 1', postcode: '01067', city: 'Dresden' } };
     const ok = await ctx.app.inject({ method: 'PATCH', url: '/api/vacancies/m', headers: H, payload: body });
     expect(ok.json().vacancy).toMatchObject(body);
     expect((await ctx.app.inject({ method: 'PATCH', url: '/api/vacancies/a', headers: H, payload: body })).statusCode).toBe(409);
@@ -178,5 +178,18 @@ describe('0.9.0: score again on an initiative card', () => {
     expect(ctx.provider.calls[0].prompt).toContain('An offer with "initiative": true is an unsolicited application');
     expect((await post(ctx, '/api/vacancies/n/score')).statusCode).toBe(200);
     expect(ctx.provider.calls[1].prompt).not.toContain('"initiative":true');
+  });
+});
+
+describe('0.9.1: a details refresh keeps the offer link and updates the partner page', () => {
+  it('refill sets url from the source (the offer page) and partnerUrl only when there is one', async () => {
+    const { refill } = await import('../src/vacancies/routes.js');
+    const offer = 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-0000000001-S';
+    const v: Vacancy = { ...vacancy({ id: 'a' }), partnerUrl: 'https://alt.example/job' };
+    refill(v, { ...details(hit({ sourceId: '10000-0000000001-S' }), 'Text'), url: offer, partnerUrl: 'https://neu.example/job' });
+    expect(v).toMatchObject({ url: offer, partnerUrl: 'https://neu.example/job' });
+    refill(v, { ...details(hit({ sourceId: '10000-0000000001-S' }), 'Text'), url: offer, partnerUrl: '' });
+    expect(v.url).toBe(offer);
+    expect(Object.hasOwn(v, 'partnerUrl')).toBe(false);
   });
 });

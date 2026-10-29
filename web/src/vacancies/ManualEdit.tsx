@@ -20,19 +20,25 @@ export function ManualEdit({ vacancy: v, checkHint, onDone }: { vacancy: Vacancy
   const [email, setEmail] = useState(v.contact?.email ?? '');
   const [salutation, setSalutation] = useState<Salutation>(v.contact?.salutation ?? '');
   const [name, setName] = useState(v.contact?.name ?? '');
+  const [phone, setPhone] = useState(v.contact?.phone ?? '');
+  const [street, setStreet] = useState(v.contact?.street ?? '');
+  const [postcode, setPostcode] = useState(v.contact?.postcode ?? '');
+  const [city, setCity] = useState(v.contact?.city ?? '');
   const [error, setError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
   const linkError = okLink(url) ? undefined : t('vacancies.edit.badLink');
   const [tried, setTried] = useState(false);
   useReportUnsaved(title !== v.title || company !== v.company || JSON.stringify(locations) !== JSON.stringify(v.locations) || url !== v.url
-    || email !== (v.contact?.email ?? '') || salutation !== (v.contact?.salutation ?? '') || name !== (v.contact?.name ?? ''));
+    || email !== (v.contact?.email ?? '') || salutation !== (v.contact?.salutation ?? '') || name !== (v.contact?.name ?? '')
+    || phone !== (v.contact?.phone ?? '') || street !== (v.contact?.street ?? '') || postcode !== (v.contact?.postcode ?? '') || city !== (v.contact?.city ?? ''));
 
   const save = async () => {
     setTried(true);
     if (linkError || !title.trim()) return;
     setSaving(true);
     try {
-      const contact = email.trim() || name.trim() ? { email: email.trim(), salutation: name.trim() ? salutation : '' as Salutation, name: name.trim() } : null;
+      const c = { email: email.trim(), name: name.trim(), phone: phone.trim(), street: street.trim(), postcode: postcode.trim(), city: city.trim() };
+      const contact = Object.values(c).some(Boolean) ? { ...c, salutation: c.name ? salutation : '' as Salutation } : null;
       put((await api.editVacancy(v.id, { title: title.trim(), company: company.trim(), locations, url: url.trim(), contact })).vacancy);
       onDone();
     } catch (err) {
@@ -53,6 +59,10 @@ export function ManualEdit({ vacancy: v, checkHint, onDone }: { vacancy: Vacancy
         <TextField label={t('vacancies.edit.email')} value={email} onChange={setEmail} />
         <SelectField label={t('vacancies.edit.salutation')} value={salutation} options={SALUTATIONS} optionLabel={(s) => s || '—'} onChange={setSalutation} />
         <TextField label={t('vacancies.edit.name')} value={name} onChange={setName} />
+        <TextField label={t('vacancies.edit.phone')} value={phone} onChange={setPhone} maxLength={40} />
+        <TextField label={t('vacancies.edit.street')} value={street} onChange={setStreet} maxLength={120} />
+        <TextField label={t('vacancies.edit.postcode')} value={postcode} onChange={setPostcode} maxLength={10} />
+        <TextField label={t('vacancies.edit.city')} value={city} onChange={setCity} maxLength={80} />
       </div>
       <div className="btn-row">
         <button type="button" className="btn" disabled={saving} onClick={() => void save()}>{t('vacancies.edit.save')}</button>

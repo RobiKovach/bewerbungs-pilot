@@ -24,7 +24,7 @@ export async function setup(opts: { connected?: boolean; approve?: boolean; logg
   for (const docId of docIds) fs.writeFileSync(ctx.profileFiles.pathOf({ id: docId, ext: '.pdf' }), await makePdf(1));
   ctx.vacancyStore.add(vacancy({
     id: 'fav1', status: 'favorite', company: 'Muster GmbH', locations: ['Hamburg'],
-    ...(opts.contact ? { contact: { email: 'jobs@muster.example', salutation: 'Frau', name: 'Weiler' } } : {}),
+    ...(opts.contact ? { contact: { email: 'jobs@muster.example', salutation: 'Frau', name: 'Weiler', phone: '', street: '', postcode: '', city: '' } } : {}),
   }), OFFER);
   await ctx.app.inject({ method: 'POST', url: '/api/applications', headers: H, payload: { vacancyId: 'fav1', language: 'de' } });
   await ctx.applicationJob.whenIdle();

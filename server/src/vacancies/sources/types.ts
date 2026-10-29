@@ -27,6 +27,8 @@ export interface SourceHit {
 
 export interface SourceDetails extends SourceHit {
   text: string;
+  /** The partner's page about the offer (`allianzpartnerUrl`), never an Arbeitsagentur address; '' = none. */
+  partnerUrl: string;
 }
 
 export interface VacancySource {

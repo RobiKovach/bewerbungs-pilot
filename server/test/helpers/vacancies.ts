@@ -19,12 +19,15 @@ export function hit(over: Partial<SourceHit> = {}): SourceHit {
   };
 }
 
+/** A fictional card — like real Arbeitsagentur cards, it links to its offer page. */
 export function vacancy(over: Partial<Vacancy> = {}): Vacancy {
   n++;
+  const sourceId = `10000-${String(n).padStart(10, '0')}-S`;
   return {
-    id: over.id ?? `v${n}`, source: 'arbeitsagentur', sourceId: `10000-${String(n).padStart(10, '0')}-S`, addedManually: false,
+    id: over.id ?? `v${n}`, source: 'arbeitsagentur', sourceId, addedManually: false,
     title: `Webentwickler ${n}`, company: `Firma ${n} GmbH`, locations: ['Dresden'], remote: 'unknown', employment: [],
-    salaryText: '', publishedAt: '2026-09-20', foundAt: '2026-09-28T10:00:00.000Z', url: '', contact: null, hasText: false,
+    salaryText: '', publishedAt: '2026-09-20', foundAt: '2026-09-28T10:00:00.000Z', url: `https://www.arbeitsagentur.de/jobsuche/jobdetail/${sourceId}`,
+    contact: null, hasText: false,
     status: 'new', scoreState: 'scored', score: { value: 70, why: ['a'], missing: [], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude', language: 'de' },
     hiddenAt: null, ...over,
   };
@@ -38,7 +41,7 @@ export function profileWithWishes(wishes: Partial<WishesData>, change: (p: Profi
 }
 
 export function details(h: SourceHit, text = `Volltext für ${h.title}. React, TypeScript.`): SourceDetails {
-  return { ...h, text };
+  return { ...h, text, partnerUrl: '' };
 }
 
 export interface FakeSource extends VacancySource { queries: SearchQuery[]; detailCalls: string[]; onlineCalls: string[] }

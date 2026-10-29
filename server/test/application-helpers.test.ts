@@ -78,18 +78,26 @@ const vac = (over: Partial<PackageVacancy> = {}): PackageVacancy => ({
 describe('letter parts', () => {
   it('recipient: company, contact line when a name is known, first location', () => {
     expect(buildRecipient(vac())).toEqual(['Muster GmbH', 'Berlin']);
-    expect(buildRecipient(vac({ contact: { email: 'a@b.de', salutation: 'Frau', name: 'Anna Müller' } }))).toEqual(['Muster GmbH', 'Frau Anna Müller', 'Berlin']);
-    expect(buildRecipient(vac({ locations: [], contact: { email: '', salutation: '', name: 'Kim Berg' } }))).toEqual(['Muster GmbH', 'Kim Berg']);
+    expect(buildRecipient(vac({ contact: { email: 'a@b.de', salutation: 'Frau', name: 'Anna Müller', phone: '', street: '', postcode: '', city: '' } }))).toEqual(['Muster GmbH', 'Frau Anna Müller', 'Berlin']);
+    expect(buildRecipient(vac({ locations: [], contact: { email: '', salutation: '', name: 'Kim Berg', phone: '', street: '', postcode: '', city: '' } }))).toEqual(['Muster GmbH', 'Kim Berg']);
+  });
+  it('0.9.1 recipient: the contact address replaces the place of work; street or postcode/city alone also count', () => {
+    const c = { email: '', salutation: 'Herr' as const, name: 'Jan Berg', phone: '0351 1', street: 'Hauptstr. 1', postcode: '01067', city: 'Dresden' };
+    expect(buildRecipient(vac({ contact: c }))).toEqual(['Muster GmbH', 'Herr Jan Berg', 'Hauptstr. 1', '01067 Dresden']);
+    expect(buildRecipient(vac({ contact: { ...c, street: '' } }))).toEqual(['Muster GmbH', 'Herr Jan Berg', '01067 Dresden']);
+    expect(buildRecipient(vac({ contact: { ...c, name: '', postcode: '', city: '' } }))).toEqual(['Muster GmbH', 'Hauptstr. 1']);
+    expect(buildRecipient(vac({ contact: { ...c, street: ' ', postcode: '', city: ' ' } }))).toEqual(['Muster GmbH', 'Herr Jan Berg', 'Berlin']);
+    expect(buildRecipient(vac({ contact: c })).length).toBeLessThanOrEqual(6);
   });
   it.each([
     [null, 'de', 'Sehr geehrte Damen und Herren,'],
-    [{ email: '', salutation: 'Frau', name: 'Anna Müller' }, 'de', 'Sehr geehrte Frau Müller,'],
-    [{ email: '', salutation: 'Herr', name: 'Dr. Jan Berg' }, 'de', 'Sehr geehrter Herr Dr. Berg,'],
-    [{ email: '', salutation: '', name: 'Kim Berg' }, 'de', 'Sehr geehrte Damen und Herren,'],
+    [{ email: '', salutation: 'Frau', name: 'Anna Müller', phone: '', street: '', postcode: '', city: '' }, 'de', 'Sehr geehrte Frau Müller,'],
+    [{ email: '', salutation: 'Herr', name: 'Dr. Jan Berg', phone: '', street: '', postcode: '', city: '' }, 'de', 'Sehr geehrter Herr Dr. Berg,'],
+    [{ email: '', salutation: '', name: 'Kim Berg', phone: '', street: '', postcode: '', city: '' }, 'de', 'Sehr geehrte Damen und Herren,'],
     [null, 'en', 'Dear Hiring Team,'],
-    [{ email: '', salutation: 'Frau', name: 'Anna Müller' }, 'en', 'Dear Ms Müller,'],
-    [{ email: '', salutation: 'Herr', name: 'Prof. Jan Berg' }, 'en', 'Dear Prof. Berg,'],
-    [{ email: '', salutation: 'Frau', name: 'Dr. Anna Müller' }, 'en', 'Dear Dr. Müller,'],
+    [{ email: '', salutation: 'Frau', name: 'Anna Müller', phone: '', street: '', postcode: '', city: '' }, 'en', 'Dear Ms Müller,'],
+    [{ email: '', salutation: 'Herr', name: 'Prof. Jan Berg', phone: '', street: '', postcode: '', city: '' }, 'en', 'Dear Prof. Berg,'],
+    [{ email: '', salutation: 'Frau', name: 'Dr. Anna Müller', phone: '', street: '', postcode: '', city: '' }, 'en', 'Dear Dr. Müller,'],
   ] as const)('salutation for %j in %s', (contact, lang, expected) => {
     expect(buildSalutation(contact, lang)).toBe(expected);
   });

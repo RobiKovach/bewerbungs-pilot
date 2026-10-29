@@ -645,6 +645,10 @@
       "email": "Kontaktowy e-mail",
       "salutation": "Zwrot grzecznościowy",
       "name": "Osoba kontaktowa",
+      "phone": "Telefon kontaktowy",
+      "street": "Ulica i numer domu",
+      "postcode": "Kod pocztowy",
+      "city": "Miejscowość",
       "save": "Zapisz"
     }
   },

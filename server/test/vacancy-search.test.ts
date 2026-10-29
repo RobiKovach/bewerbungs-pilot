@@ -185,7 +185,7 @@ describe('SearchJob', () => {
       details: (id) => {
         // the person pastes R-2 by hand while the job fetches texts
         if (id === 'R-2') ref.store!.add(vacancy({ id: 'manual', sourceId: 'R-2', addedManually: true }), null);
-        return { ...(id === 'R-1' ? h1 : h2), text: 'Text' };
+        return { ...(id === 'R-1' ? h1 : h2), text: 'Text', partnerUrl: '' };
       },
     });
     const { job, store } = setup({ source: src, provider });
@@ -197,7 +197,7 @@ describe('SearchJob', () => {
   });
 
   it('an offer that is gone when its text is fetched is skipped', async () => {
-    const { job, store } = setup({ source: fakeSource({ search: () => [hit({ sourceId: 'R-1' }), hit({ sourceId: 'R-2' })], details: (id) => (id === 'R-1' ? null : { ...hit({ sourceId: 'R-2' }), text: 'T' }) }) });
+    const { job, store } = setup({ source: fakeSource({ search: () => [hit({ sourceId: 'R-1' }), hit({ sourceId: 'R-2' })], details: (id) => (id === 'R-1' ? null : { ...hit({ sourceId: 'R-2' }), text: 'T', partnerUrl: '' }) }) });
     const s = await run(job);
     expect(s.toScore).toBe(1);
     expect(store.list().map((v) => v.sourceId)).toEqual(['R-2']);

@@ -93,7 +93,7 @@ function checkedContact(c: ManualOutput['contact'], text: string): VacancyContac
   const nameOk = name.length >= 3 && contains(text, name);
   const keptName = nameOk ? name.slice(0, VACANCY_LIMITS.name) : '';
   const salutation: Salutation = nameOk ? c.salutation : '';
-  return keptEmail || keptName ? { email: keptEmail, salutation, name: keptName } : null;
+  return keptEmail || keptName ? { email: keptEmail, salutation, name: keptName, phone: '', street: '', postcode: '', city: '' } : null;
 }
 
 export function toManualFields(out: ManualOutput, text: string): ManualFields {

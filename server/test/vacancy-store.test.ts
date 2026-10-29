@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { AppError } from '../src/errors.js';
 import { VacancyStore } from '../src/vacancies/store.js';
+import { VACANCIES_SCHEMA_VERSION } from '../src/vacancies/schema.js';
 import { vacancy } from './helpers/vacancies.js';
 
 function setup() {
@@ -24,7 +25,7 @@ describe('VacancyStore', () => {
     const again = new VacancyStore(paths);
     expect(again.load()).toHaveLength(1);
     expect(again.readText('a1')).toBe('Wir suchen Sie.');
-    expect(JSON.parse(fs.readFileSync(paths.file, 'utf8')).schemaVersion).toBe(3);
+    expect(JSON.parse(fs.readFileSync(paths.file, 'utf8')).schemaVersion).toBe(VACANCIES_SCHEMA_VERSION);
   });
 
   it('get/list return copies', () => {
@@ -117,7 +118,7 @@ describe('VacancyStore', () => {
   it('an invalid file is set aside without card content leaking into the warn reason', () => {
     const { paths } = setup();
     const card = {
-      ...vacancy({ id: 'x', title: 'Geheimer Titel', company: 'Geheime GmbH', contact: { email: 'geheim@example.com', salutation: 'Frau', name: 'Geheimer Name' } }),
+      ...vacancy({ id: 'x', title: 'Geheimer Titel', company: 'Geheime GmbH', contact: { email: 'geheim@example.com', salutation: 'Frau', name: 'Geheimer Name', phone: '', street: '', postcode: '', city: '' } }),
       status: 'weird',
     };
     fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 1, vacancies: [card] }));
@@ -216,5 +217,50 @@ describe('0.9.0: initiative flag', () => {
     again.load();
     expect(again.get('i1')?.initiative).toBe(true);
     expect(Object.hasOwn(again.get('n1') ?? {}, 'initiative')).toBe(false);
+  });
+});
+
+describe('0.9.1: vacancies file v3 → v4', () => {
+  // Shaped like the real cards found on Robert's PC: the old code had replaced the offer link with the API's partner link.
+  const offer = (refnr: string) => `https://www.arbeitsagentur.de/jobsuche/jobdetail/${refnr}`;
+  const oldContact = { email: 'jobs@muster.example', salutation: 'Frau', name: 'Erika Beispiel' };
+  const v3 = (over: Record<string, unknown>) => {
+    const { contact: _c, ...rest } = vacancy();
+    void _c;
+    return { ...rest, contact: null, ...over };
+  };
+
+  it('AA cards always link to their offer; a real partner page moves to partnerUrl, the AA home page is dropped; contacts get empty phone/address', () => {
+    const { paths } = setup();
+    const cards = [
+      v3({ id: 'home', sourceId: '10001-1003093507-S', url: 'http://www.arbeitsagentur.de', contact: oldContact }),
+      v3({ id: 'company', sourceId: '10000-2222222222-S', url: 'https://primegate-consulting.de/' }),
+      v3({ id: 'ok', sourceId: '10000-3333333333-S', url: offer('10000-3333333333-S') }),
+      v3({ id: 'empty', sourceId: '10000-4444444444-S', url: '' }),
+      v3({ id: 'manual', source: 'manual', sourceId: null, addedManually: true, url: 'https://muster.example/job', contact: oldContact }),
+    ];
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 3, vacancies: cards }));
+    const events: string[] = [];
+    const store = new VacancyStore(paths, (e) => events.push(e));
+    store.load();
+    expect(events).toEqual([]);
+    const newContact = { ...oldContact, phone: '', street: '', postcode: '', city: '' };
+    expect(store.get('home')).toEqual({ ...cards[0], url: offer('10001-1003093507-S'), contact: newContact });
+    expect(store.get('company')).toEqual({ ...cards[1], url: offer('10000-2222222222-S'), partnerUrl: 'https://primegate-consulting.de/' });
+    expect(store.get('ok')).toEqual(cards[2]);
+    expect(store.get('empty')).toEqual({ ...cards[3], url: offer('10000-4444444444-S') });
+    expect(store.get('manual')).toEqual({ ...cards[4], contact: newContact });
+    expect(Object.hasOwn(store.get('home')!, 'partnerUrl')).toBe(false);
+    expect(fs.readdirSync(path.dirname(paths.file)).some((f) => f.includes('invalid'))).toBe(false);
+  });
+
+  it('a v4 contact without the new fields is invalid; a partnerUrl that is not http(s) is invalid', () => {
+    const { paths } = setup();
+    for (const card of [v3({ id: 'x', contact: oldContact }), { ...vacancy({ id: 'y' }), partnerUrl: 'javascript:alert(1)' }]) {
+      fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 4, vacancies: [card] }));
+      const events: string[] = [];
+      expect(new VacancyStore(paths, (e) => events.push(e)).load()).toEqual([]);
+      expect(events).toEqual(['vacancies_invalid']);
+    }
   });
 });
