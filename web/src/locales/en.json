@@ -511,6 +511,7 @@
       "googleNotSignedIn": "The Google sign-in is not finished yet. Please sign in with Google first.",
       "pageUnreadable": "Could not read this page. Paste the text of the offer into the text field.",
       "pdfNoText": "This PDF has no text (it looks like a scan). Paste the text of the offer into the text field.",
+      "contactTimeout": "The contact did not appear within 5 minutes, so the window was closed. Try again or paste the copied contact text.",
       "restoreRunning": "A backup is being restored right now. Please wait until it is finished, then try again.",
       "restoreBusySearch": "A job search is running. Please wait until it is finished, then restore the backup.",
       "restoreBusyPackage": "An application package is being prepared. Please wait until it is finished, then restore the backup.",

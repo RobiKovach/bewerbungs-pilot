@@ -511,6 +511,7 @@
       "googleNotSignedIn": "Die Anmeldung bei Google ist noch nicht abgeschlossen. Bitte melden Sie sich zuerst bei Google an.",
       "pageUnreadable": "Diese Seite konnte nicht gelesen werden. Fügen Sie den Text des Angebots in das Textfeld ein.",
       "pdfNoText": "Dieses PDF enthält keinen Text (wohl ein Scan). Fügen Sie den Text des Angebots in das Textfeld ein.",
+      "contactTimeout": "Der Kontakt ist nicht innerhalb von 5 Minuten erschienen, daher wurde das Fenster geschlossen. Versuchen Sie es erneut oder fügen Sie den kopierten Kontakttext ein.",
       "restoreRunning": "Gerade wird eine Sicherung wiederhergestellt. Bitte warten Sie, bis sie fertig ist, und versuchen Sie es dann erneut.",
       "restoreBusySearch": "Gerade läuft eine Stellensuche. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",
       "restoreBusyPackage": "Gerade wird eine Bewerbungsmappe erstellt. Bitte warten Sie, bis sie fertig ist, und stellen Sie dann die Sicherung wieder her.",

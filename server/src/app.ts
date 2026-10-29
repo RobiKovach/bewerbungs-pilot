@@ -25,6 +25,7 @@ import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
 import type { PageReader } from './vacancies/sources/page-reader.js';
 import type { PdfFetcher } from './vacancies/sources/pdf-fetch.js';
+import type { ContactWindow } from './vacancies/sources/aa-contact-window.js';
 import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
 import type { VacancyStore } from './vacancies/store.js';
@@ -53,6 +54,8 @@ export interface AppDeps {
   pageReader: PageReader;
   /** Downloads PDFs behind pasted links (link field and the note, spec 0.9.1 A). */
   pdfFetcher: PdfFetcher;
+  /** The visible "find contact" window for Arbeitsagentur offers (spec 0.9.1 B; used by the contact routes). */
+  contactWindow: ContactWindow;
   searchJob: SearchJob;
   applicationStore: ApplicationStore;
   applicationJob: ApplicationJob;

@@ -511,6 +511,7 @@
       "googleNotSignedIn": "Logowanie przez Google nie zostało jeszcze zakończone. Zaloguj się najpierw przez Google.",
       "pageUnreadable": "Nie udało się odczytać tej strony. Wklej tekst oferty w pole tekstowe.",
       "pdfNoText": "Ten plik PDF nie zawiera tekstu (wygląda na skan). Wklej tekst oferty w pole tekstowe.",
+      "contactTimeout": "Kontakt nie pojawił się w ciągu 5 minut, więc okno zostało zamknięte. Spróbuj ponownie albo wklej skopiowany tekst kontaktu.",
       "restoreRunning": "Właśnie przywracana jest kopia zapasowa. Poczekaj, aż się zakończy, i spróbuj ponownie.",
       "restoreBusySearch": "Trwa wyszukiwanie ofert pracy. Poczekaj, aż się zakończy, potem przywróć kopię.",
       "restoreBusyPackage": "Trwa przygotowanie pakietu aplikacji. Poczekaj, aż się zakończy, potem przywróć kopię.",

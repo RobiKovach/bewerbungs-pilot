@@ -511,6 +511,7 @@
       "googleNotSignedIn": "Autentificarea cu Google nu este încă finalizată. Vă rugăm să vă autentificați mai întâi cu Google.",
       "pageUnreadable": "Această pagină nu a putut fi citită. Lipiți textul anunțului în câmpul de text.",
       "pdfNoText": "Acest PDF nu conține text (pare o scanare). Lipiți manual textul anunțului în câmpul de text.",
+      "contactTimeout": "Contactul nu a apărut în 5 minute, așa că fereastra a fost închisă. Încercați din nou sau lipiți textul de contact copiat.",
       "restoreRunning": "Chiar acum se restaurează o copie de rezervă. Vă rugăm să așteptați până se termină, apoi încercați din nou.",
       "restoreBusySearch": "O căutare de locuri de muncă este în curs. Vă rugăm să așteptați până se termină, apoi restaurați copia.",
       "restoreBusyPackage": "Se pregătește un pachet de candidatură. Vă rugăm să așteptați până se termină, apoi restaurați copia.",

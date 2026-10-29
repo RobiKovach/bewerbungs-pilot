@@ -77,6 +77,8 @@ export type ErrorReason =
   | 'pageUnreadable'
   // A pasted PDF link whose PDF has no text (a scan) (0.9.1).
   | 'pdfNoText'
+  // The 'find contact' window waited 5 minutes without the employer's contact appearing (0.9.1 B).
+  | 'contactTimeout'
   // A restore waits until nothing else works on the data (spec 0.9.0, section 3.1).
   | 'restoreBusySearch'
   | 'restoreBusyPackage'
