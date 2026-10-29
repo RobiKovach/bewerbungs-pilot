@@ -666,3 +666,22 @@ describe('ApplicationEditor — employer contact', () => {
     expect(screen.queryByRole('button', { name: 'Find contact' })).not.toBeInTheDocument();
   });
 });
+
+describe('ApplicationEditor — employer contact refused', () => {
+  const mail = { 'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }) };
+  it('"already sent" while saving closes the window for good; the editor reloads and shows why', async () => {
+    let sent = false;
+    const { user } = setup({
+      ...mail,
+      'GET /api/applications/app1': () => ({ body: sent ? appView({}, { status: 'sent', sentAt: '2026-09-29T12:00:00.000Z' }) : appView() }),
+      'PUT /api/applications/app1/contact': () => { sent = true; return { status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'sent', reason: 'packageSent' } } }; },
+    });
+    await user.click(await screen.findByRole('button', { name: 'Find contact' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Employer contact' });
+    await user.type(within(dialog).getByLabelText('Email'), 'hr@example.de');
+    await user.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Find contact' })).not.toBeInTheDocument());
+  });
+});

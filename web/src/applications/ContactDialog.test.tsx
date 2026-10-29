@@ -49,12 +49,32 @@ describe('ContactDialog', () => {
   });
 
   it('a found field replaces only itself: what the person had stays for the rest', async () => {
-    const initial = { ...EMPTY, street: 'Musterweg 1', postcode: '01069', city: 'Dresden', email: 'old@example.de' };
+    const initial = { ...EMPTY, salutation: 'Frau' as const, name: 'Erika Musterfrau', street: 'Musterweg 1', postcode: '01069', city: 'Dresden', email: 'old@example.de' };
     const { user } = setup({ [FIND]: () => ({ body: proposal({ email: 'jobs@example.de' }) }) }, { initial });
     await user.click(screen.getByRole('button', { name: 'Open the offer page' }));
     await screen.findByText(/Contact found/);
     expect(screen.getByLabelText('Email')).toHaveValue('jobs@example.de');
     expect(screen.getByLabelText('Street')).toHaveValue('Musterweg 1');
+    expect(screen.getByLabelText('Salutation')).toHaveValue('Frau');
+  });
+
+  it('a found name brings its own salutation ("—"), never the old Frau/Herr', async () => {
+    const initial = { ...EMPTY, salutation: 'Herr' as const, name: 'Max Mustermann' };
+    const { user } = setup({ [FIND]: () => ({ body: proposal({ name: 'Erika Musterfrau' }) }) }, { initial });
+    await user.click(screen.getByRole('button', { name: 'Open the offer page' }));
+    await screen.findByText(/Contact found/);
+    expect(screen.getByLabelText('Name')).toHaveValue('Erika Musterfrau');
+    expect(screen.getByLabelText('Salutation')).toHaveValue('');
+  });
+
+  it('a found address part replaces the whole address (street, postcode, city)', async () => {
+    const initial = { ...EMPTY, street: 'Altweg 9', postcode: '10115', city: 'Berlin' };
+    const { user } = setup({ [FIND]: () => ({ body: proposal({ street: 'Musterstraße 1' }) }) }, { initial });
+    await user.click(screen.getByRole('button', { name: 'Open the offer page' }));
+    await screen.findByText(/Contact found/);
+    expect(screen.getByLabelText('Street')).toHaveValue('Musterstraße 1');
+    expect(screen.getByLabelText('Postcode')).toHaveValue('');
+    expect(screen.getByLabelText('City')).toHaveValue('');
   });
 
   it('while the window is open every action waits; Cancel aborts the request and the fields stay editable', async () => {

@@ -13,6 +13,7 @@ const MAX = { email: 300, name: 200, phone: 40, street: 120, postcode: 10, city:
 const PASTE_MAX = 20_000;
 type Field = keyof typeof MAX;
 const FIELDS: readonly Field[] = ['name', 'email', 'phone', 'street', 'postcode', 'city'];
+const ADDRESS: readonly Field[] = ['street', 'postcode', 'city'];
 
 const EMPTY: VacancyContact = { email: '', salutation: '', name: '', phone: '', street: '', postcode: '', city: '' };
 const same = (a: VacancyContact, b: VacancyContact) => (Object.keys(EMPTY) as Array<keyof VacancyContact>).every((k) => a[k] === b[k]);
@@ -58,8 +59,12 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onC
 
   const take = (r: ContactProposal) => {
     if (r.found.length === 0) { setPhase({ kind: 'none' }); return; }
-    // Only what was found replaces a field; what the person already had stays for the rest.
-    setContact((c) => ({ ...c, ...Object.fromEntries(r.found.map((k) => [k, r.proposal[k]])) }));
+    // What was found replaces what the person had; the rest stays. A name and an address are replaced as a whole:
+    // a found name brings its own salutation (often '' = "—", the person picks), a found address part brings all three.
+    const keys = new Set<keyof VacancyContact>(r.found);
+    if (keys.has('name')) keys.add('salutation');
+    if (ADDRESS.some((k) => keys.has(k))) ADDRESS.forEach((k) => keys.add(k));
+    setContact((c) => ({ ...c, ...Object.fromEntries([...keys].map((k) => [k, r.proposal[k]])) }));
     setPhase({ kind: 'found' });
   };
   const run = async (from: ContactSource | 'paste') => {

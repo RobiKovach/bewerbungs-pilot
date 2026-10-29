@@ -87,6 +87,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   useEffect(() => { if (status !== 'rejected' && status !== 'offer') setReplying(null); }, [status]);
   // The "approve again" note belongs to the draft it made: gone once the package is approved (or sent) again.
   useEffect(() => { if (status !== 'draft') setContactChanged(false); }, [status]);
+  // The contact window belongs to an editable package: closed for good once it is sent (it never comes back by itself).
+  useEffect(() => { if (status && isFrozen(status)) setContactOpen(false); }, [status]);
   const warnings = usePackageCheck(id, unsaved, view?.warnings ?? []);
   const job = useApplicationJob({ pollMs, onFinished: (s) => { if (s.applicationId === id) void load(); } });
 
@@ -150,8 +152,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       setActionError(null);
       setContactChanged(wasApproved && v.application.status === 'draft');
     } catch (err) {
-      // Sent or changed meanwhile: show the package as it is now (the dialog keeps the error).
-      if (isStale(err)) void load();
+      // Sent or changed meanwhile: the window closes, the editor shows the package as it is now and why.
+      if (isStale(err)) { setContactOpen(false); setActionError(err); void load(); return; }
       throw err;
     }
   };
