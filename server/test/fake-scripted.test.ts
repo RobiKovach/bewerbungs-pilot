@@ -14,11 +14,14 @@ import { followUpTask, toQuestions, type FollowUpOutput } from '../src/profile/t
 import { structureStoriesTask, toStories, type StoriesOutput } from '../src/profile/tasks/structure-stories.js';
 import { helloTask } from '../src/prompts/hello.js';
 import { extractManualTask, toManualFields, type ManualOutput } from '../src/vacancies/tasks/extract-manual.js';
+import { contactNameTask, withContactName, type ContactNameOutput } from '../src/vacancies/tasks/contact-name.js';
 import { scoreTask, type ScoreOutput } from '../src/vacancies/tasks/score.js';
+import { emptyContact } from '../src/vacancies/contact-parse.js';
 import { pkg, readyPackageProfile } from './helpers/applications.js';
 
 const VAC: PackageVacancy = { id: 'v1', title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Hamburg'], remote: 'partial', contact: null, url: '' };
 const PASTED = 'Webentwickler (m/w/d)\nMuster GmbH\n20095 Hamburg\nWir suchen Verstärkung. Bewerbung an jobs@muster.example, Ansprechpartnerin Frau Erika Beispiel.';
+const CONTACT_WINDOW = 'Ihre Ansprechpartnerin\nFrau Erika Musterfrau\nE-Mail: bewerbung@muster.example';
 const ctx = (language: 'de' | 'en' = 'de') => packageContext(readyPackageProfile(), language, false);
 const id = (n: number) => () => `id-${n}`;
 
@@ -41,6 +44,7 @@ const TASKS: Record<LlmTaskId, () => LlmTask> = {
   'refresh-cv': () => refreshCvTask(ctx('en'), VAC, 'We are hiring.'),
   'revise-letter': () => reviseLetterTask(ctx(), VAC, 'Wir suchen.', pkg().letter, 'Mach es kürzer'),
   'offer-reply': () => offerReplyTask(ctx(), pkg(), '50.000 €', '55.000 €'),
+  'contact-name': () => contactNameTask(CONTACT_WINDOW, 'de'),
 };
 
 describe('scriptedResponse (fake AI for end-to-end runs)', () => {
@@ -106,5 +110,12 @@ describe('scriptedResponse (fake AI for end-to-end runs)', () => {
     expect(offerReplyViolations(body, '55.000 €', ctx())).toEqual([]);
     expect(body.startsWith('Sehr geehrte Damen und Herren,')).toBe(true);
     expect(body).toContain('Max Mustermann');
+  });
+
+  it('contact-name: the person from the contact block, accepted by the app check', () => {
+    const out = scriptedResponse(TASKS['contact-name']()) as ContactNameOutput;
+    expect(out).toEqual({ salutation: 'Frau', name: 'Erika Musterfrau' });
+    expect(withContactName(emptyContact(), out, CONTACT_WINDOW).name).toBe('Erika Musterfrau');
+    expect(scriptedResponse(contactNameTask('Kontakt\nE-Mail: jobs@muster.example', 'de'))).toEqual({ salutation: '', name: '' });
   });
 });

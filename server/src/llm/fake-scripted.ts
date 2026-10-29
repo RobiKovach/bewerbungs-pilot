@@ -124,6 +124,13 @@ function offerReply(task: LlmTask) {
   return { body };
 }
 
+/** The person named in the contact block ("Frau/Herr Vorname Nachname"), or none. */
+function contactName(task: LlmTask) {
+  const block = fenced(task.prompt, 'contact block')[0] ?? '';
+  const m = /\b(Frau|Herr)\s+([\p{Lu}][\p{L}-]+(?:\s+[\p{Lu}][\p{L}-]+)?)/u.exec(block);
+  return m ? { salutation: m[1], name: m[2] } : { salutation: '', name: '' };
+}
+
 export function scriptedResponse(task: LlmTask): unknown {
   switch (task.id) {
     case 'probe': return { ok: true };
@@ -150,6 +157,7 @@ export function scriptedResponse(task: LlmTask): unknown {
     case 'refresh-cv': return cv(task);
     case 'revise-letter': return letter(task);
     case 'offer-reply': return offerReply(task);
+    case 'contact-name': return contactName(task);
     default: {
       const unknown: never = task.id;
       throw new Error(`fake AI: no scripted answer for task "${String(unknown)}"`);
