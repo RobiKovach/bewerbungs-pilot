@@ -17,7 +17,7 @@ const copy = (rel) => {
   if (!fs.existsSync(src)) throw new Error(`Release: missing file ${rel}`);
   fs.cpSync(src, path.join(out, rel), { recursive: true });
 };
-for (const rel of ['package.json', 'package-lock.json', 'LICENSE', 'README.md', 'server/package.json', 'server/dist', 'web/package.json', 'web/dist', 'installer']) {
+for (const rel of ['package.json', 'package-lock.json', 'LICENSE', 'README.md', 'CHANGELOG.md', 'server/package.json', 'server/dist', 'web/package.json', 'web/dist', 'installer']) {
   copy(rel);
 }
 fs.rmSync(path.join(out, 'installer', 'node-path.txt'), { force: true });
