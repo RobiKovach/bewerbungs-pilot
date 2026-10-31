@@ -12,6 +12,13 @@ Newest first. The short version of every release is also on the [Releases page](
   this click starts the demo: a normal start always opens your own, empty profile.
 - **Easier start.** The README begins with five steps, what you need and the two warnings you may see (Windows
   SmartScreen and Google) — with the reason they are safe. Screenshots in the README and on the website.
+- **Find the employer's contact.** A job offer card has **Find contact**: it opens the offer page of the
+  Arbeitsagentur in an Edge window (you solve the captcha, the program takes the contact and closes the window),
+  reads the company's own page, or reads text you copied. Name, e-mail, phone and address go into the letter; you
+  check the fields and press **Save**.
+- **PDF links.** A link to a PDF (for example the job description) in the link field or in your note is read too;
+  a scanned PDF without text gets a clear notice.
+- Dependency updates (fastify 5.12.7) and small fixes.
 
 ## What's new in 0.9.0
 
