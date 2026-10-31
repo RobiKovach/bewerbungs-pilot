@@ -39,6 +39,8 @@ export type ErrorCode =
   | 'BACKUP_NEWER'
   /** A backup could not be written (disk full, no access to the folder). */
   | 'BACKUP_FAILED'
+  /** The demo copy of the app (spec 0.10.0) did not start. */
+  | 'DEMO_FAILED'
   | 'CONFLICT'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'

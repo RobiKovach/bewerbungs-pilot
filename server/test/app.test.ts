@@ -37,7 +37,7 @@ describe('guards', () => {
 describe('api', () => {
   it('reports health', async () => {
     const { app } = await makeApp();
-    expect((await app.inject({ method: 'GET', url: '/api/health' })).json()).toEqual({ ok: true, app: 'bewerbungs-pilot', version: '0.1.0' });
+    expect((await app.inject({ method: 'GET', url: '/api/health' })).json()).toEqual({ ok: true, app: 'bewerbungs-pilot', version: '0.1.0', demo: false });
   });
   it('reads and patches settings', async () => {
     const { app } = await makeApp();

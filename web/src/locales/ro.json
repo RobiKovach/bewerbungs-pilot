@@ -23,7 +23,7 @@
     "openProfile": "Deschideți profilul"
   },
   "onboarding": {
-    "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând." },
+    "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând.", "demo": "Încă nu sunteți sigur? Uitați-vă mai întâi: demo-ul arată tot programul cu persoana fictivă Max Mustermann. Nu aveți nevoie de un asistent AI, de un cont de e-mail sau de datele dumneavoastră.", "tryDemo": "Încercați demo-ul", "demoStarting": "Se pornește demo-ul…", "demoOpened": "Demo-ul s-a deschis într-o filă nouă. Când terminați, reveniți aici pentru a configura BewerbungsPilot pentru dumneavoastră." },
     "ai": {
       "title": "Asistentul dumneavoastră AI",
       "intro": "BewerbungsPilot folosește un asistent AI pe computerul dumneavoastră pentru a citi ofertele de angajare și a redacta documentele dumneavoastră. Alegeți unul.",
@@ -189,7 +189,8 @@
     "quitTitle": "Închideți aplicația",
     "quitButton": "Închideți BewerbungsPilot"
   },
-  "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop." },
+  "quit": { "title": "BewerbungsPilot a fost închis", "body": "Puteți închide această filă acum. Pentru a porni din nou, folosiți comanda rapidă BewerbungsPilot de pe desktop.", "demoTitle": "Demo-ul a fost închis", "demoBody": "Închideți această filă și reveniți la fila BewerbungsPilot pentru a-l configura pentru dumneavoastră." },
+  "demo": { "badge": "Demo", "text": "Încercați demo-ul cu persoana fictivă Max Mustermann. Răspunsurile AI sunt exemple și nu se trimite nimic: e-mailurile sunt doar salvate pe acest computer.", "leave": "Ieșiți din demo" },
   "noSession": { "title": "Deschideți BewerbungsPilot din scurtătură", "text": "Această pagină nu a fost deschisă de BewerbungsPilot însuși (de exemplu dintr-un marcaj după o repornire). Pentru siguranța dumneavoastră, aici nu se afișează nimic. Deschideți BewerbungsPilot cu scurtătura de pe desktop sau din meniul Start." },
   "profile": {
     "title": "Profilul dumneavoastră",
@@ -484,6 +485,7 @@
     "BACKUP_INVALID": { "message": "Acest fișier nu este o copie de rezervă BewerbungsPilot sau este deteriorat.", "hint": "Nu s-a modificat nimic. Alegeți alt fișier de copie." },
     "BACKUP_NEWER": { "message": "Această copie a fost creată de o versiune mai nouă a BewerbungsPilot.", "hint": "Actualizați mai întâi programul, apoi restaurați această copie." },
     "BACKUP_FAILED": { "message": "Copia nu a putut fi salvată sau restaurată.", "hint": "Datele dumneavoastră nu au fost modificate. Verificați dacă discul nu este plin și dacă nu este deschis niciun fișier din folderul de date al programului, apoi încercați din nou." },
+    "DEMO_FAILED": { "message": "Demo-ul nu a putut fi pornit.", "hint": "Încercați din nou. Dacă se repetă, reporniți BewerbungsPilot." },
     "reasons": {
       "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",
       "cvNoContent": "{{ai}} a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",

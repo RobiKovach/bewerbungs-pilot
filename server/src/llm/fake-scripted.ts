@@ -72,7 +72,8 @@ function cv(task: LlmTask) {
   };
 }
 
-const FICTIONAL_CV: ExtractedCv = {
+/** The fictional person every scripted CV reading returns; also the demo profile (demo/demo.ts). */
+export const FICTIONAL_CV: ExtractedCv = {
   readable: true,
   personal: {
     fullName: 'Max Mustermann', email: 'max.mustermann@example.com', phone: '+49 30 1234567', street: 'Musterstraße 1',

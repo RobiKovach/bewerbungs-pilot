@@ -46,6 +46,17 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 .error-banner__technical-label { font-size: 0.75rem; margin: 0.6rem 0 0.15rem; }
 /* Same spacing the paragraph wrapper used to give. */
 .welcome-lang { margin: 1em 0; }
+/* «Try the demo» (spec 0.10.0): the offer on the first setup step and the banner on every page of the demo copy. */
+.demo-offer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.demo-offer p { color: var(--muted); max-width: 60ch; }
+.demo-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; padding: 0.6rem 1.25rem;
+  background: #fff4d6; color: #5c3f00; border-bottom: 1px solid #f0d48a; }
+.demo-banner > span:not(.badge) { flex: 1 1 24rem; }
+.badge.demo-badge { background: #7a5200; color: #fff; border-color: #7a5200; text-transform: uppercase; letter-spacing: 0.04em; }
+@media (prefers-color-scheme: dark) {
+  .demo-banner { background: #3a2e10; color: #f3d88c; border-bottom-color: #6b5520; }
+  .badge.demo-badge { background: #f3d88c; color: #3a2e10; border-color: #f3d88c; }
+}
 .boot { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
 .wizard .step-counter { color: var(--muted); margin: 0; font-size: 0.9rem; }
 .progress { height: 6px; background: var(--bg); border-radius: 999px; overflow: hidden; margin: 0.5rem 0 1.25rem; }
