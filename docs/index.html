@@ -24,6 +24,31 @@
   </p>
   <p><a class="button" href="https://github.com/RobiKovach/bewerbungs-pilot/releases/latest">Download for Windows</a></p>
 
+  <figure>
+    <img src="images/02-job-offers.png" width="1280" height="860" alt="BewerbungsPilot: job offers scored from 0 to 100, with the reasons why each one fits">
+    <figcaption>Job offers scored from 0 to 100, with the reasons (from the demo with the sample person Max Mustermann).</figcaption>
+  </figure>
+
+  <h2>Start in 5 steps</h2>
+  <ol class="steps">
+    <li><strong>Download</strong> the file <code>BewerbungsPilot-vX.Y.Z.zip</code> under <strong>Assets</strong> on the
+      <a href="https://github.com/RobiKovach/bewerbungs-pilot/releases/latest">download page</a> and unzip it.</li>
+    <li><strong>Install:</strong> double-click <code>install.bat</code>. If Windows says “Windows protected your PC”, click
+      <strong>More info → Run anyway</strong> (<a href="#warnings">why this is safe</a>).</li>
+    <li><strong>Open</strong> the app with the <strong>BewerbungsPilot</strong> shortcut on your desktop. It opens in your browser.</li>
+    <li><strong>Try the demo</strong> (optional): one click shows the whole app with a sample person — no AI helper, no mailbox, none of your data.</li>
+    <li><strong>Set it up for yourself:</strong> choose your AI helper, upload your CV, check your profile and connect your mailbox. The app walks you through it.</li>
+  </ol>
+
+  <h2>What you need</h2>
+  <table>
+    <tr><th>Computer</th><td>Windows 10 or 11. The installer sets up everything else, no administrator rights needed.</td></tr>
+    <tr><th>AI helper</th><td><strong>Claude</strong> with a paid plan (<a href="https://claude.com/pricing">prices</a>), or <strong>ChatGPT</strong> —
+      a free account works, but its limit is small: one application package takes about 1–3 requests.</td></tr>
+    <tr><th>Mailbox (optional)</th><td>Gmail, GMX, WEB.DE, T-Online, Yahoo, iCloud and others. Without one, download the PDFs and send them yourself.</td></tr>
+  </table>
+  <p class="muted">The demo needs none of these except Windows.</p>
+
   <h2>How it works</h2>
   <ol>
     <li><strong>Your profile.</strong> Upload your CV; the AI helper fills in your profile, and you check every section.
@@ -35,6 +60,29 @@
     <li><strong>Sending and statuses.</strong> You send an approved package from your own mailbox, mark answers
       (interview, rejection, offer) and get a reminder after 14 days without an answer.</li>
   </ol>
+
+  <h2>What it looks like</h2>
+  <div class="shots">
+    <figure><img src="images/03-package.png" width="1280" height="860" alt="A one-page cover letter for one job offer next to its PDF preview">
+      <figcaption>A one-page cover letter for one offer — edit it or ask the AI helper to change it.</figcaption></figure>
+    <figure><img src="images/04-cv.png" width="1280" height="860" alt="A CV tailored to the job offer">
+      <figcaption>A CV tailored to the offer, in German or English.</figcaption></figure>
+    <figure><img src="images/05-send.png" alt="The email with the application before it is sent">
+      <figcaption>You see every email before it goes out from your own mailbox.</figcaption></figure>
+    <figure><img src="images/06-applications.png" width="1280" height="860" alt="Statistics of the applications">
+      <figcaption>Statuses, reminders and statistics of every application.</figcaption></figure>
+  </div>
+
+  <h2 id="warnings">Warnings you may see — and why they are safe</h2>
+  <div class="card">
+    <p><strong>Windows SmartScreen</strong> — “Windows protected your PC” when you start <code>install.bat</code>:
+      click <strong>More info → Run anyway</strong>. The installer is not signed with a paid certificate yet, so Windows does
+      not know the publisher. It is a plain script you can read in the <a href="https://github.com/RobiKovach/bewerbungs-pilot/tree/main/installer">source code</a>.</p>
+    <p><strong>Google</strong> — “Google hasn't verified this app” when you connect a Gmail address: click
+      <strong>Advanced → Go to BewerbungsPilot (unsafe)</strong>. Google has not finished checking the app yet. It only asks
+      for permission to <strong>send</strong> the emails you approve, never to read your mailbox (<a href="#google">details</a>).
+      Until then at most 100 people in total can sign in this way; otherwise use GMX, WEB.DE or another mailbox.</p>
+  </div>
 
   <h2 id="google">Why the app asks for access to your Google account</h2>
   <div class="card">
