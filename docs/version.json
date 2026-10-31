@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "latest": "0.9.0",
-  "released": "2026-10-26",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.9.0",
+  "latest": "0.10.0",
+  "released": "2026-10-31",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.10.0",
   "notes": {
-    "uk": "Резервні копії (зберегти й відновити в Налаштуваннях), копія перед кожним оновленням, повідомлення про нові версії, вкладка «Подано», ініціативні заявки й примітка до вакансії, пошук чергує всі професії, більший перегляд листа й CV.",
-    "en": "Backups (save and restore in Settings), a backup before every update, new-version notices, an \"Applied\" tab, initiative applications and a note for a vacancy, search takes turns between all job titles, a bigger letter and CV preview.",
-    "de": "Sicherungen (speichern und wiederherstellen in den Einstellungen), Sicherung vor jedem Update, Hinweis auf neue Versionen, Tab „Beworben“, Initiativbewerbungen und Notiz zur Stelle, Suche wechselt zwischen allen Berufen, größere Vorschau.",
-    "ru": "Резервные копии (сохранить и восстановить в Настройках), копия перед каждым обновлением, уведомления о новых версиях, вкладка «Подано», инициативные заявки и заметка к вакансии, поиск чередует все профессии, крупнее просмотр письма и резюме.",
-    "pl": "Kopie zapasowe (zapisz i przywróć w Ustawieniach), kopia przed każdą aktualizacją, powiadomienia o nowych wersjach, karta „Wysłane”, aplikacje z własnej inicjatywy i notatka do oferty, wyszukiwanie na zmianę dla wszystkich zawodów, większy podgląd.",
-    "ro": "Copii de siguranță (salvare și restaurare în Setări), o copie înainte de fiecare actualizare, anunțuri despre versiuni noi, fila „Trimise”, candidaturi spontane și o notă la ofertă, căutarea alternează toate meseriile, previzualizare mai mare."
+    "uk": "Кнопка «Спробувати демо» (зразковий профіль в окремій копії, ваші дані не змінюються), простіший старт у README і на сайті, пошук контакту роботодавця для листа, читання PDF-посилань.",
+    "en": "A \"Try the demo\" button (a sample profile in a separate copy, your data stays untouched), a simpler start in the README and on the site, finding the employer's contact for the letter, reading PDF links.",
+    "de": "Schaltfläche „Demo ausprobieren“ (Beispielprofil in einer eigenen Kopie, Ihre Daten bleiben unberührt), einfacherer Start in README und Website, Kontakt des Arbeitgebers für das Anschreiben finden, PDF-Links werden gelesen.",
+    "ru": "Кнопка «Попробовать демо» (пример профиля в отдельной копии, ваши данные не меняются), более простой старт в README и на сайте, поиск контакта работодателя для письма, чтение PDF-ссылок.",
+    "pl": "Przycisk „Wypróbuj demo” (przykładowy profil w osobnej kopii, Twoje dane pozostają nietknięte), prostszy start w README i na stronie, wyszukiwanie kontaktu pracodawcy do listu, czytanie linków do PDF.",
+    "ro": "Butonul „Încearcă demo” (un profil de exemplu într-o copie separată, datele tale rămân neatinse), un start mai simplu în README și pe site, găsirea contactului angajatorului pentru scrisoare, citirea linkurilor PDF."
   }
 }
