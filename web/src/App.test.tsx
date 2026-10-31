@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from './settings';
 import { App } from './App';
@@ -75,5 +75,30 @@ describe('App', () => {
     render(<SettingsProvider><App /></SettingsProvider>);
     expect(await screen.findByRole('heading', { name: 'Welcome to BewerbungsPilot' })).toBeInTheDocument();
     expect(screen.queryByRole('status', { name: 'Demo' })).toBeNull();
+  });
+  it('after setup the real app offers the demo in the top bar: it opens in a new tab, this tab stays as it is', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
+    const f = mockFetch({
+      ...settingsRoutes(baseSettings()).routes,
+      'GET /api/health': () => ({ body: { ok: true, app: 'bewerbungs-pilot', version: '0.10.0', demo: false } }),
+      'POST /api/demo': () => ({ body: { url: 'http://127.0.0.1:4291/open?key=k' } }),
+    });
+    render(<SettingsProvider><App /></SettingsProvider>);
+    expect(await screen.findByRole('heading', { name: 'Welcome to BewerbungsPilot' })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Try the demo' }));
+    await waitFor(() => expect(tab.location.href).toBe('http://127.0.0.1:4291/open?key=k'));
+    const call = f.mock.calls.find((c) => c[0] === '/api/demo');
+    expect(JSON.parse(String(call?.[1]?.body))).toEqual({ language: 'en' });
+    expect(open).toHaveBeenCalledWith('', '_blank');
+    expect(screen.getByRole('heading', { name: 'Welcome to BewerbungsPilot' })).toBeInTheDocument();
+    open.mockRestore();
+  });
+
+  it('the demo copy does not offer another demo', async () => {
+    mockFetch({ ...settingsRoutes(baseSettings()).routes, 'GET /api/health': () => ({ body: { ok: true, app: 'bewerbungs-pilot', version: '0.10.0', demo: true } }) });
+    render(<SettingsProvider><App /></SettingsProvider>);
+    await screen.findByRole('status', { name: 'Demo' });
+    expect(screen.queryByRole('button', { name: 'Try the demo' })).toBeNull();
   });
 });

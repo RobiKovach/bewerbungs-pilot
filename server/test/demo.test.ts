@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { SettingsStore } from '../src/data/settings.js';
-import { DemoLauncher, demoDataRoot, seedDemo } from '../src/demo/demo.js';
+import { DemoLauncher, demoDataRoot, isDemoStart, seedDemo } from '../src/demo/demo.js';
 import { MemorySecretStore } from '../src/mail/secret.js';
 import { readiness } from '../src/profile/readiness.js';
 import { validateProfile } from '../src/profile/schema.js';
@@ -71,6 +71,27 @@ describe('demo data (spec 0.10.0: «Try the demo»)', () => {
     expect(s.profileStore.get().sections.personal.data.city).toBe('Hamburg');
     expect(s.vacancyStore.list()).toHaveLength(3);
     expect(s.settings.get().language).toBe('en');
+  });
+});
+
+describe('a normal start (no «Try the demo» click)', () => {
+  it('is never the demo: only --demo or BP_DEMO=1, which only the demo button sets, starts it', () => {
+    expect(isDemoStart(['node', 'index.js'], {})).toBe(false);
+    expect(isDemoStart(['node', 'index.js', '--no-open', '--fake-llm'], { BP_FAKE_LLM: '1', BP_DEMO_LANGUAGE: 'de' })).toBe(false);
+    expect(isDemoStart(['node', 'index.js', '--demo', '--no-open'], {})).toBe(true);
+    expect(isDemoStart(['node', 'index.js'], { BP_DEMO: '1' })).toBe(true);
+  });
+
+  it('starts with an empty profile and no sample offers, so the person fills in their own', () => {
+    const s = stores();
+    const profile = s.profileStore.get();
+    expect(profile.sections.personal.data.fullName ?? '').toBe('');
+    expect(JSON.stringify(profile)).not.toContain('Mustermann');
+    expect(profile.stories).toHaveLength(0);
+    expect(profile.wizard.completedAt).toBeNull();
+    expect(s.vacancyStore.list()).toHaveLength(0);
+    expect(s.settings.get().onboarding.completed).toBe(false);
+    expect(s.settings.get().mail).toBeNull();
   });
 });
 

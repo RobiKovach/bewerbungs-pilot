@@ -4,11 +4,12 @@ Newest first. The short version of every release is also on the [Releases page](
 
 ## What's new in 0.10.0
 
-- **Try the demo.** The first setup step has a **Try the demo** button: it opens the whole app in a new tab with the
+- **Try the demo.** The first setup step and, after setup, the top bar have a **Try the demo** button: it opens the whole app in a new tab with the
   sample person Max Mustermann — a checked profile, two stories and three sample job offers with scores. Create a
   package, look at the letter and the CV, "send" it: AI answers are examples and emails are only saved on your PC.
   No AI helper, no mailbox and none of your own data are needed. The demo runs on its own data folder
-  (`%LOCALAPPDATA%\BewerbungsPilot\demo`) and never touches your profile; **Leave the demo** closes it.
+  (`%LOCALAPPDATA%\BewerbungsPilot\demo`) and never touches your profile; **Leave the demo** closes it. Only
+  this click starts the demo: a normal start always opens your own, empty profile.
 - **Easier start.** The README begins with five steps, what you need and the two warnings you may see (Windows
   SmartScreen and Google) — with the reason they are safe. Screenshots in the README and on the website.
 

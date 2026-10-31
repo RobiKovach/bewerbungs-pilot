@@ -17,7 +17,8 @@ update notices and a demo. Six languages: Українська · English · Deu
    **More info → Run anyway** ([why](#warnings-you-may-see)).
 3. **Open** the app with the **BewerbungsPilot** shortcut on your desktop. It opens in your browser.
 4. **Try the demo** (optional): one click shows the whole app with the sample person Max Mustermann — no AI helper,
-   no mailbox, none of your data.
+   no mailbox, none of your data. Without that click the app starts empty, for your own profile; the button stays in
+   the top bar after setup too.
 5. **Set it up for yourself:** choose your AI helper, upload your CV, check your profile and connect your mailbox.
    The app walks you through every step.
 

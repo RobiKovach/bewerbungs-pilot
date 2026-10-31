@@ -10,7 +10,7 @@ import { buildApp } from './app.js';
 import { writeJsonAtomic } from './data/atomic.js';
 import { dataPaths, ensureDataDirs, resolveDataRoot } from './data/paths.js';
 import { SettingsStore, SUPPORTED_LANGUAGES, type Language } from './data/settings.js';
-import { DemoLauncher, demoDataRoot, seedDemo } from './demo/demo.js';
+import { DemoLauncher, demoDataRoot, isDemoStart, seedDemo } from './demo/demo.js';
 import { ClaudeCodeProvider } from './llm/claude-code.js';
 import { CodexCliProvider, codexSearchRoots } from './llm/codex-cli.js';
 import { FakeProvider } from './llm/fake.js';
@@ -51,7 +51,7 @@ const noOpen = process.argv.includes('--no-open') || process.env.BP_NO_OPEN === 
 // Test/demo modes, only from the command line or the environment (never from settings or a request):
 // --fake-llm answers every AI task from fake-scripted.ts; --fake-mail writes mails to <data>/tmp/fake-mail/ instead of sending.
 // --demo (spec 0.10.0, started by «Try the demo»): both, on the demo folder, with the fictional Max Mustermann.
-const demo = process.argv.includes('--demo') || process.env.BP_DEMO === '1';
+const demo = isDemoStart(process.argv, process.env);
 const fakeLlm = demo || process.argv.includes('--fake-llm') || process.env.BP_FAKE_LLM === '1';
 const fakeMail = demo || process.argv.includes('--fake-mail') || process.env.BP_FAKE_MAIL === '1';
 const WINNER_WAIT_MS = 15_000;

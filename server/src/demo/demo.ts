@@ -17,6 +17,9 @@ import { openUrl } from '../runtime/launch-key.js';
  */
 export const demoDataRoot = (realRoot: string) => path.join(realRoot, 'demo');
 
+/** Only the demo launcher's `--demo` (or BP_DEMO=1) starts the demo; a normal start always opens the person's own, empty profile. */
+export const isDemoStart = (argv: readonly string[], env: NodeJS.ProcessEnv) => argv.includes('--demo') || env.BP_DEMO === '1';
+
 const HOST = '127.0.0.1';
 
 const STORIES: Omit<Story, 'id'>[] = [
