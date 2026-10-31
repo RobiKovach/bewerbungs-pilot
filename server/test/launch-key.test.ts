@@ -105,7 +105,7 @@ describe('API needs the launch key', () => {
     const { app } = await keyless();
     const res = await app.inject({ method: 'GET', url: '/api/health' });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ ok: true, app: 'bewerbungs-pilot', version: '0.1.0' });
+    expect(res.json()).toEqual({ ok: true, app: 'bewerbungs-pilot', version: '0.1.0', demo: false });
   });
   it('google callback works without key', async () => {
     const { app } = await keyless();

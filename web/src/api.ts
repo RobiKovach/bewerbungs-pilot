@@ -100,6 +100,10 @@ export const api = {
   installLlm: (provider: ProviderId) => request<InstallStatus>('POST', '/api/llm/install', { provider }),
   installStatus: () => request<InstallStatus>('GET', '/api/llm/install'),
   shutdown: () => request<{ ok: true }>('POST', '/api/shutdown', {}),
+  /** `demo`: this copy is the demo (spec 0.10.0); missing on older servers. */
+  health: () => request<{ ok: true; app: string; version: string; demo?: boolean }>('GET', '/api/health'),
+  /** Starts the demo copy of the app and answers with the address that opens it. */
+  startDemo: (language: Language) => request<{ url: string }>('POST', '/api/demo', { language }),
 
   listBackups: () => request<BackupListView>('GET', '/api/backups'),
   /** null = back to the automatic folder; answers with the list from the new folder. */

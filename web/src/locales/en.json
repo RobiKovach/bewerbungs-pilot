@@ -23,7 +23,7 @@
     "openProfile": "Open your profile"
   },
   "onboarding": {
-    "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time." },
+    "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time.", "demo": "Not sure yet? Look around first: the demo shows the whole app with the sample person Max Mustermann. You need no AI helper, no email account and none of your own data for it.", "tryDemo": "Try the demo", "demoStarting": "Starting the demo…", "demoOpened": "The demo opened in a new tab. When you are done, come back here to set up BewerbungsPilot for yourself." },
     "ai": {
       "title": "Your AI helper",
       "intro": "BewerbungsPilot uses an AI helper on your computer to read job offers and write your documents. Choose one.",
@@ -189,7 +189,8 @@
     "quitTitle": "Quit the app",
     "quitButton": "Quit BewerbungsPilot"
   },
-  "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop." },
+  "quit": { "title": "BewerbungsPilot has been closed", "body": "You can close this tab now. To start again, use the BewerbungsPilot shortcut on your desktop.", "demoTitle": "The demo has been closed", "demoBody": "Close this tab and go back to the BewerbungsPilot tab to set it up for yourself." },
+  "demo": { "badge": "Demo", "text": "You are trying the demo with the sample person Max Mustermann. The AI answers are examples and nothing is sent: emails are only saved on this computer.", "leave": "Leave the demo" },
   "noSession": { "title": "Open BewerbungsPilot with its shortcut", "text": "This page was not opened by BewerbungsPilot itself (for example from a bookmark after a restart). For your safety it shows nothing here. Open BewerbungsPilot with the shortcut on your desktop or in the Start menu." },
   "profile": {
     "title": "Your profile",
@@ -484,6 +485,7 @@
     "BACKUP_INVALID": { "message": "This file is not a BewerbungsPilot backup, or it is damaged.", "hint": "Nothing was changed. Choose another backup file." },
     "BACKUP_NEWER": { "message": "This backup was made by a newer version of BewerbungsPilot.", "hint": "Update the app first, then restore this backup." },
     "BACKUP_FAILED": { "message": "The backup could not be saved or restored.", "hint": "Your data was not changed. Check that the disk is not full and that no file from the app's data folder is open, then try again." },
+    "DEMO_FAILED": { "message": "The demo could not be started.", "hint": "Please try again. If it keeps happening, restart BewerbungsPilot." },
     "reasons": {
       "cvTooLittleText": "The file contains almost no text ({{chars}} characters). It is probably empty, or the text is inside a picture.",
       "cvNoContent": "{{ai}} read the file but found nothing that looks like a CV.",

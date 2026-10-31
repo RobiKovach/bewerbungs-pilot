@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
+import { useIsDemo } from './components/DemoBanner';
 import { Layout } from './components/Layout';
 import { confirmLeave, setUnsaved } from './leaveGuard';
 import { OnboardingWizard } from './onboarding/OnboardingWizard';
@@ -24,7 +25,8 @@ function routeFromHash(hash: string): Route {
 export function App() {
   const { settings } = useSettings();
   const [route, setRoute] = useState<Route>(() => routeFromHash(window.location.hash));
-  const [quit, setQuit] = useState(false);
+  const [quit, setQuit] = useState<false | 'app' | 'demo'>(false);
+  const demo = useIsDemo();
 
   useEffect(() => {
     const onHash = () => setRoute(routeFromHash(window.location.hash));
@@ -32,11 +34,16 @@ export function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  if (quit) return <QuitScreen />;
+  if (quit) return <QuitScreen demo={quit === 'demo'} />;
   const onQuit = async () => {
-    if (!confirmLeave()) return;
+    if (!confirmLeave()) return false;
     await api.shutdown().catch(() => undefined);
-    setQuit(true);
+    setQuit(demo ? 'demo' : 'app');
+    return true;
+  };
+  // The demo tab was opened by the real app's tab: closing it brings the person back there (browsers allow it for such tabs).
+  const onLeaveDemo = async () => {
+    if (await onQuit()) window.close();
   };
   const onboarding = !settings.onboarding.completed;
   let page = <HomePage />;
@@ -49,7 +56,7 @@ export function App() {
   return (
     // App-wide: any form with unsaved changes makes leaving it (page, language, Quit, closing the tab) ask first.
     <UnsavedProvider onChange={setUnsaved}>
-      <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding}>
+      <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding} demo={demo} onLeaveDemo={() => void onLeaveDemo()}>
         {page}
       </Layout>
     </UnsavedProvider>

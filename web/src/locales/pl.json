@@ -23,7 +23,7 @@
     "openProfile": "Otwórz profil"
   },
   "onboarding": {
-    "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język programu. Możesz go zmienić w dowolnym momencie." },
+    "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język programu. Możesz go zmienić w dowolnym momencie.", "demo": "Jeszcze się wahasz? Najpierw się rozejrzyj: demo pokazuje cały program na przykładzie fikcyjnej osoby Max Mustermann. Nie potrzebujesz do tego asystenta AI, konta e-mail ani własnych danych.", "tryDemo": "Wypróbuj demo", "demoStarting": "Uruchamianie demo…", "demoOpened": "Demo otworzyło się w nowej karcie. Gdy skończysz, wróć tutaj, aby skonfigurować BewerbungsPilot dla siebie." },
     "ai": {
       "title": "Twój asystent AI",
       "intro": "BewerbungsPilot używa asystenta AI na Twoim komputerze, aby czytać oferty pracy i pisać Twoje dokumenty. Wybierz jednego.",
@@ -189,7 +189,8 @@
     "quitTitle": "Zamknij program",
     "quitButton": "Zamknij BewerbungsPilot"
   },
-  "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie." },
+  "quit": { "title": "BewerbungsPilot został zamknięty", "body": "Możesz teraz zamknąć tę kartę. Aby uruchomić ponownie, użyj skrótu BewerbungsPilot na pulpicie.", "demoTitle": "Demo zostało zamknięte", "demoBody": "Zamknij tę kartę i wróć do karty BewerbungsPilot, aby skonfigurować program dla siebie." },
+  "demo": { "badge": "Demo", "text": "Testujesz demo z fikcyjną osobą Max Mustermann. Odpowiedzi AI to tylko przykłady i nic nie jest wysyłane: e-maile są tylko zapisywane na tym komputerze.", "leave": "Zakończ demo" },
   "noSession": { "title": "Otwórz BewerbungsPilot za pomocą skrótu", "text": "Tej strony nie otworzył sam BewerbungsPilot (na przykład z zakładki po ponownym uruchomieniu). Dla twojego bezpieczeństwa nic tu nie jest wyświetlane. Otwórz BewerbungsPilot skrótem na pulpicie lub w menu Start." },
   "profile": {
     "title": "Twój profil",
@@ -484,6 +485,7 @@
     "BACKUP_INVALID": { "message": "Ten plik nie jest kopią zapasową BewerbungsPilot albo jest uszkodzony.", "hint": "Nic nie zostało zmienione. Wybierz inny plik kopii." },
     "BACKUP_NEWER": { "message": "Ta kopia została utworzona przez nowszą wersję BewerbungsPilot.", "hint": "Najpierw zaktualizuj program, potem przywróć tę kopię." },
     "BACKUP_FAILED": { "message": "Nie udało się zapisać ani przywrócić kopii.", "hint": "Twoje dane nie zostały zmienione. Sprawdź, czy dysk nie jest pełny i czy żaden plik z folderu danych programu nie jest otwarty, i spróbuj ponownie." },
+    "DEMO_FAILED": { "message": "Nie udało się uruchomić demo.", "hint": "Spróbuj ponownie. Jeśli to się powtarza, uruchom BewerbungsPilot ponownie." },
     "reasons": {
       "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
       "cvNoContent": "{{ai}} odczytał plik, ale nie znalazł niczego, co wygląda jak CV.",

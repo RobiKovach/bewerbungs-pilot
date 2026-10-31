@@ -77,6 +77,8 @@ export interface AppDeps {
   backup: Pick<BackupRouteDeps, 'paths' | 'folder' | 'reload' | 'openFolder' | 'maxUploadBytes'>;
   /** What the daily update check found (spec 0.9.0, 3.3). */
   updates: { available: () => AvailableUpdate | null };
+  /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
+  demo?: { active: boolean; start?: (language: Language) => Promise<{ url: string }> };
 }
 
 /**
@@ -188,7 +190,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return reply.code(500).send(errorBody('UNKNOWN', e.message));
   });
 
-  app.get('/api/health', async () => ({ ok: true, app: 'bewerbungs-pilot', version: deps.version }));
+  app.get('/api/health', async () => ({ ok: true, app: 'bewerbungs-pilot', version: deps.version, demo: deps.demo?.active === true }));
+
+  app.post('/api/demo', { schema: { body: languageBodySchema } }, async (req) => {
+    const start = deps.demo?.start;
+    if (deps.demo?.active || !start) throw new AppError('BAD_REQUEST', 'the demo cannot be started from here');
+    return start((req.body as { language: Language }).language);
+  });
 
   // The shortcut opens /open?key=…: the right key becomes a session cookie (no Expires = gone when the
   // browser closes; a restart makes a new key anyway). A wrong or missing key just goes on to the app,

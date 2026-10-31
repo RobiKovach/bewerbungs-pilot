@@ -7,7 +7,7 @@ import { ApplicationJob } from '../../src/applications/job.js';
 import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
 import { profilePhoto } from '../../src/applications/views.js';
-import { buildApp } from '../../src/app.js';
+import { buildApp, type AppDeps } from '../../src/app.js';
 import { resolveBackupFolder } from '../../src/backup/folder.js';
 import { dataPaths } from '../../src/data/paths.js';
 import { SettingsStore } from '../../src/data/settings.js';
@@ -35,7 +35,7 @@ export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
  * `autoKey` (default true): every `app.inject` carries the launch key unless the test sets its own `x-bp-key`
  * or cookie, so tests about other things need not repeat it. Launch-key tests pass `autoKey: false`.
  */
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; pdfFetcher?: FakePdfFetcher; contactWindow?: FakeContactWindow; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null; maxBackupUploadBytes?: number; documents?: string; backupEnv?: NodeJS.ProcessEnv } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; pdfFetcher?: FakePdfFetcher; contactWindow?: FakeContactWindow; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null; maxBackupUploadBytes?: number; documents?: string; backupEnv?: NodeJS.ProcessEnv; demo?: AppDeps['demo'] } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -115,6 +115,7 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     },
     // `update`: what the daily check found; `updateSource` when a test changes it later.
     updates: { available: opts.updateSource ?? (() => opts.update ?? null) },
+    demo: opts.demo,
   });
   if (opts.autoKey !== false) {
     const inject = app.inject.bind(app) as (o: InjectOptions | string) => Promise<LightMyRequestResponse>;

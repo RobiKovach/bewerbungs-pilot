@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from '../settings';
@@ -27,6 +27,38 @@ function setup(currentStep: string | null, availability: Availability = { ok: tr
 }
 
 describe('OnboardingWizard', () => {
+  it('step 1 offers the demo: it opens in a new tab in the chosen language, this tab stays on the real setup', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
+    const { f, user } = setup(null);
+    const routes = new Map<string, (init?: RequestInit) => Response>();
+    routes.set('POST /api/demo', () => new Response(JSON.stringify({ url: 'http://127.0.0.1:4291/open?key=k' }), { status: 200 }));
+    const fallback = f.getMockImplementation();
+    f.mockImplementation(async (url: string, init?: RequestInit) => routes.get(`${init?.method ?? 'GET'} ${url}`)?.(init) ?? fallback!(url, init));
+    await user.click(await screen.findByRole('button', { name: 'Try the demo' }));
+    await waitFor(() => expect(tab.location.href).toBe('http://127.0.0.1:4291/open?key=k'));
+    const call = f.mock.calls.find((c) => c[0] === '/api/demo');
+    expect(JSON.parse(String(call?.[1]?.body))).toEqual({ language: 'en' });
+    expect(open).toHaveBeenCalledWith('', '_blank');
+    expect(await screen.findByText(/The demo opened in a new tab/)).toBeInTheDocument();
+    expect(screen.getByText('Step 1 of 5')).toBeInTheDocument();
+    open.mockRestore();
+  });
+
+  it('a failed demo start closes the empty tab and says so', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
+    const { f, user } = setup(null);
+    const fallback = f.getMockImplementation();
+    f.mockImplementation(async (url: string, init?: RequestInit) => (url === '/api/demo'
+      ? new Response(JSON.stringify({ error: { code: 'DEMO_FAILED', detailsForLog: 'x' } }), { status: 500 })
+      : fallback!(url, init)));
+    await user.click(await screen.findByRole('button', { name: 'Try the demo' }));
+    expect(await screen.findByText('The demo could not be started.')).toBeInTheDocument();
+    expect(tab.close).toHaveBeenCalled();
+    open.mockRestore();
+  });
+
   it('starts at step 1 and moves on, saving progress', async () => {
     const { server, user } = setup(null);
     expect(await screen.findByText('Step 1 of 5')).toBeInTheDocument();

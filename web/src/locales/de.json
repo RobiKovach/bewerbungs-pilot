@@ -23,7 +23,7 @@
     "openProfile": "Profil öffnen"
   },
   "onboarding": {
-    "welcome": { "title": "Willkommen", "body": "Nur wenige kurze Schritte, und BewerbungsPilot ist bereit für Sie. Wählen Sie zuerst die Sprache der App. Sie können sie jederzeit ändern." },
+    "welcome": { "title": "Willkommen", "body": "Nur wenige kurze Schritte, und BewerbungsPilot ist bereit für Sie. Wählen Sie zuerst die Sprache der App. Sie können sie jederzeit ändern.", "demo": "Noch unsicher? Schauen Sie sich zuerst um: Die Demo zeigt das ganze Programm mit der Beispielperson Max Mustermann. Dafür brauchen Sie keinen KI-Assistenten, kein E-Mail-Konto und keine eigenen Daten.", "tryDemo": "Demo ausprobieren", "demoStarting": "Demo wird gestartet…", "demoOpened": "Die Demo wurde in einem neuen Tab geöffnet. Wenn Sie fertig sind, kommen Sie hierher zurück und richten Sie BewerbungsPilot für sich ein." },
     "ai": {
       "title": "Ihr KI-Assistent",
       "intro": "BewerbungsPilot nutzt einen KI-Assistenten auf Ihrem Computer, um Stellenangebote zu lesen und Ihre Dokumente zu schreiben. Wählen Sie einen aus.",
@@ -189,7 +189,8 @@
     "quitTitle": "App beenden",
     "quitButton": "BewerbungsPilot beenden"
   },
-  "quit": { "title": "BewerbungsPilot wurde beendet", "body": "Sie können diesen Tab jetzt schließen. Um erneut zu starten, verwenden Sie die BewerbungsPilot-Verknüpfung auf Ihrem Desktop." },
+  "quit": { "title": "BewerbungsPilot wurde beendet", "body": "Sie können diesen Tab jetzt schließen. Um erneut zu starten, verwenden Sie die BewerbungsPilot-Verknüpfung auf Ihrem Desktop.", "demoTitle": "Die Demo wurde beendet", "demoBody": "Schließen Sie diesen Tab und kehren Sie zum Tab von BewerbungsPilot zurück, um es für sich einzurichten." },
+  "demo": { "badge": "Demo", "text": "Sie probieren die Demo mit der Beispielperson Max Mustermann aus. Die KI-Antworten sind Beispiele und nichts wird versendet: E-Mails werden nur auf diesem Computer gespeichert.", "leave": "Demo beenden" },
   "noSession": { "title": "BewerbungsPilot über die Verknüpfung öffnen", "text": "Diese Seite wurde nicht von BewerbungsPilot selbst geöffnet (zum Beispiel über ein Lesezeichen nach einem Neustart). Zu Ihrer Sicherheit wird hier nichts angezeigt. Öffnen Sie BewerbungsPilot über die Verknüpfung auf Ihrem Desktop oder im Startmenü." },
   "profile": {
     "title": "Ihr Profil",
@@ -484,6 +485,7 @@
     "BACKUP_INVALID": { "message": "Diese Datei ist keine BewerbungsPilot-Sicherung oder sie ist beschädigt.", "hint": "Es wurde nichts geändert. Wählen Sie eine andere Sicherungsdatei." },
     "BACKUP_NEWER": { "message": "Diese Sicherung wurde mit einer neueren Version von BewerbungsPilot erstellt.", "hint": "Aktualisieren Sie zuerst das Programm und stellen Sie dann diese Sicherung wieder her." },
     "BACKUP_FAILED": { "message": "Die Sicherung konnte nicht gespeichert oder wiederhergestellt werden.", "hint": "Ihre Daten wurden nicht geändert. Prüfen Sie, ob die Festplatte voll ist und ob eine Datei aus dem Datenordner des Programms geöffnet ist, und versuchen Sie es erneut." },
+    "DEMO_FAILED": { "message": "Die Demo konnte nicht gestartet werden.", "hint": "Bitte versuchen Sie es erneut. Wenn es wieder passiert, starten Sie BewerbungsPilot neu." },
     "reasons": {
       "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",
       "cvNoContent": "{{ai}} hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",

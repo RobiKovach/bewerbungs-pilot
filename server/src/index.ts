@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +9,8 @@ import { profilePhoto } from './applications/views.js';
 import { buildApp } from './app.js';
 import { writeJsonAtomic } from './data/atomic.js';
 import { dataPaths, ensureDataDirs, resolveDataRoot } from './data/paths.js';
-import { SettingsStore } from './data/settings.js';
+import { SettingsStore, SUPPORTED_LANGUAGES, type Language } from './data/settings.js';
+import { DemoLauncher, demoDataRoot, isDemoStart, seedDemo } from './demo/demo.js';
 import { ClaudeCodeProvider } from './llm/claude-code.js';
 import { CodexCliProvider, codexSearchRoots } from './llm/codex-cli.js';
 import { FakeProvider } from './llm/fake.js';
@@ -48,16 +50,21 @@ const HOST = '127.0.0.1';
 const noOpen = process.argv.includes('--no-open') || process.env.BP_NO_OPEN === '1';
 // Test/demo modes, only from the command line or the environment (never from settings or a request):
 // --fake-llm answers every AI task from fake-scripted.ts; --fake-mail writes mails to <data>/tmp/fake-mail/ instead of sending.
-const fakeLlm = process.argv.includes('--fake-llm') || process.env.BP_FAKE_LLM === '1';
-const fakeMail = process.argv.includes('--fake-mail') || process.env.BP_FAKE_MAIL === '1';
+// --demo (spec 0.10.0, started by «Try the demo»): both, on the demo folder, with the fictional Max Mustermann.
+const demo = isDemoStart(process.argv, process.env);
+const fakeLlm = demo || process.argv.includes('--fake-llm') || process.env.BP_FAKE_LLM === '1';
+const fakeMail = demo || process.argv.includes('--fake-mail') || process.env.BP_FAKE_MAIL === '1';
 const WINNER_WAIT_MS = 15_000;
 const CLOSE_TIMEOUT_MS = 3000;
 
 /** Where the browser goes: with the key, /open turns it into the session cookie; a pre-0.8.3 server has none. */
 const appUrl = (r: RunningInstance) => (r.key ? openUrl(HOST, r.port, r.key) : `http://${HOST}:${r.port}/`);
 
+/** The demo's own folder unless the launcher (or a test) gave one: the demo never runs on the person's data. */
+const dataRoot = () => (demo && !process.env.BP_DATA_DIR ? demoDataRoot(resolveDataRoot()) : resolveDataRoot());
+
 async function main(): Promise<void> {
-  const paths = dataPaths(resolveDataRoot());
+  const paths = dataPaths(dataRoot());
   ensureDataDirs(paths);
   const logger = createFileLogger(paths.logs);
 
@@ -83,6 +90,12 @@ async function main(): Promise<void> {
   const profileStore = new ProfileStore(paths.profileFile, (event, data) => logger.warn(event, data));
   profileStore.load();
   const profileFiles = new ProfileFiles(paths.profileFiles);
+  const secrets = new DpapiSecretStore(paths.mailSecret);
+  let demoLanguage: Language | null = null;
+  if (demo) {
+    const language = SUPPORTED_LANGUAGES.find((l) => l === process.env.BP_DEMO_LANGUAGE) ?? 'en';
+    demoLanguage = language;
+  }
   const claude: LlmProvider = fakeLlm ? new FakeProvider(undefined, scriptedResponse, 'claude')
     : new ClaudeCodeProvider({ tmpRoot: paths.tmp, timeoutMs: () => settings.get().llm.timeoutSec * 1000, logger });
   const chatgpt: LlmProvider = fakeLlm ? new FakeProvider(undefined, scriptedResponse, 'chatgpt')
@@ -108,6 +121,7 @@ async function main(): Promise<void> {
   const queue = new LlmQueue(() => providers.current());
   const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));
   vacancyStore.load();
+  if (demoLanguage !== null) await seedDemo({ settings, profileStore, vacancyStore, secrets, language: demoLanguage });
   const vacancySource = new ArbeitsagenturSource();
   const searchJob = new SearchJob({
     store: vacancyStore, source: vacancySource, queue, logger,
@@ -144,7 +158,7 @@ async function main(): Promise<void> {
     onShutdown: () => void shutdown(),
     profileStore, profileFiles, vacancyStore, vacancySource, pageReader, pdfFetcher, contactWindow, searchJob,
     applicationStore, applicationJob, printer,
-    mailer: fakeMail ? new MailRouter(fileMailer, fileMailer) : new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets: new DpapiSecretStore(paths.mailSecret), sentUnsaved,
+    mailer: fakeMail ? new MailRouter(fileMailer, fileMailer) : new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets, sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,
     session: { key, cookieName: cookieName(port) },
     activity: new Activity(),
@@ -157,6 +171,15 @@ async function main(): Promise<void> {
       },
     },
     updates,
+    demo: demo ? { active: true } : {
+      active: false,
+      start: (language) => new DemoLauncher({
+        dataRoot: paths.root, entry: fileURLToPath(import.meta.url),
+        // Detached: the demo is its own copy with its own Quit; it keeps running if this one is closed first.
+        spawn: (file, args, opts) => spawn(file, args, { ...opts, detached: true, stdio: 'ignore' }).unref(),
+        find: () => findRunningInstance(dataPaths(demoDataRoot(paths.root)).server),
+      }).start(language),
+    },
   });
 
   const shutdown = createShutdown({
@@ -172,7 +195,7 @@ async function main(): Promise<void> {
   await app.listen({ host: HOST, port });
   const info: ServerInfo = { port, pid: process.pid, startedAt: new Date().toISOString(), key };
   writeJsonAtomic(paths.server, info);
-  logger.info('started', { port, version, fakeLlm, fakeMail });
+  logger.info('started', { port, version, fakeLlm, fakeMail, demo });
   if (fakeLlm || fakeMail) {
     logger.warn('fake_mode', { fakeLlm, fakeMail });
     const what = [fakeLlm && 'AI answers are scripted (--fake-llm)', fakeMail && `mail is written to ${fakeMailDir}, nothing is sent (--fake-mail)`];
@@ -184,7 +207,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  const paths = dataPaths(resolveDataRoot());
+  const paths = dataPaths(dataRoot());
   createFileLogger(paths.logs).error('fatal', { message: String(err), stack: (err as Error)?.stack });
   process.exit(1);
 });
