@@ -2,6 +2,13 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.10.1
+
+- **Cookie banner closes by itself.** In **Find contact**, the Arbeitsagentur cookie banner is now dismissed as soon as it
+  appears, with **Alle Cookies ablehnen** (only necessary cookies) — you only solve the captcha. The program clicks only
+  inside the banner on the Arbeitsagentur page, never anything else and never "accept".
+- **Security updates.** nodemailer 10.1.7, undici 8.12.2, fast-uri and 22 small dependency updates.
+
 ## What's new in 0.10.0
 
 - **Try the demo.** The first setup step and, after setup, the top bar have a **Try the demo** button: it opens the whole app in a new tab with the
