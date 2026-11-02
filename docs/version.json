@@ -1,14 +1,14 @@
 {
   "schema": 1,
-  "latest": "0.10.0",
-  "released": "2026-10-31",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.10.0",
+  "latest": "0.10.1",
+  "released": "2026-11-02",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.10.1",
   "notes": {
-    "uk": "Кнопка «Спробувати демо» (зразковий профіль в окремій копії, ваші дані не змінюються), простіший старт у README і на сайті, пошук контакту роботодавця для листа, читання PDF-посилань.",
-    "en": "A \"Try the demo\" button (a sample profile in a separate copy, your data stays untouched), a simpler start in the README and on the site, finding the employer's contact for the letter, reading PDF links.",
-    "de": "Schaltfläche „Demo ausprobieren“ (Beispielprofil in einer eigenen Kopie, Ihre Daten bleiben unberührt), einfacherer Start in README und Website, Kontakt des Arbeitgebers für das Anschreiben finden, PDF-Links werden gelesen.",
-    "ru": "Кнопка «Попробовать демо» (пример профиля в отдельной копии, ваши данные не меняются), более простой старт в README и на сайте, поиск контакта работодателя для письма, чтение PDF-ссылок.",
-    "pl": "Przycisk „Wypróbuj demo” (przykładowy profil w osobnej kopii, Twoje dane pozostają nietknięte), prostszy start w README i na stronie, wyszukiwanie kontaktu pracodawcy do listu, czytanie linków do PDF.",
-    "ro": "Butonul „Încearcă demo” (un profil de exemplu într-o copie separată, datele tale rămân neatinse), un start mai simplu în README și pe site, găsirea contactului angajatorului pentru scrisoare, citirea linkurilor PDF."
+    "uk": "«Знайти контакт»: банер кукі Arbeitsagentur закривається сам («лише необхідні») — лишається тільки капча. Оновлення безпеки бібліотек.",
+    "en": "\"Find contact\": the Arbeitsagentur cookie banner now closes by itself (necessary cookies only) — you only solve the captcha. Security updates of libraries.",
+    "de": "„Kontakt finden“: Das Cookie-Banner der Arbeitsagentur schließt sich jetzt selbst (nur notwendige Cookies) — Sie lösen nur noch das Captcha. Sicherheitsupdates der Bibliotheken.",
+    "ru": "«Найти контакт»: баннер cookie Arbeitsagentur теперь закрывается сам («только необходимые») — остаётся только капча. Обновления безопасности библиотек.",
+    "pl": "„Znajdź kontakt”: baner cookies Arbeitsagentur zamyka się teraz sam (tylko niezbędne) — rozwiązujesz tylko captchę. Aktualizacje bezpieczeństwa bibliotek.",
+    "ro": "„Găsește contactul”: bannerul de cookie-uri al Arbeitsagentur se închide acum singur (doar cele necesare) — rezolvi doar captcha. Actualizări de securitate ale bibliotecilor."
   }
 }
