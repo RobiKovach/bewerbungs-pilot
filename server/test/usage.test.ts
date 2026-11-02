@@ -59,6 +59,24 @@ describe('settings v5 — usage', () => {
     expect(u.installId).toMatch(UUID_V4);
   });
 
+  it('the old-format provider rule is for v1 only: a v5 file with finished onboarding and no helper stays null, also after a v4 round trip', () => {
+    const dir = tmpDir();
+    fs.writeFileSync(file(dir), JSON.stringify({ schemaVersion: 4, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } }));
+    expect(load(dir).llm.provider).toBeNull();
+    expect(load(dir).llm.provider).toBeNull();
+    fs.writeFileSync(file(dir), JSON.stringify({ schemaVersion: 5, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } }));
+    expect(load(dir).llm.provider).toBeNull();
+    expect(load(dir).llm.provider).toBeNull();
+    fs.writeFileSync(file(dir), JSON.stringify({ onboarding: { currentStep: null, completed: true } }));
+    expect(load(dir).llm.provider).toBe('claude');
+  });
+
+  it('load({ persist: false }) writes nothing', () => {
+    const dir = tmpDir();
+    new SettingsStore(file(dir)).load({ persist: false });
+    expect(fs.existsSync(file(dir))).toBe(false);
+  });
+
   it('patch changes ping and noticeShown but never the id', () => {
     const dir = tmpDir();
     const s = new SettingsStore(file(dir));
@@ -146,6 +164,18 @@ describe('UsagePinger', () => {
     expect(warns.map((w) => w.event)).toEqual(['usage_ping_failed']);
   });
 
+  it('a ping time in the future (clock moved back) still waits 60 s, not 1 ms and not out of range', async () => {
+    fs.writeFileSync(stateFile, JSON.stringify({ lastPingAt: Date.now() + 400 * 24 * 3600_000 }));
+    const f = fakeFetch();
+    const p = make(f.fn);
+    p.start();
+    await vi.advanceTimersByTimeAsync(59_000);
+    expect(f.calls).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(f.calls).toHaveLength(1);
+    p.stop();
+  });
+
   it('a hanging request is cut after 10 s', async () => {
     const { logger, warns } = recLogger();
     const hang = (async (_u: unknown, init?: RequestInit) => new Promise<Response>((_res, rej) => {
@@ -156,6 +186,7 @@ describe('UsagePinger', () => {
     await vi.advanceTimersByTimeAsync(10_500);
     await done;
     expect(warns.map((w) => w.event)).toEqual(['usage_ping_failed']);
+    expect(warns[0]!.data).toEqual({ reason: 'timeout' });
   });
 });
 
@@ -218,6 +249,18 @@ describe('settings API and POST /api/feedback', () => {
     expect(f.calls).toHaveLength(0);
     // exactly 5 000 is fine
     expect((await post(t, { ...body, text: 'a'.repeat(5000) })).statusCode).toBe(204);
+  });
+
+  it('a bad email or a blank text is a 400 BAD_REQUEST here (the cloud is not called); the email is trimmed', async () => {
+    const f = fakeFetch(() => new Response(null, { status: 202 }));
+    const t = await makeApp({ cloud: { url: 'https://cloud.test', fetch: f.fn } });
+    for (const email of ['x', 'a@b', 'a b@c.de', '']) expect((await post(t, { ...body, email })).statusCode).toBe(400);
+    for (const text of ['   ', '\n\t']) expect((await post(t, { ...body, text })).statusCode).toBe(400);
+    expect((await post(t, { ...body, text: '😀'.repeat(2600) })).statusCode).toBe(204); // 5 200 UTF-16 units, 2 600 characters
+    expect(f.calls).toHaveLength(1);
+    f.calls.length = 0;
+    expect((await post(t, { ...body, email: '  max@example.de ' })).statusCode).toBe(204);
+    expect(JSON.parse(String(f.calls[0]!.init?.body)).email).toBe('max@example.de');
   });
 
   it('Worker 429 → 502 FEEDBACK_FAILED reason limit', async () => {

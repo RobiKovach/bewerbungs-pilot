@@ -5,6 +5,9 @@ import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
 
 const TIMEOUT_MS = 10_000;
+const MAX_TEXT = 5000;
+// Same as cloud/src/validate.ts: one @, no spaces or control characters, a dot in the domain.
+const EMAIL = /^[^s@p{Cc}]+@[^s@p{Cc}]+.[^s@p{Cc}]+$/u;
 
 export interface UsageRouteDeps {
   settings: SettingsStore;
@@ -38,6 +41,9 @@ export async function registerUsageRoutes(app: FastifyInstance, d: UsageRouteDep
     schema: { body: feedbackSchema },
   }, async (req, reply) => {
     const b = req.body as { kind: string; email: string; text: string };
+    // The same rules as the cloud service: a typo is told here, not as a service error.
+    const email = b.email.trim();
+    if (!EMAIL.test(email) || b.text.trim() === '' || Array.from(b.text).length > MAX_TEXT) throw new AppError('BAD_REQUEST', 'invalid email or text');
     const s = d.settings.get();
     const language: Language = s.language ?? 'en';
     let res: Response;
@@ -46,16 +52,14 @@ export async function registerUsageRoutes(app: FastifyInstance, d: UsageRouteDep
       res = await fetchFn(`${d.url}/v1/feedback`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ installId: s.usage.installId, version: d.version, language, email: b.email, kind: b.kind, text: b.text }),
+        body: JSON.stringify({ installId: s.usage.installId, version: d.version, language, email, kind: b.kind, text: b.text }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-    } catch (err) {
-      d.logger.warn('feedback_failed', { reason: 'offline', message: err instanceof Error ? err.name : 'unknown' });
+    } catch {
       throw new AppError('FEEDBACK_FAILED', 'offline', 'offline');
     }
     if (res.ok) return reply.code(204).send();
     const limit = res.status === 429;
-    d.logger.warn('feedback_failed', { reason: limit ? 'limit' : 'server', status: res.status });
     throw new AppError('FEEDBACK_FAILED', `${limit ? 'limit' : 'server'} (HTTP ${res.status})`, limit ? 'limit' : 'server');
   });
 }

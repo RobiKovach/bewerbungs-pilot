@@ -45,7 +45,7 @@ function sameMailbox(a: MailSettings | null, b: MailSettings | null): boolean {
 
 /** The mailbox in the unpacked settings.json, read exactly as the reload will read it. */
 function stagedMailbox(staging: string, warn: Warn): MailSettings | null {
-  return new SettingsStore(path.join(staging, 'settings.json'), warn).load().mail;
+  return new SettingsStore(path.join(staging, 'settings.json'), warn).load({ persist: false }).mail;
 }
 
 /**

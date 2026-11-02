@@ -50,7 +50,8 @@ export class SettingsStore {
 
   constructor(private readonly file: string, private readonly warn: Warn = () => {}) {}
 
-  load(): Settings {
+  /** persist:false = only look (a backup being unpacked): nothing is written, even when the install id was just made. */
+  load(opts: { persist?: boolean } = {}): Settings {
     let raw: unknown = null;
     try {
       raw = readJson<unknown>(this.file);
@@ -63,7 +64,7 @@ export class SettingsStore {
     this.current = normalize(raw);
     // The install id must be the same next time: write the file when the id (or the schema) was just made.
     const stored = raw && typeof raw === 'object' ? (raw as { schemaVersion?: unknown; usage?: { installId?: unknown } }) : null;
-    if (stored?.schemaVersion !== 5 || stored.usage?.installId !== this.current.usage.installId) {
+    if (opts.persist !== false && (stored?.schemaVersion !== 5 || stored.usage?.installId !== this.current.usage.installId)) {
       try { writeJsonAtomic(this.file, this.current); } catch (err) { this.warn('settings_write_failed', { message: String(err) }); }
     }
     return this.get();
@@ -93,6 +94,11 @@ export class SettingsStore {
   /** null = automatic (see backup/folder.ts); the route checks the folder before it is saved. */
   setBackupFolder(folder: string | null): Settings {
     return this.save({ ...this.current, backups: { folder } });
+  }
+
+  /** A restored backup keeps this PC's id (see backup/routes.ts). */
+  setInstallId(installId: string): Settings {
+    return this.save({ ...this.current, usage: { ...this.current.usage, installId } });
   }
 
   /** × on the update banner: hidden for this version only, the next one shows again. */
@@ -139,11 +145,13 @@ function normalize(raw: unknown): Settings {
     backups?: { folder?: unknown };
     usage?: { ping?: unknown; installId?: unknown; noticeShown?: unknown };
   };
+  // Only files from before the choice existed (no schemaVersion, or 1); never v2 and later.
+  const isV1 = r.schemaVersion === undefined || r.schemaVersion === 1;
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
   const provider: ProviderId | null = PROVIDER_IDS.find((id) => id === r.llm?.provider)
     // v1 files (schemaVersion missing or 1) predate the choice: everyone who finished onboarding — or got past the Claude step — used Claude.
-    ?? (r.schemaVersion !== 2 && r.schemaVersion !== 3 && r.schemaVersion !== 4 && (r.onboarding?.completed === true
+    ?? (isV1 && (r.onboarding?.completed === true
       || (typeof r.onboarding?.currentStep === 'string' && STEPS_AFTER_CLAUDE.includes(r.onboarding.currentStep))) ? 'claude' : null);
   const dismissed = r.updates?.dismissedVersion;
   const folder = r.backups?.folder;

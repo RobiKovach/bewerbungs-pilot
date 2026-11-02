@@ -88,6 +88,8 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
       // The backup folder belongs to this PC, not to the data: a backup from elsewhere (or from before the folder was
       // chosen) must not move where the next backups go — nor where the installer puts its own.
       const chosenFolder = d.settings.get().backups.folder;
+      // Likewise the anonymous install id: one PC stays one install, whichever PC the backup came from.
+      const localInstallId = d.settings.get().usage.installId;
       const result = await restoreBackup(file, {
         paths: d.paths, appVersion: d.version, backupDir: await writeDir(), busy, reload: d.reload,
         warn: (event, data) => d.logger.warn(event, data),
@@ -103,6 +105,11 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
         // via Settings; the installer then follows the restored file).
         try { d.settings.setBackupFolder(chosenFolder); } catch (err) {
           d.logger.warn('backup_folder_keep_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+        }
+      }
+      if (localInstallId && d.settings.get().usage.installId !== localInstallId) {
+        try { d.settings.setInstallId(localInstallId); } catch (err) {
+          d.logger.warn('install_id_keep_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
         }
       }
       d.logger.info('backup_restored', { appVersion: result.restored.appVersion, kind: result.restored.kind });

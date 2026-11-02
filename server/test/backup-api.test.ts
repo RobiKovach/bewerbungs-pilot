@@ -93,6 +93,18 @@ describe('backup API', { timeout: 30_000 }, () => {
     expect(stagingLeft(ctx.dir)).toEqual([]);
   });
 
+  it("restore keeps this PC's install id, not the one in the backup", async () => {
+    const ctx = await makeApp();
+    const fromBackup = ctx.settings.get().usage.installId;
+    const made = await save(ctx);
+    const local = '3b8f6c3e-5d1a-4b7e-9c2f-0a1b2c3d4e5f';
+    ctx.settings.setInstallId(local);
+    expect((await restore(ctx, made.name)).statusCode).toBe(200);
+    expect(fromBackup).not.toBe(local);
+    expect(ctx.settings.get().usage.installId).toBe(local);
+    expect(JSON.parse(fs.readFileSync(path.join(ctx.dir, 'settings.json'), 'utf8')).usage.installId).toBe(local);
+  });
+
   it('restore refuses while busy and leaves the data alone', async () => {
     const cases: [string, (ctx: Ctx) => () => void][] = [
       ['restoreBusySearch', (ctx) => { const s = vi.spyOn(ctx.searchJob, 'state').mockReturnValue({ ...ctx.searchJob.state(), state: 'running' }); return () => s.mockRestore(); }],

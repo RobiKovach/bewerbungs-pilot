@@ -39,7 +39,9 @@ export class UsagePinger {
   constructor(private readonly d: UsagePingerDeps) {
     this.fetchFn = d.fetch ?? fetch;
     this.now = d.now ?? Date.now;
-    this.lastPingAt = this.readState();
+    // A clock that went back (or a hand-edited file) must not push the next ping out of range or make it instant.
+    const saved = this.readState();
+    this.lastPingAt = saved > this.now() ? 0 : saved;
   }
 
   start(): void {
@@ -72,7 +74,7 @@ export class UsagePinger {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (err) {
       if (ctrl.signal.aborted && !timedOut) return; // stopped (shutdown): not a failure
-      this.d.logger.warn('usage_ping_failed', { reason: err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : 'unknown' });
+      this.d.logger.warn('usage_ping_failed', { reason: timedOut ? 'timeout' : err instanceof Error ? `${err.name}: ${err.message}`.slice(0, 200) : 'unknown' });
     } finally {
       clearTimeout(cut);
       if (this.inFlight === ctrl) this.inFlight = null;
