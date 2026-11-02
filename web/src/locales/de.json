@@ -486,6 +486,7 @@
     "BACKUP_NEWER": { "message": "Diese Sicherung wurde mit einer neueren Version von BewerbungsPilot erstellt.", "hint": "Aktualisieren Sie zuerst das Programm und stellen Sie dann diese Sicherung wieder her." },
     "BACKUP_FAILED": { "message": "Die Sicherung konnte nicht gespeichert oder wiederhergestellt werden.", "hint": "Ihre Daten wurden nicht geändert. Prüfen Sie, ob die Festplatte voll ist und ob eine Datei aus dem Datenordner des Programms geöffnet ist, und versuchen Sie es erneut." },
     "DEMO_FAILED": { "message": "Die Demo konnte nicht gestartet werden.", "hint": "Bitte versuchen Sie es erneut. Wenn es wieder passiert, starten Sie BewerbungsPilot neu." },
+    "FEEDBACK_FAILED": { "message": "Ihre Nachricht konnte nicht gesendet werden.", "hint": "Bitte versuchen Sie es gleich noch einmal." },
     "reasons": {
       "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",
       "cvNoContent": "{{ai}} hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",
@@ -525,7 +526,10 @@
       "backupFolderInvalid": "Bitte geben Sie einen vollständigen Pfad auf diesem PC an, der mit einem Laufwerksbuchstaben beginnt, zum Beispiel D:\\Sicherungen. Pfade, die mit \\\\ beginnen (wie \\\\server\\freigabe), sind nicht möglich.",
       "backupFolderInData": "Dieser Ordner liegt in den Daten von BewerbungsPilot selbst. Bitte wählen Sie einen Ordner außerhalb davon.",
       "backupFolderNotWritable": "BewerbungsPilot kann diesen Ordner nicht anlegen oder nicht hineinschreiben. Bitte wählen Sie einen anderen (zum Beispiel auf Laufwerk D: oder einem USB-Stick).",
-      "backupFolderUnavailable": "Der Sicherungsordner ist gerade nicht erreichbar (zum Beispiel ist der USB-Stick nicht eingesteckt). Schließen Sie ihn an oder wählen Sie unter Einstellungen → Sicherungen einen anderen Ordner."
+      "backupFolderUnavailable": "Der Sicherungsordner ist gerade nicht erreichbar (zum Beispiel ist der USB-Stick nicht eingesteckt). Schließen Sie ihn an oder wählen Sie unter Einstellungen → Sicherungen einen anderen Ordner.",
+      "offline": "Sie sind offline oder der Dienst ist nicht erreichbar. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+      "limit": "Sie haben in kurzer Zeit mehrere Nachrichten gesendet. Bitte versuchen Sie es später erneut.",
+      "server": "Der Dienst hat die Nachricht gerade nicht angenommen. Bitte versuchen Sie es später erneut."
     }
   },
   "vacancies": {

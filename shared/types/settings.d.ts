@@ -14,7 +14,7 @@ export interface MailSettingsView { mail: MailSettings | null; passwordSaved: bo
 export type ProviderId = 'claude' | 'chatgpt';
 
 export interface Settings {
-  schemaVersion: 4;
+  schemaVersion: 5;
   language: Language | null;
   onboarding: { currentStep: string | null; completed: boolean };
   llm: { timeoutSec: number; provider: ProviderId | null };
@@ -24,7 +24,12 @@ export interface Settings {
   updates: { check: boolean; dismissedVersion: string | null };
   /** folder null = automatic (Documents, or a local folder when Documents is in OneDrive); set via PUT /api/backups/folder. */
   backups: { folder: string | null };
+  /** Anonymous daily ping + feedback (spec 0.11.0). installId stays on this PC and goes only to our own cloud service. */
+  usage: { ping: boolean; installId: string; noticeShown: boolean };
 }
+
+/** What the browser gets: the same settings without the install id (it never needs it). */
+export type SettingsView = Omit<Settings, 'usage'> & { usage: Omit<Settings['usage'], 'installId'> };
 
 export interface SettingsPatch {
   language?: Language;
@@ -32,7 +37,12 @@ export interface SettingsPatch {
   vacancies?: { publishedWithinDays: PublishedWithinDays };
   llm?: { provider: ProviderId };
   updates?: { check: boolean };
+  usage?: { ping?: boolean; noticeShown?: true };
 }
+
+/** POST /api/feedback (spec 0.11.0). */
+export type FeedbackKind = 'problem' | 'idea';
+export interface FeedbackInput { kind: FeedbackKind; email: string; text: string }
 
 /** GET /api/updates: notes already in the UI language (English fallback); available null = no banner. */
 export interface UpdatesView { current: string; available: { version: string; url: string; notes: string } | null }

@@ -44,6 +44,8 @@ import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
 import { SearchJob } from './vacancies/search-job.js';
 import { UpdateChecker } from './updates/checker.js';
 import { UPDATE_URL } from './updates/version-file.js';
+import { cloudUrl } from './usage/cloud.js';
+import { shouldPing, UsagePinger } from './usage/pinger.js';
 import { VacancyStore } from './vacancies/store.js';
 
 const HOST = '127.0.0.1';
@@ -150,6 +152,11 @@ async function main(): Promise<void> {
     url: process.env.BP_UPDATE_URL || UPDATE_URL, stateFile: path.join(paths.root, 'update-state.json'),
     currentVersion: version, enabled: () => settings.get().updates.check, logger,
   });
+  // No ping in demo / fake modes: tests and the demo are not users.
+  const usage = shouldPing({ demo, fakeLlm, fakeMail }) ? new UsagePinger({
+    url: cloudUrl(), stateFile: path.join(paths.root, 'usage-state.json'), version,
+    installId: () => settings.get().usage.installId, enabled: () => settings.get().usage.ping, logger,
+  }) : null;
   const key = newLaunchKey();
   const app = await buildApp({
     settings, providers, install, queue, logger, version,
@@ -183,7 +190,7 @@ async function main(): Promise<void> {
   });
 
   const shutdown = createShutdown({
-    abortAll: () => { updates.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
+    abortAll: () => { updates.stop(); usage?.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
     close: () => app.close(),
     releaseLock: () => lock.release(),
     serverFile: paths.server,
@@ -202,6 +209,7 @@ async function main(): Promise<void> {
     console.warn(`FAKE MODE — ${what.filter(Boolean).join('; ')}`);
   }
   updates.start();
+  usage?.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
   else openBrowser(openUrl(HOST, port, key));
 }

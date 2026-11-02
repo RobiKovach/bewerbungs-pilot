@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import type { LlmCheck } from '@bp/shared';
-import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, type Language, type ProviderId, type SettingsPatch, type SettingsStore } from './data/settings.js';
+import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, settingsView, type Language, type ProviderId, type SettingsPatch, type SettingsStore } from './data/settings.js';
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
 import { keyMatches, readCookie } from './runtime/launch-key.js';
@@ -33,6 +33,8 @@ import { registerBackupRoutes, type BackupRouteDeps } from './backup/routes.js';
 import type { Activity } from './runtime/activity.js';
 import type { AvailableUpdate } from './updates/checker.js';
 import { registerUpdateRoutes } from './updates/routes.js';
+import { cloudUrl } from './usage/cloud.js';
+import { registerUsageRoutes } from './usage/routes.js';
 
 export interface AppDeps {
   settings: SettingsStore;
@@ -77,6 +79,8 @@ export interface AppDeps {
   backup: Pick<BackupRouteDeps, 'paths' | 'folder' | 'reload' | 'openFolder' | 'maxUploadBytes'>;
   /** What the daily update check found (spec 0.9.0, 3.3). */
   updates: { available: () => AvailableUpdate | null };
+  /** Our cloud service for feedback (spec 0.11.0); tests inject `fetch` and a URL. Default: the real one. */
+  cloud?: { url: string; fetch?: typeof fetch };
   /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
   demo?: { active: boolean; start?: (language: Language) => Promise<{ url: string }> };
 }
@@ -115,6 +119,10 @@ const settingsPatchSchema = {
     updates: {
       type: 'object', additionalProperties: false, required: ['check'],
       properties: { check: { type: 'boolean' } },
+    },
+    usage: {
+      type: 'object', additionalProperties: false,
+      properties: { ping: { type: 'boolean' }, noticeShown: { type: 'boolean', const: true } },
     },
   },
 } as const;
@@ -209,10 +217,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return reply.code(303).header('Location', '/').send();
   });
 
-  app.get('/api/settings', async () => deps.settings.get());
+  app.get('/api/settings', async () => settingsView(deps.settings.get()));
 
   app.patch('/api/settings', { schema: { body: settingsPatchSchema } }, async (req) =>
-    deps.settings.patch(req.body as SettingsPatch),
+    settingsView(deps.settings.patch(req.body as SettingsPatch)),
   );
 
   /** No `provider` (or empty) = the current helper; an unknown name is a mistake, never silently the current one. */
@@ -291,6 +299,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     revokeTimeoutMs: deps.revokeTimeoutMs,
   });
 
+  await registerUsageRoutes(app, { settings: deps.settings, version: deps.version, url: deps.cloud?.url ?? cloudUrl(), fetch: deps.cloud?.fetch, logger: deps.logger });
   await registerUpdateRoutes(app, { settings: deps.settings, version: deps.version, available: () => deps.updates.available() });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {

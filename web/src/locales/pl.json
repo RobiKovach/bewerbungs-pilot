@@ -486,6 +486,7 @@
     "BACKUP_NEWER": { "message": "Ta kopia została utworzona przez nowszą wersję BewerbungsPilot.", "hint": "Najpierw zaktualizuj program, potem przywróć tę kopię." },
     "BACKUP_FAILED": { "message": "Nie udało się zapisać ani przywrócić kopii.", "hint": "Twoje dane nie zostały zmienione. Sprawdź, czy dysk nie jest pełny i czy żaden plik z folderu danych programu nie jest otwarty, i spróbuj ponownie." },
     "DEMO_FAILED": { "message": "Nie udało się uruchomić demo.", "hint": "Spróbuj ponownie. Jeśli to się powtarza, uruchom BewerbungsPilot ponownie." },
+    "FEEDBACK_FAILED": { "message": "Nie udało się wysłać wiadomości.", "hint": "Spróbuj ponownie za chwilę." },
     "reasons": {
       "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
       "cvNoContent": "{{ai}} odczytał plik, ale nie znalazł niczego, co wygląda jak CV.",
@@ -525,7 +526,10 @@
       "backupFolderInvalid": "Podaj pełną ścieżkę na tym komputerze, zaczynającą się od litery dysku, na przykład D:\\Kopie. Ścieżki zaczynające się od \\\\ (jak \\\\server\\share) nie są możliwe.",
       "backupFolderInData": "Ten folder leży wewnątrz danych samego BewerbungsPilot. Wybierz folder poza nimi.",
       "backupFolderNotWritable": "BewerbungsPilot nie może utworzyć tego folderu ani w nim zapisywać. Wybierz inny (na przykład na dysku D: albo pendrivie).",
-      "backupFolderUnavailable": "Folder na kopie zapasowe jest teraz niedostępny (na przykład pendrive nie jest podłączony). Podłącz go albo wybierz inny folder w Ustawieniach → Kopie zapasowe."
+      "backupFolderUnavailable": "Folder na kopie zapasowe jest teraz niedostępny (na przykład pendrive nie jest podłączony). Podłącz go albo wybierz inny folder w Ustawieniach → Kopie zapasowe.",
+      "offline": "Brak połączenia lub usługa jest niedostępna. Sprawdź internet i spróbuj ponownie.",
+      "limit": "Wysłano kilka wiadomości w krótkim czasie. Spróbuj później.",
+      "server": "Usługa nie przyjęła teraz wiadomości. Spróbuj później."
     }
   },
   "vacancies": {

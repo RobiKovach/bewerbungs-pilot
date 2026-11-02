@@ -54,6 +54,7 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'MAIL_CONNECT': return 503;
     case 'BACKUP_INVALID': return 422;
     case 'BACKUP_NEWER': return 409;
+    case 'FEEDBACK_FAILED': return 502;
     default: return 500;
   }
 }

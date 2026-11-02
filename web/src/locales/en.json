@@ -486,6 +486,7 @@
     "BACKUP_NEWER": { "message": "This backup was made by a newer version of BewerbungsPilot.", "hint": "Update the app first, then restore this backup." },
     "BACKUP_FAILED": { "message": "The backup could not be saved or restored.", "hint": "Your data was not changed. Check that the disk is not full and that no file from the app's data folder is open, then try again." },
     "DEMO_FAILED": { "message": "The demo could not be started.", "hint": "Please try again. If it keeps happening, restart BewerbungsPilot." },
+    "FEEDBACK_FAILED": { "message": "Your message could not be sent.", "hint": "Please try again in a moment." },
     "reasons": {
       "cvTooLittleText": "The file contains almost no text ({{chars}} characters). It is probably empty, or the text is inside a picture.",
       "cvNoContent": "{{ai}} read the file but found nothing that looks like a CV.",
@@ -525,7 +526,10 @@
       "backupFolderInvalid": "Please enter a full path on this PC that starts with a drive letter, for example D:\\Backups. Paths that start with \\\\ (like \\\\server\\share) are not possible.",
       "backupFolderInData": "This folder is inside the BewerbungsPilot data itself. Please choose a folder outside it.",
       "backupFolderNotWritable": "BewerbungsPilot cannot create or write to this folder. Please choose another one (for example on drive D: or a USB stick).",
-      "backupFolderUnavailable": "The backup folder is not available right now (for example the USB stick is not plugged in). Connect it, or choose another folder under Settings → Backups."
+      "backupFolderUnavailable": "The backup folder is not available right now (for example the USB stick is not plugged in). Connect it, or choose another folder under Settings → Backups.",
+      "offline": "You are offline or the service cannot be reached. Check your internet connection and try again.",
+      "limit": "You have sent several messages in a short time. Please try again later.",
+      "server": "The service did not accept the message right now. Please try again later."
     }
   },
   "vacancies": {

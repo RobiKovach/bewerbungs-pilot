@@ -39,6 +39,8 @@ export type ErrorCode =
   | 'BACKUP_NEWER'
   /** A backup could not be written (disk full, no access to the folder). */
   | 'BACKUP_FAILED'
+  /** A feedback message could not reach our cloud service (reason: offline | limit | server). */
+  | 'FEEDBACK_FAILED'
   /** The demo copy of the app (spec 0.10.0) did not start. */
   | 'DEMO_FAILED'
   | 'CONFLICT'
@@ -96,4 +98,8 @@ export type ErrorReason =
   | 'backupFolderInvalid'
   | 'backupFolderInData'
   | 'backupFolderNotWritable'
-  | 'backupFolderUnavailable';
+  | 'backupFolderUnavailable'
+  // Feedback to the developer (0.11.0): what went wrong when it could not be sent.
+  | 'offline'
+  | 'limit'
+  | 'server';

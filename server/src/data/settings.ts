@@ -1,6 +1,7 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Language, MailSettings, ProviderId, PublishedWithinDays, Settings, SettingsPatch } from '@bp/shared';
+import type { Language, MailSettings, ProviderId, PublishedWithinDays, Settings, SettingsPatch, SettingsView } from '@bp/shared';
 import { DRIVE_PATH } from '../backup/folder.js';
 import { AppError } from '../errors.js';
 import { CorruptJsonError, readJson, writeJsonAtomic } from './atomic.js';
@@ -20,7 +21,7 @@ export const ONBOARDING_STEP_ORDER = ['welcome', 'claude', 'profile', 'email', '
 const STEPS_AFTER_CLAUDE: readonly string[] = ONBOARDING_STEP_ORDER.slice(ONBOARDING_STEP_ORDER.indexOf('claude') + 1);
 
 export const DEFAULT_SETTINGS: Settings = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   language: null,
   onboarding: { currentStep: null, completed: false },
   llm: { timeoutSec: 180, provider: null },
@@ -28,10 +29,19 @@ export const DEFAULT_SETTINGS: Settings = {
   mail: null,
   updates: { check: true, dismissedVersion: null },
   backups: { folder: null },
+  // The id is made once, when a file is first read (see normalize); this one is only a placeholder for the type.
+  usage: { ping: true, installId: '', noticeShown: false },
 };
 
 /** A chosen backup folder as stored: an absolute path on a drive letter (off Windows, where tests run: any absolute path). */
 const isLocalAbsolute = (p: string) => DRIVE_PATH.test(p) || (process.platform !== 'win32' && path.isAbsolute(p));
+
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** What the browser may see: the settings without the install id. */
+export function settingsView(s: Settings): SettingsView {
+  return { ...s, usage: { ping: s.usage.ping, noticeShown: s.usage.noticeShown } };
+}
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
@@ -51,6 +61,11 @@ export class SettingsStore {
       this.warn('settings_corrupt', { backup });
     }
     this.current = normalize(raw);
+    // The install id must be the same next time: write the file when the id (or the schema) was just made.
+    const stored = raw && typeof raw === 'object' ? (raw as { schemaVersion?: unknown; usage?: { installId?: unknown } }) : null;
+    if (stored?.schemaVersion !== 5 || stored.usage?.installId !== this.current.usage.installId) {
+      try { writeJsonAtomic(this.file, this.current); } catch (err) { this.warn('settings_write_failed', { message: String(err) }); }
+    }
     return this.get();
   }
 
@@ -66,6 +81,7 @@ export class SettingsStore {
       llm: { ...this.current.llm, ...(p.llm ?? {}) },
       vacancies: { ...this.current.vacancies, ...p.vacancies },
       updates: { ...this.current.updates, ...(p.updates ?? {}) },
+      usage: { ...this.current.usage, ...(p.usage ?? {}) },
     };
     return this.save(next);
   }
@@ -111,7 +127,7 @@ function normalizeMail(raw: unknown): MailSettings | null {
 
 function normalize(raw: unknown): Settings {
   const d = structuredClone(DEFAULT_SETTINGS);
-  if (!raw || typeof raw !== 'object') return d;
+  if (!raw || typeof raw !== 'object') return { ...d, usage: { ...d.usage, installId: crypto.randomUUID() } };
   const r = raw as {
     schemaVersion?: unknown;
     language?: unknown;
@@ -121,6 +137,7 @@ function normalize(raw: unknown): Settings {
     mail?: unknown;
     updates?: { check?: unknown; dismissedVersion?: unknown };
     backups?: { folder?: unknown };
+    usage?: { ping?: unknown; installId?: unknown; noticeShown?: unknown };
   };
   const lang = SUPPORTED_LANGUAGES.find((l) => l === r.language) ?? null;
   const timeout = r.llm?.timeoutSec;
@@ -130,8 +147,9 @@ function normalize(raw: unknown): Settings {
       || (typeof r.onboarding?.currentStep === 'string' && STEPS_AFTER_CLAUDE.includes(r.onboarding.currentStep))) ? 'claude' : null);
   const dismissed = r.updates?.dismissedVersion;
   const folder = r.backups?.folder;
+  const installId = r.usage?.installId;
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     language: lang,
     onboarding: {
       currentStep: typeof r.onboarding?.currentStep === 'string' ? r.onboarding.currentStep : null,
@@ -149,5 +167,11 @@ function normalize(raw: unknown): Settings {
     },
     // v3 → v4: automatic. A hand-edited relative or network path is dropped too (the installer ignores it the same way).
     backups: { folder: typeof folder === 'string' && isLocalAbsolute(folder) ? folder : null },
+    // v4 → v5: the ping is on until someone switches it off; the install id is made once and then kept.
+    usage: {
+      ping: r.usage?.ping !== false,
+      installId: typeof installId === 'string' && UUID_V4.test(installId) ? installId : crypto.randomUUID(),
+      noticeShown: r.usage?.noticeShown === true,
+    },
   };
 }

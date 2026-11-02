@@ -486,6 +486,7 @@
     "BACKUP_NEWER": { "message": "Această copie a fost creată de o versiune mai nouă a BewerbungsPilot.", "hint": "Actualizați mai întâi programul, apoi restaurați această copie." },
     "BACKUP_FAILED": { "message": "Copia nu a putut fi salvată sau restaurată.", "hint": "Datele dumneavoastră nu au fost modificate. Verificați dacă discul nu este plin și dacă nu este deschis niciun fișier din folderul de date al programului, apoi încercați din nou." },
     "DEMO_FAILED": { "message": "Demo-ul nu a putut fi pornit.", "hint": "Încercați din nou. Dacă se repetă, reporniți BewerbungsPilot." },
+    "FEEDBACK_FAILED": { "message": "Mesajul nu a putut fi trimis.", "hint": "Încercați din nou peste un moment." },
     "reasons": {
       "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",
       "cvNoContent": "{{ai}} a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",
@@ -525,7 +526,10 @@
       "backupFolderInvalid": "Introduceți o cale completă pe acest PC care începe cu o literă de unitate, de exemplu D:\\Copii. Căile care încep cu \\\\ (precum \\\\server\\share) nu sunt posibile.",
       "backupFolderInData": "Acest folder se află chiar în datele BewerbungsPilot. Alegeți un folder din afara lor.",
       "backupFolderNotWritable": "BewerbungsPilot nu poate crea acest folder sau nu poate scrie în el. Alegeți altul (de exemplu pe unitatea D: sau pe un stick USB).",
-      "backupFolderUnavailable": "Folderul pentru copiile de rezervă nu este disponibil acum (de exemplu stick-ul USB nu este conectat). Conectați-l sau alegeți alt folder în Setări → Copii de rezervă."
+      "backupFolderUnavailable": "Folderul pentru copiile de rezervă nu este disponibil acum (de exemplu stick-ul USB nu este conectat). Conectați-l sau alegeți alt folder în Setări → Copii de rezervă.",
+      "offline": "Nu aveți conexiune sau serviciul nu este disponibil. Verificați internetul și încercați din nou.",
+      "limit": "Ați trimis mai multe mesaje într-un timp scurt. Încercați mai târziu.",
+      "server": "Serviciul nu a acceptat acum mesajul. Încercați mai târziu."
     }
   },
   "vacancies": {

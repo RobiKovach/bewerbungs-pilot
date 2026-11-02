@@ -124,7 +124,7 @@ describe('settings v4 — backups.folder', () => {
 
   it('a v3 file becomes v4 with the automatic folder', () => {
     expect(load(tmpDir(), { schemaVersion: 3, updates: { check: false, dismissedVersion: null } })).toMatchObject({
-      schemaVersion: 4, updates: { check: false }, backups: { folder: null },
+      schemaVersion: 5, updates: { check: false }, backups: { folder: null },
     });
   });
   it('keeps a stored absolute folder; drops relative and network paths', () => {

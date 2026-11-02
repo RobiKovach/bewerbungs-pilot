@@ -56,7 +56,7 @@ describe('atomic JSON', () => {
 describe('SettingsStore', () => {
   it('starts with defaults when there is no file', () => {
     const store = new SettingsStore(path.join(tempRoot(), 'settings.json'));
-    expect(store.load()).toEqual(DEFAULT_SETTINGS);
+    expect(store.load()).toEqual({ ...DEFAULT_SETTINGS, usage: { ...DEFAULT_SETTINGS.usage, installId: store.get().usage.installId } });
   });
   it('backs up a corrupt file and starts with defaults', () => {
     const dir = tempRoot();
@@ -64,8 +64,9 @@ describe('SettingsStore', () => {
     fs.writeFileSync(file, '{"language": "uk", "onboard');
     const warnings: string[] = [];
     const store = new SettingsStore(file, (event) => warnings.push(event));
-    expect(store.load()).toEqual(DEFAULT_SETTINGS);
-    expect(fs.existsSync(file)).toBe(false);
+    expect(store.load()).toEqual({ ...DEFAULT_SETTINGS, usage: { ...DEFAULT_SETTINGS.usage, installId: store.get().usage.installId } });
+    // The corrupt file is moved away; a fresh one with the new install id is written in its place.
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: 5, language: null });
     expect(fs.readdirSync(dir).some((f) => f.startsWith('settings.corrupt-'))).toBe(true);
     expect(warnings).toEqual(['settings_corrupt']);
   });
@@ -166,7 +167,7 @@ describe('settings v2 — llm.provider', () => {
   it('a v1 file with completed onboarding becomes claude', () => {
     const dir = tmpDir();
     write(dir, { schemaVersion: 1, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180 } });
-    expect(load(dir)).toMatchObject({ schemaVersion: 4, llm: { timeoutSec: 180, provider: 'claude' } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 5, llm: { timeoutSec: 180, provider: 'claude' } });
   });
   it('a v1 file without completed onboarding gets null', () => {
     const dir = tmpDir();
@@ -218,7 +219,7 @@ describe('settings v3 — updates', () => {
   const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp-set3-'));
 
   it('defaults to checking, nothing dismissed', () => {
-    expect(DEFAULT_SETTINGS.schemaVersion).toBe(4);
+    expect(DEFAULT_SETTINGS.schemaVersion).toBe(5);
     expect(DEFAULT_SETTINGS.updates).toEqual({ check: true, dismissedVersion: null });
   });
   it('a v2 file becomes v3 with the check on; provider and the rest unchanged', () => {
@@ -226,8 +227,8 @@ describe('settings v3 — updates', () => {
     const mail = { kind: 'google', address: 'a@x.de', senderName: 'Max', provider: 'gmail' };
     write(dir, { schemaVersion: 2, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' }, vacancies: { publishedWithinDays: 7 }, mail });
     expect(load(dir)).toEqual({
-      schemaVersion: 4, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' },
-      vacancies: { publishedWithinDays: 7 }, mail, updates: { check: true, dismissedVersion: null }, backups: { folder: null },
+      schemaVersion: 5, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' },
+      vacancies: { publishedWithinDays: 7 }, mail, updates: { check: true, dismissedVersion: null }, backups: { folder: null }, usage: { ping: true, installId: expect.any(String), noticeShown: false },
     });
     // v2 with completed onboarding and no provider stays null — the v1 rule applies to neither v2 nor v3.
     write(dir, { schemaVersion: 2, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } });
@@ -238,7 +239,7 @@ describe('settings v3 — updates', () => {
   it('a v1 file goes straight to v3 (provider rule as before)', () => {
     const dir = tmpDir();
     write(dir, { schemaVersion: 1, onboarding: { currentStep: null, completed: true } });
-    expect(load(dir)).toMatchObject({ schemaVersion: 4, llm: { provider: 'claude' }, updates: { check: true, dismissedVersion: null } });
+    expect(load(dir)).toMatchObject({ schemaVersion: 5, llm: { provider: 'claude' }, updates: { check: true, dismissedVersion: null } });
   });
   it('a v3 file keeps its values; broken values fall back', () => {
     const dir = tmpDir();
