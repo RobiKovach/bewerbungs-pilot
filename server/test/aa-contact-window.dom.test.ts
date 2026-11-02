@@ -29,7 +29,7 @@ describe('COOKIE_SCRIPT', () => {
   });
 
   it('a reject button later in the page still wins over an earlier "Auswahl bestätigen"', () => {
-    doc().body.innerHTML = '<button id="sel">Auswahl bestätigen</button><div><button id="rej">Ablehnen</button></div>';
+    doc().body.innerHTML = '<div class="cookie-banner"><button id="sel">Auswahl bestätigen</button><div><button id="rej">Ablehnen</button></div></div>';
     const clicked: string[] = [];
     for (const id of ['rej', 'sel']) doc().body.querySelector(`#${id}`)!.addEventListener('click', () => clicked.push(id));
     expect(runInPage(COOKIE_SCRIPT)).toBe('Ablehnen');
@@ -44,8 +44,27 @@ describe('COOKIE_SCRIPT', () => {
     expect(clicked).toBe(false);
   });
 
+  it('a link or button in the offer text (outside any banner) is never clicked', () => {
+    doc().body.innerHTML = '<main><p>Bitte <a id="l" href="#x">Nur erforderliche Unterlagen hochladen</a></p><button id="b">Ablehnen</button></main>';
+    let clicked = false;
+    for (const id of ['l', 'b']) doc().body.querySelector(`#${id}`)!.addEventListener('click', () => { clicked = true; });
+    expect(runInPage(COOKIE_SCRIPT)).toBeNull();
+    expect(clicked).toBe(false);
+  });
+
+  it('a word that only starts like "Ablehnen" does not count', () => {
+    doc().body.innerHTML = '<div role="dialog"><button id="b">Ablehnenswert</button></div>';
+    expect(runInPage(COOKIE_SCRIPT)).toBeNull();
+  });
+
+  it('a hidden leftover button is not clicked again (display:none, [hidden], closed dialog)', () => {
+    doc().body.innerHTML = '<div class="cookie" style="display:none"><button>Alle Cookies ablehnen</button></div>'
+      + '<div role="dialog" hidden><button>Ablehnen</button></div><dialog><button>Nur notwendige Cookies</button></dialog>';
+    expect(runInPage(COOKIE_SCRIPT)).toBeNull();
+  });
+
   it('clicks "Auswahl bestätigen", never "Alle akzeptieren"', () => {
-    doc().body.innerHTML = '<div><button id="all">Alle akzeptieren</button><button id="sel">Auswahl bestätigen</button></div>';
+    doc().body.innerHTML = '<div role="dialog"><button id="all">Alle akzeptieren</button><button id="sel">Auswahl bestätigen</button></div>';
     const clicked: string[] = [];
     for (const id of ['all', 'sel']) doc().body.querySelector(`#${id}`)!.addEventListener('click', () => clicked.push(id));
     expect(runInPage(COOKIE_SCRIPT)).toBe('Auswahl bestätigen');

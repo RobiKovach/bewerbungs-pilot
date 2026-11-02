@@ -56,12 +56,38 @@ export const READ_FRAME_SCRIPT = `(() => {
  * Dismisses the cookie banner with its privacy-preserving button only — a reject button ("Alle Cookies ablehnen",
  * "Ablehnen", "Nur notwendige …") first, "Auswahl bestätigen" (nothing extra chosen) only when there is none; never
  * "akzeptieren"/"zustimmen": without such a button the person decides. Looks into open shadow roots (the AA banner is a
- * web component) and never touches anything inside a captcha. Returns the text of the clicked button, or null.
+ * web component) and never touches anything inside a captcha. Only a visible element inside the banner counts (a
+ * dialog / modal / cookie- or consent-named ancestor, also across the shadow host) — a link in the offer text that
+ * starts with "Ablehnen…" or "Nur erforderliche…" is never clicked. Returns the text of the clicked button, or null.
  */
 export const COOKIE_SCRIPT = `(() => {
-  const REJECT = /^(Alle (Cookies )?ablehnen|Ablehnen|Nur notwendige|Nur erforderliche)/i;
-  const CONFIRM = /^Auswahl bestätigen/i;
+  const REJECT = /^(Alle (Cookies )?ablehnen|Ablehnen|Nur notwendige|Nur erforderliche)\\b/i;
+  const CONFIRM = /^Auswahl bestätigen\\b/i;
   const NEVER = /akzeptieren|zustimmen/i;
+  const BANNER = 'dialog, [role="dialog"], [aria-modal="true"], [id*="cookie" i], [class*="cookie" i], [id*="consent" i], [class*="consent" i]';
+  const NAMED = /cookie|consent/i;
+  const inBanner = (el) => {
+    let node = el;
+    for (let i = 0; i < 20 && node; i++) {
+      if (node.closest(BANNER)) return true;
+      const host = node.getRootNode().host;
+      if (!host) return false;
+      if (NAMED.test(host.tagName) || NAMED.test(host.id || '') || NAMED.test(String(host.className || ''))) return true;
+      node = host;
+    }
+    return false;
+  };
+  // jsdom (tests) has no layout at all: then only display/visibility/hidden/closed dialog count.
+  const layout = document.documentElement.getClientRects().length > 0;
+  const visible = (el) => {
+    if (el.closest('[hidden], dialog:not([open])')) return false;
+    if (getComputedStyle(el).visibility === 'hidden') return false;
+    // display is not inherited: a hidden banner hides its buttons only through an ancestor (also across the shadow host).
+    for (let n = el, i = 0; n && i < 60; n = n.parentElement || n.getRootNode().host, i++) {
+      if (getComputedStyle(n).display === 'none') return false;
+    }
+    return !layout || el.getClientRects().length > 0;
+  };
   let confirm = null;
   const roots = [document];
   while (roots.length) {
@@ -72,6 +98,7 @@ export const COOKIE_SCRIPT = `(() => {
       if (el.closest('[id*="captcha" i], [class*="captcha" i]')) continue;
       const label = (el.innerText ?? el.textContent ?? '').trim();
       if (NEVER.test(label)) continue;
+      if (!(REJECT.test(label) || CONFIRM.test(label)) || !inBanner(el) || !visible(el)) continue;
       if (REJECT.test(label)) { el.click(); return label.slice(0, 60); }
       if (!confirm && CONFIRM.test(label)) confirm = { el, label };
     }
@@ -79,6 +106,13 @@ export const COOKIE_SCRIPT = `(() => {
   if (confirm) { confirm.el.click(); return confirm.label.slice(0, 60); }
   return null;
 })()`;
+
+/** The cookie script, only while the tab is on the Arbeitsagentur (the person may follow a link to another site). */
+async function clickCookieBanner(page: Page): Promise<string | null> {
+  if (!isAaHost(page.url())) return null;
+  const label: unknown = await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
+  return typeof label === 'string' && label !== '' ? label : null;
+}
 
 /** Scrolls the application block ("Informationen zur Bewerbung", where the captcha is) into view. */
 export const SCROLL_SCRIPT = `(() => {
@@ -310,7 +344,7 @@ export class AaContactWindow implements ContactWindow {
         if (closed) return { cancelled: true };
         stopIfOver();
         const loaded = idle;
-        const label = await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
+        const label = await clickCookieBanner(page);
         if (label) cookieClicked = true;
         else if (cookieClicked || loaded) break;
         if (Date.now() >= cookieUntil) break;
@@ -330,8 +364,9 @@ export class AaContactWindow implements ContactWindow {
       for (;;) {
         if (closed) return { cancelled: true };
         stopIfOver();
-        // A banner that appears late (or again) is dismissed the same way; nothing else is ever clicked.
-        await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
+        // A banner that appears late (or again) is dismissed the same way; nothing else is ever clicked. It may have
+        // covered or shifted the page, so the application block is scrolled to once more.
+        if (await clickCookieBanner(page)) await page.mainFrame().evaluate(SCROLL_SCRIPT).catch(() => false);
         if (closed) return { cancelled: true };
         let frames: FrameRead[] = [];
         try { frames = (await Promise.all(page.frames().map(readFrame))).filter((f): f is FrameRead => f !== null); } catch { frames = []; }

@@ -22,6 +22,8 @@ interface Scenario {
   cookie?: (n: number, f: FakeBrowser) => string | null;
   /** The page load ("network idle") takes this long (default: at once). */
   idleMs?: number;
+  /** Where the tab is (default: the AA offer page). */
+  pageUrl?: string;
 }
 
 const BEFORE = [
@@ -72,6 +74,7 @@ class FakePage extends EventEmitter {
     }
     return { ok: () => true, status: () => 200 };
   }
+  url() { return this.s.pageUrl ?? 'https://www.arbeitsagentur.de/jobsuche/jobdetail/x'; }
   async waitForNetworkIdle() { if (this.s.idleMs) await new Promise((r) => setTimeout(r, this.s.idleMs)); }
   mainFrame() {
     return new FakeFrame({ text: '' }, this.b.log, () => {
@@ -159,6 +162,20 @@ describe('AaContactWindow', () => {
     await run(win);
     expect(browser.cookieRuns).toBeGreaterThan(3);
     expect(browser.log.lastIndexOf('cookie')).toBeGreaterThan(browser.log.indexOf('scroll'));
+    // The late banner may have covered the page: the application block is scrolled to once more, right after it.
+    const late = browser.log.indexOf('cookie', browser.log.indexOf('scroll'));
+    expect(browser.log.filter((x) => x === 'scroll')).toHaveLength(2);
+    expect(browser.log.lastIndexOf('scroll')).toBeGreaterThan(late);
+  });
+
+  it('on a page that is not the Arbeitsagentur the cookie script never runs', async () => {
+    const { win, browser } = setup({
+      polls: [[{ text: BEFORE }], [{ text: AFTER_CONTACT }]], pageUrl: 'https://www.beispiel.example/karriere',
+      cookie: () => 'Ablehnen',
+    }, { cookieRetryMs: 5 });
+    await run(win);
+    expect(browser.cookieRuns).toBe(0);
+    expect(browser.log).not.toContain('cookie');
   });
 
   it('a button that never goes away is retried at most cookieMaxMs, then the window goes on', async () => {
