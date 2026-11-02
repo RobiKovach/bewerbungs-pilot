@@ -132,6 +132,21 @@ describe('SettingsPage', () => {
     await waitFor(() => expect(server.current().updates.check).toBe(true));
   });
 
+  it('the usage report switch is on by default, explains itself and toggles usage.ping', async () => {
+    const server = settingsRoutes(baseSettings());
+    mockFetch({ ...server.routes, ...mailRoutes });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    const box = await screen.findByRole('checkbox', { name: 'Anonymously report that the app is used' });
+    expect(box).toBeChecked();
+    expect(screen.getByText(/random number .not linked to you./)).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(box);
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Anonymously report that the app is used' })).not.toBeChecked());
+    expect(server.current().usage.ping).toBe(false);
+    await user.click(screen.getByRole('checkbox', { name: 'Anonymously report that the app is used' }));
+    await waitFor(() => expect(server.current().usage.ping).toBe(true));
+  });
+
   it('quits via the given callback', async () => {
     const server = settingsRoutes(baseSettings());
     mockFetch({ ...server.routes, ...mailRoutes });

@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Your assistant for job applications in Germany" },
-  "nav": { "home": "Home", "profile": "Profile", "vacancies": "Job offers", "applications": "Applications", "guide": "How it works", "settings": "Settings", "quit": "Quit" },
+  "nav": { "home": "Home", "profile": "Profile", "vacancies": "Job offers", "applications": "Applications", "guide": "How it works", "settings": "Settings", "quit": "Quit", "feedback": "Feedback" },
   "common": {
     "connectionLost": "BewerbungsPilot is not answering. If the program was closed, start it again with the shortcut on your desktop.", "checkAgain": "Check again",
     "next": "Next", "back": "Back", "retry": "Check again", "cancel": "Cancel", "details": "Details",
@@ -14,6 +14,8 @@
   "language": { "label": "Language" },
   "unsaved": { "leave": "Some changes are not saved yet. If you leave now, they will be lost. Leave anyway?" },
   "updates": { "available": "Version {{version}} is available", "whatsNew": "What's new", "download": "Download", "dismiss": "Hide until the next version" },
+  "feedback": { "title": "Send feedback", "button": "Feedback", "kind": "Type", "problem": "Problem", "idea": "Idea", "text": "Your message", "email": "Your email (for our reply)", "emailBad": "Please enter a valid email address.", "sent": "Sent: your text, this address, app version {{version}}. Nothing else from your data.", "send": "Send", "sending": "Sending…", "thanks": "Thank you! Your message was sent.", "close": "Close" },
+  "usageNotice": { "text": "Once a day the app anonymously reports that it is used: only a random number and the version. You can switch this off in Settings.", "ok": "OK", "settings": "Open Settings" },
   "home": {
     "title": "Welcome to BewerbungsPilot",
     "intro": "BewerbungsPilot finds job offers in Germany that fit you, writes your application documents and helps you keep track of every application.",
@@ -23,7 +25,7 @@
     "openProfile": "Open your profile"
   },
   "onboarding": {
-    "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time.", "demo": "Not sure yet? Look around first: the demo shows the whole app with the sample person Max Mustermann. You need no AI helper, no email account and none of your own data for it.", "tryDemo": "Try the demo", "demoStarting": "Starting the demo…", "demoOpened": "The demo opened in a new tab. When you are done, come back here to set up BewerbungsPilot for yourself." },
+    "welcome": { "title": "Welcome", "body": "A few short steps and BewerbungsPilot is ready for you. First choose the language of the app. You can change it at any time.", "demo": "Not sure yet? Look around first: the demo shows the whole app with the sample person Max Mustermann. You need no AI helper, no email account and none of your own data for it.", "tryDemo": "Try the demo", "demoStarting": "Starting the demo…", "demoOpened": "The demo opened in a new tab. When you are done, come back here to set up BewerbungsPilot for yourself.", "ping": "Once a day the app anonymously reports that it is used: only a random number and the version. You can switch this off later in Settings." },
     "ai": {
       "title": "Your AI helper",
       "intro": "BewerbungsPilot uses an AI helper on your computer to read job offers and write your documents. Choose one.",
@@ -152,6 +154,9 @@
     "updatesTitle": "Updates",
     "updatesCheck": "Check for updates",
     "updatesExplain": "Once a day the app asks the BewerbungsPilot website (GitHub) whether there is a new version. Nothing about you is sent.",
+    "usageTitle": "Usage report",
+    "usagePing": "Anonymously report that the app is used",
+    "usageExplain": "Once a day the app sends a random number (not linked to you) and the version number to the BewerbungsPilot server. Nothing else. It only tells the developer how many people use the app. Feedback you write is separate and is never sent without your click on \"Send\".",
     "backupsTitle": "Backups",
     "backups": {
       "intro": "A backup holds your profile, job offers and applications with all files. Your email password or Google key is never included.",

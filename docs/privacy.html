@@ -12,20 +12,24 @@
   <header>
     <nav><a href="./">Home</a><a href="privacy.html">Privacy policy</a><a href="https://github.com/RobiKovach/bewerbungs-pilot">Source code</a></nav>
     <h1>Privacy policy</h1>
-    <p class="lead">BewerbungsPilot · effective 26 October 2026</p>
+    <p class="lead">BewerbungsPilot · effective 2 November 2026</p>
   </header>
 
   <h2>In short</h2>
   <ul>
-    <li>BewerbungsPilot is a Windows app that runs only on your own PC. It has <strong>no server, no user accounts,
-      no tracking and no analytics</strong>.</li>
-    <li>The developer of BewerbungsPilot <strong>does not receive any of your data</strong> — not your profile, not
-      your documents, not your emails and not your Google account data.</li>
+    <li>BewerbungsPilot is a Windows app that runs only on your own PC. It has <strong>no user accounts and no
+      tracking of what you do</strong>. The only thing the developer's server learns is an anonymous daily
+      "the app is in use" signal (see below), which you can switch off.</li>
+    <li>The developer of BewerbungsPilot <strong>does not receive your data</strong> — not your profile, not
+      your documents, not your emails and not your Google account data. The one exception is a message you
+      write yourself with the <strong>Feedback</strong> button and send by clicking "Send".</li>
     <li>The app sends data only to the services you use through it: the job board of the Federal Employment Agency,
       the AI helper you chose, and your email provider (Google, if you use Sign in with Google). Each of them is
       described below.</li>
     <li>Once a day the app asks the BewerbungsPilot website whether a newer version exists. Nothing about you is sent;
       you can switch this off in Settings.</li>
+    <li>Once a day the app also tells the developer's server that it is in use: a random number and the version, nothing
+      else. You can switch this off in Settings.</li>
   </ul>
 
   <h2>Who is responsible</h2>
@@ -101,6 +105,27 @@
     GitHub Pages) to see whether a newer version exists. The request carries no query, no cookies and nothing about you
     or your data. Like any website, GitHub sees the IP address of your connection. You can switch this off in
     Settings → Updates; then the app makes no such request.
+  </p>
+
+  <h3 id="usage">Anonymous daily "in use" signal</h3>
+  <p>
+    Once a day, while the app is running, it sends a small message to the developer's server (a Cloudflare Worker at
+    <code>bewerbungspilot.robikovach.workers.dev</code>). The message contains exactly two things: a <strong>random number</strong>
+    that the app created on first start (it is not derived from you, your PC or your accounts and is stored only in the app's
+    settings) and the <strong>version</strong> of the app. Like any website, Cloudflare sees the IP address of your connection;
+    the developer stores no IP address next to the signal (an IP address is only kept in hashed form, for a short time, to
+    stop abuse). The signal tells the developer roughly how many people use the app and which versions. You can switch it off
+    in Settings → Usage report; then the app sends nothing. If you delete the app's data, you simply count as a new
+    installation; restoring a backup brings the old random number back.
+  </p>
+
+  <h3 id="feedback">Feedback you send</h3>
+  <p>
+    The <strong>Feedback</strong> button opens a window where you write a message. Nothing is sent until you click "Send".
+    What is sent: your text, the email address you typed (so the developer can answer), whether it is a problem or an idea,
+    the app version, your interface language and the random number above. Nothing else from your data. The message goes to the
+    developer's mailbox and is kept on the server for 12 months. The window warns you if your text seems to contain personal
+    data that you may not want to send. This works even if you switched the daily signal off, because you decide to send it.
   </p>
 
   <h2 id="google">Google user data</h2>

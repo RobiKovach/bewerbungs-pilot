@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Ihr Assistent für Bewerbungen in Deutschland" },
-  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Stellenangebote", "applications": "Bewerbungen", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden" },
+  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Stellenangebote", "applications": "Bewerbungen", "guide": "So funktioniert's", "settings": "Einstellungen", "quit": "Beenden", "feedback": "Feedback" },
   "common": {
     "connectionLost": "BewerbungsPilot antwortet nicht. Falls das Programm geschlossen wurde, starten Sie es mit der Verknüpfung auf dem Desktop neu.", "checkAgain": "Erneut prüfen",
     "next": "Weiter", "back": "Zurück", "retry": "Erneut prüfen", "cancel": "Abbrechen", "details": "Details",
@@ -14,6 +14,8 @@
   "language": { "label": "Sprache" },
   "unsaved": { "leave": "Einige Änderungen sind noch nicht gespeichert. Wenn Sie jetzt weitergehen, gehen sie verloren. Trotzdem weiter?" },
   "updates": { "available": "Version {{version}} ist verfügbar", "whatsNew": "Was ist neu", "download": "Herunterladen", "dismiss": "Bis zur nächsten Version ausblenden" },
+  "feedback": { "title": "Feedback senden", "button": "Feedback", "kind": "Art", "problem": "Problem", "idea": "Idee", "text": "Ihre Nachricht", "email": "Ihre E-Mail (für unsere Antwort)", "emailBad": "Bitte geben Sie eine gültige E-Mail-Adresse ein.", "sent": "Gesendet wird: Ihr Text, diese Adresse, App-Version {{version}}. Sonst nichts aus Ihren Daten.", "send": "Senden", "sending": "Wird gesendet…", "thanks": "Danke! Ihre Nachricht wurde gesendet.", "close": "Schließen" },
+  "usageNotice": { "text": "Einmal am Tag meldet die App anonym, dass sie benutzt wird: nur eine Zufallszahl und die Version. Das können Sie in den Einstellungen ausschalten.", "ok": "OK", "settings": "Einstellungen öffnen" },
   "home": {
     "title": "Willkommen bei BewerbungsPilot",
     "intro": "BewerbungsPilot findet Stellenangebote in Deutschland, die zu Ihnen passen, schreibt Ihre Bewerbungsunterlagen und hilft Ihnen, den Überblick über jede Bewerbung zu behalten.",
@@ -23,7 +25,7 @@
     "openProfile": "Profil öffnen"
   },
   "onboarding": {
-    "welcome": { "title": "Willkommen", "body": "Nur wenige kurze Schritte, und BewerbungsPilot ist bereit für Sie. Wählen Sie zuerst die Sprache der App. Sie können sie jederzeit ändern.", "demo": "Noch unsicher? Schauen Sie sich zuerst um: Die Demo zeigt das ganze Programm mit der Beispielperson Max Mustermann. Dafür brauchen Sie keinen KI-Assistenten, kein E-Mail-Konto und keine eigenen Daten.", "tryDemo": "Demo ausprobieren", "demoStarting": "Demo wird gestartet…", "demoOpened": "Die Demo wurde in einem neuen Tab geöffnet. Wenn Sie fertig sind, kommen Sie hierher zurück und richten Sie BewerbungsPilot für sich ein." },
+    "welcome": { "title": "Willkommen", "body": "Nur wenige kurze Schritte, und BewerbungsPilot ist bereit für Sie. Wählen Sie zuerst die Sprache der App. Sie können sie jederzeit ändern.", "demo": "Noch unsicher? Schauen Sie sich zuerst um: Die Demo zeigt das ganze Programm mit der Beispielperson Max Mustermann. Dafür brauchen Sie keinen KI-Assistenten, kein E-Mail-Konto und keine eigenen Daten.", "tryDemo": "Demo ausprobieren", "demoStarting": "Demo wird gestartet…", "demoOpened": "Die Demo wurde in einem neuen Tab geöffnet. Wenn Sie fertig sind, kommen Sie hierher zurück und richten Sie BewerbungsPilot für sich ein.", "ping": "Einmal am Tag meldet die App anonym, dass sie benutzt wird: nur eine Zufallszahl und die Version. Das können Sie später in den Einstellungen ausschalten." },
     "ai": {
       "title": "Ihr KI-Assistent",
       "intro": "BewerbungsPilot nutzt einen KI-Assistenten auf Ihrem Computer, um Stellenangebote zu lesen und Ihre Dokumente zu schreiben. Wählen Sie einen aus.",
@@ -152,6 +154,9 @@
     "updatesTitle": "Updates",
     "updatesCheck": "Nach Updates suchen",
     "updatesExplain": "Einmal am Tag fragt die App die BewerbungsPilot-Website (GitHub), ob es eine neue Version gibt. Dabei wird nichts über Sie gesendet.",
+    "usageTitle": "Nutzungsmeldung",
+    "usagePing": "Anonym melden, dass die App benutzt wird",
+    "usageExplain": "Einmal am Tag sendet die App eine Zufallszahl (ohne Bezug zu Ihnen) und die Versionsnummer an den BewerbungsPilot-Server. Sonst nichts. So erfährt der Entwickler nur, wie viele Menschen die App nutzen. Feedback, das Sie schreiben, ist davon getrennt und wird nie ohne Ihren Klick auf „Senden“ gesendet.",
     "backupsTitle": "Sicherungen",
     "backups": {
       "intro": "Eine Sicherung enthält Ihr Profil, Stellenangebote und Bewerbungen mit allen Dateien. Ihr E-Mail-Passwort oder Ihr Google-Schlüssel ist nie enthalten.",

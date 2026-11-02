@@ -107,6 +107,19 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
       </div>
 
       <div className="card settings-section">
+        <h2>{t('settings.usageTitle')}</h2>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={settings.usage.ping}
+            onChange={(e) => { const ping = e.target.checked; void guarded(() => update({ usage: { ping } })); }}
+          />{' '}
+          {t('settings.usagePing')}
+        </label>
+        <p className="muted">{t('settings.usageExplain')}</p>
+      </div>
+
+      <div className="card settings-section">
         <h2>{t('settings.introTitle')}<InfoTip textKey="info.restartIntro" /></h2>
         <button type="button" className="btn ghost" onClick={() => void guarded(() => update({ onboarding: { completed: false, currentStep: 'welcome' } }))}>
           {t('settings.introRestart')}

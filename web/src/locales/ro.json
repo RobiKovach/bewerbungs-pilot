@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Asistentul dumneavoastră pentru cererile de angajare în Germania" },
-  "nav": { "home": "Acasă", "profile": "Profil", "vacancies": "Oferte de muncă", "applications": "Candidaturi", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire" },
+  "nav": { "home": "Acasă", "profile": "Profil", "vacancies": "Oferte de muncă", "applications": "Candidaturi", "guide": "Cum funcționează", "settings": "Setări", "quit": "Ieșire", "feedback": "Feedback" },
   "common": {
     "connectionLost": "BewerbungsPilot nu răspunde. Dacă programul a fost închis, porniți-l din nou cu scurtătura de pe desktop.", "checkAgain": "Verificați din nou",
     "next": "Următorul", "back": "Înapoi", "retry": "Verificați din nou", "cancel": "Anulare", "details": "Detalii",
@@ -14,6 +14,8 @@
   "language": { "label": "Limbă" },
   "unsaved": { "leave": "Unele modificări nu sunt încă salvate. Dacă plecați acum, se vor pierde. Plecați totuși?" },
   "updates": { "available": "Versiunea {{version}} este disponibilă", "whatsNew": "Ce este nou", "download": "Descărcați", "dismiss": "Ascundeți până la următoarea versiune" },
+  "feedback": { "title": "Trimiteți feedback", "button": "Feedback", "kind": "Tip", "problem": "Problemă", "idea": "Idee", "text": "Mesajul dumneavoastră", "email": "E-mailul dumneavoastră (pentru răspuns)", "emailBad": "Introduceți o adresă de e-mail validă.", "sent": "Se trimite: textul dumneavoastră, această adresă, versiunea aplicației {{version}}. Nimic altceva din datele dumneavoastră.", "send": "Trimite", "sending": "Se trimite…", "thanks": "Mulțumim! Mesajul a fost trimis.", "close": "Închide" },
+  "usageNotice": { "text": "O dată pe zi aplicația raportează anonim că este folosită: doar un număr aleatoriu și versiunea. Puteți opri acest lucru în Setări.", "ok": "OK", "settings": "Deschide Setările" },
   "home": {
     "title": "Bine ați venit la BewerbungsPilot",
     "intro": "BewerbungsPilot găsește oferte de angajare în Germania potrivite pentru dumneavoastră, redactează documentele de candidatură și vă ajută să urmăriți fiecare cerere.",
@@ -23,7 +25,7 @@
     "openProfile": "Deschideți profilul"
   },
   "onboarding": {
-    "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând.", "demo": "Încă nu sunteți sigur? Uitați-vă mai întâi: demo-ul arată tot programul cu persoana fictivă Max Mustermann. Nu aveți nevoie de un asistent AI, de un cont de e-mail sau de datele dumneavoastră.", "tryDemo": "Încercați demo-ul", "demoStarting": "Se pornește demo-ul…", "demoOpened": "Demo-ul s-a deschis într-o filă nouă. Când terminați, reveniți aici pentru a configura BewerbungsPilot pentru dumneavoastră." },
+    "welcome": { "title": "Bine ați venit", "body": "Câțiva pași scurți și BewerbungsPilot este pregătit pentru dumneavoastră. Mai întâi alegeți limba aplicației. O puteți schimba oricând.", "demo": "Încă nu sunteți sigur? Uitați-vă mai întâi: demo-ul arată tot programul cu persoana fictivă Max Mustermann. Nu aveți nevoie de un asistent AI, de un cont de e-mail sau de datele dumneavoastră.", "tryDemo": "Încercați demo-ul", "demoStarting": "Se pornește demo-ul…", "demoOpened": "Demo-ul s-a deschis într-o filă nouă. Când terminați, reveniți aici pentru a configura BewerbungsPilot pentru dumneavoastră.", "ping": "O dată pe zi aplicația raportează anonim că este folosită: doar un număr aleatoriu și versiunea. Puteți opri acest lucru ulterior în Setări." },
     "ai": {
       "title": "Asistentul dumneavoastră AI",
       "intro": "BewerbungsPilot folosește un asistent AI pe computerul dumneavoastră pentru a citi ofertele de angajare și a redacta documentele dumneavoastră. Alegeți unul.",
@@ -152,6 +154,9 @@
     "updatesTitle": "Actualizări",
     "updatesCheck": "Căutați actualizări",
     "updatesExplain": "O dată pe zi aplicația întreabă site-ul BewerbungsPilot (GitHub) dacă există o versiune nouă. Nu se trimite nimic despre dumneavoastră.",
+    "usageTitle": "Raport de utilizare",
+    "usagePing": "Raportează anonim că aplicația este folosită",
+    "usageExplain": "O dată pe zi aplicația trimite serverului BewerbungsPilot un număr aleatoriu (fără legătură cu dumneavoastră) și numărul versiunii. Nimic altceva. Dezvoltatorul află doar câți oameni folosesc aplicația. Feedbackul pe care îl scrieți este separat și nu se trimite niciodată fără clicul dumneavoastră pe „Trimite”.",
     "backupsTitle": "Copii de rezervă",
     "backups": {
       "intro": "O copie de rezervă conține profilul dumneavoastră, ofertele de muncă și candidaturile cu toate fișierele. Parola de e-mail sau cheia Google nu sunt incluse niciodată.",

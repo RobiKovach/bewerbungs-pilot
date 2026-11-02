@@ -19,6 +19,7 @@ export function settingsRoutes(initial: Settings) {
         ...state, language: p.language ?? state.language, onboarding: { ...state.onboarding, ...p.onboarding },
         vacancies: p.vacancies ?? state.vacancies, llm: p.llm ? { ...state.llm, ...p.llm } : state.llm,
         updates: p.updates ? { ...state.updates, ...p.updates } : state.updates,
+        usage: p.usage ? { ...state.usage, ...p.usage } : state.usage,
       };
       return { body: state };
     },

@@ -1,6 +1,6 @@
 {
   "app": { "name": "BewerbungsPilot", "tagline": "Twój asystent w poszukiwaniu pracy w Niemczech" },
-  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Oferty pracy", "applications": "Aplikacje", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij" },
+  "nav": { "home": "Start", "profile": "Profil", "vacancies": "Oferty pracy", "applications": "Aplikacje", "guide": "Jak to działa", "settings": "Ustawienia", "quit": "Zamknij", "feedback": "Opinia" },
   "common": {
     "connectionLost": "BewerbungsPilot nie odpowiada. Jeśli program został zamknięty, uruchom go ponownie skrótem na pulpicie.", "checkAgain": "Sprawdź ponownie",
     "next": "Dalej", "back": "Wstecz", "retry": "Sprawdź ponownie", "cancel": "Anuluj", "details": "Szczegóły",
@@ -14,6 +14,8 @@
   "language": { "label": "Język" },
   "unsaved": { "leave": "Niektóre zmiany nie są jeszcze zapisane. Jeśli teraz wyjdziesz, przepadną. Wyjść mimo to?" },
   "updates": { "available": "Dostępna jest wersja {{version}}", "whatsNew": "Co nowego", "download": "Pobierz", "dismiss": "Ukryj do następnej wersji" },
+  "feedback": { "title": "Wyślij opinię", "button": "Opinia", "kind": "Rodzaj", "problem": "Problem", "idea": "Pomysł", "text": "Twoja wiadomość", "email": "Twój e-mail (na odpowiedź)", "emailBad": "Wpisz prawidłowy adres e-mail.", "sent": "Wysyłamy: Twój tekst, ten adres, wersję aplikacji {{version}}. Nic więcej z Twoich danych.", "send": "Wyślij", "sending": "Wysyłam…", "thanks": "Dziękujemy! Wiadomość została wysłana.", "close": "Zamknij" },
+  "usageNotice": { "text": "Raz dziennie aplikacja anonimowo zgłasza, że jest używana: tylko losowy numer i wersja. Możesz to wyłączyć w Ustawieniach.", "ok": "OK", "settings": "Otwórz Ustawienia" },
   "home": {
     "title": "Witamy w BewerbungsPilot",
     "intro": "BewerbungsPilot znajduje oferty pracy w Niemczech, które Ci odpowiadają, przygotowuje dokumenty aplikacyjne i pomaga śledzić każdą aplikację.",
@@ -23,7 +25,7 @@
     "openProfile": "Otwórz profil"
   },
   "onboarding": {
-    "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język programu. Możesz go zmienić w dowolnym momencie.", "demo": "Jeszcze się wahasz? Najpierw się rozejrzyj: demo pokazuje cały program na przykładzie fikcyjnej osoby Max Mustermann. Nie potrzebujesz do tego asystenta AI, konta e-mail ani własnych danych.", "tryDemo": "Wypróbuj demo", "demoStarting": "Uruchamianie demo…", "demoOpened": "Demo otworzyło się w nowej karcie. Gdy skończysz, wróć tutaj, aby skonfigurować BewerbungsPilot dla siebie." },
+    "welcome": { "title": "Witamy", "body": "Jeszcze tylko kilka krótkich kroków i BewerbungsPilot będzie gotowy. Najpierw wybierz język programu. Możesz go zmienić w dowolnym momencie.", "demo": "Jeszcze się wahasz? Najpierw się rozejrzyj: demo pokazuje cały program na przykładzie fikcyjnej osoby Max Mustermann. Nie potrzebujesz do tego asystenta AI, konta e-mail ani własnych danych.", "tryDemo": "Wypróbuj demo", "demoStarting": "Uruchamianie demo…", "demoOpened": "Demo otworzyło się w nowej karcie. Gdy skończysz, wróć tutaj, aby skonfigurować BewerbungsPilot dla siebie.", "ping": "Raz dziennie aplikacja anonimowo zgłasza, że jest używana: tylko losowy numer i wersja. Możesz to później wyłączyć w Ustawieniach." },
     "ai": {
       "title": "Twój asystent AI",
       "intro": "BewerbungsPilot używa asystenta AI na Twoim komputerze, aby czytać oferty pracy i pisać Twoje dokumenty. Wybierz jednego.",
@@ -152,6 +154,9 @@
     "updatesTitle": "Aktualizacje",
     "updatesCheck": "Sprawdzaj aktualizacje",
     "updatesExplain": "Raz dziennie aplikacja pyta stronę BewerbungsPilot (GitHub), czy jest nowa wersja. Nic o Tobie nie jest wysyłane.",
+    "usageTitle": "Zgłoszenie użycia",
+    "usagePing": "Anonimowo zgłaszaj, że aplikacja jest używana",
+    "usageExplain": "Raz dziennie aplikacja wysyła na serwer BewerbungsPilot losowy numer (niepowiązany z Tobą) i numer wersji. Nic więcej. Programista tylko dowiaduje się, ile osób korzysta z aplikacji. Opinia, którą piszesz, to osobna sprawa i nigdy nie jest wysyłana bez Twojego kliknięcia „Wyślij”.",
     "backupsTitle": "Kopie zapasowe",
     "backups": {
       "intro": "Kopia zapasowa zawiera Twój profil, oferty pracy i aplikacje ze wszystkimi plikami. Hasło do poczty ani klucz Google nigdy się w niej nie znajdują.",

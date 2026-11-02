@@ -113,6 +113,11 @@ export const api = {
   restoreBackupUpload: (file: File) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>('/api/backups/restore-upload', file, fileName(file, 'backup.zip')),
   openBackupFolder: () => request<{ ok: true }>('POST', '/api/backups/open-folder', {}),
   getUpdates: () => request<UpdatesView>('GET', '/api/updates'),
+  /** The developer's mailbox: 204 on success; FEEDBACK_FAILED (reason offline | limit | server) otherwise. */
+  sendFeedback: (body: { kind: 'problem' | 'idea'; email: string; text: string }) => request<unknown>('POST', '/api/feedback', body),
+  /** Personal data in an unsent feedback text (the profile does not count as allowed here). */
+  checkFeedbackText: (text: string, email: string, signal?: AbortSignal) =>
+    request<{ warnings: PersonalFinding[] }>('POST', '/api/feedback/check-text', { text, email }, signal),
   dismissUpdate: (version: string) => request<unknown>('POST', '/api/updates/dismiss', { version }),
 
   getProfile: () => request<ProfileView>('GET', '/api/profile'),

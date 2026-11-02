@@ -281,4 +281,18 @@ describe('settings API and POST /api/feedback', () => {
     const res2 = await post(t2, body);
     expect([res2.statusCode, res2.json().error.code, res2.json().error.reason]).toEqual([502, 'FEEDBACK_FAILED', 'offline']);
   });
+
+  it('POST /api/feedback/check-text warns about personal data, allows only the typed address, and rejects extra fields', async () => {
+    const t = await makeApp();
+    const check = (payload: unknown) => t.app.inject({ method: 'POST', url: '/api/feedback/check-text', headers: H, payload: payload as object });
+    const res = await check({ text: 'Ruf mich an: +49 351 1234567, Mail max@example.de, IBAN DE89 3704 0044 0532 0130 00', email: 'max@example.de' });
+    expect(res.statusCode).toBe(200);
+    const kinds = (res.json().warnings as Array<{ kind: string }>).map((w) => w.kind).sort();
+    expect(kinds).toEqual(['iban', 'phone']);
+    const other = await check({ text: 'schreib an anna@example.de', email: 'max@example.de' });
+    expect(other.json().warnings.map((w: { kind: string }) => w.kind)).toEqual(['email']);
+    expect((await check({ text: '', email: '' })).json()).toEqual({ warnings: [] });
+    expect((await check({ text: 'x', email: 'a@b.de', extra: 1 })).statusCode).toBe(400);
+    expect((await check({ text: 'a'.repeat(20001), email: '' })).statusCode).toBe(400);
+  });
 });

@@ -96,11 +96,16 @@ walks you through signing in; you can switch at any time in Settings. Only one h
 
 ## Privacy
 
-The developer receives none of your data. Apart from the daily version check below, the app talks only to the services
-you use through it (job board, AI helper, email provider) — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
+The developer receives none of your data, except a message you write yourself with the **Feedback** button and send by
+clicking "Send" (your text, the email address you typed, the version; kept 12 months). Apart from the daily version check
+and the daily "in use" signal below, the app talks only to the services you use through it (job board, AI helper, email provider) — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
 
 Once a day the app asks the BewerbungsPilot website (GitHub Pages) whether a newer version exists. GitHub sees your IP
 address, as with any website; nothing about you or your data is sent. You can switch it off in **Settings → Updates**.
+
+Once a day the app also tells the developer's server (a Cloudflare Worker) that it is in use: a random number that the app
+created on first start (not linked to you) and the version — nothing else. It is on by default and shown once in the welcome
+steps (or once after an update). Switch it off in **Settings → Usage report**.
 
 ## Languages
 

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Language } from '@bp/shared';
 import type { SettingsStore } from '../data/settings.js';
+import { findPersonalData, normEmail } from '../applications/personal-data.js';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
 
@@ -27,8 +28,21 @@ const feedbackSchema = {
   },
 } as const;
 
+/** Unsaved feedback text: empty fields are fine (typing is in progress). */
+const checkSchema = {
+  type: 'object', additionalProperties: false, propertyNames: { enum: ['text', 'email'] }, required: ['text', 'email'],
+  properties: { text: { type: 'string', maxLength: 20000 }, email: { type: 'string', maxLength: 254 } },
+} as const;
+
 export async function registerUsageRoutes(app: FastifyInstance, d: UsageRouteDeps): Promise<void> {
   const fetchFn = d.fetch ?? fetch;
+
+  // Feedback goes to the developer, so profile data is NOT allowed here: only the address typed in the dialog is.
+  app.post('/api/feedback/check-text', { schema: { body: checkSchema } }, async (req) => {
+    const { text, email } = req.body as { text: string; email: string };
+    const allowed = { emails: normEmail(email) === '' ? [] : [normEmail(email)], phones: [], postalCodes: [], birthDates: [], links: [] };
+    return { warnings: findPersonalData([{ text, where: { part: 'email', field: 'body' } }], allowed) };
+  });
 
   app.post('/api/feedback', {
     // Fastify's Ajv strips unknown keys; here they are refused instead (same as POST /api/updates/dismiss).

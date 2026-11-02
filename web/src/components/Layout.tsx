@@ -1,10 +1,13 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Route } from '../types';
 import { DemoBanner } from './DemoBanner';
+import { FeedbackButton } from './FeedbackButton';
+import { FeedbackDialog } from './FeedbackDialog';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { TryDemoButton } from './TryDemoButton';
 import { UpdateBanner } from './UpdateBanner';
+import { UsageNotice } from './UsageNotice';
 
 const ROUTES: Route[] = ['home', 'profile', 'vacancies', 'applications', 'guide', 'settings'];
 
@@ -12,6 +15,7 @@ export function Layout({ route, onQuit, showNav, demo = false, onLeaveDemo, chil
   route: Route; onQuit: () => void; showNav: boolean; demo?: boolean; onLeaveDemo?: () => void; children: ReactNode;
 }) {
   const { t } = useTranslation();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   return (
     <div className="app">
       <header className="topbar">
@@ -28,12 +32,15 @@ export function Layout({ route, onQuit, showNav, demo = false, onLeaveDemo, chil
         <div className="topbar-actions">
           {/* After setup the real app keeps offering the demo (during setup it sits on the first step). */}
           {showNav && !demo ? <TryDemoButton /> : null}
+          {showNav && !demo ? <FeedbackButton open={feedbackOpen} onClick={() => setFeedbackOpen((o) => !o)} /> : null}
           <LanguageSwitcher />
           <button type="button" className="btn ghost" onClick={onQuit}>{t('nav.quit')}</button>
         </div>
       </header>
       {demo ? <DemoBanner onLeave={onLeaveDemo ?? onQuit} /> : null}
       <UpdateBanner />
+      {showNav ? <UsageNotice /> : null}
+      {feedbackOpen && showNav && !demo ? <div className="content"><FeedbackDialog onClose={() => setFeedbackOpen(false)} /></div> : null}
       <main className="content">{children}</main>
     </div>
   );
