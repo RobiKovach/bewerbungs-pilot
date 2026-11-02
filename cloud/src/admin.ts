@@ -130,10 +130,17 @@ async function requestCode(req: Request, d: AdminDeps): Promise<Response> {
   return html(200, loginPage('code', SENT_MESSAGE));
 }
 
+/**
+ * One answer for a wrong, expired, used or used-up code and for "no code at all": otherwise asking for a code for
+ * some address and typing 000000 would tell whether that address is the admin's.
+ */
+const loginFailed = () => html(401, loginPage('code', 'Wrong or expired code. You can ask for a new one.'));
+
 async function login(req: Request, d: AdminDeps): Promise<Response> {
   const form = await readForm(req);
   const now = d.now();
-  // Every check takes a slot of today's wrong-code budget first (one atomic step); a right code gives it back.
+  // Every check takes a slot of today's wrong-code budget first (one atomic step); only a right code gives it back,
+  // so a check without a live code costs the same as a wrong guess (no difference to observe).
   const dayKey = `admin:wrong:${utcDay(now)}`;
   if (!(await d.store.takeHit(dayKey, DAY, now, WRONG_CODES_PER_DAY))) {
     return html(429, loginPage('email', 'Too many wrong codes today. Try again tomorrow.'));
@@ -141,26 +148,20 @@ async function login(req: Request, d: AdminDeps): Promise<Response> {
   // Counting the attempt and reading the code is one atomic step, so parallel requests cannot pass the limit.
   const hash = await d.store.takeCodeAttempt(now, MAX_WRONG_CODES);
   if (!hash) {
-    await d.store.releaseHit(dayKey, now);
     const stored = await d.store.getCode();
-    if (stored && stored.expires > now && stored.attempts >= MAX_WRONG_CODES) {
-      await d.store.deleteCode();
-      return html(429, loginPage('email', 'Too many wrong codes. Ask for a new one.'));
-    }
-    return html(401, loginPage('email', 'The code has expired or was already used. Ask for a new one.'));
+    if (stored && stored.attempts >= MAX_WRONG_CODES) await d.store.deleteCode();
+    return loginFailed();
   }
   const typed = (form?.code ?? '').trim();
   if (/^\d{6}$/.test(typed) && sameHex(await sha256Hex(typed), hash)) {
     await d.store.releaseHit(dayKey, now);
     // Only the request that really deleted the code gets a session: one code, one session.
-    if (!(await d.store.consumeCode(hash))) {
-      return html(401, loginPage('email', 'The code has expired or was already used. Ask for a new one.'));
-    }
+    if (!(await d.store.consumeCode(hash))) return loginFailed();
     const token = newToken();
     await d.store.addSession(await sha256Hex(token), now + SESSION_TTL_MS);
     return redirect(`${COOKIE}=${token}; Path=/admin; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`);
   }
-  return html(401, loginPage('code', 'Wrong code.'));
+  return loginFailed();
 }
 
 async function logout(req: Request, d: AdminDeps): Promise<Response> {

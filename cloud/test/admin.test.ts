@@ -79,13 +79,41 @@ describe.each([
     expect((await call(form('/admin/login', { code: lastCode() }))).status).toBe(401);
   });
 
-  it('allows 5 wrong attempts; the 6th is 429 and the code is dead', async () => {
+  it('allows 5 wrong attempts; after that the code is dead (and the answer stays the same 401)', async () => {
     await call(form('/admin/code', { email: ROBERT }));
     const code = lastCode();
     const wrong = code === '000000' ? '111111' : '000000';
     for (let i = 0; i < 5; i++) expect((await call(form('/admin/login', { code: wrong }))).status).toBe(401);
-    expect((await call(form('/admin/login', { code: wrong }))).status).toBe(429);
+    expect((await call(form('/admin/login', { code: wrong }))).status).toBe(401);
     expect((await call(form('/admin/login', { code }))).status).toBe(401);
+    expect(await store.getCode()).toBeNull();
+  });
+
+  it('answers byte-identically whether or not the typed address had a code (the admin address stays secret)', async () => {
+    const snapshot = async (res: Response) => ({
+      status: res.status, body: await res.text(), headers: [...res.headers.entries()].sort(),
+    });
+    // No code requested at all (someone typed another address).
+    const noCode = await snapshot(await call(form('/admin/login', { code: '123456' })));
+    // A code for the admin address exists; a wrong guess.
+    await call(form('/admin/code', { email: ROBERT }));
+    const wrong = lastCode() === '123456' ? '654321' : '123456';
+    const wrongGuess = await snapshot(await call(form('/admin/login', { code: wrong })));
+    expect(wrongGuess).toEqual(noCode);
+    // Expired and used-up codes look the same too.
+    now = T0 + 10 * 60_000 + 1;
+    expect(await snapshot(await call(form('/admin/login', { code: lastCode() })))).toEqual(noCode);
+    now = T0 + 20 * 60_000;
+    await call(form('/admin/code', { email: ROBERT }, { 'cf-connecting-ip': '198.51.100.2' }));
+    const w = lastCode() === '123456' ? '654321' : '123456';
+    for (let i = 0; i < 5; i++) await call(form('/admin/login', { code: w }));
+    expect(await snapshot(await call(form('/admin/login', { code: w })))).toEqual(noCode);
+    expect(noCode.status).toBe(401);
+  });
+
+  it('a check without any live code costs a slot of the daily budget like a wrong guess', async () => {
+    for (let i = 0; i < 10; i++) expect((await call(form('/admin/login', { code: '123456' }))).status).toBe(401);
+    expect((await call(form('/admin/login', { code: '123456' }))).status).toBe(429);
   });
 
   it('refuses a form over 4 KB while reading it', async () => {
@@ -178,9 +206,17 @@ describe.each([
     await call(form('/admin/code', { email: ROBERT }));
     const code = lastCode();
     const wrong = code === '000000' ? '111111' : '000000';
+    // Every answer is the same 401 now, so count the checks the store let through instead.
+    let checks = 0;
+    const take = store.takeCodeAttempt.bind(store);
+    store.takeCodeAttempt = async (...args: Parameters<Store['takeCodeAttempt']>) => {
+      const hash = await take(...args);
+      if (hash) checks++;
+      return hash;
+    };
     const res = await Promise.all(Array.from({ length: 9 }, () => call(form('/admin/login', { code: wrong }))));
-    expect(res.filter((r) => r.status === 401)).toHaveLength(5);
-    expect(res.filter((r) => r.status === 303)).toHaveLength(0);
+    expect(checks).toBe(5);
+    expect(res.every((r) => r.status === 401)).toBe(true);
     expect((await call(form('/admin/login', { code }))).status).not.toBe(303);
   });
 
