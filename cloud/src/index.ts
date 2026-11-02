@@ -1,10 +1,12 @@
+import { handleAdmin, sha256Hex } from './admin.js';
+import { ResendMailer } from './mail.js';
 import { D1Store, utcDay, type Mailer, type Store } from './store.js';
 import { parseFeedback, parsePing } from './validate.js';
 
 export type { Mailer, Store } from './store.js';
 
-/** Grows in Task 2 (ROBERT_EMAIL, RESEND_API_KEY). */
-export interface Env { DB: D1Database }
+/** ROBERT_EMAIL and RESEND_API_KEY are secrets (`wrangler secret put`), never in code or wrangler.toml. */
+export interface Env { DB: D1Database; ROBERT_EMAIL: string; RESEND_API_KEY: string }
 
 export interface Deps { store: Store; mailer: Mailer; now(): number }
 
@@ -15,6 +17,10 @@ const HOUR = 3600_000;
 const DAY = 24 * HOUR;
 const FEEDBACK_PER_INSTALL_PER_DAY = 5;
 const FEEDBACK_PER_IP_PER_HOUR = 10;
+/** Installs never seen before, per IP: a flood of made-up ids can neither inflate the count nor burn D1 writes. */
+const NEW_INSTALLS_PER_IP = 20;
+/** The window of that cap: IP rows live at most 2 hours (privacy), so the cap cannot look further back. */
+const NEW_INSTALLS_WINDOW_MS = 2 * HOUR;
 const SUBJECT_TEXT = 60;
 
 const empty = (status: number) => new Response(null, { status, headers: { 'cache-control': 'no-store' } });
@@ -47,11 +53,10 @@ async function readJson(req: Request, maxBytes: number): Promise<unknown> {
   }
 }
 
-/** The IP is only ever kept hashed with the day, in a rate-limit row that lives at most 2 hours. */
-async function ipKey(req: Request, now: number): Promise<string> {
+/** The IP is only ever kept hashed with the day, in a rate-limit row ("ip:" key) that lives at most 2 hours. */
+async function ipKey(req: Request, now: number, purpose: string): Promise<string> {
   const ip = req.headers.get('cf-connecting-ip') ?? 'unknown';
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${ip}|${utcDay(now)}`));
-  return `ip:${[...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+  return `ip:${purpose}:${await sha256Hex(`${ip}|${utcDay(now)}`)}`;
 }
 
 /** One line, no control characters: the subject goes into a mail header. */
@@ -60,7 +65,17 @@ const oneLine = (s: string) => s.replace(/[\p{Cc}\p{Zl}\p{Zp}]+/gu, ' ').replace
 async function ping(req: Request, d: Deps): Promise<Response> {
   const input = parsePing(await readJson(req, PING_MAX_BYTES));
   if (!input) return error(400, 'bad_request');
-  await d.store.recordPing(input.installId, input.version, utcDay(d.now()));
+  const now = d.now();
+  const today = utcDay(now);
+  const last = await d.store.lastPingDay(input.installId);
+  // Already counted today: no write at all.
+  if (last === today) return empty(204);
+  if (last === null) {
+    const key = await ipKey(req, now, 'new');
+    if (await d.store.countHits(key, NEW_INSTALLS_WINDOW_MS, now) >= NEW_INSTALLS_PER_IP) return error(429, 'too_many');
+    await d.store.addHit(key, now);
+  }
+  await d.store.recordPing(input.installId, input.version, today);
   return empty(204);
 }
 
@@ -68,9 +83,13 @@ async function feedback(req: Request, d: Deps): Promise<Response> {
   const input = parseFeedback(await readJson(req, FEEDBACK_MAX_BYTES));
   if (!input) return error(400, 'bad_request');
   const now = d.now();
-  const perInstall = await d.store.hit(`install:${input.installId}:${utcDay(now)}`, DAY, now);
-  const perIp = await d.store.hit(await ipKey(req, now), HOUR, now);
-  if (perInstall > FEEDBACK_PER_INSTALL_PER_DAY || perIp > FEEDBACK_PER_IP_PER_HOUR) return error(429, 'too_many');
+  // Count first, write the hits only for an accepted request: a refused one writes nothing.
+  const installKey = `install:${input.installId}:${utcDay(now)}`;
+  const ip = await ipKey(req, now, 'feedback');
+  if (await d.store.countHits(installKey, DAY, now) >= FEEDBACK_PER_INSTALL_PER_DAY
+    || await d.store.countHits(ip, HOUR, now) >= FEEDBACK_PER_IP_PER_HOUR) return error(429, 'too_many');
+  await d.store.addHit(installKey, now);
+  await d.store.addHit(ip, now);
 
   const createdAt = new Date(now).toISOString();
   const id = await d.store.addFeedback({
@@ -90,20 +109,23 @@ async function feedback(req: Request, d: Deps): Promise<Response> {
 
 const routes: Record<string, (req: Request, d: Deps) => Promise<Response>> = { '/v1/ping': ping, '/v1/feedback': feedback };
 
-/** Everything the worker answers. Only the app's own server calls it, so there are no CORS headers. */
-export async function handle(req: Request, _env: Env, deps: Deps): Promise<Response> {
-  const route = routes[new URL(req.url).pathname];
+/** Everything the worker answers. Only the app's own server calls /v1, so there are no CORS headers. */
+export async function handle(req: Request, env: Env, deps: Deps): Promise<Response> {
+  const path = new URL(req.url).pathname;
+  const admin = await handleAdmin(req, path, {
+    store: deps.store, mailer: deps.mailer, now: deps.now, adminEmail: env.ROBERT_EMAIL ?? '',
+    ipKey: (purpose) => ipKey(req, deps.now(), purpose),
+  });
+  if (admin) return admin;
+  const route = routes[path];
   if (!route) return error(404, 'not_found');
   if (req.method !== 'POST') return error(405, 'method_not_allowed');
   return route(req, deps);
 }
 
-/** Until Task 2 brings the Resend mailer, feedback is only stored (mailed = 0). */
-const noMailer: Mailer = { send: async () => false };
-
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    return handle(req, env, { store: new D1Store(env.DB), mailer: noMailer, now: Date.now });
+    return handle(req, env, { store: new D1Store(env.DB), mailer: new ResendMailer(env.RESEND_API_KEY, env.ROBERT_EMAIL), now: Date.now });
   },
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(new D1Store(env.DB).purge(Date.now()));

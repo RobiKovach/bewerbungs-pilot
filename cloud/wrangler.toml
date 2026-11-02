@@ -12,4 +12,5 @@ database_name = "bewerbungspilot"
 database_id = "00000000-0000-0000-0000-000000000000"
 
 [triggers]
-crons = ["0 3 * * *"]
+# Hourly: IP rate-limit rows must be gone within 2 hours (spec), expired codes and sessions too.
+crons = ["0 * * * *"]

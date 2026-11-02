@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { handle, type Env } from '../src/index.js';
 import { D1Store, MemoryStore, type Mailer, type MailMessage, type Store } from '../src/store.js';
 import { sqliteD1 } from './sqlite-d1.js';
@@ -48,6 +48,37 @@ describe('worker api', () => {
       expect((await call(post('/v1/ping', { installId: A, version: '0.11.0' }))).status).toBe(204);
       expect((await call(post('/v1/ping', { installId: A, version: '0.11.0' }))).status).toBe(204);
       expect((await store.stats(now)).users.d1).toBe(1);
+    });
+
+    it('writes nothing for a second ping of the same install on the same day', async () => {
+      await call(post('/v1/ping', { installId: A, version: '0.11.0' }));
+      const record = vi.spyOn(store, 'recordPing');
+      const addHit = vi.spyOn(store, 'addHit');
+      expect((await call(post('/v1/ping', { installId: A, version: '0.11.0' }))).status).toBe(204);
+      expect(record).not.toHaveBeenCalled();
+      expect(addHit).not.toHaveBeenCalled();
+      now = T0 + DAY;
+      await call(post('/v1/ping', { installId: A, version: '0.11.1' }));
+      expect(record).toHaveBeenCalledTimes(1);
+    });
+
+    it('accepts at most 20 new installs per IP (within 2 hours); known installs keep working', async () => {
+      const id = (i: number) => `${(0x20000000 + i).toString(16)}-8d2a-4f5b-9c7d-1e2f3a4b5c6d`;
+      for (let i = 0; i < 20; i++) expect((await call(post('/v1/ping', { installId: id(i), version: '0.11.0' }))).status).toBe(204);
+      const record = vi.spyOn(store, 'recordPing');
+      const addHit = vi.spyOn(store, 'addHit');
+      expect((await call(post('/v1/ping', { installId: id(20), version: '0.11.0' }))).status).toBe(429);
+      expect(record).not.toHaveBeenCalled();
+      expect(addHit).not.toHaveBeenCalled();
+      expect((await store.stats(now)).users.d1).toBe(20);
+      // Another IP, or a known install from the same IP the next day, still counts.
+      expect((await call(post('/v1/ping', { installId: id(21), version: '0.11.0' }, { 'cf-connecting-ip': '198.51.100.50' }))).status).toBe(204);
+      now = T0 + DAY;
+      expect((await call(post('/v1/ping', { installId: id(0), version: '0.11.0' }))).status).toBe(204);
+      expect((await store.stats(now)).users.d1).toBe(1);
+      // After the 2-hour window the cap starts over.
+      now = T0 + 2 * 3600_000 + 1;
+      expect((await call(post('/v1/ping', { installId: id(22), version: '0.11.0' }))).status).toBe(204);
     });
 
     it('counts users over 1, 7 and 30 days and groups by the last version', async () => {
@@ -141,6 +172,21 @@ describe('worker api', () => {
       expect((await call(post('/v1/feedback', feedback({ installId: id(11) })))).status).toBe(202);
     });
 
+    it('a refused feedback writes nothing', async () => {
+      for (let i = 0; i < 5; i++) await call(post('/v1/feedback', feedback(), { 'cf-connecting-ip': `198.51.100.${i}` }));
+      const addHit = vi.spyOn(store, 'addHit');
+      const add = vi.spyOn(store, 'addFeedback');
+      expect((await call(post('/v1/feedback', feedback(), { 'cf-connecting-ip': '198.51.100.9' }))).status).toBe(429);
+      expect(addHit).not.toHaveBeenCalled();
+      expect(add).not.toHaveBeenCalled();
+      expect(mailer.sent).toHaveLength(5);
+    });
+
+    it('never puts the person\'s address into the subject', async () => {
+      await call(post('/v1/feedback', feedback({ text: 'Hi', email: 'secret.person@example.com' })));
+      expect(mailer.sent[0]!.subject).not.toContain('secret.person');
+    });
+
     it('never stores the IP itself', async () => {
       await call(post('/v1/feedback', feedback()));
       expect(JSON.stringify(store)).not.toContain('203.0.113.7');
@@ -189,11 +235,40 @@ describe.each([
     expect(s.versions).toEqual([{ version: '0.11.0', users: 2 }]);
   });
 
-  it('counts hits inside the window only', async () => {
-    expect(await store.hit('k', 3600_000, T0)).toBe(1);
-    expect(await store.hit('k', 3600_000, T0 + 1000)).toBe(2);
-    expect(await store.hit('k', 3600_000, T0 + 3600_000 + 2000)).toBe(1);
-    expect(await store.hit('other', 3600_000, T0)).toBe(1);
+  it('counts hits inside the window only; counting writes nothing', async () => {
+    expect(await store.countHits('k', 3600_000, T0)).toBe(0);
+    await store.addHit('k', T0);
+    await store.addHit('k', T0 + 1000);
+    expect(await store.countHits('k', 3600_000, T0 + 1000)).toBe(2);
+    expect(await store.countHits('k', 3600_000, T0 + 3600_000 + 500)).toBe(1);
+    expect(await store.countHits('other', 3600_000, T0)).toBe(0);
+  });
+
+  it('knows the last ping day of an install', async () => {
+    expect(await store.lastPingDay(A)).toBeNull();
+    await store.recordPing(A, '0.11.0', day(T0));
+    expect(await store.lastPingDay(A)).toBe(day(T0));
+  });
+
+  it('keeps one admin code: a new one replaces the old, attempts count, delete removes it', async () => {
+    expect(await store.getCode()).toBeNull();
+    await store.saveCode('h1', T0 + 1000);
+    await store.saveCode('h2', T0 + 2000);
+    await store.countCodeAttempt();
+    await store.countCodeAttempt();
+    expect(await store.getCode()).toEqual({ hash: 'h2', expires: T0 + 2000, attempts: 2 });
+    await store.deleteCode();
+    expect(await store.getCode()).toBeNull();
+  });
+
+  it('keeps sessions until they expire or are deleted', async () => {
+    await store.addSession('s1', T0 + 1000);
+    await store.addSession('s2', T0 + 1000);
+    expect(await store.hasSession('s1', T0)).toBe(true);
+    expect(await store.hasSession('s1', T0 + 1000)).toBe(false);
+    expect(await store.hasSession('nope', T0)).toBe(false);
+    await store.deleteSession('s2');
+    expect(await store.hasSession('s2', T0)).toBe(false);
   });
 
   it('lists feedback newest first and records whether it was mailed', async () => {
@@ -211,14 +286,19 @@ describe.each([
     const base = { version: '0.11.0', language: 'de', kind: 'problem' as const, email: 'a@b.de', text: 't' };
     await store.addFeedback({ ...base, createdAt: new Date(T0 - 366 * DAY).toISOString(), text: 'old' });
     await store.addFeedback({ ...base, createdAt: new Date(T0 - 300 * DAY).toISOString(), text: 'kept' });
-    await store.hit('ip:old', 3600_000, T0 - 3 * 3600_000);
-    await store.hit('ip:new', 3600_000, T0 - 3600_000);
+    await store.addHit('ip:old', T0 - 3 * 3600_000);
+    await store.addHit('ip:new', T0 - 3600_000);
+    await store.addSession('expired', T0 - 1);
+    await store.addSession('live', T0 + 1000);
+    await store.saveCode('old-code', T0 - 1);
     await store.recordPing(A, '0.9.0', day(T0 - 401 * DAY));
     await store.recordPing(B, '0.11.0', day(T0 - 10 * DAY));
     await store.purge(T0);
     expect((await store.listFeedback(10)).map((f) => f.text)).toEqual(['kept']);
-    expect(await store.hit('ip:old', 24 * 3600_000, T0)).toBe(1);
-    expect(await store.hit('ip:new', 24 * 3600_000, T0)).toBe(2);
+    expect(await store.countHits('ip:old', 24 * 3600_000, T0)).toBe(0);
+    expect(await store.countHits('ip:new', 24 * 3600_000, T0)).toBe(1);
+    expect(await store.hasSession('live', T0)).toBe(true);
+    expect(await store.getCode()).toBeNull();
     expect((await store.stats(T0)).users.d30).toBe(1);
     await store.recordPing(A, '0.9.0', day(T0 - 401 * DAY));
     await store.purge(T0);

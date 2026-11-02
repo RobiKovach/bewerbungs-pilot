@@ -23,3 +23,19 @@ updates:
       interval: weekly
     cooldown:
       default-days: 14
+  # The Cloudflare Worker (spec 0.11.0) is its own npm project, not a workspace of the app.
+  - package-ecosystem: npm
+    directory: /cloud
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major

@@ -18,18 +18,33 @@ export interface Stats {
   versions: Array<{ version: string; users: number }>;
 }
 
-export interface MailMessage { subject: string; text: string; replyTo: string }
+/** replyTo is sent as its own field of the mail API, never as text in a header. */
+export interface MailMessage { subject: string; text: string; replyTo?: string }
 /** Sends one mail to Robert; false (never a throw) when it did not go out. */
 export interface Mailer { send(m: MailMessage): Promise<boolean> }
 
+export interface StoredCode { hash: string; expires: number; attempts: number }
+
 export interface Store {
+  /** The last UTC day this install pinged, or null for an install never seen (or purged). */
+  lastPingDay(id: string): Promise<string | null>;
   recordPing(id: string, version: string, day: string): Promise<void>;
   addFeedback(f: NewFeedback): Promise<number>;
   markMailed(id: number, ok: boolean): Promise<void>;
-  /** Records one hit for `key` at `now` and returns the hits inside the last `windowMs`, this one included. */
-  hit(key: string, windowMs: number, now: number): Promise<number>;
+  /** Hits of `key` inside the last `windowMs`. Callers count first and add a hit only while under their limit. */
+  countHits(key: string, windowMs: number, now: number): Promise<number>;
+  addHit(key: string, now: number): Promise<void>;
   stats(now: number): Promise<Stats>;
   listFeedback(limit: number): Promise<FeedbackRow[]>;
+  /** The one admin login code: a new one replaces the old. Only its SHA-256 is stored. */
+  saveCode(hash: string, expires: number): Promise<void>;
+  getCode(): Promise<StoredCode | null>;
+  countCodeAttempt(): Promise<void>;
+  deleteCode(): Promise<void>;
+  /** Admin sessions, by the SHA-256 of their token. */
+  addSession(tokenHash: string, expires: number): Promise<void>;
+  hasSession(tokenHash: string, now: number): Promise<boolean>;
+  deleteSession(tokenHash: string): Promise<void>;
   purge(now: number): Promise<void>;
 }
 
@@ -53,7 +68,13 @@ export class MemoryStore implements Store {
   private readonly pings = new Map<string, { version: string; day: string }>();
   private feedback: FeedbackRow[] = [];
   private hits: Array<{ key: string; at: number }> = [];
+  private code: StoredCode | null = null;
+  private sessions = new Map<string, number>();
   private nextId = 1;
+
+  async lastPingDay(id: string): Promise<string | null> {
+    return this.pings.get(id)?.day ?? null;
+  }
 
   async recordPing(id: string, version: string, day: string): Promise<void> {
     this.pings.set(id, { version, day });
@@ -70,9 +91,41 @@ export class MemoryStore implements Store {
     if (row) row.mailed = ok;
   }
 
-  async hit(key: string, windowMs: number, now: number): Promise<number> {
-    this.hits.push({ key, at: now });
+  async countHits(key: string, windowMs: number, now: number): Promise<number> {
     return this.hits.filter((h) => h.key === key && h.at > now - windowMs).length;
+  }
+
+  async addHit(key: string, now: number): Promise<void> {
+    this.hits.push({ key, at: now });
+  }
+
+  async saveCode(hash: string, expires: number): Promise<void> {
+    this.code = { hash, expires, attempts: 0 };
+  }
+
+  async getCode(): Promise<StoredCode | null> {
+    return this.code ? { ...this.code } : null;
+  }
+
+  async countCodeAttempt(): Promise<void> {
+    if (this.code) this.code.attempts++;
+  }
+
+  async deleteCode(): Promise<void> {
+    this.code = null;
+  }
+
+  async addSession(tokenHash: string, expires: number): Promise<void> {
+    this.sessions.set(tokenHash, expires);
+  }
+
+  async hasSession(tokenHash: string, now: number): Promise<boolean> {
+    const expires = this.sessions.get(tokenHash);
+    return expires !== undefined && expires > now;
+  }
+
+  async deleteSession(tokenHash: string): Promise<void> {
+    this.sessions.delete(tokenHash);
   }
 
   async stats(now: number): Promise<Stats> {
@@ -96,6 +149,8 @@ export class MemoryStore implements Store {
     this.hits = this.hits.filter((h) => h.at >= now - (h.key.startsWith('ip:') ? IP_HIT_KEEP_MS : OTHER_HIT_KEEP_MS));
     const firstDay = utcDay(now - PING_KEEP_MS);
     for (const [id, p] of this.pings) if (p.day < firstDay) this.pings.delete(id);
+    if (this.code && this.code.expires <= now) this.code = null;
+    for (const [hash, expires] of this.sessions) if (expires <= now) this.sessions.delete(hash);
   }
 }
 
@@ -103,6 +158,11 @@ interface FeedbackDbRow { id: number; created_at: string; version: string; langu
 
 export class D1Store implements Store {
   constructor(private readonly db: D1Database) {}
+
+  async lastPingDay(id: string): Promise<string | null> {
+    const day = await this.db.prepare('SELECT last_day FROM pings WHERE install_id = ?1').bind(id).first<string>('last_day');
+    return day ?? null;
+  }
 
   async recordPing(id: string, version: string, day: string): Promise<void> {
     await this.db.prepare(
@@ -122,10 +182,46 @@ export class D1Store implements Store {
     await this.db.prepare('UPDATE feedback SET mailed = ?1 WHERE id = ?2').bind(ok ? 1 : 0, id).run();
   }
 
-  async hit(key: string, windowMs: number, now: number): Promise<number> {
-    await this.db.prepare('INSERT INTO hits (key, at) VALUES (?1, ?2)').bind(key, now).run();
+  async countHits(key: string, windowMs: number, now: number): Promise<number> {
     const n = await this.db.prepare('SELECT COUNT(*) AS n FROM hits WHERE key = ?1 AND at > ?2').bind(key, now - windowMs).first<number>('n');
     return Number(n ?? 0);
+  }
+
+  async addHit(key: string, now: number): Promise<void> {
+    await this.db.prepare('INSERT INTO hits (key, at) VALUES (?1, ?2)').bind(key, now).run();
+  }
+
+  async saveCode(hash: string, expires: number): Promise<void> {
+    await this.db.batch([
+      this.db.prepare('DELETE FROM codes'),
+      this.db.prepare('INSERT INTO codes (hash, expires, attempts) VALUES (?1, ?2, 0)').bind(hash, expires),
+    ]);
+  }
+
+  async getCode(): Promise<StoredCode | null> {
+    const r = await this.db.prepare('SELECT hash, expires, attempts FROM codes LIMIT 1').first<StoredCode>();
+    return r ? { hash: r.hash, expires: Number(r.expires), attempts: Number(r.attempts) } : null;
+  }
+
+  async countCodeAttempt(): Promise<void> {
+    await this.db.prepare('UPDATE codes SET attempts = attempts + 1').run();
+  }
+
+  async deleteCode(): Promise<void> {
+    await this.db.prepare('DELETE FROM codes').run();
+  }
+
+  async addSession(tokenHash: string, expires: number): Promise<void> {
+    await this.db.prepare('INSERT INTO sessions (token_hash, expires) VALUES (?1, ?2)').bind(tokenHash, expires).run();
+  }
+
+  async hasSession(tokenHash: string, now: number): Promise<boolean> {
+    const n = await this.db.prepare('SELECT COUNT(*) AS n FROM sessions WHERE token_hash = ?1 AND expires > ?2').bind(tokenHash, now).first<number>('n');
+    return Number(n ?? 0) > 0;
+  }
+
+  async deleteSession(tokenHash: string): Promise<void> {
+    await this.db.prepare('DELETE FROM sessions WHERE token_hash = ?1').bind(tokenHash).run();
   }
 
   async stats(now: number): Promise<Stats> {
@@ -160,6 +256,8 @@ export class D1Store implements Store {
       this.db.prepare("DELETE FROM hits WHERE key LIKE 'ip:%' AND at < ?1").bind(now - IP_HIT_KEEP_MS),
       this.db.prepare("DELETE FROM hits WHERE key NOT LIKE 'ip:%' AND at < ?1").bind(now - OTHER_HIT_KEEP_MS),
       this.db.prepare('DELETE FROM pings WHERE last_day < ?1').bind(utcDay(now - PING_KEEP_MS)),
+      this.db.prepare('DELETE FROM codes WHERE expires <= ?1').bind(now),
+      this.db.prepare('DELETE FROM sessions WHERE expires <= ?1').bind(now),
     ]);
   }
 }

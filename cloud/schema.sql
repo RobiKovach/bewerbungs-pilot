@@ -21,9 +21,23 @@ CREATE TABLE IF NOT EXISTS feedback (
 );
 CREATE INDEX IF NOT EXISTS feedback_created_at ON feedback (created_at);
 
--- Rate-limit hits. IP keys are SHA-256(ip + UTC day), never the IP itself, and live at most 2 hours.
+-- Rate-limit hits. IP keys are SHA-256(ip + UTC day), never the IP itself, and live at most 2 hours
+-- (the hourly cron deletes them).
 CREATE TABLE IF NOT EXISTS hits (
   key TEXT NOT NULL,
   at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS hits_key_at ON hits (key, at);
+
+-- The one admin login code (spec 0.11.0, 1.4): only its SHA-256, valid 10 minutes, at most 5 wrong attempts.
+CREATE TABLE IF NOT EXISTS codes (
+  hash TEXT NOT NULL,
+  expires INTEGER NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0
+);
+
+-- Admin sessions: only the SHA-256 of the cookie token, 12 hours.
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  expires INTEGER NOT NULL
+);
