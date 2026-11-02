@@ -6,7 +6,20 @@ The small server of BewerbungsPilot on Cloudflare Workers (spec 0.11.0). It rece
 - `POST /v1/feedback` `{ installId, version, language, email, kind, text }` — feedback, stored and mailed to the developer.
 
 It stores only that (Cloudflare D1, `schema.sql`), keeps feedback 12 months, pings 400 days, and keeps IP addresses
-only hashed with the day in rate-limit rows that are deleted after 2 hours.
+only hashed with the day in rate-limit rows that are deleted after 2 hours (an hourly cron cleans up).
+
+Limits: a ping writes at most once per install per UTC day, at most 20 installs never seen before per IP within
+2 hours; feedback at most 5 per install per day and 10 per IP per hour. A refused request writes nothing.
+
+Feedback is mailed through [Resend](https://resend.com) (`onboarding@resend.dev`; without an own domain Resend
+delivers only to the account owner — the developer) with the person's address as Reply-To.
+
+## Admin page
+
+`https://<worker>/admin` — users in the last 1 / 7 / 30 days, users per version, all feedback. Sign-in: type the
+admin address (the `ROBERT_EMAIL` secret) and get a 6-digit code by mail (valid 10 minutes, once, at most 5 wrong
+attempts; at most 5 code requests per IP per hour). Any other address gets the same answer and no mail. The
+session cookie lasts 12 hours (`HttpOnly`, `Secure`, `SameSite=Strict`). The page has no scripts.
 
 This folder is its own npm project. It is **not** part of the app, its workspaces or its release zip.
 
