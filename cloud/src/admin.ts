@@ -1,4 +1,5 @@
 import { dashboardPage, loginPage } from './admin-page.js';
+import { readLimited, utf8 } from './body.js';
 import type { Mailer, Store } from './store.js';
 import { utcDay } from './store.js';
 
@@ -6,6 +7,8 @@ export const COOKIE = 'bp_admin';
 export const CODE_TTL_MS = 10 * 60_000;
 export const SESSION_TTL_MS = 12 * 3600_000;
 export const MAX_WRONG_CODES = 5;
+/** Wrong codes per UTC day over all codes: a new code does not start this count again. */
+export const WRONG_CODES_PER_DAY = 10;
 /** Code requests per IP per hour (counted for any address), and code mails per day in total. */
 export const CODE_REQUESTS_PER_IP_PER_HOUR = 5;
 export const CODE_MAILS_PER_DAY = 20;
@@ -71,8 +74,9 @@ const normEmail = (s: string) => s.trim().toLowerCase();
 
 /** A small form body (urlencoded from the page, JSON accepted too); null when too big or unreadable. */
 async function readForm(req: Request): Promise<Record<string, string> | null> {
-  const text = await req.text().catch(() => null);
-  if (text === null || new TextEncoder().encode(text).byteLength > FORM_MAX_BYTES) return null;
+  const bytes = await readLimited(req, FORM_MAX_BYTES).catch(() => undefined);
+  const text = bytes && utf8(bytes);
+  if (text === undefined) return null;
   if ((req.headers.get('content-type') ?? '').includes('application/json')) {
     try {
       const v = JSON.parse(text) as unknown;
@@ -129,22 +133,33 @@ async function requestCode(req: Request, d: AdminDeps): Promise<Response> {
 async function login(req: Request, d: AdminDeps): Promise<Response> {
   const form = await readForm(req);
   const now = d.now();
-  const stored = await d.store.getCode();
-  if (!stored || stored.expires <= now) {
+  // Every check takes a slot of today's wrong-code budget first (one atomic step); a right code gives it back.
+  const dayKey = `admin:wrong:${utcDay(now)}`;
+  if (!(await d.store.takeHit(dayKey, DAY, now, WRONG_CODES_PER_DAY))) {
+    return html(429, loginPage('email', 'Too many wrong codes today. Try again tomorrow.'));
+  }
+  // Counting the attempt and reading the code is one atomic step, so parallel requests cannot pass the limit.
+  const hash = await d.store.takeCodeAttempt(now, MAX_WRONG_CODES);
+  if (!hash) {
+    await d.store.releaseHit(dayKey, now);
+    const stored = await d.store.getCode();
+    if (stored && stored.expires > now && stored.attempts >= MAX_WRONG_CODES) {
+      await d.store.deleteCode();
+      return html(429, loginPage('email', 'Too many wrong codes. Ask for a new one.'));
+    }
     return html(401, loginPage('email', 'The code has expired or was already used. Ask for a new one.'));
   }
-  if (stored.attempts >= MAX_WRONG_CODES) {
-    await d.store.deleteCode();
-    return html(429, loginPage('email', 'Too many wrong codes. Ask for a new one.'));
-  }
   const typed = (form?.code ?? '').trim();
-  if (/^\d{6}$/.test(typed) && sameHex(await sha256Hex(typed), stored.hash)) {
-    await d.store.deleteCode();
+  if (/^\d{6}$/.test(typed) && sameHex(await sha256Hex(typed), hash)) {
+    await d.store.releaseHit(dayKey, now);
+    // Only the request that really deleted the code gets a session: one code, one session.
+    if (!(await d.store.consumeCode(hash))) {
+      return html(401, loginPage('email', 'The code has expired or was already used. Ask for a new one.'));
+    }
     const token = newToken();
     await d.store.addSession(await sha256Hex(token), now + SESSION_TTL_MS);
     return redirect(`${COOKIE}=${token}; Path=/admin; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`);
   }
-  await d.store.countCodeAttempt();
   return html(401, loginPage('code', 'Wrong code.'));
 }
 

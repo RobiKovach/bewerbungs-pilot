@@ -34,12 +34,22 @@ export interface Store {
   /** Hits of `key` inside the last `windowMs`. Callers count first and add a hit only while under their limit. */
   countHits(key: string, windowMs: number, now: number): Promise<number>;
   addHit(key: string, now: number): Promise<void>;
+  /** Adds a hit only while `key` has fewer than `limit` inside the window, in one atomic step; true when added. */
+  takeHit(key: string, windowMs: number, now: number, limit: number): Promise<boolean>;
+  /** Removes one hit of `key` made at `at` (gives back a slot taken by takeHit). */
+  releaseHit(key: string, at: number): Promise<void>;
   stats(now: number): Promise<Stats>;
   listFeedback(limit: number): Promise<FeedbackRow[]>;
   /** The one admin login code: a new one replaces the old. Only its SHA-256 is stored. */
   saveCode(hash: string, expires: number): Promise<void>;
   getCode(): Promise<StoredCode | null>;
-  countCodeAttempt(): Promise<void>;
+  /**
+   * In one atomic step: counts an attempt on the live code (not expired, fewer than `maxAttempts` so far) and
+   * returns its hash; null when there is no such code. Parallel requests can never check more than `maxAttempts`.
+   */
+  takeCodeAttempt(now: number, maxAttempts: number): Promise<string | null>;
+  /** Deletes the code with this hash; true only for the one caller that really removed it. */
+  consumeCode(hash: string): Promise<boolean>;
   deleteCode(): Promise<void>;
   /** Admin sessions, by the SHA-256 of their token. */
   addSession(tokenHash: string, expires: number): Promise<void>;
@@ -99,6 +109,17 @@ export class MemoryStore implements Store {
     this.hits.push({ key, at: now });
   }
 
+  async takeHit(key: string, windowMs: number, now: number, limit: number): Promise<boolean> {
+    if (this.hits.filter((h) => h.key === key && h.at > now - windowMs).length >= limit) return false;
+    this.hits.push({ key, at: now });
+    return true;
+  }
+
+  async releaseHit(key: string, at: number): Promise<void> {
+    const i = this.hits.findIndex((h) => h.key === key && h.at === at);
+    if (i >= 0) this.hits.splice(i, 1);
+  }
+
   async saveCode(hash: string, expires: number): Promise<void> {
     this.code = { hash, expires, attempts: 0 };
   }
@@ -107,8 +128,16 @@ export class MemoryStore implements Store {
     return this.code ? { ...this.code } : null;
   }
 
-  async countCodeAttempt(): Promise<void> {
-    if (this.code) this.code.attempts++;
+  async takeCodeAttempt(now: number, maxAttempts: number): Promise<string | null> {
+    if (!this.code || this.code.expires <= now || this.code.attempts >= maxAttempts) return null;
+    this.code.attempts++;
+    return this.code.hash;
+  }
+
+  async consumeCode(hash: string): Promise<boolean> {
+    if (this.code?.hash !== hash) return false;
+    this.code = null;
+    return true;
   }
 
   async deleteCode(): Promise<void> {
@@ -191,6 +220,18 @@ export class D1Store implements Store {
     await this.db.prepare('INSERT INTO hits (key, at) VALUES (?1, ?2)').bind(key, now).run();
   }
 
+  async takeHit(key: string, windowMs: number, now: number, limit: number): Promise<boolean> {
+    // One statement: SQLite (and D1) runs it as a unit, so parallel requests cannot both take the last slot.
+    const r = await this.db.prepare(
+      'INSERT INTO hits (key, at) SELECT ?1, ?2 WHERE (SELECT COUNT(*) FROM hits WHERE key = ?1 AND at > ?3) < ?4',
+    ).bind(key, now, now - windowMs, limit).run();
+    return Number(r.meta.changes) > 0;
+  }
+
+  async releaseHit(key: string, at: number): Promise<void> {
+    await this.db.prepare('DELETE FROM hits WHERE rowid = (SELECT rowid FROM hits WHERE key = ?1 AND at = ?2 LIMIT 1)').bind(key, at).run();
+  }
+
   async saveCode(hash: string, expires: number): Promise<void> {
     await this.db.batch([
       this.db.prepare('DELETE FROM codes'),
@@ -203,8 +244,16 @@ export class D1Store implements Store {
     return r ? { hash: r.hash, expires: Number(r.expires), attempts: Number(r.attempts) } : null;
   }
 
-  async countCodeAttempt(): Promise<void> {
-    await this.db.prepare('UPDATE codes SET attempts = attempts + 1').run();
+  async takeCodeAttempt(now: number, maxAttempts: number): Promise<string | null> {
+    const hash = await this.db.prepare(
+      'UPDATE codes SET attempts = attempts + 1 WHERE expires > ?1 AND attempts < ?2 RETURNING hash',
+    ).bind(now, maxAttempts).first<string>('hash');
+    return hash ?? null;
+  }
+
+  async consumeCode(hash: string): Promise<boolean> {
+    const removed = await this.db.prepare('DELETE FROM codes WHERE hash = ?1 RETURNING hash').bind(hash).first<string>('hash');
+    return removed != null;
   }
 
   async deleteCode(): Promise<void> {

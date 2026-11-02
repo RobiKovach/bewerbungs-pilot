@@ -1,14 +1,15 @@
 import { handleAdmin, sha256Hex } from './admin.js';
+import { readLimited, utf8 } from './body.js';
 import { ResendMailer } from './mail.js';
 import { D1Store, utcDay, type Mailer, type Store } from './store.js';
 import { parseFeedback, parsePing } from './validate.js';
 
 export type { Mailer, Store } from './store.js';
 
-/** ROBERT_EMAIL and RESEND_API_KEY are secrets (`wrangler secret put`), never in code or wrangler.toml. */
-export interface Env { DB: D1Database; ROBERT_EMAIL: string; RESEND_API_KEY: string }
+/** ROBERT_EMAIL, RESEND_API_KEY and the optional IP_PEPPER are secrets (`wrangler secret put`), never in code or wrangler.toml. */
+export interface Env { DB: D1Database; ROBERT_EMAIL: string; RESEND_API_KEY: string; IP_PEPPER?: string }
 
-export interface Deps { store: Store; mailer: Mailer; now(): number }
+export interface Deps { store: Store; mailer: Mailer; now(): number; ipPepper?: string }
 
 const PING_MAX_BYTES = 16 * 1024;
 // 5 000 characters can be 20 KB of UTF-8 and more once JSON escapes them.
@@ -27,36 +28,26 @@ const empty = (status: number) => new Response(null, { status, headers: { 'cache
 const error = (status: number, code: string) =>
   new Response(JSON.stringify({ error: code }), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
-/** The body as JSON, or undefined when it is too big or not JSON. Reads the stream, never trusts Content-Length. */
+/** The body as JSON, or undefined when it is too big or not JSON. */
 async function readJson(req: Request, maxBytes: number): Promise<unknown> {
-  if (!req.body) return undefined;
-  const reader = req.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > maxBytes) {
-      await reader.cancel().catch(() => undefined);
-      return undefined;
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(size);
-  let offset = 0;
-  for (const c of chunks) { bytes.set(c, offset); offset += c.byteLength; }
+  const bytes = await readLimited(req, maxBytes).catch(() => undefined);
+  const text = bytes && utf8(bytes);
+  if (text === undefined) return undefined;
   try {
-    return JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes));
+    return JSON.parse(text);
   } catch {
     return undefined;
   }
 }
 
-/** The IP is only ever kept hashed with the day, in a rate-limit row ("ip:" key) that lives at most 2 hours. */
-async function ipKey(req: Request, now: number, purpose: string): Promise<string> {
+/**
+ * The IP is only ever kept hashed with the day (and the IP_PEPPER secret, when set), in a rate-limit row ("ip:" key)
+ * that lives at most 2 hours.
+ */
+async function ipKey(req: Request, now: number, purpose: string, pepper = ''): Promise<string> {
   const ip = req.headers.get('cf-connecting-ip') ?? 'unknown';
-  return `ip:${purpose}:${await sha256Hex(`${ip}|${utcDay(now)}`)}`;
+  const salted = pepper ? `${pepper}|${ip}|${utcDay(now)}` : `${ip}|${utcDay(now)}`;
+  return `ip:${purpose}:${await sha256Hex(salted)}`;
 }
 
 /** One line, no control characters: the subject goes into a mail header. */
@@ -71,7 +62,7 @@ async function ping(req: Request, d: Deps): Promise<Response> {
   // Already counted today: no write at all.
   if (last === today) return empty(204);
   if (last === null) {
-    const key = await ipKey(req, now, 'new');
+    const key = await ipKey(req, now, 'new', d.ipPepper);
     if (await d.store.countHits(key, NEW_INSTALLS_WINDOW_MS, now) >= NEW_INSTALLS_PER_IP) return error(429, 'too_many');
     await d.store.addHit(key, now);
   }
@@ -85,7 +76,7 @@ async function feedback(req: Request, d: Deps): Promise<Response> {
   const now = d.now();
   // Count first, write the hits only for an accepted request: a refused one writes nothing.
   const installKey = `install:${input.installId}:${utcDay(now)}`;
-  const ip = await ipKey(req, now, 'feedback');
+  const ip = await ipKey(req, now, 'feedback', d.ipPepper);
   if (await d.store.countHits(installKey, DAY, now) >= FEEDBACK_PER_INSTALL_PER_DAY
     || await d.store.countHits(ip, HOUR, now) >= FEEDBACK_PER_IP_PER_HOUR) return error(429, 'too_many');
   await d.store.addHit(installKey, now);
@@ -112,9 +103,10 @@ const routes: Record<string, (req: Request, d: Deps) => Promise<Response>> = { '
 /** Everything the worker answers. Only the app's own server calls /v1, so there are no CORS headers. */
 export async function handle(req: Request, env: Env, deps: Deps): Promise<Response> {
   const path = new URL(req.url).pathname;
+  deps = { ...deps, ipPepper: deps.ipPepper ?? env.IP_PEPPER ?? '' };
   const admin = await handleAdmin(req, path, {
     store: deps.store, mailer: deps.mailer, now: deps.now, adminEmail: env.ROBERT_EMAIL ?? '',
-    ipKey: (purpose) => ipKey(req, deps.now(), purpose),
+    ipKey: (purpose) => ipKey(req, deps.now(), purpose, deps.ipPepper),
   });
   if (admin) return admin;
   const route = routes[path];

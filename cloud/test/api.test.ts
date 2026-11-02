@@ -81,6 +81,17 @@ describe('worker api', () => {
       expect((await call(post('/v1/ping', { installId: id(22), version: '0.11.0' }))).status).toBe(204);
     });
 
+    it('mixes the IP_PEPPER secret into the IP hash when it is set', async () => {
+      const addHit = vi.spyOn(store, 'addHit');
+      await call(post('/v1/ping', { installId: A, version: '0.11.0' }));
+      await handle(post('/v1/ping', { installId: B, version: '0.11.0' }), { IP_PEPPER: 'pepper' } as Env, { store, mailer, now: () => now });
+      const [plain, peppered] = addHit.mock.calls.map((c) => c[0]);
+      expect(plain).toMatch(/^ip:new:[0-9a-f]{64}$/);
+      expect(peppered).toMatch(/^ip:new:[0-9a-f]{64}$/);
+      expect(peppered).not.toBe(plain);
+      expect(`${plain}${peppered}`).not.toContain('203.0.113.7');
+    });
+
     it('counts users over 1, 7 and 30 days and groups by the last version', async () => {
       await call(post('/v1/ping', { installId: A, version: '0.10.1' }));
       now = T0 + 10 * DAY;
@@ -254,11 +265,39 @@ describe.each([
     expect(await store.getCode()).toBeNull();
     await store.saveCode('h1', T0 + 1000);
     await store.saveCode('h2', T0 + 2000);
-    await store.countCodeAttempt();
-    await store.countCodeAttempt();
+    expect(await store.takeCodeAttempt(T0, 5)).toBe('h2');
+    expect(await store.takeCodeAttempt(T0, 5)).toBe('h2');
     expect(await store.getCode()).toEqual({ hash: 'h2', expires: T0 + 2000, attempts: 2 });
     await store.deleteCode();
     expect(await store.getCode()).toBeNull();
+  });
+
+  it('gives out code attempts only up to the limit and before expiry, also in parallel', async () => {
+    expect(await store.takeCodeAttempt(T0, 5)).toBeNull();
+    await store.saveCode('h', T0 + 1000);
+    const taken = await Promise.all(Array.from({ length: 12 }, () => store.takeCodeAttempt(T0, 5)));
+    expect(taken.filter((h) => h === 'h')).toHaveLength(5);
+    expect((await store.getCode())!.attempts).toBe(5);
+    await store.saveCode('h2', T0 + 1000);
+    expect(await store.takeCodeAttempt(T0 + 1000, 5)).toBeNull();
+  });
+
+  it('lets only one caller consume a code', async () => {
+    await store.saveCode('h', T0 + 1000);
+    expect(await store.consumeCode('other')).toBe(false);
+    const results = await Promise.all([store.consumeCode('h'), store.consumeCode('h'), store.consumeCode('h')]);
+    expect(results.filter(Boolean)).toHaveLength(1);
+    expect(await store.getCode()).toBeNull();
+  });
+
+  it('takes a hit only while under the limit, also in parallel, and gives one back', async () => {
+    const taken = await Promise.all(Array.from({ length: 8 }, () => store.takeHit('k', 3600_000, T0, 3)));
+    expect(taken.filter(Boolean)).toHaveLength(3);
+    expect(await store.countHits('k', 3600_000, T0)).toBe(3);
+    await store.releaseHit('k', T0);
+    expect(await store.countHits('k', 3600_000, T0)).toBe(2);
+    expect(await store.takeHit('k', 3600_000, T0, 3)).toBe(true);
+    expect(await store.takeHit('k', 3600_000, T0 + 3600_000, 3)).toBe(true);
   });
 
   it('keeps sessions until they expire or are deleted', async () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { handle, type Env } from '../src/index.js';
-import { MemoryStore, type Mailer, type MailMessage } from '../src/store.js';
+import { D1Store, MemoryStore, type Mailer, type MailMessage, type Store } from '../src/store.js';
+import { sqliteD1 } from './sqlite-d1.js';
 
 const T0 = Date.UTC(2026, 10, 2, 12, 0, 0);
 const ROBERT = 'Robert.Admin@example.com';
@@ -23,8 +24,11 @@ const form = (path: string, fields: Record<string, string>, headers: Record<stri
   });
 const get = (cookie?: string) => new Request('https://bp.example/admin', { headers: cookie ? { cookie } : {} });
 
-describe('admin', () => {
-  let store: MemoryStore;
+describe.each([
+  ['MemoryStore', () => new MemoryStore()],
+  ['D1Store (real SQL)', () => new D1Store(sqliteD1())],
+])('admin on %s', (_, make: () => Store) => {
+  let store: Store;
   let mailer: FakeMailer;
   let now: number;
   const call = (req: Request) => handle(req, env, { store, mailer, now: () => now });
@@ -36,7 +40,7 @@ describe('admin', () => {
   }
 
   beforeEach(() => {
-    store = new MemoryStore();
+    store = make();
     mailer = new FakeMailer();
     now = T0;
   });
@@ -82,6 +86,12 @@ describe('admin', () => {
     for (let i = 0; i < 5; i++) expect((await call(form('/admin/login', { code: wrong }))).status).toBe(401);
     expect((await call(form('/admin/login', { code: wrong }))).status).toBe(429);
     expect((await call(form('/admin/login', { code }))).status).toBe(401);
+  });
+
+  it('refuses a form over 4 KB while reading it', async () => {
+    const res = await call(form('/admin/code', { email: ROBERT, pad: 'x'.repeat(5000) }));
+    expect(res.status).toBe(400);
+    expect(mailer.sent).toHaveLength(0);
   });
 
   it('limits code requests to 5 per IP per hour', async () => {
@@ -145,9 +155,62 @@ describe('admin', () => {
     expect(answers[3]!.status).toBe(405);
   });
 
-  it('nobody can sign in when ROBERT_EMAIL is not set', async () => {
-    const res = await handle(form('/admin/code', { email: '' }), { RESEND_API_KEY: 'k' } as Env, { store, mailer, now: () => now });
-    expect(res.status).toBe(200);
+  it('nobody can sign in when ROBERT_EMAIL is not set, whatever address is typed', async () => {
+    for (const email of ['', ROBERT]) {
+      const res = await handle(form('/admin/code', { email }), { RESEND_API_KEY: 'k' } as Env, { store, mailer, now: () => now });
+      expect(res.status).toBe(200);
+    }
     expect(mailer.sent).toHaveLength(0);
+    expect(await store.getCode()).toBeNull();
+  });
+
+  it('mails at most 20 codes a day, whatever the IPs', async () => {
+    for (let i = 0; i < 25; i++) {
+      expect((await call(form('/admin/code', { email: ROBERT }, { 'cf-connecting-ip': `198.51.100.${i}` }))).status).toBe(200);
+    }
+    expect(mailer.sent).toHaveLength(20);
+    now = T0 + 24 * 3600_000;
+    await call(form('/admin/code', { email: ROBERT }, { 'cf-connecting-ip': '198.51.100.99' }));
+    expect(mailer.sent).toHaveLength(21);
+  });
+
+  it('parallel wrong logins never get more than 5 checks of one code', async () => {
+    await call(form('/admin/code', { email: ROBERT }));
+    const code = lastCode();
+    const wrong = code === '000000' ? '111111' : '000000';
+    const res = await Promise.all(Array.from({ length: 9 }, () => call(form('/admin/login', { code: wrong }))));
+    expect(res.filter((r) => r.status === 401)).toHaveLength(5);
+    expect(res.filter((r) => r.status === 303)).toHaveLength(0);
+    expect((await call(form('/admin/login', { code }))).status).not.toBe(303);
+  });
+
+  it('one code makes one session, even with parallel logins', async () => {
+    await call(form('/admin/code', { email: ROBERT }));
+    const code = lastCode();
+    const res = await Promise.all(Array.from({ length: 4 }, () => call(form('/admin/login', { code }))));
+    expect(res.filter((r) => r.status === 303)).toHaveLength(1);
+  });
+
+  it('allows 10 wrong codes a day over all codes; a new code does not start again', async () => {
+    const wrongFor = (code: string) => (code === '000000' ? '111111' : '000000');
+    for (let round = 0; round < 2; round++) {
+      await call(form('/admin/code', { email: ROBERT }));
+      for (let i = 0; i < 5; i++) expect((await call(form('/admin/login', { code: wrongFor(lastCode()) }))).status).toBe(401);
+    }
+    await call(form('/admin/code', { email: ROBERT }));
+    const res = await call(form('/admin/login', { code: lastCode() }));
+    expect(res.status).toBe(429);
+    expect(await res.text()).toContain('Try again tomorrow');
+    // The next UTC day the right code works again.
+    now = Date.UTC(2026, 10, 3, 0, 1, 0);
+    await call(form('/admin/code', { email: ROBERT }, { 'cf-connecting-ip': '198.51.100.1' }));
+    expect((await call(form('/admin/login', { code: lastCode() }))).status).toBe(303);
+  });
+
+  it('a right code does not use up the daily wrong-code budget', async () => {
+    for (let i = 0; i < 12; i++) {
+      await call(form('/admin/code', { email: ROBERT }, { 'cf-connecting-ip': `198.51.100.${i}` }));
+      expect((await call(form('/admin/login', { code: lastCode() }))).status).toBe(303);
+    }
   });
 });
