@@ -1,0 +1,15 @@
+# BewerbungsPilot Worker (spec 0.11.0). Secrets (ROBERT_EMAIL, RESEND_API_KEY) are set with `wrangler secret put`,
+# never written here. The D1 database_id is filled in at the first deploy (Task 3) — it is not a secret.
+name = "bewerbungspilot"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+send_metrics = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "bewerbungspilot"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[triggers]
+crons = ["0 3 * * *"]

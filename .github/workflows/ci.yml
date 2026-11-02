@@ -22,6 +22,25 @@ jobs:
       - run: npm test
       - run: npm run i18n:check
       - run: npm run build
+  cloud:
+    # The Cloudflare Worker (cloud/): its own npm project, never part of the app or the release zip.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    defaults:
+      run:
+        working-directory: cloud
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: cloud/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
   e2e:
     runs-on: windows-latest
     timeout-minutes: 20

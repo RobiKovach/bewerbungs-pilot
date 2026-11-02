@@ -1,0 +1,21 @@
+{
+  "name": "bewerbungspilot-cloud",
+  "private": true,
+  "type": "module",
+  "description": "The BewerbungsPilot Cloudflare Worker: anonymous usage pings, feedback mail, admin page. Not part of the app or its release zip.",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "deploy": "wrangler deploy"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261019.1",
+    "@types/node": "26.6.5",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5",
+    "wrangler": "4.151.2"
+  }
+}
