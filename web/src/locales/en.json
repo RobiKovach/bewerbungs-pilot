@@ -14,7 +14,7 @@
   "language": { "label": "Language" },
   "unsaved": { "leave": "Some changes are not saved yet. If you leave now, they will be lost. Leave anyway?" },
   "updates": { "available": "Version {{version}} is available", "whatsNew": "What's new", "download": "Download", "dismiss": "Hide until the next version" },
-  "feedback": { "title": "Send feedback", "button": "Feedback", "kind": "Type", "problem": "Problem", "idea": "Idea", "text": "Your message", "email": "Your email (for our reply)", "emailBad": "Please enter a valid email address.", "sent": "Sent: your text, this address, app version {{version}}. Nothing else from your data.", "send": "Send", "sending": "Sending…", "thanks": "Thank you! Your message was sent.", "close": "Close" },
+  "feedback": { "title": "Send feedback", "button": "Feedback", "kind": "Type", "problem": "Problem", "idea": "Idea", "text": "Your message", "email": "Your email (for our reply)", "emailBad": "Please enter a valid email address.", "sent": "Sent: your text, this address, app version {{version}}, your language and a random install number. Nothing else from your data.", "personalTitle": "Your message contains personal data — it will go to the developer", "personalHint": "Remove it if the developer does not need it to help you.", "send": "Send", "sending": "Sending…", "thanks": "Thank you! Your message was sent.", "close": "Close" },
   "usageNotice": { "text": "Once a day the app anonymously reports that it is used: only a random number and the version. You can switch this off in Settings.", "ok": "OK", "settings": "Open Settings" },
   "home": {
     "title": "Welcome to BewerbungsPilot",
@@ -491,7 +491,7 @@
     "BACKUP_NEWER": { "message": "This backup was made by a newer version of BewerbungsPilot.", "hint": "Update the app first, then restore this backup." },
     "BACKUP_FAILED": { "message": "The backup could not be saved or restored.", "hint": "Your data was not changed. Check that the disk is not full and that no file from the app's data folder is open, then try again." },
     "DEMO_FAILED": { "message": "The demo could not be started.", "hint": "Please try again. If it keeps happening, restart BewerbungsPilot." },
-    "FEEDBACK_FAILED": { "message": "Your message could not be sent.", "hint": "Please try again in a moment." },
+    "FEEDBACK_FAILED": { "message": "Your message could not be sent.", "hint": "Please try again in a moment.", "hint_limit": "You have reached the daily limit for messages. Please try again tomorrow." },
     "reasons": {
       "cvTooLittleText": "The file contains almost no text ({{chars}} characters). It is probably empty, or the text is inside a picture.",
       "cvNoContent": "{{ai}} read the file but found nothing that looks like a CV.",

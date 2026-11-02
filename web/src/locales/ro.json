@@ -14,7 +14,7 @@
   "language": { "label": "Limbă" },
   "unsaved": { "leave": "Unele modificări nu sunt încă salvate. Dacă plecați acum, se vor pierde. Plecați totuși?" },
   "updates": { "available": "Versiunea {{version}} este disponibilă", "whatsNew": "Ce este nou", "download": "Descărcați", "dismiss": "Ascundeți până la următoarea versiune" },
-  "feedback": { "title": "Trimiteți feedback", "button": "Feedback", "kind": "Tip", "problem": "Problemă", "idea": "Idee", "text": "Mesajul dumneavoastră", "email": "E-mailul dumneavoastră (pentru răspuns)", "emailBad": "Introduceți o adresă de e-mail validă.", "sent": "Se trimite: textul dumneavoastră, această adresă, versiunea aplicației {{version}}. Nimic altceva din datele dumneavoastră.", "send": "Trimite", "sending": "Se trimite…", "thanks": "Mulțumim! Mesajul a fost trimis.", "close": "Închide" },
+  "feedback": { "title": "Trimiteți feedback", "button": "Feedback", "kind": "Tip", "problem": "Problemă", "idea": "Idee", "text": "Mesajul dumneavoastră", "email": "E-mailul dumneavoastră (pentru răspuns)", "emailBad": "Introduceți o adresă de e-mail validă.", "sent": "Se trimite: textul dumneavoastră, această adresă, versiunea aplicației {{version}}, limba dumneavoastră și un număr aleatoriu al instalării. Nimic altceva din datele dumneavoastră.", "personalTitle": "Mesajul dumneavoastră conține date personale — vor ajunge la dezvoltator", "personalHint": "Ștergeți-le dacă dezvoltatorul nu are nevoie de ele ca să vă ajute.", "send": "Trimite", "sending": "Se trimite…", "thanks": "Mulțumim! Mesajul a fost trimis.", "close": "Închide" },
   "usageNotice": { "text": "O dată pe zi aplicația raportează anonim că este folosită: doar un număr aleatoriu și versiunea. Puteți opri acest lucru în Setări.", "ok": "OK", "settings": "Deschide Setările" },
   "home": {
     "title": "Bine ați venit la BewerbungsPilot",
@@ -491,7 +491,7 @@
     "BACKUP_NEWER": { "message": "Această copie a fost creată de o versiune mai nouă a BewerbungsPilot.", "hint": "Actualizați mai întâi programul, apoi restaurați această copie." },
     "BACKUP_FAILED": { "message": "Copia nu a putut fi salvată sau restaurată.", "hint": "Datele dumneavoastră nu au fost modificate. Verificați dacă discul nu este plin și dacă nu este deschis niciun fișier din folderul de date al programului, apoi încercați din nou." },
     "DEMO_FAILED": { "message": "Demo-ul nu a putut fi pornit.", "hint": "Încercați din nou. Dacă se repetă, reporniți BewerbungsPilot." },
-    "FEEDBACK_FAILED": { "message": "Mesajul nu a putut fi trimis.", "hint": "Încercați din nou peste un moment." },
+    "FEEDBACK_FAILED": { "message": "Mesajul nu a putut fi trimis.", "hint": "Încercați din nou peste un moment.", "hint_limit": "Limita zilnică de mesaje a fost atinsă. Încercați mâine." },
     "reasons": {
       "cvTooLittleText": "Fișierul conține aproape deloc text ({{chars}} caractere). Este probabil gol sau textul se află într-o imagine.",
       "cvNoContent": "{{ai}} a citit fișierul, dar nu a găsit nimic care să semene cu un CV.",

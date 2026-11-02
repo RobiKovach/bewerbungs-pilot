@@ -23,7 +23,8 @@ export function ErrorBanner({ error, onRetry }: { error: unknown; onRetry?: () =
   return (
     <div className="error-banner" role="alert">
       <strong>{t(`errors.${key}.message`)}</strong>
-      <p>{t(`errors.${key}.hint`)}</p>
+      {/* A reason can have a more accurate hint of its own (errors.<code>.hint_<reason>). */}
+      <p>{reason && i18n.exists(`errors.${key}.hint_${reason}`) ? t(`errors.${key}.hint_${reason}`) : t(`errors.${key}.hint`)}</p>
       {details ? (
         <details>
           <summary>{t('common.details')}</summary>

@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { PersonalDataWarning } from '../applications/PersonalDataWarning';
 import { useScrollIntoView } from '../applications/dialog';
 import { TextField } from '../profile/fields';
-import { useReportUnsaved } from '../profile/unsaved';
 import type { PersonalFinding } from '../types';
 import { ErrorBanner } from './ErrorBanner';
 
@@ -34,17 +33,24 @@ function useFeedbackCheck(text: string, email: string): PersonalFinding[] {
   return warnings;
 }
 
+export interface FeedbackDraft { kind: 'problem' | 'idea'; text: string; email: string; emailTouched: boolean }
+export const emptyFeedbackDraft: FeedbackDraft = { kind: 'problem', text: '', email: '', emailTouched: false };
+
 /**
  * Message to the developer: kind, text, the person's address (prefilled from the profile). It shows exactly what goes
- * out; the personal-data hint never blocks "Send". A failed send keeps the text.
+ * out; the personal-data hint never blocks "Send". A failed send keeps the text. The draft lives in the parent, so closing
+ * the window does not throw it away (and so it needs no "unsaved changes" warning); a successful send clears it.
  */
-export function FeedbackDialog({ onClose }: { onClose: () => void }) {
+export function FeedbackDialog({ draft, onDraft, onClose }: { draft: FeedbackDraft; onDraft: (d: FeedbackDraft) => void; onClose: () => void }) {
   const { t } = useTranslation();
   const ref = useScrollIntoView<HTMLDivElement>();
-  const [kind, setKind] = useState<'problem' | 'idea'>('problem');
-  const [text, setText] = useState('');
-  const [email, setEmail] = useState('');
-  const [emailTouched, setEmailTouched] = useState(false);
+  const { kind, text, email, emailTouched } = draft;
+  // The latest draft for the late profile answer (the effect below runs once).
+  const latest = useRef(draft);
+  latest.current = draft;
+  const setKind = (k: 'problem' | 'idea') => onDraft({ ...draft, kind: k });
+  const setText = (v: string) => onDraft({ ...draft, text: v });
+  const setEmail = (v: string) => onDraft({ ...draft, email: v, emailTouched: true });
   const [version, setVersion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -60,13 +66,14 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
     let alive = true;
     api.getProfile().then((p) => {
       const mail = p.profile.sections.personal.data.email;
-      if (alive && mail) setEmail((cur) => (cur === '' ? mail : cur));
+      // Only an address the person has not touched: a cleared field stays cleared.
+      const cur = latest.current;
+      if (alive && mail && !cur.emailTouched && cur.email === '') onDraft({ ...cur, email: mail });
     }, () => undefined);
     return () => { alive = false; };
   }, []);
 
   const warnings = useFeedbackCheck(text, email);
-  useReportUnsaved(!done && text.trim() !== '');
   const mail = email.trim();
   const badEmail = mail !== '' && !emailOk(mail);
   const tooLong = Array.from(text).length > MAX_TEXT;
@@ -77,6 +84,7 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
     setError(null);
     try {
       await api.sendFeedback({ kind, email: mail, text });
+      onDraft(emptyFeedbackDraft);
       setDone(true);
     } catch (err) {
       setError(err);
@@ -108,16 +116,16 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
             ))}
           </div>
         </div>
-        <TextField multiline rows={6} label={t('feedback.text')} value={text} onChange={setText} maxLength={MAX_TEXT} />
+        <TextField multiline rows={6} autoFocus label={t('feedback.text')} value={text} onChange={setText} maxLength={MAX_TEXT} />
         <TextField
           type="email" label={t('feedback.email')} value={email} maxLength={254}
-          onChange={(v) => { setEmail(v); setEmailTouched(true); }}
+          onChange={setEmail}
           error={badEmail && (emailTouched || email !== '') ? t('feedback.emailBad') : undefined}
         />
       </fieldset>
       <p className="muted">{t('feedback.sent', { version })}</p>
       {error ? <ErrorBanner error={error} /> : null}
-      <PersonalDataWarning warnings={warnings} />
+      <PersonalDataWarning warnings={warnings} titleKey="feedback.personalTitle" hintKey="feedback.personalHint" />
       <div className="btn-row">
         <button type="button" className="btn" disabled={!valid || busy} onClick={() => void send()}>
           {busy ? t('feedback.sending') : t('feedback.send')}

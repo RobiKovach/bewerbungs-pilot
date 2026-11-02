@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Route } from '../types';
 import { DemoBanner } from './DemoBanner';
 import { FeedbackButton } from './FeedbackButton';
-import { FeedbackDialog } from './FeedbackDialog';
+import { emptyFeedbackDraft, FeedbackDialog, type FeedbackDraft } from './FeedbackDialog';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { TryDemoButton } from './TryDemoButton';
 import { UpdateBanner } from './UpdateBanner';
@@ -16,6 +16,8 @@ export function Layout({ route, onQuit, showNav, demo = false, onLeaveDemo, chil
 }) {
   const { t } = useTranslation();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Kept here, not in the window: closing and reopening it (or moving to another page) does not lose the typed text.
+  const [feedbackDraft, setFeedbackDraft] = useState<FeedbackDraft>(emptyFeedbackDraft);
   return (
     <div className="app">
       <header className="topbar">
@@ -40,7 +42,7 @@ export function Layout({ route, onQuit, showNav, demo = false, onLeaveDemo, chil
       {demo ? <DemoBanner onLeave={onLeaveDemo ?? onQuit} /> : null}
       <UpdateBanner />
       {showNav ? <UsageNotice /> : null}
-      {feedbackOpen && showNav && !demo ? <div className="content"><FeedbackDialog onClose={() => setFeedbackOpen(false)} /></div> : null}
+      {feedbackOpen && showNav && !demo ? <div className="content"><FeedbackDialog draft={feedbackDraft} onDraft={setFeedbackDraft} onClose={() => setFeedbackOpen(false)} /></div> : null}
       <main className="content">{children}</main>
     </div>
   );

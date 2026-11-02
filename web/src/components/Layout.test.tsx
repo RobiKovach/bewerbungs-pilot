@@ -40,3 +40,15 @@ describe('Layout feedback button', () => {
     expect(screen.queryByRole('button', { name: 'Feedback' })).not.toBeInTheDocument();
   });
 });
+
+describe('Layout feedback draft', () => {
+  it('keeps the typed text when the window is closed and opened again', async () => {
+    setup({});
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Feedback' }));
+    await user.type(screen.getByLabelText('Your message'), 'half written');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Feedback' }));
+    expect(screen.getByLabelText('Your message')).toHaveValue('half written');
+  });
+});

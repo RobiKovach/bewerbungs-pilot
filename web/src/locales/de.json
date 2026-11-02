@@ -14,7 +14,7 @@
   "language": { "label": "Sprache" },
   "unsaved": { "leave": "Einige Änderungen sind noch nicht gespeichert. Wenn Sie jetzt weitergehen, gehen sie verloren. Trotzdem weiter?" },
   "updates": { "available": "Version {{version}} ist verfügbar", "whatsNew": "Was ist neu", "download": "Herunterladen", "dismiss": "Bis zur nächsten Version ausblenden" },
-  "feedback": { "title": "Feedback senden", "button": "Feedback", "kind": "Art", "problem": "Problem", "idea": "Idee", "text": "Ihre Nachricht", "email": "Ihre E-Mail (für unsere Antwort)", "emailBad": "Bitte geben Sie eine gültige E-Mail-Adresse ein.", "sent": "Gesendet wird: Ihr Text, diese Adresse, App-Version {{version}}. Sonst nichts aus Ihren Daten.", "send": "Senden", "sending": "Wird gesendet…", "thanks": "Danke! Ihre Nachricht wurde gesendet.", "close": "Schließen" },
+  "feedback": { "title": "Feedback senden", "button": "Feedback", "kind": "Art", "problem": "Problem", "idea": "Idee", "text": "Ihre Nachricht", "email": "Ihre E-Mail (für unsere Antwort)", "emailBad": "Bitte geben Sie eine gültige E-Mail-Adresse ein.", "sent": "Gesendet wird: Ihr Text, diese Adresse, App-Version {{version}}, Ihre Sprache und eine zufällige Installationsnummer. Sonst nichts aus Ihren Daten.", "personalTitle": "Ihre Nachricht enthält persönliche Daten — sie geht an den Entwickler", "personalHint": "Entfernen Sie sie, wenn der Entwickler sie nicht braucht, um Ihnen zu helfen.", "send": "Senden", "sending": "Wird gesendet…", "thanks": "Danke! Ihre Nachricht wurde gesendet.", "close": "Schließen" },
   "usageNotice": { "text": "Einmal am Tag meldet die App anonym, dass sie benutzt wird: nur eine Zufallszahl und die Version. Das können Sie in den Einstellungen ausschalten.", "ok": "OK", "settings": "Einstellungen öffnen" },
   "home": {
     "title": "Willkommen bei BewerbungsPilot",
@@ -491,7 +491,7 @@
     "BACKUP_NEWER": { "message": "Diese Sicherung wurde mit einer neueren Version von BewerbungsPilot erstellt.", "hint": "Aktualisieren Sie zuerst das Programm und stellen Sie dann diese Sicherung wieder her." },
     "BACKUP_FAILED": { "message": "Die Sicherung konnte nicht gespeichert oder wiederhergestellt werden.", "hint": "Ihre Daten wurden nicht geändert. Prüfen Sie, ob die Festplatte voll ist und ob eine Datei aus dem Datenordner des Programms geöffnet ist, und versuchen Sie es erneut." },
     "DEMO_FAILED": { "message": "Die Demo konnte nicht gestartet werden.", "hint": "Bitte versuchen Sie es erneut. Wenn es wieder passiert, starten Sie BewerbungsPilot neu." },
-    "FEEDBACK_FAILED": { "message": "Ihre Nachricht konnte nicht gesendet werden.", "hint": "Bitte versuchen Sie es gleich noch einmal." },
+    "FEEDBACK_FAILED": { "message": "Ihre Nachricht konnte nicht gesendet werden.", "hint": "Bitte versuchen Sie es gleich noch einmal.", "hint_limit": "Das Tageslimit für Nachrichten ist erreicht. Bitte versuchen Sie es morgen noch einmal." },
     "reasons": {
       "cvTooLittleText": "Die Datei enthält fast keinen Text ({{chars}} Zeichen). Sie ist wahrscheinlich leer, oder der Text steckt in einem Bild.",
       "cvNoContent": "{{ai}} hat die Datei gelesen, aber nichts gefunden, das wie ein Lebenslauf aussieht.",

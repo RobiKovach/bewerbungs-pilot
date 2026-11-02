@@ -14,7 +14,7 @@
   "language": { "label": "Język" },
   "unsaved": { "leave": "Niektóre zmiany nie są jeszcze zapisane. Jeśli teraz wyjdziesz, przepadną. Wyjść mimo to?" },
   "updates": { "available": "Dostępna jest wersja {{version}}", "whatsNew": "Co nowego", "download": "Pobierz", "dismiss": "Ukryj do następnej wersji" },
-  "feedback": { "title": "Wyślij opinię", "button": "Opinia", "kind": "Rodzaj", "problem": "Problem", "idea": "Pomysł", "text": "Twoja wiadomość", "email": "Twój e-mail (na odpowiedź)", "emailBad": "Wpisz prawidłowy adres e-mail.", "sent": "Wysyłamy: Twój tekst, ten adres, wersję aplikacji {{version}}. Nic więcej z Twoich danych.", "send": "Wyślij", "sending": "Wysyłam…", "thanks": "Dziękujemy! Wiadomość została wysłana.", "close": "Zamknij" },
+  "feedback": { "title": "Wyślij opinię", "button": "Opinia", "kind": "Rodzaj", "problem": "Problem", "idea": "Pomysł", "text": "Twoja wiadomość", "email": "Twój e-mail (na odpowiedź)", "emailBad": "Wpisz prawidłowy adres e-mail.", "sent": "Wysyłamy: Twój tekst, ten adres, wersję aplikacji {{version}}, Twój język i losowy numer instalacji. Nic więcej z Twoich danych.", "personalTitle": "Twoja wiadomość zawiera dane osobowe — trafi do programisty", "personalHint": "Usuń je, jeśli programista nie potrzebuje ich, by Ci pomóc.", "send": "Wyślij", "sending": "Wysyłam…", "thanks": "Dziękujemy! Wiadomość została wysłana.", "close": "Zamknij" },
   "usageNotice": { "text": "Raz dziennie aplikacja anonimowo zgłasza, że jest używana: tylko losowy numer i wersja. Możesz to wyłączyć w Ustawieniach.", "ok": "OK", "settings": "Otwórz Ustawienia" },
   "home": {
     "title": "Witamy w BewerbungsPilot",
@@ -491,7 +491,7 @@
     "BACKUP_NEWER": { "message": "Ta kopia została utworzona przez nowszą wersję BewerbungsPilot.", "hint": "Najpierw zaktualizuj program, potem przywróć tę kopię." },
     "BACKUP_FAILED": { "message": "Nie udało się zapisać ani przywrócić kopii.", "hint": "Twoje dane nie zostały zmienione. Sprawdź, czy dysk nie jest pełny i czy żaden plik z folderu danych programu nie jest otwarty, i spróbuj ponownie." },
     "DEMO_FAILED": { "message": "Nie udało się uruchomić demo.", "hint": "Spróbuj ponownie. Jeśli to się powtarza, uruchom BewerbungsPilot ponownie." },
-    "FEEDBACK_FAILED": { "message": "Nie udało się wysłać wiadomości.", "hint": "Spróbuj ponownie za chwilę." },
+    "FEEDBACK_FAILED": { "message": "Nie udało się wysłać wiadomości.", "hint": "Spróbuj ponownie za chwilę.", "hint_limit": "Dzienny limit wiadomości został wyczerpany. Spróbuj jutro." },
     "reasons": {
       "cvTooLittleText": "Plik zawiera prawie żaden tekst ({{chars}} znaków). Prawdopodobnie jest pusty albo tekst znajduje się na obrazku.",
       "cvNoContent": "{{ai}} odczytał plik, ale nie znalazł niczego, co wygląda jak CV.",
