@@ -20,6 +20,30 @@ beforeEach(() => {
 });
 
 describe('COOKIE_SCRIPT', () => {
+  it('prefers "Alle Cookies ablehnen" over "Auswahl bestätigen" (the live AA banner), never "akzeptieren"', () => {
+    doc().body.innerHTML = '<div role="dialog"><button id="rej">Alle Cookies ablehnen</button><button id="sel">Auswahl bestätigen</button><button id="all">Alle Cookies akzeptieren</button></div>';
+    const clicked: string[] = [];
+    for (const id of ['rej', 'sel', 'all']) doc().body.querySelector(`#${id}`)!.addEventListener('click', () => clicked.push(id));
+    expect(runInPage(COOKIE_SCRIPT)).toBe('Alle Cookies ablehnen');
+    expect(clicked).toEqual(['rej']);
+  });
+
+  it('a reject button later in the page still wins over an earlier "Auswahl bestätigen"', () => {
+    doc().body.innerHTML = '<button id="sel">Auswahl bestätigen</button><div><button id="rej">Ablehnen</button></div>';
+    const clicked: string[] = [];
+    for (const id of ['rej', 'sel']) doc().body.querySelector(`#${id}`)!.addEventListener('click', () => clicked.push(id));
+    expect(runInPage(COOKIE_SCRIPT)).toBe('Ablehnen');
+    expect(clicked).toEqual(['rej']);
+  });
+
+  it('never clicks "zustimmen" / "akzeptieren" even if the label also says "ablehnen"', () => {
+    doc().body.innerHTML = '<button id="a">Ablehnen oder zustimmen</button><button id="b">Alle akzeptieren</button>';
+    let clicked = false;
+    for (const id of ['a', 'b']) doc().body.querySelector(`#${id}`)!.addEventListener('click', () => { clicked = true; });
+    expect(runInPage(COOKIE_SCRIPT)).toBeNull();
+    expect(clicked).toBe(false);
+  });
+
   it('clicks "Auswahl bestätigen", never "Alle akzeptieren"', () => {
     doc().body.innerHTML = '<div><button id="all">Alle akzeptieren</button><button id="sel">Auswahl bestätigen</button></div>';
     const clicked: string[] = [];

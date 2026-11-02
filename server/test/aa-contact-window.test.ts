@@ -16,7 +16,13 @@ const REFNR = '12345-ABCDEF-S';
 /** What one frame shows on one poll (all values invented — no real contact data). */
 interface FrameData { url?: string; text: string; hrefs?: string[]; links?: Array<{ href: string; section: string }> }
 /** One poll = the frames of the page at that moment. The last poll repeats. `onPoll` may close the window etc. */
-interface Scenario { polls: FrameData[][]; onPoll?: (i: number, f: FakeBrowser) => void; requests?: Array<{ url: string; type: string }> }
+interface Scenario {
+  polls: FrameData[][]; onPoll?: (i: number, f: FakeBrowser) => void; requests?: Array<{ url: string; type: string }>;
+  /** What the cookie script clicks on its n-th run (default: the banner on the first run, then nothing is left). */
+  cookie?: (n: number, f: FakeBrowser) => string | null;
+  /** The page load ("network idle") takes this long (default: at once). */
+  idleMs?: number;
+}
 
 const BEFORE = [
   'Softwareentwickler (m/w/d)', 'Beispiel GmbH', 'Informationen zur Bewerbung', 'Sicherheitsabfrage',
@@ -36,11 +42,11 @@ const AA_LINK = { href: 'https://www.arbeitsagentur.de/hilfe', section: 'Hilfe' 
 const APPLY = { href: 'https://karriere.beispiel.example/stelle/42', section: 'Informationen zur Bewerbung' };
 
 class FakeFrame {
-  constructor(private readonly data: FrameData, readonly log: string[]) {}
+  constructor(private readonly data: FrameData, readonly log: string[], private readonly cookie: () => string | null = () => null) {}
   url() { return this.data.url ?? 'https://www.arbeitsagentur.de/jobsuche/jobdetail/x'; }
   async evaluate(script: string) {
     if (script === READ_FRAME_SCRIPT) return { text: this.data.text, hrefs: this.data.hrefs ?? [], links: this.data.links ?? [] };
-    if (script === COOKIE_SCRIPT) { this.log.push('cookie'); return 'Auswahl bestätigen'; }
+    if (script === COOKIE_SCRIPT) { this.log.push('cookie'); return this.cookie(); }
     if (script === SCROLL_SCRIPT) { this.log.push('scroll'); return true; }
     throw new Error('unknown script');
   }
@@ -66,8 +72,13 @@ class FakePage extends EventEmitter {
     }
     return { ok: () => true, status: () => 200 };
   }
-  async waitForNetworkIdle() {}
-  mainFrame() { return new FakeFrame({ text: '' }, this.b.log); }
+  async waitForNetworkIdle() { if (this.s.idleMs) await new Promise((r) => setTimeout(r, this.s.idleMs)); }
+  mainFrame() {
+    return new FakeFrame({ text: '' }, this.b.log, () => {
+      const n = this.b.cookieRuns++;
+      return (this.s.cookie ?? ((i) => (i === 0 ? 'Alle Cookies ablehnen' : null)))(n, this.b);
+    });
+  }
   frames() {
     const i = this.poll++;
     this.s.onPoll?.(i, this.b);
@@ -78,6 +89,7 @@ class FakePage extends EventEmitter {
 
 class FakeBrowser extends EventEmitter {
   log: string[] = [];
+  cookieRuns = 0;
   closed = 0;
   page: FakePage;
   constructor(s: Scenario) { super(); this.page = new FakePage(s, this); }
@@ -123,6 +135,51 @@ describe('AaContactWindow', () => {
     expect(browser.log).toContain('cookie');
     expect(browser.log.indexOf('cookie')).toBeLessThan(browser.log.indexOf('scroll'));
     expect(browser.log).toContain('Browser.setDownloadBehavior:{"behavior":"deny"}');
+  });
+
+  it('a banner that appears while the page is still loading is clicked as soon as it is there, before the scroll', async () => {
+    // Nothing on the first two tries, the banner on the third; the load takes much longer.
+    const clickedAt: number[] = [];
+    const { win, browser } = setup({
+      polls: [[{ text: BEFORE }], [{ text: AFTER_CONTACT }]], idleMs: 300,
+      cookie: (n) => { if (n === 2) { clickedAt.push(n); return 'Alle Cookies ablehnen'; } return null; },
+    }, { cookieRetryMs: 5 });
+    const started = Date.now();
+    await run(win);
+    expect(clickedAt).toEqual([2]);
+    expect(browser.log.indexOf('cookie')).toBeLessThan(browser.log.indexOf('scroll'));
+    expect(Date.now() - started).toBeGreaterThanOrEqual(250); // the scroll still waits for the load
+  });
+
+  it('a banner that comes only after the load is clicked in the poll loop', async () => {
+    const { win, browser } = setup({
+      polls: [[{ text: BEFORE }], [{ text: BEFORE }], [{ text: AFTER_CONTACT }]],
+      cookie: (n) => (n === 3 ? 'Alle Cookies ablehnen' : null),
+    }, { cookieRetryMs: 5 });
+    await run(win);
+    expect(browser.cookieRuns).toBeGreaterThan(3);
+    expect(browser.log.lastIndexOf('cookie')).toBeGreaterThan(browser.log.indexOf('scroll'));
+  });
+
+  it('a button that never goes away is retried at most cookieMaxMs, then the window goes on', async () => {
+    const { win, browser } = setup({ polls: [[{ text: BEFORE }], [{ text: AFTER_CONTACT }]], cookie: () => 'Auswahl bestätigen' },
+      { cookieRetryMs: 5, cookieMaxMs: 60 });
+    const r = await run(win);
+    expect('text' in r).toBe(true);
+    expect(browser.log).toContain('scroll');
+  });
+
+  it('closing the window while the banner is retried stops the retries', async () => {
+    const { win, browser } = setup({
+      polls: [[{ text: BEFORE }]], idleMs: 1000,
+      cookie: (n, b) => { if (n === 2) b.closeWindow(); return null; },
+    }, { cookieRetryMs: 5 });
+    const r = await run(win);
+    expect(r).toEqual({ cancelled: true });
+    const runs = browser.cookieRuns;
+    await new Promise((res) => setTimeout(res, 50));
+    expect(browser.cookieRuns).toBe(runs);
+    expect(browser.log).not.toContain('scroll');
   });
 
   it('a contact found after a few polls: returns the page text once it reads the same twice in a row, closes the window', async () => {

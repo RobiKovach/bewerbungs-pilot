@@ -53,13 +53,16 @@ export const READ_FRAME_SCRIPT = `(() => {
 })()`;
 
 /**
- * Dismisses the cookie banner with its privacy-preserving button only ("Ablehnen", "Nur notwendige",
- * "Auswahl bestätigen" with nothing extra chosen) — never "akzeptieren": without such a button the person decides.
- * Looks into open shadow roots (the AA banner is a web component) and never touches anything inside a captcha.
- * Returns the text of the clicked button, or null.
+ * Dismisses the cookie banner with its privacy-preserving button only — a reject button ("Alle Cookies ablehnen",
+ * "Ablehnen", "Nur notwendige …") first, "Auswahl bestätigen" (nothing extra chosen) only when there is none; never
+ * "akzeptieren"/"zustimmen": without such a button the person decides. Looks into open shadow roots (the AA banner is a
+ * web component) and never touches anything inside a captcha. Returns the text of the clicked button, or null.
  */
 export const COOKIE_SCRIPT = `(() => {
-  const REJECT = /^(Alle )?(ablehnen|Nur notwendige|Nur erforderliche|Auswahl bestätigen)/i;
+  const REJECT = /^(Alle (Cookies )?ablehnen|Ablehnen|Nur notwendige|Nur erforderliche)/i;
+  const CONFIRM = /^Auswahl bestätigen/i;
+  const NEVER = /akzeptieren|zustimmen/i;
+  let confirm = null;
   const roots = [document];
   while (roots.length) {
     const root = roots.pop();
@@ -68,9 +71,12 @@ export const COOKIE_SCRIPT = `(() => {
       if (!el.matches('button, [role="button"], a')) continue;
       if (el.closest('[id*="captcha" i], [class*="captcha" i]')) continue;
       const label = (el.innerText ?? el.textContent ?? '').trim();
+      if (NEVER.test(label)) continue;
       if (REJECT.test(label)) { el.click(); return label.slice(0, 60); }
+      if (!confirm && CONFIRM.test(label)) confirm = { el, label };
     }
   }
+  if (confirm) { confirm.el.click(); return confirm.label.slice(0, 60); }
   return null;
 })()`;
 
@@ -163,7 +169,7 @@ const unreadable = (why: string) => new AppError('BAD_REQUEST', `offer page not 
 /**
  * The "find contact" window (spec 0.9.1 B): the installed Edge/Chrome opens exactly the Arbeitsagentur offer, visibly,
  * with a fresh temporary profile (deleted afterwards). The program dismisses the cookie banner with its
- * privacy-preserving button and scrolls to the application block — the person clicks and solves the captcha; the
+ * privacy-preserving button as soon as it appears (and again if it comes back) and scrolls to the application block — the person clicks and solves the captcha; the
  * program never touches it. Every 2 s it reads the page; the first read is the baseline, so data already there before
  * the captcha does not end the wait (the AA's own service number and e-mail are never taken at all). It finishes when
  * a new e-mail or phone reads the same twice in a row, when the block was revealed (captcha gone / "Bewerben Sie
@@ -181,6 +187,8 @@ export class AaContactWindow implements ContactWindow {
   private readonly maxChars: number;
   private readonly closeTimeoutMs: number;
   private readonly noCaptchaWaitMs: number;
+  private readonly cookieRetryMs: number;
+  private readonly cookieMaxMs: number;
 
   constructor(private readonly opts: {
     tmpRoot: string; find?: () => string | null; check?: Check;
@@ -190,6 +198,8 @@ export class AaContactWindow implements ContactWindow {
     closeTimeoutMs?: number;
     /** An offer without any captcha is accepted only this long after loading (default 20 s; live captchas came at 8–12 s). */
     noCaptchaWaitMs?: number;
+    /** The cookie banner is tried every 300 ms from the first HTML on, for at most 15 s (it may appear late). */
+    cookieRetryMs?: number; cookieMaxMs?: number;
     /** Tests: a fake browser instead of puppeteer.launch. */
     launch?: (options: ReturnType<typeof contactLaunchOptions>) => Promise<Browser>;
     warn?: (event: string, data: Record<string, unknown>) => void; log?: Log;
@@ -202,6 +212,8 @@ export class AaContactWindow implements ContactWindow {
     this.maxChars = opts.maxChars ?? 60_000;
     this.closeTimeoutMs = opts.closeTimeoutMs ?? 5000;
     this.noCaptchaWaitMs = opts.noCaptchaWaitMs ?? 20_000;
+    this.cookieRetryMs = opts.cookieRetryMs ?? 300;
+    this.cookieMaxMs = opts.cookieMaxMs ?? 15_000;
   }
 
   readContact(refnr: string, signal: AbortSignal): Promise<ContactWindowResult> {
@@ -287,10 +299,26 @@ export class AaContactWindow implements ContactWindow {
         stopIfOver();
         throw unreadable(/net::ERR_[A-Z_]+/.exec(String(err))?.[0] ?? 'navigation failed');
       }
-      await page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000 }).catch(() => undefined);
+      let idle = false;
+      const idleDone = page.waitForNetworkIdle({ idleTime: 500, timeout: 10_000 }).catch(() => undefined).then(() => { idle = true; });
+      // The banner shows up while the page is still loading: click it as soon as it is there, not after the load.
+      // Done when a click was followed by "nothing left to click", or nothing was there even after the load (a late
+      // banner is caught by the poll loop below), or after cookieMaxMs.
+      const cookieUntil = Date.now() + this.cookieMaxMs;
+      let cookieClicked = false;
+      for (;;) {
+        if (closed) return { cancelled: true };
+        stopIfOver();
+        const loaded = idle;
+        const label = await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
+        if (label) cookieClicked = true;
+        else if (cookieClicked || loaded) break;
+        if (Date.now() >= cookieUntil) break;
+        await sleep(this.cookieRetryMs);
+      }
+      await idleDone;
       if (closed) return { cancelled: true };
       stopIfOver();
-      await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
       await sleep(this.settleMs);
       await page.mainFrame().evaluate(SCROLL_SCRIPT).catch(() => false);
       const loadedAt = Date.now();
@@ -302,6 +330,9 @@ export class AaContactWindow implements ContactWindow {
       for (;;) {
         if (closed) return { cancelled: true };
         stopIfOver();
+        // A banner that appears late (or again) is dismissed the same way; nothing else is ever clicked.
+        await page.mainFrame().evaluate(COOKIE_SCRIPT).catch(() => null);
+        if (closed) return { cancelled: true };
         let frames: FrameRead[] = [];
         try { frames = (await Promise.all(page.frames().map(readFrame))).filter((f): f is FrameRead => f !== null); } catch { frames = []; }
         if (closed) return { cancelled: true };
