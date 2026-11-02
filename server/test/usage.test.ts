@@ -254,7 +254,10 @@ describe('settings API and POST /api/feedback', () => {
   it('a bad email or a blank text is a 400 BAD_REQUEST here (the cloud is not called); the email is trimmed', async () => {
     const f = fakeFetch(() => new Response(null, { status: 202 }));
     const t = await makeApp({ cloud: { url: 'https://cloud.test', fetch: f.fn } });
-    for (const email of ['x', 'a@b', 'a b@c.de', '']) expect((await post(t, { ...body, email })).statusCode).toBe(400);
+    for (const email of ['x', 'a@b', 'a b@c.de', '', 'a@bcde', 'a@b\u0007.de']) expect((await post(t, { ...body, email })).statusCode).toBe(400);
+    // Letters s, p, c and dots must pass (a regex that lost its backslashes rejects these).
+    for (const email of ['susi@web.de', 'sasha@gmx.de', 'paul@spp.com', 'robert.kovach@t-online.de']) expect((await post(t, { ...body, email })).statusCode).toBe(204);
+    f.calls.length = 0;
     for (const text of ['   ', '\n\t']) expect((await post(t, { ...body, text })).statusCode).toBe(400);
     expect((await post(t, { ...body, text: '😀'.repeat(2600) })).statusCode).toBe(204); // 5 200 UTF-16 units, 2 600 characters
     expect(f.calls).toHaveLength(1);

@@ -7,7 +7,7 @@ import type { Logger } from '../log.js';
 const TIMEOUT_MS = 10_000;
 const MAX_TEXT = 5000;
 // Same as cloud/src/validate.ts: one @, no spaces or control characters, a dot in the domain.
-const EMAIL = /^[^s@p{Cc}]+@[^s@p{Cc}]+.[^s@p{Cc}]+$/u;
+const EMAIL = /^[^\s@\p{Cc}]+@[^\s@\p{Cc}]+\.[^\s@\p{Cc}]+$/u;
 
 export interface UsageRouteDeps {
   settings: SettingsStore;
