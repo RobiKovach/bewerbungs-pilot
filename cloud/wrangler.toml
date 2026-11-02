@@ -9,7 +9,7 @@ send_metrics = false
 [[d1_databases]]
 binding = "DB"
 database_name = "bewerbungspilot"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "ab0fb853-8a71-4409-8c7d-a8a60260d53c"
 
 [triggers]
 # Hourly: IP rate-limit rows must be gone within 2 hours (spec), expired codes and sessions too.
