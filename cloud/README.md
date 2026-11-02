@@ -23,7 +23,10 @@ mails per day). Any other address gets the same answer and no mail. The session 
 `Secure`, `SameSite=Strict`). The page has no scripts.
 
 - Someone who knows the admin address can use up these limits on purpose; then signing in works again the next UTC
-  day (the data is not at risk, only the page is locked for the rest of the day).
+  day (the data is not at risk, only the page is locked for the rest of the day). Without a code requested, failed
+  sign-ins do not count, so a stranger cannot lock the page.
+- The admin address is kept out of the code, the repo and the logs (secret `ROBERT_EMAIL`), and every failed sign-in
+  gets the same answer, but it is not treated as a secret against timing or limit side channels.
 - The cookie is `Secure`, so signing in needs https: it works on `*.workers.dev`, but `wrangler dev` over plain http
   does not keep the session.
 

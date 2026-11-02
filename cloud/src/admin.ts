@@ -139,21 +139,16 @@ const loginFailed = () => html(401, loginPage('code', 'Wrong or expired code. Yo
 async function login(req: Request, d: AdminDeps): Promise<Response> {
   const form = await readForm(req);
   const now = d.now();
-  // Every check takes a slot of today's wrong-code budget first (one atomic step); only a right code gives it back,
-  // so a check without a live code costs the same as a wrong guess (no difference to observe).
+  // Every check takes a slot of today's wrong-code budget first (one atomic step). Only a real wrong guess keeps it:
+  // a right code, or a check while no code is live, gives it back, so strangers cannot lock the page without a code.
   const dayKey = `admin:wrong:${utcDay(now)}`;
   if (!(await d.store.takeHit(dayKey, DAY, now, WRONG_CODES_PER_DAY))) {
     return html(429, loginPage('email', 'Too many wrong codes today. Try again tomorrow.'));
   }
   // Counting the attempt and reading the code is one atomic step, so parallel requests cannot pass the limit.
   const hash = await d.store.takeCodeAttempt(now, MAX_WRONG_CODES);
-  if (!hash) {
-    const stored = await d.store.getCode();
-    if (stored && stored.attempts >= MAX_WRONG_CODES) await d.store.deleteCode();
-    return loginFailed();
-  }
   const typed = (form?.code ?? '').trim();
-  if (/^\d{6}$/.test(typed) && sameHex(await sha256Hex(typed), hash)) {
+  if (hash && /^\d{6}$/.test(typed) && sameHex(await sha256Hex(typed), hash)) {
     await d.store.releaseHit(dayKey, now);
     // Only the request that really deleted the code gets a session: one code, one session.
     if (!(await d.store.consumeCode(hash))) return loginFailed();
@@ -161,6 +156,10 @@ async function login(req: Request, d: AdminDeps): Promise<Response> {
     await d.store.addSession(await sha256Hex(token), now + SESSION_TTL_MS);
     return redirect(`${COOKIE}=${token}; Path=/admin; Max-Age=${SESSION_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`);
   }
+  // Both failure paths read the code the same way (fewer differences in what runs); a used-up code is deleted.
+  const stored = await d.store.getCode();
+  if (stored && stored.attempts >= MAX_WRONG_CODES) await d.store.deleteCode();
+  if (!hash) await d.store.releaseHit(dayKey, now);
   return loginFailed();
 }
 

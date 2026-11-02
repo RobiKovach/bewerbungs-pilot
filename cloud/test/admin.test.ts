@@ -111,9 +111,11 @@ describe.each([
     expect(noCode.status).toBe(401);
   });
 
-  it('a check without any live code costs a slot of the daily budget like a wrong guess', async () => {
-    for (let i = 0; i < 10; i++) expect((await call(form('/admin/login', { code: '123456' }))).status).toBe(401);
-    expect((await call(form('/admin/login', { code: '123456' }))).status).toBe(429);
+  it('a stranger without a live code cannot use up the daily budget: 20 failed logins, no 429', async () => {
+    for (let i = 0; i < 20; i++) expect((await call(form('/admin/login', { code: '123456' }))).status).toBe(401);
+    // Robert can still sign in afterwards.
+    await call(form('/admin/code', { email: ROBERT }));
+    expect((await call(form('/admin/login', { code: lastCode() }))).status).toBe(303);
   });
 
   it('refuses a form over 4 KB while reading it', async () => {
