@@ -10,7 +10,7 @@ const OFF_RECHECK_MS = 3600_000;
 const TIMEOUT_MS = 10_000;
 const MAX_BODY = 64 * 1024;
 
-export interface AvailableUpdate { version: string; url: string; notes: Partial<Record<Language, string>> }
+export interface AvailableUpdate { version: string; url: string; notes: Partial<Record<Language, string>>; sha256?: string }
 
 interface State { lastCheckedAt: number; latest: VersionFile | null }
 
@@ -62,7 +62,7 @@ export class UpdateChecker {
   available(): AvailableUpdate | null {
     const latest = this.state.latest;
     if (!latest || !isNewer(latest.latest, this.d.currentVersion)) return null;
-    return { version: latest.latest, url: latest.url, notes: latest.notes };
+    return { version: latest.latest, url: latest.url, notes: latest.notes, ...(latest.sha256 ? { sha256: latest.sha256 } : {}) };
   }
 
   async checkNow(): Promise<void> {

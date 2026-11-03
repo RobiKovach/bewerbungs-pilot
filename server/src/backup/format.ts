@@ -28,6 +28,19 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
  */
 export function entryProblem(name: string): string | null {
   if (name === META_FILE) return null;
+  const bad = nameProblem(name);
+  if (bad) return bad;
+  const isFolder = name.endsWith('/');
+  const segments = (isFolder ? name.slice(0, -1) : name).split('/');
+  if (segments.length === 1 && !isFolder) return BACKUP_FILES.includes(segments[0]!) ? null : 'not a data file';
+  return BACKUP_FOLDERS.includes(segments[0]!) ? null : 'not a data folder';
+}
+
+/**
+ * The part of that check which does not depend on what the zip is for (the update unpacker uses it too): bad
+ * characters, absolute paths, relative segments, trailing dots/spaces, device names.
+ */
+export function nameProblem(name: string): string | null {
   // eslint-disable-next-line no-control-regex
   if (/[\\:\x00-\x1f]/.test(name)) return 'bad characters';
   if (name.startsWith('/')) return 'absolute path';
@@ -38,8 +51,7 @@ export function entryProblem(name: string): string | null {
     if (/[. ]$/.test(s)) return 'segment ends with a dot or space';
     if (RESERVED.test(s)) return 'reserved device name';
   }
-  if (segments.length === 1 && !isFolder) return BACKUP_FILES.includes(segments[0]!) ? null : 'not a data file';
-  return BACKUP_FOLDERS.includes(segments[0]!) ? null : 'not a data folder';
+  return null;
 }
 
 /** A symlink entry (made on Unix): its mode sits in the high 16 bits of the external attributes. */

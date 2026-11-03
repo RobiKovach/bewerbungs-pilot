@@ -102,4 +102,8 @@ export type ErrorReason =
   // Feedback to the developer (0.11.0): what went wrong when it could not be sent.
   | 'offline'
   | 'limit'
-  | 'server';
+  | 'server'
+  // One-click update (0.11.0): the download failed / differs from the published checksum / is not a valid release.
+  | 'updateDownload'
+  | 'updateChecksum'
+  | 'updateInvalid';

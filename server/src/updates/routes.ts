@@ -26,7 +26,7 @@ export async function registerUpdateRoutes(app: FastifyInstance, d: UpdateRouteD
       return { current: d.version, available: null };
     }
     const notes = a.notes[s.language ?? 'en'] ?? a.notes.en ?? '';
-    return { current: d.version, available: { version: a.version, url: a.url, notes } };
+    return { current: d.version, available: { version: a.version, url: a.url, notes, canInstall: Boolean(a.sha256) } };
   });
 
   app.post('/api/updates/dismiss', {

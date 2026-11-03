@@ -7,6 +7,7 @@ export const UPDATE_URL = 'https://robikovach.github.io/bewerbungs-pilot/version
 /** Only links to our own GitHub releases are ever shown — a broken site cannot slip someone a foreign link. */
 const RELEASES_PREFIX = 'https://github.com/RobiKovach/bewerbungs-pilot/releases/';
 const SEMVER = /^\d+\.\d+\.\d+$/;
+const SHA256 = /^[0-9a-f]{64}$/;
 const MAX_NOTES = 300;
 const MAX_URL = 500;
 
@@ -16,6 +17,8 @@ export interface VersionFile {
   released: string;
   url: string;
   notes: Partial<Record<Language, string>>;
+  /** sha256 (lowercase hex) of the release zip; without it the app only shows the banner and cannot update itself. */
+  sha256?: string;
 }
 
 /** The version file as published, or null when anything about it is wrong. Notes stay plain text (React escapes them). */
@@ -34,7 +37,9 @@ export function parseVersionFile(raw: unknown): VersionFile | null {
       if (typeof text === 'string') notes[lang] = Array.from(text).slice(0, MAX_NOTES).join('');
     }
   }
-  return { schema: 1, latest: r.latest, released: typeof r.released === 'string' ? r.released.slice(0, 40) : '', url, notes };
+  const out: VersionFile = { schema: 1, latest: r.latest, released: typeof r.released === 'string' ? r.released.slice(0, 40) : '', url, notes };
+  if (typeof r.sha256 === 'string' && SHA256.test(r.sha256)) out.sha256 = r.sha256;
+  return out;
 }
 
 /** The url only if it is, also after URL normalisation (`..`, odd hosts), one of our release pages. */

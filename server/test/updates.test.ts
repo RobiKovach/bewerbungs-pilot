@@ -216,7 +216,9 @@ describe('updates API', () => {
   it('a newer version is offered with notes in the UI language (fallback English)', async () => {
     const ctx = await makeApp({ update: avail('0.2.0') });
     let res = await ctx.app.inject({ method: 'GET', url: '/api/updates', headers: H });
-    expect(res.json()).toEqual({ current: '0.1.0', available: { version: '0.2.0', url: `${RELEASES}tag/v0.2.0`, notes: 'English notes' } });
+    expect(res.json()).toEqual({ current: '0.1.0', available: { version: '0.2.0', url: `${RELEASES}tag/v0.2.0`, notes: 'English notes', canInstall: false } });
+    const withSha = await makeApp({ update: { ...avail('0.2.0'), sha256: 'a'.repeat(64) } });
+    expect((await withSha.app.inject({ method: 'GET', url: '/api/updates', headers: H })).json().available.canInstall).toBe(true);
     ctx.settings.patch({ language: 'de' });
     res = await ctx.app.inject({ method: 'GET', url: '/api/updates', headers: H });
     expect(res.json().available.notes).toBe('Deutsche Notizen');

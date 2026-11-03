@@ -8,7 +8,7 @@ import { UpdateBanner } from './UpdateBanner';
 const URL_091 = 'https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.9.1';
 
 function available(notes = 'Faster search. <b>Not bold</b>'): UpdatesView {
-  return { current: '0.9.0', available: { version: '0.9.1', url: URL_091, notes } };
+  return { current: '0.9.0', available: { version: '0.9.1', url: URL_091, notes, canInstall: false } };
 }
 
 describe('UpdateBanner', () => {

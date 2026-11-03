@@ -45,7 +45,8 @@ export type FeedbackKind = 'problem' | 'idea';
 export interface FeedbackInput { kind: FeedbackKind; email: string; text: string }
 
 /** GET /api/updates: notes already in the UI language (English fallback); available null = no banner. */
-export interface UpdatesView { current: string; available: { version: string; url: string; notes: string } | null }
+/** canInstall: the published version.json carries the zip checksum, so "Update now" can verify the download. */
+export interface UpdatesView { current: string; available: { version: string; url: string; notes: string; canInstall: boolean } | null }
 
 export interface Availability { ok: boolean; reason?: 'not-installed' | 'not-logged-in' | 'error'; detail?: string }
 /** provider null = none chosen yet (availability is then { ok: false, reason: 'error' }). */

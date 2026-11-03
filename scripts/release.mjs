@@ -1,7 +1,8 @@
 // Builds everything and packs release/BewerbungsPilot-v<version>.zip for GitHub Releases.
-import { execFileSync, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { packFolder } from './pack-zip.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const { version } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -25,9 +26,5 @@ fs.copyFileSync(path.join(root, 'installer', 'install.bat'), path.join(out, 'ins
 
 const zip = `${out}.zip`;
 fs.rmSync(zip, { force: true });
-// Paths go in through the environment, never into the command text (no quoting, no shell).
-execFileSync('powershell', ['-NoProfile', '-Command', 'Compress-Archive -Path (Join-Path $env:BP_RELEASE_DIR "*") -DestinationPath $env:BP_RELEASE_ZIP -Force'], {
-  stdio: 'inherit',
-  env: { ...process.env, BP_RELEASE_DIR: out, BP_RELEASE_ZIP: zip },
-});
+await packFolder(out, zip);
 console.log(`Release ready: ${zip}`);

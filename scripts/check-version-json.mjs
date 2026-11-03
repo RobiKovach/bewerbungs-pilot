@@ -29,5 +29,6 @@ if (parsed === null) {
 const cut = Object.entries(raw.notes ?? {}).filter(([lang, text]) => typeof text === 'string' && parsed.notes[lang] !== undefined && parsed.notes[lang] !== text);
 console.log(`OK: ${file}\n  latest ${parsed.latest}, released ${parsed.released || '(none)'}\n  ${parsed.url}\n  notes: ${Object.keys(parsed.notes).join(', ') || '(none)'}`);
 for (const [lang] of cut) console.warn(`  warning: notes.${lang} is longer than 300 characters and will be cut`);
+if (parsed.sha256 === undefined) console.warn('  warning: no valid sha256 of the release zip (64 hex characters) — the app will show the banner but "Update now" will be unavailable');
 const missing = ['uk', 'en', 'de', 'ru', 'pl', 'ro'].filter((l) => parsed.notes[l] === undefined);
 if (missing.length > 0) console.warn(`  warning: no notes for ${missing.join(', ')} (English is shown instead)`);
