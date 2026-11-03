@@ -206,6 +206,9 @@ async function main(): Promise<void> {
         updater, statusFile, outcome,
         // Detached: the installer outlives this process, which quits right after starting it.
         spawn: (file, args, opts) => new Promise<{ kill: () => void }>((resolve, reject) => {
+          // A test data folder never starts the real installer: it would replace the installed app in %LOCALAPPDATA%
+          // while this copy runs on other data.
+          if (process.env.BP_DATA_DIR) { reject(new Error('BP_DATA_DIR is set: no real install from a test data folder')); return; }
           // Resolves when the child really started; a start failure (missing file, no access) arrives as an 'error' event.
           const child = spawn(file, args, opts);
           child.once('error', reject);

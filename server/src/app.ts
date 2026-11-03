@@ -85,7 +85,7 @@ export interface AppDeps {
     /** Whether the demo copy (its own program, started from this app) is running; an update must wait for it to be closed. */
     demoRunning?: () => boolean;
     /** One-click update (0.11.0): production passes the real Updater and spawn; tests pass fakes. Shutdown is `onShutdown`. */
-    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<{ kill?: () => void } | void>; statusFile: string; outcome: UpdateOutcome; startWaitMs?: number };
+    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<{ kill?: () => void } | void>; statusFile: string; outcome: UpdateOutcome; startWaitMs?: number; startPollMs?: number };
   };
   /** Our cloud service for feedback (spec 0.11.0); tests inject `fetch` and a URL. Default: the real one. */
   cloud?: { url: string; fetch?: typeof fetch };
@@ -327,7 +327,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // The demo copy has no one-click update (its installer would act on the real program and data).
   const applier = deps.updates.apply && deps.demo?.active !== true ? new UpdateApplier({
     updater: deps.updates.apply.updater, activity: deps.activity, available: () => deps.updates.available(), version: deps.version,
-    enabled: () => deps.settings.get().updates.check, statusFile: deps.updates.apply.statusFile, spawn: deps.updates.apply.spawn, startWaitMs: deps.updates.apply.startWaitMs,
+    enabled: () => deps.settings.get().updates.check, statusFile: deps.updates.apply.statusFile, spawn: deps.updates.apply.spawn, startWaitMs: deps.updates.apply.startWaitMs, startPollMs: deps.updates.apply.startPollMs,
     shutdown: deps.onShutdown, logger: deps.logger,
     busy: () => {
       const active = deps.activity.active();

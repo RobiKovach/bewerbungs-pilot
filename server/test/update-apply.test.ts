@@ -302,10 +302,10 @@ describe('installerEnv', () => {
 });
 
 describe('the installer must confirm it took over', () => {
-  const tryApply = async (spawn: (statusFile: string) => Promise<{ kill?: () => void } | void>, wait = 300) => {
+  const tryApply = async (spawn: (statusFile: string) => Promise<{ kill?: () => void } | void>, wait = 300, poll?: number) => {
     const s = setup();
     const statusFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp-handover-')), 'update-status.json');
-    const ctx = await makeApp({ update: NEWER, updateApply: { updater: s.updater, statusFile, outcome: new UpdateOutcome({}), spawn: () => spawn(statusFile), startWaitMs: wait } });
+    const ctx = await makeApp({ update: NEWER, updateApply: { updater: s.updater, statusFile, outcome: new UpdateOutcome({}), spawn: () => spawn(statusFile), startWaitMs: wait, startPollMs: poll } });
     await apply(ctx);
     s.updater.finish({ releaseRoot: 'C:/x/update-1/release' });
     return { ctx, statusFile };
@@ -329,6 +329,15 @@ describe('the installer must confirm it took over', () => {
     await new Promise((r) => setTimeout(r, 700));
     expect((await progress(ctx)).state).toBe('failed');
     expect(ctx.shutdownCalls()).toBe(0);
+  });
+
+  it('a status written during the last poll interval still counts (the loop looks before the deadline check): no kill', async () => {
+    let killed = 0;
+    // Wait 300 ms but poll only every 1000 ms: the report (at ~400 ms) lands after the deadline, before the last look.
+    const { ctx } = await tryApply(async (f) => { setTimeout(() => writeRunning(f), 400); return { kill: () => { killed++; } }; }, 300, 1000);
+    await new Promise((r) => setTimeout(r, 1500));
+    expect(killed).toBe(0);
+    expect(ctx.shutdownCalls()).toBe(1);
   });
 
   it('a status that appears a little later is enough: then the server shuts down', async () => {
