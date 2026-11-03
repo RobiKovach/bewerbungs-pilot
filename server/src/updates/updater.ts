@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import yauzl, { type Entry, type ZipFile } from 'yauzl';
 import { MAX_ENTRIES, isSymlink, nameProblem } from '../backup/format.js';
@@ -79,8 +80,13 @@ export class Updater {
     if (!dev && src.zipUrl !== zipUrlFor(src.version)) throw fail('updateInvalid', 'unexpected zip address');
     if (!/^[0-9a-f]{64}$/.test(src.sha256)) throw fail('updateInvalid', 'no checksum');
 
-    await fs.promises.mkdir(this.d.tmpDir, { recursive: true });
-    const work = await fs.promises.mkdtemp(path.join(this.d.tmpDir, 'update-'));
+    let work: string;
+    try {
+      await fs.promises.mkdir(this.d.tmpDir, { recursive: true });
+      work = await fs.promises.mkdtemp(path.join(this.d.tmpDir, 'update-'));
+    } catch (err) {
+      throw fail('updateDownload', `temp folder: ${String(err)}`);
+    }
     try {
       const zip = path.join(work, 'update.zip');
       onStep('downloading');
@@ -95,7 +101,7 @@ export class Updater {
     } catch (err) {
       await fs.promises.rm(work, { recursive: true, force: true }).catch(() => undefined);
       this.d.logger.warn('update_prepare_failed', { reason: err instanceof AppError ? (err.reason ?? err.code) : 'unknown' });
-      throw err instanceof AppError ? err : fail('updateInvalid', String(err));
+      throw err instanceof AppError ? err : fail('updateDownload', String(err));
     }
   }
 
@@ -140,25 +146,17 @@ export class Updater {
     if (!ok) throw fail('updateDownload', `host not allowed: ${u.hostname}`);
   }
 
-  /** Streams to disk and counts the bytes itself — `Content-Length` is not trusted. */
+  /** Streams to disk and counts the bytes itself — `Content-Length` is not trusted. pipeline() owns every stream error. */
   private async save(body: ReadableStream<Uint8Array>, file: string, max: number): Promise<void> {
     let size = 0;
-    const out = fs.createWriteStream(file, { flags: 'wx' });
-    const reader = body.getReader();
-    try {
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        size += value.byteLength;
-        if (size > max) throw fail('updateDownload', 'too large');
-        if (!out.write(value)) await new Promise<void>((resolve, reject) => { out.once('drain', resolve); out.once('error', reject); });
-      }
-      await new Promise<void>((resolve, reject) => { out.once('error', reject); out.end(resolve); });
-    } catch (err) {
-      await reader.cancel().catch(() => undefined);
-      out.destroy();
-      throw err;
-    }
+    const counter = new Transform({
+      transform(chunk: Buffer, _enc, cb) {
+        size += chunk.length;
+        if (size > max) cb(fail('updateDownload', 'too large'));
+        else cb(null, chunk);
+      },
+    });
+    await pipeline(Readable.fromWeb(body as import('node:stream/web').ReadableStream<Uint8Array>), counter, fs.createWriteStream(file, { flags: 'wx' }));
   }
 }
 

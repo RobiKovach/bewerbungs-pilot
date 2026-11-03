@@ -267,3 +267,26 @@ describe('scripts/pack-zip.mjs (release packing)', () => {
     expect(fs.readFileSync(path.join(releaseRoot, 'install.bat'), 'utf8')).toBe('@echo off');
   });
 });
+
+describe('Updater.prepare — local failures', () => {
+  it('a write failure while saving (zip path unwritable) is an updateDownload error, not a crash, and cleans up', async () => {
+    // Make the zip path a folder in advance: createWriteStream('wx') then fails with EEXIST/EISDIR after the response began.
+    const u = updater({ fetch: fakeFetch({ [ZIP_URL]: () => { fs.mkdirSync(path.join(tmp, fs.readdirSync(tmp)[0]!, 'update.zip')); return new Response(new Uint8Array(GOOD), { status: 200 }); } }) });
+    const unhandled: unknown[] = [];
+    const h = (e: unknown) => unhandled.push(e);
+    process.on('uncaughtException', h);
+    try {
+      expect(await reasonOf(u.prepare(() => undefined, never))).toBe('updateDownload');
+      await new Promise((r) => setTimeout(r, 50));
+    } finally { process.off('uncaughtException', h); }
+    expect(unhandled).toEqual([]);
+    expect(left()).toEqual([]);
+  });
+
+  it('an unusable temp folder is an updateDownload error, not updateInvalid', async () => {
+    const file = path.join(tmp, 'file');
+    fs.writeFileSync(file, 'x');
+    const u = updater({ tmpDir: path.join(file, 'sub'), fetch: fakeFetch({ [ZIP_URL]: ok(GOOD) }) });
+    expect(await reasonOf(u.prepare(() => undefined, never))).toBe('updateDownload');
+  });
+});

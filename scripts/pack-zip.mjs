@@ -3,6 +3,7 @@
 // rightly refuses, so releases are packed here with yazl.
 import fs from 'node:fs';
 import path from 'node:path';
+// yazl is declared in server/package.json only; it resolves from the root node_modules via workspace hoisting.
 import yazl from 'yazl';
 
 function listFiles(dir, rel = '') {
