@@ -196,7 +196,12 @@ async function main(): Promise<void> {
       apply: {
         updater, statusFile, outcome,
         // Detached: the installer outlives this process, which quits right after starting it.
-        spawn: (file, args, opts) => { spawn(file, args, opts).unref(); },
+        spawn: (file, args, opts) => new Promise<void>((resolve, reject) => {
+          // Resolves when the child really started; a start failure (missing file, no access) arrives as an 'error' event.
+          const child = spawn(file, args, opts);
+          child.once('error', reject);
+          child.once('spawn', () => { child.on('error', () => undefined); child.unref(); resolve(); });
+        }),
       },
     },
     demo: demo ? { active: true } : {

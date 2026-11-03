@@ -83,7 +83,7 @@ export interface AppDeps {
   updates: {
     available: () => AvailableUpdate | null;
     /** One-click update (0.11.0): production passes the real Updater and spawn; tests pass fakes. Shutdown is `onShutdown`. */
-    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => void; statusFile: string; outcome: UpdateOutcome };
+    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<void>; statusFile: string; outcome: UpdateOutcome };
   };
   /** Our cloud service for feedback (spec 0.11.0); tests inject `fetch` and a URL. Default: the real one. */
   cloud?: { url: string; fetch?: typeof fetch };
@@ -97,6 +97,18 @@ export interface AppDeps {
  * the Google callback arrives from accounts.google.com, so the SameSite=Strict cookie is not sent with it
  * (it is protected by state + PKCE and shows fixed texts only).
  */
+/**
+ * Reading a link or the Arbeitsagentur contact window can take minutes (a person solves a captcha): while one is open
+ * it counts as work in flight, so an update does not start in the middle of it.
+ */
+function browserWork<T extends { read?: (...a: never[]) => Promise<unknown>; readContact?: (...a: never[]) => Promise<unknown> }>(activity: Activity, inner: T): T {
+  const wrap = <F extends (...a: never[]) => Promise<unknown>>(fn: F, self: unknown) => (async (...a: never[]) => {
+    const end = activity.begin('browser');
+    try { return await fn.apply(self, a); } finally { end(); }
+  }) as F;
+  return { ...inner, ...(inner.read ? { read: wrap(inner.read, inner) } : {}), ...(inner.readContact ? { readContact: wrap(inner.readContact, inner) } : {}) };
+}
+
 const PUBLIC_ROUTES = new Set(['/open', '/api/health', '/oauth/google/callback', '/', '/*']);
 
 const settingsPatchSchema = {
@@ -284,7 +296,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerVacancyRoutes(app, {
-    store: deps.vacancyStore, source: deps.vacancySource, pageReader: deps.pageReader, pdfFetcher: deps.pdfFetcher, contactWindow: deps.contactWindow, queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
+    store: deps.vacancyStore, source: deps.vacancySource, pageReader: browserWork(deps.activity, deps.pageReader), pdfFetcher: deps.pdfFetcher, contactWindow: browserWork(deps.activity, deps.contactWindow), queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
     profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
   });
 
@@ -318,6 +330,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       const q = deps.queue.status();
       if (q.running || q.queued > 0) return 'ai';
       if (active.includes('send')) return 'send';
+      if (deps.install.status().state === 'running') return 'install';
+      if (active.includes('browser')) return 'browser';
       return null;
     },
   }) : undefined;

@@ -61,7 +61,7 @@ export function UpdateProgress({ target, onClose }: { target: string; onClose: (
           if (!alive) return;
           // The old server may still be shutting down: only an answer after we saw it gone counts.
           if (!down) continue;
-          muteNoSession(false);
+          // Stays muted: the new server refuses this tab's old key, which must not replace the text below.
           setPhase({ kind: h.version === target ? 'done' : 'notFinished' });
           return;
         } catch {

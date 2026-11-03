@@ -31,9 +31,13 @@ export function UpdateBanner() {
 
   useEffect(() => {
     let alive = true;
+    let retry: number | undefined;
+    // The installer reports its end a little after the new app started: ask again every 2 s, for up to 3 minutes.
+    const giveUpAt = Date.now() + 3 * 60_000;
     const load = () => {
       api.getUpdates().then((v) => {
         if (!alive) return;
+        if (v.updatePending && Date.now() < giveUpAt) retry = window.setTimeout(load, 2000);
         setUpdate(v.available);
         // These come once: a later answer without them must not hide what was already shown.
         if (v.justUpdated) setNotice({ kind: 'updated', version: v.justUpdated });
@@ -42,7 +46,7 @@ export function UpdateBanner() {
     };
     load();
     const timer = window.setInterval(load, RECHECK_MS);
-    return () => { alive = false; window.clearInterval(timer); };
+    return () => { alive = false; window.clearInterval(timer); window.clearTimeout(retry); };
   }, [language, reload]);
 
   const noticeEl = notice ? (

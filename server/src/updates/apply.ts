@@ -21,7 +21,14 @@ export interface UpdateOutcomeData { justUpdated?: string; lastUpdateError?: Upd
  * `failed` / `rolledBack` → why it did not work; `running` for long → the installer was interrupted; `running` for a
  * short time is left alone (an installer may still be working on it).
  */
-export function readUpdateOutcome(file: string, logger: Logger, now: number = Date.now()): UpdateOutcome {
+export function readUpdateOutcome(file: string, logger: Logger, now: () => number = Date.now): UpdateOutcome {
+  return new UpdateOutcome(evaluateStatusFile(file, logger, now()).data, { file, logger, now });
+}
+
+interface Evaluated { data: UpdateOutcomeData; pending: boolean }
+
+/** One look at the file: a final state is returned and the file deleted; a young `running` is pending and left alone. */
+function evaluateStatusFile(file: string, logger: Logger, now: number): Evaluated {
   let raw: unknown;
   try {
     const text = fs.readFileSync(file, 'utf8');
@@ -31,7 +38,7 @@ export function readUpdateOutcome(file: string, logger: Logger, now: number = Da
       logger.warn('update_status_unreadable', { code: (err as NodeJS.ErrnoException).code ?? 'PARSE' });
       fs.rmSync(file, { force: true });
     }
-    return new UpdateOutcome({});
+    return { data: {}, pending: false };
   }
   const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const state = s.state;
@@ -45,21 +52,40 @@ export function readUpdateOutcome(file: string, logger: Logger, now: number = Da
     data = { lastUpdateError: /^rollback failed/i.test(error) ? 'rollbackFailed' : 'failed' };
     logger.warn('update_failed', { state, step: typeof s.step === 'string' ? s.step : null, error: error.slice(0, 300) });
   } else if (state === 'running') {
-    if (Number.isFinite(at) && now - at < STALE_RUNNING_MS) return new UpdateOutcome({});
+    if (Number.isFinite(at) && now - at < STALE_RUNNING_MS) return { data: {}, pending: true };
     data = { lastUpdateError: 'interrupted' };
     logger.warn('update_interrupted', { step: typeof s.step === 'string' ? s.step : null });
   }
   fs.rmSync(file, { force: true });
-  return new UpdateOutcome(data);
+  return { data, pending: false };
 }
 
-/** Held in memory; `take()` hands it out once. */
+/**
+ * What the installer reported. The installer writes `running` just before it starts the new app and `done` only after
+ * the new app answered — so the new server starts while the file still says `running`. `take()` therefore looks at the
+ * file again each time until it reaches a final state, and hands the result out once. `updatePending` tells the page
+ * to ask again soon.
+ */
 export class UpdateOutcome {
-  constructor(private data: UpdateOutcomeData) {}
+  constructor(
+    private data: UpdateOutcomeData,
+    private readonly src?: { file: string; logger: Logger; now: () => number },
+  ) {
+    this.pending = false;
+  }
 
-  take(): UpdateOutcomeData {
+  private pending: boolean;
+
+  take(): UpdateOutcomeData & { updatePending?: true } {
+    if (Object.keys(this.data).length === 0 && this.src) {
+      const r = evaluateStatusFile(this.src.file, this.src.logger, this.src.now());
+      this.data = r.data;
+      this.pending = r.pending;
+    }
     const d = this.data;
     this.data = {};
+    if (Object.keys(d).length === 0 && this.pending) return { updatePending: true };
+    this.pending = false;
     return d;
   }
 }
@@ -79,7 +105,7 @@ export function cleanOldUpdateFolders(dir: string, logger: Logger, now: number =
   }
 }
 
-export interface SpawnOptions { detached: true; stdio: 'ignore'; windowsHide: true }
+export interface SpawnOptions { detached: true; stdio: 'ignore'; windowsHide: true; cwd: string }
 
 export interface UpdateApplierDeps {
   updater: Pick<Updater, 'prepare'>;
@@ -93,12 +119,16 @@ export interface UpdateApplierDeps {
   /** Other work that must finish first; each returns its name for the sentence or null. */
   busy: () => string | null;
   /** Starts the installer (detached). Injected: tests never run anything. */
-  spawn: (file: string, args: string[], opts: SpawnOptions) => void;
+  spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<void>;
+  /** Full path of Windows PowerShell (no PATH search). */
+  powershell?: string;
   /** The server's normal shutdown path. */
   shutdown: () => void;
   pid?: number;
   logger: Logger;
 }
+
+const WINDOWS_POWERSHELL = () => path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
 
 type Step = UpdateStep | 'installing';
 
@@ -139,10 +169,18 @@ export class UpdateApplier {
       const { releaseRoot } = await this.d.updater.prepare((s) => this.set(s), new AbortController().signal);
       this.set('installing');
       const script = path.join(releaseRoot, 'installer', 'install.ps1');
-      this.d.spawn('powershell.exe', [
+      const work = path.dirname(releaseRoot);
+      try {
+        // Own folder as the working directory: never from inside the program folder the installer replaces.
+        await this.d.spawn(this.d.powershell ?? WINDOWS_POWERSHELL(), [
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script,
         '-Unattended', '-StatusFile', this.d.statusFile, '-WaitPid', String(this.d.pid ?? process.pid),
-      ], { detached: true, stdio: 'ignore', windowsHide: true });
+      ], { detached: true, stdio: 'ignore', windowsHide: true, cwd: work });
+      } catch (err) {
+        // The installer did not start: the old app keeps running, the unpacked release is not needed.
+        if (path.basename(work).startsWith('update-')) fs.rmSync(work, { recursive: true, force: true, maxRetries: 2 });
+        throw new AppError('CONFLICT', `installer did not start: ${String(err)}`, 'updateStart');
+      }
       this.d.logger.info('update_installer_started', {});
       // `activity` stays open: this server is going away and must not accept new work meanwhile.
       this.d.shutdown();

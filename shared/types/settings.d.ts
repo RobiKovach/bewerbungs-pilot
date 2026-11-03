@@ -54,6 +54,8 @@ export interface UpdatesView {
   justUpdated?: string;
   /** Set once, in the first answer after an update that did not finish; the app is the old one (0.11.0). */
   lastUpdateError?: UpdateFailure;
+  /** The installer has not reported its end yet: ask again in a moment (0.11.0). */
+  updatePending?: boolean;
 }
 /** error = an errors.reasons id (updateDownload | updateChecksum | updateInvalid | unknown). */
 export interface UpdateProgress { state: 'idle' | 'downloading' | 'verifying' | 'extracting' | 'installing' | 'failed'; error?: string }

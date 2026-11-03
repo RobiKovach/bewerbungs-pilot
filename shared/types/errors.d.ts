@@ -107,6 +107,8 @@ export type ErrorReason =
   | 'updateDownload'
   | 'updateChecksum'
   | 'updateInvalid'
+  // …the installer could not be started.
+  | 'updateStart'
   // …and starting one: already running / nothing to install / other work is still running (params.what).
   | 'updateRunning'
   | 'noUpdate'

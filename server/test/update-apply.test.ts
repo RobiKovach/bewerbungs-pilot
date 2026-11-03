@@ -35,7 +35,7 @@ function setup(over: { update?: typeof NEWER | null; outcome?: UpdateOutcome } =
     updater, spawned, statusFile,
     make: () => makeApp({
       update: over.update === undefined ? NEWER : over.update,
-      updateApply: { updater, statusFile, outcome: over.outcome ?? new UpdateOutcome({}), spawn: (file, args, opts) => { spawned.push({ file, args, opts }); } },
+      updateApply: { updater, statusFile, outcome: over.outcome ?? new UpdateOutcome({}), spawn: async (file, args, opts) => { spawned.push({ file, args, opts }); } },
     }),
   };
 }
@@ -57,10 +57,10 @@ describe('POST /api/updates/apply', { timeout: 30_000 }, () => {
     await tick();
     expect(s.spawned).toHaveLength(1);
     expect(s.spawned[0]).toEqual({
-      file: 'powershell.exe',
+      file: path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join('C:\\x\\update-1\\release', 'installer', 'install.ps1'),
         '-Unattended', '-StatusFile', s.statusFile, '-WaitPid', String(process.pid)],
-      opts: { detached: true, stdio: 'ignore', windowsHide: true },
+      opts: { detached: true, stdio: 'ignore', windowsHide: true, cwd: 'C:\\x\\update-1' },
     });
     expect(ctx.shutdownCalls()).toBe(1);
     expect((await progress(ctx)).state).toBe('installing');
@@ -75,7 +75,7 @@ describe('POST /api/updates/apply', { timeout: 30_000 }, () => {
   });
 
   it('while other work runs gives 409 busy naming it; nothing starts', async () => {
-    for (const what of ['send', 'restore']) {
+    for (const what of ['send', 'restore', 'browser']) {
       const s = setup();
       const ctx = await s.make();
       const end = ctx.activity.begin(what);
@@ -114,15 +114,26 @@ describe('POST /api/updates/apply', { timeout: 30_000 }, () => {
     expect((await apply(ctx)).statusCode).toBe(202);
   });
 
-  it('a spawn that throws leaves the old app running and reports "unknown"', async () => {
+  it('a spawn that fails to start leaves the old app running: failed/updateStart, update folder removed', async () => {
     const s = setup();
-    const ctx = await makeApp({ update: NEWER, updateApply: { updater: s.updater, statusFile: s.statusFile, outcome: new UpdateOutcome({}), spawn: () => { throw new Error('boom'); } } });
+    const ctx = await makeApp({ update: NEWER, updateApply: { updater: s.updater, statusFile: s.statusFile, outcome: new UpdateOutcome({}), spawn: async () => { throw new Error('boom'); } } });
     await apply(ctx);
     s.updater.finish({ releaseRoot: 'C:\\r' });
     await tick();
-    expect(await progress(ctx)).toEqual({ state: 'failed', error: 'unknown' });
+    expect(await progress(ctx)).toEqual({ state: 'failed', error: 'updateStart' });
     expect(ctx.shutdownCalls()).toBe(0);
     expect(ctx.activity.active()).not.toContain('update');
+  });
+
+  it('a failed start removes the unpacked update folder', async () => {
+    const s = setup();
+    const ctx = await makeApp({ update: NEWER, updateApply: { updater: s.updater, statusFile: s.statusFile, outcome: new UpdateOutcome({}), spawn: async () => { throw new Error('ENOENT'); } } });
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), 'update-'));
+    fs.mkdirSync(path.join(work, 'release'));
+    await apply(ctx);
+    s.updater.finish({ releaseRoot: path.join(work, 'release') });
+    await tick();
+    expect(fs.existsSync(work)).toBe(false);
   });
 
   it('while an update runs, sending, search, package jobs, mailbox changes and restore are refused (updateRunning)', async () => {
@@ -158,6 +169,21 @@ describe('GET /api/updates after an update', () => {
     expect(await get()).not.toHaveProperty('justUpdated');
   });
 
+  it('the real order: "running" at start, "done" later: updatePending first, then justUpdated once', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-outcome-'));
+    const file = path.join(dir, 'update-status.json');
+    const status = (state: string) => fs.writeFileSync(file, JSON.stringify({ state, step: 'starting', from: '0.10.1', to: '9.9.9', at: new Date().toISOString() }));
+    status('running');
+    const ctx = await setup({ outcome: readUpdateOutcome(file, nullLogger) }).make();
+    const get = async () => (await ctx.app.inject({ method: 'GET', url: '/api/updates', headers: H })).json();
+    expect((await get()).updatePending).toBe(true);
+    status('done');
+    const done = await get();
+    expect([done.justUpdated, done.updatePending]).toEqual(['9.9.9', undefined]);
+    expect(await get()).not.toHaveProperty('justUpdated');
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
   it('a rolled-back update is reported once as lastUpdateError', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-outcome-'));
     const file = path.join(dir, 'update-status.json');
@@ -181,34 +207,51 @@ describe('readUpdateOutcome', () => {
   const at = (msAgo: number) => new Date(NOW - msAgo).toISOString();
 
   it('no file means nothing', () => {
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({});
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({});
   });
   it('done gives justUpdated, the file is deleted, handed out once; a BOM is fine', () => {
     write({ state: 'done', step: 'starting', from: '0.10.1', to: '0.11.0', at: at(1000) }, true);
-    const o = readUpdateOutcome(file, nullLogger, NOW);
+    const o = readUpdateOutcome(file, nullLogger, () => NOW);
     expect(fs.existsSync(file)).toBe(false);
     expect(o.take()).toEqual({ justUpdated: '0.11.0' });
     expect(o.take()).toEqual({});
   });
   it('failed and rolledBack give failed; "rollback failed" gives rollbackFailed', () => {
     write({ state: 'failed', step: 'installing', error: 'copy failed', at: at(1000) });
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({ lastUpdateError: 'failed' });
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({ lastUpdateError: 'failed' });
     write({ state: 'rolledBack', step: 'installing', error: 'npm', at: at(1000) });
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({ lastUpdateError: 'failed' });
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({ lastUpdateError: 'failed' });
     write({ state: 'failed', step: 'installing', error: 'rollback failed: copy', at: at(1000) });
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({ lastUpdateError: 'rollbackFailed' });
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({ lastUpdateError: 'rollbackFailed' });
   });
   it('running for over 10 minutes gives interrupted (file deleted); younger is ignored and left', () => {
     write({ state: 'running', step: 'installing', at: at(11 * 60_000) });
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({ lastUpdateError: 'interrupted' });
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({ lastUpdateError: 'interrupted' });
     expect(fs.existsSync(file)).toBe(false);
     write({ state: 'running', step: 'installing', at: at(60_000) });
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({});
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({ updatePending: true });
     expect(fs.existsSync(file)).toBe(true);
+  });
+  it('the real order: running at start, later done: the next take reports it once', () => {
+    write({ state: 'running', step: 'starting', from: '0.10.1', to: '0.11.0', at: at(1000) });
+    const o = readUpdateOutcome(file, nullLogger, () => NOW);
+    expect(o.take()).toEqual({ updatePending: true });
+    expect(o.take()).toEqual({ updatePending: true });
+    write({ state: 'done', step: 'starting', from: '0.10.1', to: '0.11.0', at: at(500) });
+    expect(o.take()).toEqual({ justUpdated: '0.11.0' });
+    expect(fs.existsSync(file)).toBe(false);
+    expect(o.take()).toEqual({});
+  });
+  it('no file at start, a rolledBack file appears later: reported once', () => {
+    const o = readUpdateOutcome(file, nullLogger, () => NOW);
+    expect(o.take()).toEqual({});
+    write({ state: 'rolledBack', step: 'starting', error: 'x', at: at(500) });
+    expect(o.take()).toEqual({ lastUpdateError: 'failed' });
+    expect(o.take()).toEqual({});
   });
   it('a garbage file is removed and ignored', () => {
     fs.writeFileSync(file, '{nope');
-    expect(readUpdateOutcome(file, nullLogger, NOW).take()).toEqual({});
+    expect(readUpdateOutcome(file, nullLogger, () => NOW).take()).toEqual({});
     expect(fs.existsSync(file)).toBe(false);
   });
 });

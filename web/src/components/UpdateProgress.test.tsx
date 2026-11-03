@@ -156,6 +156,24 @@ describe('UpdateBanner — Update now', () => {
     expect(screen.getByRole('button', { name: 'Update now' })).toBeEnabled();
   });
 
+  it('while the installer has not reported its end (updatePending) the page asks again every 2 s and then says "Updated"', async () => {
+    let asked = 0;
+    const f = vi.fn(async (url: string) => {
+      if (url !== '/api/updates') return json(404, { error: { code: 'NOT_FOUND' } });
+      asked++;
+      return json(200, asked < 3 ? { current: '0.11.0', available: null, updatePending: true } : { current: '0.11.0', available: null, justUpdated: '0.11.0' });
+    });
+    vi.stubGlobal('fetch', f);
+    render(<UpdateBanner />);
+    await advance(100);
+    expect(screen.queryByText('Updated to version 0.11.0.')).not.toBeInTheDocument();
+    await advance(2000);
+    await advance(2000);
+    expect(screen.getByText('Updated to version 0.11.0.')).toBeInTheDocument();
+    await advance(10_000);
+    expect(asked).toBe(3);
+  });
+
   it('the first answer after an update says so; a failed one says why', async () => {
     server({ updates: { current: '0.11.0', available: null, justUpdated: '0.11.0' }, progress: () => ({ state: 'idle' }), health: () => ({ version: '0.11.0' }) });
     const first = render(<UpdateBanner />);
