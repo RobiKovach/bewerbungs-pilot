@@ -29,8 +29,8 @@ function put(file: string, text: string) {
   fs.writeFileSync(file, text);
 }
 
-function fixture(): Fixture {
-  const root = tempRoot();
+function fixture(dirName = 'bp оновлення-'): Fixture {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), dirName));
   const app = path.join(root, 'Programs', 'BewerbungsPilot');
   const release = path.join(root, 'extracted', 'release');
   const data = path.join(root, 'BewerbungsPilot');
@@ -55,6 +55,8 @@ interface RunOptions {
   waitPid?: number;
   waitSec?: number;
   noReadHost?: boolean;
+  prelude?: string;        // extra PowerShell run before the update (e.g. to hold a file open)
+  findNodeThrows?: boolean;
 }
 
 function runUpdate(fx: Fixture, o: RunOptions = {}) {
@@ -62,8 +64,9 @@ function runUpdate(fx: Fixture, o: RunOptions = {}) {
   const probe = o.probe === null ? '$null' : `'${o.probe ?? '2.0.0'}'`;
   const script = [
     o.noReadHost === false ? '' : `function Read-Host { throw 'Read-Host must not be called in unattended mode' };`,
+    o.prelude ?? '',
     `$log = ${psString(fx.log)};`,
-    `$findNode = { ${node} };`,
+    `$findNode = { ${o.findNodeThrows ? "throw 'boom'" : node} };`,
     // The fake npm records what the world looked like while the new app was being installed.
     `$npm = { param($dir) $st = Get-Content -Raw -LiteralPath ${psString(fx.status)} | ConvertFrom-Json; ` +
       `Add-Content -Encoding UTF8 -LiteralPath $log -Value ("npm dir=" + $dir + " previous=" + (Test-Path -LiteralPath ${psString(fx.previous)}) + " state=" + $st.state + " step=" + $st.step); ${o.npmExit ?? 0} };`,
@@ -124,7 +127,7 @@ describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
     expect(r.status.error).toMatch(/node/i);
     expect(fs.existsSync(path.join(fx.app, 'old.txt'))).toBe(true);
     expect(fs.existsSync(fx.previous)).toBe(false);
-    expect(r.log).toEqual([]);
+    expect(r.log).toEqual(["start 1.0.0"]);
   }, 90_000);
 
   it('a failed backup stops the update (state failed, step backup) and leaves the app folder untouched', () => {
@@ -137,7 +140,7 @@ describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
     expect(fs.existsSync(path.join(fx.app, 'old.txt'))).toBe(true);
     expect(fs.existsSync(path.join(fx.app, 'new.txt'))).toBe(false);
     expect(fs.existsSync(fx.previous)).toBe(false);
-    expect(r.log).toEqual([]);
+    expect(r.log).toEqual(["start 1.0.0"]);
   }, 90_000);
 
   it('npm ci failing rolls back: old app back in place, started again, state rolledBack with the reason', () => {
@@ -223,6 +226,80 @@ describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
       child.kill();
     }
   }, 90_000);
+
+  it('an unexpected exception still ends in a final state (failed) and starts the old app again', () => {
+    const fx = fixture();
+    const r = runUpdate(fx, { findNodeThrows: true });
+    expect(r.code).toBe(1);
+    expect(r.status.state).toBe('failed');
+    expect(r.status.error).toMatch(/^unexpected: .*boom/);
+    expect(r.log).toEqual(['start 1.0.0']);
+    expect(fs.existsSync(path.join(fx.app, 'old.txt'))).toBe(true);
+  }, 90_000);
+
+  it('Write-BpStatus tries again when the file is briefly locked', () => {
+    const dir = tempRoot();
+    const file = path.join(dir, 'status.json');
+    fs.writeFileSync(file, '{}');
+    ps(`$global:lk = [IO.File]::Open(${psString(file)}, 'Open', 'Read', 'None'); ` +
+      `function Start-Sleep { param($Milliseconds) if ($global:lk) { $global:lk.Dispose(); $global:lk = $null } }; ` +
+      `Write-BpStatus -File ${psString(file)} -State done -Step starting -From 1.0.0 -To 2.0.0`);
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ state: 'done' });
+  }, 60_000);
+
+  it('moving the old app aside tries again when a file in it is briefly held', () => {
+    const fx = fixture();
+    const r = runUpdate(fx, {
+      prelude: `$global:lk = [IO.File]::Open(${psString(path.join(fx.app, 'old.txt'))}, 'Open', 'Read', 'None'); ` +
+        `function Start-Sleep { param($Milliseconds) Add-Content -LiteralPath $log -Value 'slept'; if ($global:lk) { $global:lk.Dispose(); $global:lk = $null } };`,
+    });
+    expect(r.code).toBe(0);
+    expect(r.log).toContain('slept');
+    expect(fs.existsSync(path.join(fx.app, 'new.txt'))).toBe(true);
+  }, 90_000);
+
+  it('works in a folder whose name contains [ ] (literal paths everywhere)', () => {
+    const fx = fixture('bp [x] оновлення-');
+    const r = runUpdate(fx);
+    expect(r.code).toBe(0);
+    expect(r.status.state).toBe('done');
+    expect(fs.existsSync(path.join(fx.app, 'new.txt'))).toBe(true);
+    expect(fs.existsSync(path.join(fx.app, 'installer', 'node-path.txt'))).toBe(true);
+  }, 90_000);
+
+  describe('leftover .previous next to a broken app folder is resolved by the last status', () => {
+    const prepare = (status: object | null) => {
+      const fx = fixture();
+      fs.renameSync(fx.app, fx.previous); // the good old app
+      put(path.join(fx.app, 'junk.txt'), 'half-copied'); // the broken new one: no package.json
+      if (status) put(fx.status, JSON.stringify(status));
+      return fx;
+    };
+    it.each([
+      ['running installing', { state: 'running', step: 'installing' }],
+      ['running starting', { state: 'running', step: 'starting' }],
+      ['failed after a failed rollback', { state: 'failed', step: 'installing', error: 'rollback failed: busy (update problem: x)' }],
+    ])('restores .previous when the status is %s', (_n, status) => {
+      const fx = prepare(status);
+      const r = runUpdate(fx);
+      expect(r.code).toBe(0);
+      expect(r.status).toMatchObject({ state: 'done', from: '1.0.0' }); // 1.0.0 = read from the restored copy
+      expect(fs.existsSync(path.join(fx.app, 'junk.txt'))).toBe(false);
+      expect(fs.existsSync(path.join(fx.app, 'new.txt'))).toBe(true);
+      expect(fs.existsSync(fx.previous)).toBe(false);
+    }, 90_000);
+
+    it.each([
+      ['done', { state: 'done', step: 'starting' }],
+      ['no status file', null],
+    ])('removes .previous when the status is %s', (_n, status) => {
+      const fx = prepare(status);
+      const r = runUpdate(fx);
+      expect(r.code).toBe(0);
+      expect(r.status.from).toBe('0.0.0'); // the app folder (junk) was kept, .previous deleted
+      expect(fs.existsSync(fx.previous)).toBe(false);
+    }, 90_000);
+  });
 
   it('Write-BpStatus replaces an existing file atomically as UTF-8 without BOM', () => {
     const dir = tempRoot();

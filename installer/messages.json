@@ -20,7 +20,8 @@
     "updateRunning": "Updating BewerbungsPilot. This takes a minute; the app opens again by itself.",
     "updateDone": "The update is installed. BewerbungsPilot is starting.",
     "updateRolledBack": "The update did not work. Your previous version has been restored and is starting again. Your data was not changed.",
-    "updateFailed": "The update could not be installed. Nothing was changed."
+    "updateFailed": "The update could not be installed. Nothing was changed.",
+    "updateRollbackFailed": "The update failed and the previous version could not be restored automatically. Your data is safe (a backup was saved). Please download BewerbungsPilot again from https://github.com/RobiKovach/bewerbungs-pilot/releases/latest and run install.bat."
   },
   "uk": {
     "title": "Інсталятор BewerbungsPilot",
@@ -43,7 +44,8 @@
     "updateRunning": "Оновлюємо BewerbungsPilot. Це займе хвилину; програма відкриється знову сама.",
     "updateDone": "Оновлення встановлено. BewerbungsPilot запускається.",
     "updateRolledBack": "Оновлення не вдалося. Попередню версію відновлено, вона знову запускається. Твої дані не змінились.",
-    "updateFailed": "Не вдалося встановити оновлення. Нічого не змінено."
+    "updateFailed": "Не вдалося встановити оновлення. Нічого не змінено.",
+    "updateRollbackFailed": "Оновлення не вдалося, а попередню версію не вдалося відновити автоматично. Твої дані в безпеці (резервну копію збережено). Завантаж BewerbungsPilot ще раз з https://github.com/RobiKovach/bewerbungs-pilot/releases/latest і запусти install.bat."
   },
   "de": {
     "title": "BewerbungsPilot-Installer",
@@ -66,7 +68,8 @@
     "updateRunning": "BewerbungsPilot wird aktualisiert. Das dauert eine Minute; die App öffnet sich danach von selbst wieder.",
     "updateDone": "Das Update ist installiert. BewerbungsPilot startet.",
     "updateRolledBack": "Das Update hat nicht funktioniert. Die vorherige Version wurde wiederhergestellt und startet wieder. Deine Daten wurden nicht verändert.",
-    "updateFailed": "Das Update konnte nicht installiert werden. Es wurde nichts verändert."
+    "updateFailed": "Das Update konnte nicht installiert werden. Es wurde nichts verändert.",
+    "updateRollbackFailed": "Das Update ist fehlgeschlagen und die vorherige Version konnte nicht automatisch wiederhergestellt werden. Deine Daten sind sicher (eine Sicherung wurde gespeichert). Lade BewerbungsPilot bitte erneut von https://github.com/RobiKovach/bewerbungs-pilot/releases/latest herunter und starte install.bat."
   },
   "ru": {
     "title": "Установщик BewerbungsPilot",
@@ -89,7 +92,8 @@
     "updateRunning": "Обновляем BewerbungsPilot. Это займёт минуту; программа откроется снова сама.",
     "updateDone": "Обновление установлено. BewerbungsPilot запускается.",
     "updateRolledBack": "Обновление не удалось. Предыдущая версия восстановлена и снова запускается. Твои данные не изменились.",
-    "updateFailed": "Не удалось установить обновление. Ничего не изменено."
+    "updateFailed": "Не удалось установить обновление. Ничего не изменено.",
+    "updateRollbackFailed": "Обновление не удалось, а предыдущую версию не получилось восстановить автоматически. Твои данные в безопасности (резервная копия сохранена). Скачай BewerbungsPilot заново с https://github.com/RobiKovach/bewerbungs-pilot/releases/latest и запусти install.bat."
   },
   "pl": {
     "title": "Instalator BewerbungsPilot",
@@ -112,7 +116,8 @@
     "updateRunning": "Aktualizujemy BewerbungsPilot. To potrwa minutę; aplikacja otworzy się ponownie sama.",
     "updateDone": "Aktualizacja jest zainstalowana. BewerbungsPilot się uruchamia.",
     "updateRolledBack": "Aktualizacja się nie udała. Poprzednia wersja została przywrócona i uruchamia się ponownie. Twoje dane nie zostały zmienione.",
-    "updateFailed": "Nie udało się zainstalować aktualizacji. Nic nie zostało zmienione."
+    "updateFailed": "Nie udało się zainstalować aktualizacji. Nic nie zostało zmienione.",
+    "updateRollbackFailed": "Aktualizacja się nie udała, a poprzedniej wersji nie udało się przywrócić automatycznie. Twoje dane są bezpieczne (kopia zapasowa została zapisana). Pobierz BewerbungsPilot ponownie z https://github.com/RobiKovach/bewerbungs-pilot/releases/latest i uruchom install.bat."
   },
   "ro": {
     "title": "Program de instalare BewerbungsPilot",
@@ -135,6 +140,7 @@
     "updateRunning": "Actualizăm BewerbungsPilot. Durează un minut; aplicația se deschide din nou singură.",
     "updateDone": "Actualizarea este instalată. BewerbungsPilot pornește.",
     "updateRolledBack": "Actualizarea nu a funcționat. Versiunea anterioară a fost restaurată și pornește din nou. Datele tale nu au fost modificate.",
-    "updateFailed": "Actualizarea nu a putut fi instalată. Nu s-a modificat nimic."
+    "updateFailed": "Actualizarea nu a putut fi instalată. Nu s-a modificat nimic.",
+    "updateRollbackFailed": "Actualizarea a eșuat, iar versiunea anterioară nu a putut fi restaurată automat. Datele tale sunt în siguranță (o copie de rezervă a fost salvată). Descarcă din nou BewerbungsPilot de la https://github.com/RobiKovach/bewerbungs-pilot/releases/latest și rulează install.bat."
   }
 }

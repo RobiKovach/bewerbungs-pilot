@@ -234,6 +234,12 @@ function Remove-OldBpBackups([string]$BackupDir, [int]$Keep = 3) {
 }
 
 # --- Unattended update (0.11.0, "update now" button): no questions, rollback, status file for the app ---------------
+function Invoke-BpRetry([scriptblock]$Action, [int]$Tries, [int]$DelayMs) {
+  # Files are briefly held by antivirus scanners, Explorer windows or child processes: try again before giving up.
+  for ($i = 1; $i -le $Tries; $i++) {
+    try { & $Action | Out-Null; return } catch { if ($i -eq $Tries) { throw }; Start-Sleep -Milliseconds $DelayMs }
+  }
+}
 function Write-BpStatus([string]$File, [string]$State, [string]$Step, [string]$From, [string]$To, [string]$Err) {
   # The running app reads this file. Written next to the target and swapped in, so it never sees half a file;
   # UTF-8 without BOM, which JSON.parse in Node needs.
@@ -245,9 +251,12 @@ function Write-BpStatus([string]$File, [string]$State, [string]$Step, [string]$F
   $dir = Split-Path -Parent $File
   if ($dir -and -not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
   $tmp = "$File.tmp"
-  [IO.File]::WriteAllText($tmp, ($status | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
-  # .NET Framework's File.Move cannot overwrite, so an existing file is swapped with Replace.
-  if (Test-Path -LiteralPath $File) { [IO.File]::Replace($tmp, $File, [NullString]::Value) } else { [IO.File]::Move($tmp, $File) }
+  $json = $status | ConvertTo-Json
+  Invoke-BpRetry -Tries 5 -DelayMs 200 -Action {
+    [IO.File]::WriteAllText($tmp, $json, (New-Object Text.UTF8Encoding($false)))
+    # .NET Framework's File.Move cannot overwrite, so an existing file is swapped with Replace.
+    if (Test-Path -LiteralPath $File) { [IO.File]::Replace($tmp, $File, [NullString]::Value) } else { [IO.File]::Move($tmp, $File) }
+  }
 }
 function Get-BpHealthVersion([int]$Port) {
   # The version the server on this port reports at its open health route, or $null when nothing sensible answers.
@@ -257,12 +266,21 @@ function Get-BpHealthVersion([int]$Port) {
   } catch { }
   return $null
 }
+$BpNpmTail = ''
 function Invoke-BpNpmCi([string]$Dir) {
+  # The exit code; the last lines of npm's output are kept in $BpNpmTail for the status file.
+  $script:BpNpmTail = ''
   Push-Location -LiteralPath $Dir
+  $saved = $ErrorActionPreference
   try {
-    & npm ci --omit=dev --no-audit --no-fund | Out-Null
-    return $LASTEXITCODE
-  } finally { Pop-Location }
+    # npm writes progress to stderr; with 'Stop' PowerShell 5.1 would turn that into an exception.
+    $ErrorActionPreference = 'Continue'
+    $lines = @(& npm ci --omit=dev --no-audit --no-fund 2>&1 | ForEach-Object { "$_" })
+    $code = $LASTEXITCODE
+    $script:BpNpmTail = (($lines | Select-Object -Last 4) -join ' | ')
+    if ($script:BpNpmTail.Length -gt 400) { $script:BpNpmTail = $script:BpNpmTail.Substring(0, 400) }
+    return $code
+  } finally { $ErrorActionPreference = $saved; Pop-Location }
 }
 function Start-BpApp([string]$Dir) {
   Start-Process -FilePath $Wscript -ArgumentList ('"' + (Join-Path $Dir 'installer\launch.vbs') + '"')
@@ -279,10 +297,22 @@ function New-BpShortcuts([string]$Dir) {
     $lnk.Save()
   }
 }
+function Find-BpUpdateNode([string]$AppDir) {
+  # The node the installed app actually runs on comes first (launch.vbs reads the same file), then the usual search.
+  try {
+    $file = Join-Path $AppDir 'installer\node-path.txt'
+    if (Test-Path -LiteralPath $file) {
+      $exe = (Get-Content -Raw -Encoding Unicode -LiteralPath $file).Trim()
+      if ($exe -and (Test-Path -LiteralPath $exe) -and (Test-MinVersion (& $exe -p "process.versions.node"))) { return $exe }
+    }
+  } catch { }
+  return Find-Node
+}
 function Wait-BpProcessExit([int]$ProcessId, [int]$Seconds) {
   $deadline = (Get-Date).AddSeconds($Seconds)
   while ((Get-Process -Id $ProcessId -ErrorAction SilentlyContinue) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
 }
+$BpStopTarget = 0
 function Stop-BpOldApp([string]$DataDir, [int]$WaitPid, [int]$WaitSec) {
   # $true when the old server is gone (or was never running). A process we cannot stop makes the update fail.
   $info = $null
@@ -302,6 +332,7 @@ function Stop-BpOldApp([string]$DataDir, [int]$WaitPid, [int]$WaitSec) {
     $p = Get-Process -Id ([int]$info.pid) -ErrorAction SilentlyContinue
     if ($p -and $p.ProcessName -eq 'node') { $target = [int]$info.pid }
   }
+  $script:BpStopTarget = $target
   if ($target -le 0) { return $true }
   Wait-BpProcessExit $target $WaitSec
   $proc = Get-Process -Id $target -ErrorAction SilentlyContinue
@@ -311,27 +342,37 @@ function Stop-BpOldApp([string]$DataDir, [int]$WaitPid, [int]$WaitSec) {
   }
   return -not (Get-Process -Id $target -ErrorAction SilentlyContinue)
 }
-function Stop-BpNewServer([string]$DataDir) {
-  # Rollback: a half-started new server must not keep the folder we are about to delete locked.
+function Stop-BpNewServer([string]$DataDir, [string]$AppDir) {
+  # Rollback: a half-started new server must not keep the folder we are about to delete locked (launch.vbs
+  # runs node with the app folder as its current directory). Found by server.json and by its command line,
+  # because a server that has not written server.json yet is still holding the folder.
+  $pids = New-Object System.Collections.Generic.List[int]
   try {
     $info = Get-Content -Raw -LiteralPath (Join-Path $DataDir 'server.json') -ErrorAction Stop | ConvertFrom-Json
     if ($info.pid -and [int]$info.pid -gt 0) {
       $p = Get-Process -Id ([int]$info.pid) -ErrorAction SilentlyContinue
-      if ($p -and $p.ProcessName -eq 'node') {
-        Stop-Process -Id ([int]$info.pid) -Force -ErrorAction SilentlyContinue
-        Wait-BpProcessExit ([int]$info.pid) 5
-      }
+      if ($p -and $p.ProcessName -eq 'node') { $pids.Add([int]$info.pid) }
     }
   } catch { }
+  try {
+    $needle = (Join-Path $AppDir 'server\dist\index.js').ToLowerInvariant()
+    foreach ($proc in @(Get-CimInstance Win32_Process -Filter "Name='node.exe'")) {
+      if ($proc.CommandLine -and $proc.CommandLine.ToLowerInvariant().Contains($needle) -and -not $pids.Contains([int]$proc.ProcessId)) { $pids.Add([int]$proc.ProcessId) }
+    }
+  } catch { }
+  foreach ($id in $pids) {
+    Stop-Process -Id $id -Force -ErrorAction SilentlyContinue
+    Wait-BpProcessExit $id 5
+  }
 }
 function Invoke-BpUnattendedUpdate {
-  # Returns the exit code: 0 done, 1 failed (nothing changed), 2 rolled back (or the rollback itself failed).
+  # Returns the exit code: 0 done, 1 failed (the old app was started again), 2 rolled back (or the rollback itself failed).
   # The scriptblocks are the parts that touch the outside world; tests replace them.
   param(
     [string]$AppDir, [string]$DataDir, [string]$ReleaseRoot, [string]$StatusFile,
     [int]$WaitPid = 0, [int]$WaitSec = 30, [int]$HealthTimeoutSec = 60, [int]$PollMs = 500,
     [string]$BackupDir = '',
-    [scriptblock]$FindNode = { Find-Node },
+    [scriptblock]$FindNode = { Find-BpUpdateNode $AppDir },
     [scriptblock]$RunNpmCi = { param($dir) Invoke-BpNpmCi $dir },
     [scriptblock]$StartApp = { param($dir) Start-BpApp $dir },
     [scriptblock]$ProbeHealth = { param($port) Get-BpHealthVersion $port },
@@ -339,129 +380,153 @@ function Invoke-BpUnattendedUpdate {
   )
   $previous = "$AppDir.previous"
   $from = '0.0.0'
-  $to = Get-InstalledVersion $ReleaseRoot
+  $to = '0.0.0'
   $step = 'stopping'
   $report = { param($state, $err) Write-BpStatus -File $StatusFile -State $state -Step $step -From $from -To $to -Err $err }
+  # The old app is stopped by now. After a failure that left it intact it must run again: the app that started
+  # this installer has exited, so nobody else will.
+  $restartOld = { try { if (Test-Path -LiteralPath $AppDir) { & $StartApp $AppDir | Out-Null } } catch { } }
+  $fail = { param($why) & $report 'failed' $why; Say 'updateFailed'; & $restartOld }
 
-  # Leftovers of an interrupted update: the old app is the one to keep.
   try {
-    if (-not (Test-Path -LiteralPath $AppDir) -and (Test-Path -LiteralPath $previous)) {
-      Move-Item -LiteralPath $previous -Destination $AppDir
-    } elseif ((Test-Path -LiteralPath $AppDir) -and (Test-Path -LiteralPath $previous)) {
-      Remove-Item -LiteralPath $previous -Recurse -Force
-    }
-  } catch {
-    $from = Get-InstalledVersion $AppDir
-    & $report 'failed' "could not clean up a previous update: $($_.Exception.Message)"
-    Say 'updateFailed'
-    return 1
-  }
-  $from = Get-InstalledVersion $AppDir
-  & $report 'running' $null
-  Say 'updateRunning'
+    $to = Get-InstalledVersion $ReleaseRoot
 
-  if (-not (Test-Path -LiteralPath (Join-Path $ReleaseRoot 'server\dist\index.js'))) {
-    & $report 'failed' 'the release folder holds no built app (server\dist\index.js)'
-    Say 'updateFailed'
-    return 1
-  }
-  $nodeExe = & $FindNode
-  if (-not $nodeExe) {
-    & $report 'failed' 'Node.js 22.12 or newer was not found (unattended mode does not download it)'
-    Say 'updateFailed'
-    return 1
-  }
+    # What the last (interrupted) run left in the status file decides which copy is the good one.
+    $prior = $null
+    try { $prior = Get-Content -Raw -Encoding UTF8 -LiteralPath $StatusFile -ErrorAction Stop | ConvertFrom-Json } catch { }
 
-  # 1. Stop the old app.
-  if (-not (Stop-BpOldApp -DataDir $DataDir -WaitPid $WaitPid -WaitSec $WaitSec)) {
-    & $report 'failed' "the running app (pid $WaitPid) did not stop"
-    Say 'updateFailed'
-    return 1
-  }
-
-  # 2. Backup of the person's data. No backup, no update.
-  $step = 'backup'
-  & $report 'running' $null
-  if (Test-Path -LiteralPath $DataDir) {
+    # Leftovers of an interrupted update.
     try {
-      if (-not $BackupDir) { $BackupDir = Get-BpBackupDir -DataDir $DataDir -Documents ([Environment]::GetFolderPath('MyDocuments')) }
-      New-BpBackup -DataDir $DataDir -BackupDir $BackupDir -AppVersion $from | Out-Null
+      if (-not (Test-Path -LiteralPath $AppDir) -and (Test-Path -LiteralPath $previous)) {
+        Move-Item -LiteralPath $previous -Destination $AppDir
+      } elseif ((Test-Path -LiteralPath $AppDir) -and (Test-Path -LiteralPath $previous)) {
+        $interrupted = $prior -and (
+          ($prior.state -eq 'running' -and ($prior.step -eq 'installing' -or $prior.step -eq 'starting')) -or
+          ($prior.state -eq 'failed' -and ([string]$prior.error).StartsWith('rollback failed')))
+        if ($interrupted) {
+          # The new app is half-installed or broken: the old one in .previous is the good copy.
+          Invoke-BpRetry -Tries 6 -DelayMs 500 -Action { Remove-Item -LiteralPath $AppDir -Recurse -Force -ErrorAction Stop }
+          Move-Item -LiteralPath $previous -Destination $AppDir
+        } else {
+          Remove-Item -LiteralPath $previous -Recurse -Force
+        }
+      }
     } catch {
-      & $report 'failed' "backup failed: $($_.Exception.Message)"
+      $from = Get-InstalledVersion $AppDir
+      & $fail "could not clean up a previous update: $($_.Exception.Message)"
+      return 1
+    }
+    $from = Get-InstalledVersion $AppDir
+    & $report 'running' $null
+    Say 'updateRunning'
+
+    # 1. Stop the old app.
+    if (-not (Stop-BpOldApp -DataDir $DataDir -WaitPid $WaitPid -WaitSec $WaitSec)) {
+      & $report 'failed' "the running app (pid $BpStopTarget) did not stop"
       Say 'updateFailed'
       return 1
     }
-    try { Remove-OldBpBackups -BackupDir $BackupDir -Keep 3 } catch { }
-  }
 
-  # 3. Install next to the old app, which is only renamed until the new one answers.
-  $step = 'installing'
-  & $report 'running' $null
-  $hadApp = Test-Path -LiteralPath $AppDir
-  try {
-    if ($hadApp) { Move-Item -LiteralPath $AppDir -Destination $previous }
+    if (-not (Test-Path -LiteralPath (Join-Path $ReleaseRoot 'server\dist\index.js'))) {
+      & $fail 'the release folder holds no built app (server\dist\index.js)'
+      return 1
+    }
+    $nodeExe = & $FindNode
+    if (-not $nodeExe) {
+      & $fail 'Node.js 22.12 or newer was not found (unattended mode does not download it)'
+      return 1
+    }
+
+    # 2. Backup of the person's data. No backup, no update.
+    $step = 'backup'
+    & $report 'running' $null
+    if (Test-Path -LiteralPath $DataDir) {
+      try {
+        if (-not $BackupDir) { $BackupDir = Get-BpBackupDir -DataDir $DataDir -Documents ([Environment]::GetFolderPath('MyDocuments')) }
+        New-BpBackup -DataDir $DataDir -BackupDir $BackupDir -AppVersion $from | Out-Null
+      } catch {
+        & $fail "backup failed: $($_.Exception.Message)"
+        return 1
+      }
+      try { Remove-OldBpBackups -BackupDir $BackupDir -Keep 3 } catch { }
+    }
+
+    # 3. Install next to the old app, which is only renamed until the new one answers.
+    $step = 'installing'
+    & $report 'running' $null
+    $hadApp = Test-Path -LiteralPath $AppDir
+    try {
+      if ($hadApp) { Invoke-BpRetry -Tries 10 -DelayMs 500 -Action { Move-Item -LiteralPath $AppDir -Destination $previous -ErrorAction Stop } }
+    } catch {
+      & $fail "could not move the old app aside: $($_.Exception.Message)"
+      return 1
+    }
+
+    $problem = $null
+    try {
+      New-Item -ItemType Directory -Force $AppDir | Out-Null
+      # Literal paths: a user name with [ ] would make a wildcard copy match nothing.
+      Get-ChildItem -LiteralPath $ReleaseRoot -Force | Copy-Item -Destination $AppDir -Recurse -Force
+      $npmExit = & $RunNpmCi $AppDir
+      if ($npmExit -ne 0) { throw "npm ci exit code $npmExit $BpNpmTail".Trim() }
+      # UTF-16 so launch.vbs can read paths with non-Latin letters.
+      Set-Content -LiteralPath (Join-Path $AppDir 'installer\node-path.txt') -Value $nodeExe -Encoding Unicode
+      # Shortcuts point to the same path as before: failing to write them is no reason to undo the update.
+      try { & $CreateShortcuts $AppDir | Out-Null } catch { }
+
+      # 4. Start it and wait until it really answers with the new version.
+      $step = 'starting'
+      & $report 'running' $null
+      # An old server.json would name the old port and pid.
+      Remove-Item -LiteralPath (Join-Path $DataDir 'server.json') -Force -ErrorAction SilentlyContinue
+      & $StartApp $AppDir | Out-Null
+      $answered = $false
+      $deadline = (Get-Date).AddSeconds($HealthTimeoutSec)
+      do {
+        try {
+          $info = Get-Content -Raw -LiteralPath (Join-Path $DataDir 'server.json') -ErrorAction Stop | ConvertFrom-Json
+          if ($info.port) { $answered = ([string](& $ProbeHealth ([int]$info.port)) -eq $to) }
+        } catch { }
+        if (-not $answered) { Start-Sleep -Milliseconds $PollMs }
+      } while (-not $answered -and (Get-Date) -lt $deadline)
+      if (-not $answered) { throw "the new app did not answer /api/health with version $to within $HealthTimeoutSec s" }
+    } catch {
+      $problem = $_.Exception.Message
+    }
+
+    if (-not $problem) {
+      if ($hadApp) { try { Remove-Item -LiteralPath $previous -Recurse -Force } catch { } }   # a leftover is cleaned at the next start
+      # The update is done; a status file that cannot be written must not turn that into a failure.
+      try { & $report 'done' $null } catch { }
+      Say 'updateDone'
+      return 0
+    }
+
+    # Rollback: the old app comes back exactly as it was.
+    try {
+      Stop-BpNewServer $DataDir $AppDir
+      if (Test-Path -LiteralPath $AppDir) {
+        Invoke-BpRetry -Tries 6 -DelayMs 500 -Action { Remove-Item -LiteralPath $AppDir -Recurse -Force -ErrorAction Stop }
+      }
+      if ($hadApp) { Move-Item -LiteralPath $previous -Destination $AppDir }
+      Remove-Item -LiteralPath (Join-Path $DataDir 'server.json') -Force -ErrorAction SilentlyContinue
+      if ($hadApp) { & $StartApp $AppDir | Out-Null }
+    } catch {
+      # "rollback failed" is what the next run looks for to restore .previous.
+      try { & $report 'failed' "rollback failed: $($_.Exception.Message) (update problem: $problem)" } catch { }
+      Say 'updateRollbackFailed'
+      return 2
+    }
+    try { & $report 'rolledBack' $problem } catch { }
+    Say 'updateRolledBack'
+    return 2
   } catch {
-    & $report 'failed' "could not move the old app aside: $($_.Exception.Message)"
+    # Anything unforeseen: the status must still end in a final state, and the old app should run again.
+    try { & $report 'failed' "unexpected: $($_.Exception.Message)" } catch { }
     Say 'updateFailed'
+    & $restartOld
     return 1
   }
-
-  $problem = $null
-  try {
-    New-Item -ItemType Directory -Force $AppDir | Out-Null
-    Copy-Item (Join-Path $ReleaseRoot '*') $AppDir -Recurse -Force
-    $npmExit = & $RunNpmCi $AppDir
-    if ($npmExit -ne 0) { throw "npm ci exit code $npmExit" }
-    # UTF-16 so launch.vbs can read paths with non-Latin letters.
-    Set-Content -Path (Join-Path $AppDir 'installer\node-path.txt') -Value $nodeExe -Encoding Unicode
-    & $CreateShortcuts $AppDir | Out-Null
-
-    # 4. Start it and wait until it really answers with the new version.
-    $step = 'starting'
-    & $report 'running' $null
-    # An old server.json would name the old port and pid.
-    Remove-Item -LiteralPath (Join-Path $DataDir 'server.json') -Force -ErrorAction SilentlyContinue
-    & $StartApp $AppDir | Out-Null
-    $answered = $false
-    $deadline = (Get-Date).AddSeconds($HealthTimeoutSec)
-    do {
-      try {
-        $info = Get-Content -Raw -LiteralPath (Join-Path $DataDir 'server.json') -ErrorAction Stop | ConvertFrom-Json
-        if ($info.port) { $answered = ([string](& $ProbeHealth ([int]$info.port)) -eq $to) }
-      } catch { }
-      if (-not $answered) { Start-Sleep -Milliseconds $PollMs }
-    } while (-not $answered -and (Get-Date) -lt $deadline)
-    if (-not $answered) { throw "the new app did not answer /api/health with version $to within $HealthTimeoutSec s" }
-  } catch {
-    $problem = $_.Exception.Message
-  }
-
-  if (-not $problem) {
-    if ($hadApp) { try { Remove-Item -LiteralPath $previous -Recurse -Force } catch { } }   # a leftover is cleaned at the next start
-    & $report 'done' $null
-    Say 'updateDone'
-    return 0
-  }
-
-  # Rollback: the old app comes back exactly as it was.
-  try {
-    Stop-BpNewServer $DataDir
-    if (Test-Path -LiteralPath $AppDir) {
-      for ($i = 0; $i -lt 6; $i++) {
-        try { Remove-Item -LiteralPath $AppDir -Recurse -Force -ErrorAction Stop; break } catch { if ($i -eq 5) { throw }; Start-Sleep -Milliseconds 500 }
-      }
-    }
-    if ($hadApp) { Move-Item -LiteralPath $previous -Destination $AppDir }
-    Remove-Item -LiteralPath (Join-Path $DataDir 'server.json') -Force -ErrorAction SilentlyContinue
-    if ($hadApp) { & $StartApp $AppDir | Out-Null }
-  } catch {
-    & $report 'failed' "$problem; rollback failed too: $($_.Exception.Message)"
-    Say 'updateFailed'
-    return 2
-  }
-  & $report 'rolledBack' $problem
-  Say 'updateRolledBack'
-  return 2
 }
 
 # Everything below acts. Dot-sourcing the script (tests: `. .\install.ps1`) only loads the functions above.
@@ -469,7 +534,7 @@ if ($MyInvocation.InvocationName -ne '.') {
   if ($Unattended) {
     if (-not $StatusFile) { $StatusFile = Join-Path $DataDir 'update-status.json' }
     $findNode = {
-      $n = Find-Node
+      $n = Find-BpUpdateNode $AppDir
       # npm below must be the one that belongs to this node.
       if ($n) { $env:Path = (Split-Path -Parent $n) + ';' + $env:Path }
       $n
@@ -570,6 +635,8 @@ if ($MyInvocation.InvocationName -ne '.') {
   } finally { Pop-Location }
   # UTF-16 so launch.vbs can read paths with non-Latin letters.
   Set-Content -Path (Join-Path $AppDir 'installer\node-path.txt') -Value $NodeExe -Encoding Unicode
+  # A leftover of an earlier one-click update is of no use now (best effort).
+  if (Test-Path -LiteralPath "$AppDir.previous") { try { Remove-Item -LiteralPath "$AppDir.previous" -Recurse -Force } catch { } }
 
   # 4. Shortcuts
   Say 'shortcuts'
