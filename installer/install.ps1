@@ -625,16 +625,16 @@ if ($MyInvocation.InvocationName -ne '.') {
     }
   }
   Say 'copying'
-  if (Test-Path $AppDir) { Remove-Item $AppDir -Recurse -Force }
+  if (Test-Path -LiteralPath $AppDir) { Remove-Item -LiteralPath $AppDir -Recurse -Force }
   New-Item -ItemType Directory -Force $AppDir | Out-Null
-  Copy-Item (Join-Path $ReleaseRoot '*') $AppDir -Recurse -Force
-  Push-Location $AppDir
+  Get-ChildItem -LiteralPath $ReleaseRoot -Force | Copy-Item -Destination $AppDir -Recurse -Force
+  Push-Location -LiteralPath $AppDir
   try {
     & npm ci --omit=dev --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { Fail "npm ci exit code $LASTEXITCODE" }
   } finally { Pop-Location }
   # UTF-16 so launch.vbs can read paths with non-Latin letters.
-  Set-Content -Path (Join-Path $AppDir 'installer\node-path.txt') -Value $NodeExe -Encoding Unicode
+  Set-Content -LiteralPath (Join-Path $AppDir 'installer\node-path.txt') -Value $NodeExe -Encoding Unicode
   # A leftover of an earlier one-click update is of no use now (best effort).
   if (Test-Path -LiteralPath "$AppDir.previous") { try { Remove-Item -LiteralPath "$AppDir.previous" -Recurse -Force } catch { } }
 
