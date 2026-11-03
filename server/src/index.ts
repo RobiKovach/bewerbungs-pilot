@@ -8,6 +8,7 @@ import { ApplicationStore } from './applications/store.js';
 import { profilePhoto } from './applications/views.js';
 import { buildApp } from './app.js';
 import { writeJsonAtomic } from './data/atomic.js';
+import { readJson } from './data/atomic.js';
 import { dataPaths, ensureDataDirs, resolveDataRoot } from './data/paths.js';
 import { SettingsStore, SUPPORTED_LANGUAGES, type Language } from './data/settings.js';
 import { DemoLauncher, demoDataRoot, isDemoStart, seedDemo } from './demo/demo.js';
@@ -32,7 +33,7 @@ import { ProfileStore } from './profile/store.js';
 import { resolveBackupFolder } from './backup/folder.js';
 import { Activity } from './runtime/activity.js';
 import { openBrowser, openFolder } from './runtime/browser.js';
-import { findRunningInstance, waitForRunningInstance, type RunningInstance, type ServerInfo } from './runtime/instance.js';
+import { findRunningInstance, isAlive, waitForRunningInstance, type RunningInstance, type ServerInfo } from './runtime/instance.js';
 import { cookieName, newLaunchKey, openUrl } from './runtime/launch-key.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
@@ -193,14 +194,22 @@ async function main(): Promise<void> {
     },
     updates: {
       available: () => updates.available(),
+      demoRunning: () => {
+        // The demo copy writes its own server.json in <data>demo while it runs.
+        if (demo) return false;
+        try {
+          const info = readJson<ServerInfo>(dataPaths(demoDataRoot(paths.root)).server);
+          return Boolean(info && typeof info.pid === 'number' && isAlive(info.pid));
+        } catch { return false; }
+      },
       apply: {
         updater, statusFile, outcome,
         // Detached: the installer outlives this process, which quits right after starting it.
-        spawn: (file, args, opts) => new Promise<void>((resolve, reject) => {
+        spawn: (file, args, opts) => new Promise<{ kill: () => void }>((resolve, reject) => {
           // Resolves when the child really started; a start failure (missing file, no access) arrives as an 'error' event.
           const child = spawn(file, args, opts);
           child.once('error', reject);
-          child.once('spawn', () => { child.on('error', () => undefined); child.unref(); resolve(); });
+          child.once('spawn', () => { child.on('error', () => undefined); child.unref(); resolve({ kill: () => { try { child.kill(); } catch { /* already gone */ } } }); });
         }),
       },
     },

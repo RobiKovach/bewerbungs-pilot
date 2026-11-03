@@ -12,6 +12,8 @@ Newest first. The short version of every release is also on the [Releases page](
 - **Update now.** The update banner can update the app in one click: it downloads only the official release from GitHub
   Releases, checks its sha256 from `version.json`, saves a backup of your data, installs silently and restarts. If anything
   fails, the old version keeps working (rollback) and you are told why. If you have 0.10.x or older, install 0.11.0 by hand once.
+- Developer note: a rollback after the new version has already started may leave data written by the newer version. Any future
+  schema change must accept running an older app on newer data, or refuse to start on it.
 - Tests: the end-to-end run covers the feedback window, the absence of the signal in test mode and a failed update.
 
 ## What's new in 0.10.1

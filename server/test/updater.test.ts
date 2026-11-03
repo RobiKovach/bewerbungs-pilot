@@ -290,3 +290,15 @@ describe('Updater.prepare — local failures', () => {
     expect(await reasonOf(u.prepare(() => undefined, never))).toBe('updateDownload');
   });
 });
+
+describe('scripts/check-versions.mjs (release guard)', () => {
+  it('accepts equal versions and refuses when root, server and web differ', async () => {
+    const { pathToFileURL, fileURLToPath } = await import('node:url');
+    const { checkVersions } = (await import(pathToFileURL(fileURLToPath(new URL('../../scripts/check-versions.mjs', import.meta.url))).href)) as {
+      checkVersions: (v: Record<string, string>) => void;
+    };
+    expect(() => checkVersions({ 'package.json': '0.11.0', 'server/package.json': '0.11.0', 'web/package.json': '0.11.0' })).not.toThrow();
+    expect(() => checkVersions({ 'package.json': '0.11.0', 'server/package.json': '0.10.1', 'web/package.json': '0.11.0' })).toThrow(/versions differ.*server\/package\.json=0\.10\.1/);
+    expect(() => checkVersions({ 'package.json': '0.11.0', 'server/package.json': '0.11.0', 'web/package.json': '0.10.1' })).toThrow(/versions differ/);
+  });
+});

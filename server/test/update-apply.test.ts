@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { AppError } from '../src/errors.js';
 import { nullLogger } from '../src/log.js';
-import { cleanOldUpdateFolders, readUpdateOutcome, UpdateOutcome } from '../src/updates/apply.js';
+import { cleanOldUpdateFolders, installerEnv, readUpdateOutcome, UpdateOutcome } from '../src/updates/apply.js';
 import type { UpdateStep } from '../src/updates/updater.js';
 import { pkg } from './helpers/applications.js';
 import { H, makeApp } from './helpers/app.js';
@@ -27,15 +27,22 @@ function fakeUpdater() {
   };
 }
 
+/** What the installer does first thing: reports `running`. */
+function writeRunning(file: string): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ state: 'running', step: 'stopping', from: '0.10.1', to: '9.9.9', at: new Date().toISOString() }));
+}
+
 function setup(over: { update?: typeof NEWER | null; outcome?: UpdateOutcome } = {}) {
   const updater = fakeUpdater();
   const spawned: { file: string; args: string[]; opts: unknown }[] = [];
+  const killed = { n: 0 };
   const statusFile = path.join(os.tmpdir(), 'bp-status-x', 'update-status.json');
   return {
-    updater, spawned, statusFile,
+    updater, spawned, statusFile, killed,
     make: () => makeApp({
       update: over.update === undefined ? NEWER : over.update,
-      updateApply: { updater, statusFile, outcome: over.outcome ?? new UpdateOutcome({}), spawn: async (file, args, opts) => { spawned.push({ file, args, opts }); } },
+      updateApply: { updater, statusFile, outcome: over.outcome ?? new UpdateOutcome({}), spawn: async (file, args, opts) => { spawned.push({ file, args, opts }); writeRunning(statusFile); return { kill: () => { killed.n++; } }; }, startWaitMs: 400 },
     }),
   };
 }
@@ -60,8 +67,9 @@ describe('POST /api/updates/apply', { timeout: 30_000 }, () => {
       file: path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
       args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join('C:\\x\\update-1\\release', 'installer', 'install.ps1'),
         '-Unattended', '-StatusFile', s.statusFile, '-WaitPid', String(process.pid)],
-      opts: { detached: true, stdio: 'ignore', windowsHide: true, cwd: 'C:\\x\\update-1' },
+      opts: { detached: true, stdio: 'ignore', windowsHide: true, cwd: 'C:\\x\\update-1', env: expect.any(Object) },
     });
+    expect(Object.keys((s.spawned[0].opts as { env: object }).env).filter((k) => k.toUpperCase().startsWith('BP_'))).toEqual([]);
     expect(ctx.shutdownCalls()).toBe(1);
     expect((await progress(ctx)).state).toBe('installing');
   });
@@ -272,5 +280,104 @@ describe('cleanOldUpdateFolders', () => {
   });
   it('a missing folder is fine', () => {
     expect(() => cleanOldUpdateFolders(path.join(os.tmpdir(), 'bp-does-not-exist-x'), nullLogger)).not.toThrow();
+  });
+});
+
+describe('installerEnv', () => {
+  it('removes every BP_* variable and keeps the rest', () => {
+    const env = installerEnv({ BP_DATA_DIR: 'x', bp_demo_language: 'de', BP_FAKE_MAIL: '1', PATH: 'p', LOCALAPPDATA: 'l' });
+    expect(env).toEqual({ PATH: 'p', LOCALAPPDATA: 'l' });
+  });
+  it('the spawned installer never sees BP_* even when the server has them', async () => {
+    process.env.BP_TEST_LEAK = '1';
+    try {
+      const s = setup();
+      const ctx = await s.make();
+      await apply(ctx);
+      s.updater.finish({ releaseRoot: 'C:/x/update-1/release' });
+      await tick();
+      expect(Object.keys((s.spawned[0].opts as { env: object }).env)).not.toContain('BP_TEST_LEAK');
+    } finally { delete process.env.BP_TEST_LEAK; }
+  });
+});
+
+describe('the installer must confirm it took over', () => {
+  const tryApply = async (spawn: (statusFile: string) => Promise<{ kill?: () => void } | void>, wait = 300) => {
+    const s = setup();
+    const statusFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp-handover-')), 'update-status.json');
+    const ctx = await makeApp({ update: NEWER, updateApply: { updater: s.updater, statusFile, outcome: new UpdateOutcome({}), spawn: () => spawn(statusFile), startWaitMs: wait } });
+    await apply(ctx);
+    s.updater.finish({ releaseRoot: 'C:/x/update-1/release' });
+    return { ctx, statusFile };
+  };
+
+  it('no status within the wait: no shutdown, failed/updateStart, activity cleared, the child is stopped', async () => {
+    let killed = 0;
+    const { ctx } = await tryApply(async () => ({ kill: () => { killed++; } }), 250);
+    await new Promise((r) => setTimeout(r, 700));
+    expect(await progress(ctx)).toEqual({ state: 'failed', error: 'updateStart' });
+    expect(ctx.shutdownCalls()).toBe(0);
+    expect(ctx.activity.active()).not.toContain('update');
+    expect(killed).toBe(1);
+  });
+
+  it('an old running file from an earlier run does not count', async () => {
+    const { ctx } = await tryApply(async (f) => {
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      fs.writeFileSync(f, JSON.stringify({ state: 'running', step: 'installing', at: new Date(Date.now() - 60_000).toISOString() }));
+    }, 250);
+    await new Promise((r) => setTimeout(r, 700));
+    expect((await progress(ctx)).state).toBe('failed');
+    expect(ctx.shutdownCalls()).toBe(0);
+  });
+
+  it('a status that appears a little later is enough: then the server shuts down', async () => {
+    const { ctx } = await tryApply(async (f) => { setTimeout(() => writeRunning(f), 150); }, 2000);
+    await new Promise((r) => setTimeout(r, 700));
+    expect(ctx.shutdownCalls()).toBe(1);
+    expect((await progress(ctx)).state).toBe('installing');
+  });
+});
+
+describe('the demo copy and one-click update', () => {
+  it('in the demo copy: canInstall is false and apply gives 409 noUpdate', async () => {
+    const s = setup();
+    const ctx = await makeApp({ update: NEWER, demo: { active: true }, updateApply: { updater: s.updater, statusFile: s.statusFile, outcome: new UpdateOutcome({}), spawn: async () => undefined } });
+    const view = (await ctx.app.inject({ method: 'GET', url: '/api/updates', headers: H })).json();
+    expect(view.available.canInstall).toBe(false);
+    const res = await apply(ctx);
+    expect([res.statusCode, res.json().error.reason]).toEqual([409, 'noUpdate']);
+    expect(s.spawned).toEqual([]);
+  });
+
+  it('in the real app: a running demo copy gives 409 busy with what = demo; nothing starts', async () => {
+    const s = setup();
+    let demoUp = true;
+    const ctx = await makeApp({
+      update: NEWER, demoRunning: () => demoUp,
+      updateApply: { updater: s.updater, statusFile: s.statusFile, outcome: new UpdateOutcome({}), spawn: async () => undefined },
+    });
+    const res = await apply(ctx);
+    expect([res.statusCode, res.json().error.reason, res.json().error.params]).toEqual([409, 'busy', { what: 'demo' }]);
+    expect(ctx.activity.active()).not.toContain('update');
+    demoUp = false;
+    expect((await apply(ctx)).statusCode).toBe(202);
+  });
+});
+
+describe('browser work and AI-helper install are refused during an update', () => {
+  it('the contact window and the install route answer 409 updateRunning', async () => {
+    const ctx = await makeApp();
+    ctx.vacancyStore.add(vacancy({ id: 'aa1' }), 'Text');
+    const end = ctx.activity.begin('update');
+    const calls: [string, string, object][] = [
+      ['POST', '/api/llm/install', { provider: 'claude' }],
+      ['POST', `/api/vacancies/aa1/contact/find`, { from: 'aa' }],
+    ];
+    for (const [method, url, payload] of calls) {
+      const res = await ctx.app.inject({ method: method as 'POST', url, headers: H, payload });
+      expect([url, res.statusCode, res.json().error?.reason]).toEqual([url, 409, 'updateRunning']);
+    }
+    end();
   });
 });

@@ -5,6 +5,8 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { nullLogger } from '../src/log.js';
+import { readUpdateOutcome } from '../src/updates/apply.js';
 
 const INSTALLER = fileURLToPath(new URL('../../installer/install.ps1', import.meta.url));
 const windows = process.platform === 'win32';
@@ -299,6 +301,44 @@ describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
       expect(r.status.from).toBe('0.0.0'); // the app folder (junk) was kept, .previous deleted
       expect(fs.existsSync(fx.previous)).toBe(false);
     }, 90_000);
+  });
+
+  it('the leftover .previous is resolved after the old app was stopped, not before', () => {
+    const fx = fixture();
+    fs.renameSync(fx.app, fx.previous);
+    put(path.join(fx.app, 'junk.txt'), 'half-copied');
+    put(fx.status, JSON.stringify({ state: 'running', step: 'installing' }));
+    const r = runUpdate(fx, {
+      prelude: `function Stop-BpOldApp { Add-Content -Encoding UTF8 -LiteralPath $log -Value 'stopped'; return $true }; ` +
+        `function Invoke-BpRetry { param($Tries, $DelayMs, $Action) if ($Action.ToString() -match 'Remove-Item') { Add-Content -Encoding UTF8 -LiteralPath $log -Value 'cleanup' }; & $Action }; `,
+    });
+    expect(r.code).toBe(0);
+    expect(r.log.filter((l) => l === 'stopped' || l === 'cleanup')).toEqual(['stopped', 'cleanup']);
+  }, 90_000);
+
+  describe('Write-BpStatus and readUpdateOutcome agree on the file', () => {
+    const outcome = (state: string, err: string | null) => {
+      const dir = tempRoot();
+      const file = path.join(dir, 'update-status.json');
+      const errArg = err === null ? '$null' : psString(err);
+      ps(`Write-BpStatus -File ${psString(file)} -State ${psString(state)} -Step 'starting' -From '0.10.1' -To '0.11.0' -Err ${errArg}`);
+      const o = readUpdateOutcome(file, nullLogger);
+      const result = o.take();
+      return { result, exists: fs.existsSync(file) };
+    };
+    it('done → justUpdated, file consumed', () => {
+      expect(outcome('done', null)).toEqual({ result: { justUpdated: '0.11.0' }, exists: false });
+    });
+    it('rolledBack and failed → failed', () => {
+      expect(outcome('rolledBack', 'new version did not answer').result).toEqual({ lastUpdateError: 'failed' });
+      expect(outcome('failed', 'backup failed').result).toEqual({ lastUpdateError: 'failed' });
+    });
+    it('"rollback failed: …" → rollbackFailed', () => {
+      expect(outcome('failed', 'rollback failed: copy').result).toEqual({ lastUpdateError: 'rollbackFailed' });
+    });
+    it('running (fresh) → updatePending, file kept', () => {
+      expect(outcome('running', null)).toEqual({ result: { updatePending: true }, exists: true });
+    });
   });
 
   it('Write-BpStatus replaces an existing file atomically as UTF-8 without BOM', () => {

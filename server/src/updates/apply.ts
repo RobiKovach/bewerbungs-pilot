@@ -105,7 +105,28 @@ export function cleanOldUpdateFolders(dir: string, logger: Logger, now: number =
   }
 }
 
-export interface SpawnOptions { detached: true; stdio: 'ignore'; windowsHide: true; cwd: string }
+export interface SpawnOptions { detached: true; stdio: 'ignore'; windowsHide: true; cwd: string; env: NodeJS.ProcessEnv }
+
+/**
+ * The environment the installer gets: ours without any `BP_*` variable. The installer works on the fixed folders under
+ * %LOCALAPPDATA%; with `BP_DATA_DIR` / demo / test variables inherited its new app would run on another data folder than
+ * the one this server watches for the status file.
+ */
+export function installerEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const out: NodeJS.ProcessEnv = {};
+  for (const [k, v] of Object.entries(env)) if (!k.toUpperCase().startsWith('BP_')) out[k] = v;
+  return out;
+}
+
+/** True when `file` holds a `running` status the installer wrote at or after `since` (ms). */
+export function installerReportedRunning(file: string, since: number): boolean {
+  try {
+    const text = fs.readFileSync(file, 'utf8');
+    const s = JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text) as { state?: unknown; at?: unknown };
+    const at = typeof s.at === 'string' ? Date.parse(s.at) : NaN;
+    return s.state === 'running' && Number.isFinite(at) && at >= since;
+  } catch { return false; }
+}
 
 export interface UpdateApplierDeps {
   updater: Pick<Updater, 'prepare'>;
@@ -119,7 +140,10 @@ export interface UpdateApplierDeps {
   /** Other work that must finish first; each returns its name for the sentence or null. */
   busy: () => string | null;
   /** Starts the installer (detached). Injected: tests never run anything. */
-  spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<void>;
+  spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<{ kill?: () => void } | void>;
+  /** How long to wait for the installer's first status (default 15 s) and how often to look (default 200 ms). */
+  startWaitMs?: number;
+  startPollMs?: number;
   /** Full path of Windows PowerShell (no PATH search). */
   powershell?: string;
   /** The server's normal shutdown path. */
@@ -170,16 +194,31 @@ export class UpdateApplier {
       this.set('installing');
       const script = path.join(releaseRoot, 'installer', 'install.ps1');
       const work = path.dirname(releaseRoot);
+      const startedAt = Date.now();
+      let child: { kill?: () => void } | void = undefined;
       try {
         // Own folder as the working directory: never from inside the program folder the installer replaces.
-        await this.d.spawn(this.d.powershell ?? WINDOWS_POWERSHELL(), [
+        child = await this.d.spawn(this.d.powershell ?? WINDOWS_POWERSHELL(), [
         '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script,
         '-Unattended', '-StatusFile', this.d.statusFile, '-WaitPid', String(this.d.pid ?? process.pid),
-      ], { detached: true, stdio: 'ignore', windowsHide: true, cwd: work });
+      ], { detached: true, stdio: 'ignore', windowsHide: true, cwd: work, env: installerEnv() });
       } catch (err) {
         // The installer did not start: the old app keeps running, the unpacked release is not needed.
         if (path.basename(work).startsWith('update-')) fs.rmSync(work, { recursive: true, force: true, maxRetries: 2 });
         throw new AppError('CONFLICT', `installer did not start: ${String(err)}`, 'updateStart');
+      }
+      // "Process started" is not "installer took over": it writes `running` first thing. Without it (blocked script,
+      // broken messages.json, …) nobody would restart the old app after a shutdown — so the old app stays up and the
+      // child is stopped, otherwise its Stop-BpOldApp would shut this server down anyway.
+      const deadline = startedAt + (this.d.startWaitMs ?? 15_000);
+      // The installer's clock and ours are the same PC; two seconds of slack for the timestamp's rounding.
+      while (!installerReportedRunning(this.d.statusFile, startedAt - 2000)) {
+        if (Date.now() >= deadline) {
+          try { child?.kill?.(); } catch { /* already gone */ }
+          if (path.basename(work).startsWith('update-')) fs.rmSync(work, { recursive: true, force: true, maxRetries: 2 });
+          throw new AppError('CONFLICT', 'installer did not report within the wait time', 'updateStart');
+        }
+        await new Promise((r) => setTimeout(r, this.d.startPollMs ?? 200));
       }
       this.d.logger.info('update_installer_started', {});
       // `activity` stays open: this server is going away and must not accept new work meanwhile.

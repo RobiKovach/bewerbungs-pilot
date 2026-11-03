@@ -14,6 +14,8 @@ export interface UpdateRouteDeps {
   available: () => AvailableUpdate | null;
   /** One-click update (0.11.0); without it every apply answers `noUpdate`. */
   apply?: UpdateApplier;
+  /** False in the demo copy: it can show the banner but never install. Default true. */
+  installable?: boolean;
   /** What the installer left for this start; handed out once. */
   outcome?: UpdateOutcome;
 }
@@ -35,7 +37,7 @@ export async function registerUpdateRoutes(app: FastifyInstance, d: UpdateRouteD
       return view({ current: d.version, available: null });
     }
     const notes = a.notes[s.language ?? 'en'] ?? a.notes.en ?? '';
-    return view({ current: d.version, available: { version: a.version, url: a.url, notes, canInstall: Boolean(a.sha256) } });
+    return view({ current: d.version, available: { version: a.version, url: a.url, notes, canInstall: Boolean(a.sha256) && d.installable !== false } });
   });
 
   /** Starts "Update now": 202 and the work goes on in the background; 409 updateRunning | noUpdate | busy. */

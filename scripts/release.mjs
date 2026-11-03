@@ -3,9 +3,13 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { packFolder } from './pack-zip.mjs';
+import { checkVersions } from './check-versions.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const { version } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+// The installer waits for the root version, /api/health reports the server's: they must agree or every update rolls back.
+const versionOf = (rel) => JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8')).version;
+checkVersions({ 'package.json': version, 'server/package.json': versionOf('server/package.json'), 'web/package.json': versionOf('web/package.json') });
 const name = `BewerbungsPilot-v${version}`;
 const out = path.join(root, 'release', name);
 

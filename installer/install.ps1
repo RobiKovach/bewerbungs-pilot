@@ -395,7 +395,19 @@ function Invoke-BpUnattendedUpdate {
     $prior = $null
     try { $prior = Get-Content -Raw -Encoding UTF8 -LiteralPath $StatusFile -ErrorAction Stop | ConvertFrom-Json } catch { }
 
-    # Leftovers of an interrupted update.
+    $from = Get-InstalledVersion $AppDir
+    & $report 'running' $null
+    Say 'updateRunning'
+
+    # 1. Stop the old app.
+    if (-not (Stop-BpOldApp -DataDir $DataDir -WaitPid $WaitPid -WaitSec $WaitSec)) {
+      & $report 'failed' "the running app (pid $BpStopTarget) did not stop"
+      Say 'updateFailed'
+      return 1
+    }
+
+    # Leftovers of an interrupted update. Resolved only now that the old app is stopped: a failure here restarts the
+    # old app, which must not find the dying one still answering.
     try {
       if (-not (Test-Path -LiteralPath $AppDir) -and (Test-Path -LiteralPath $previous)) {
         Move-Item -LiteralPath $previous -Destination $AppDir
@@ -417,15 +429,6 @@ function Invoke-BpUnattendedUpdate {
       return 1
     }
     $from = Get-InstalledVersion $AppDir
-    & $report 'running' $null
-    Say 'updateRunning'
-
-    # 1. Stop the old app.
-    if (-not (Stop-BpOldApp -DataDir $DataDir -WaitPid $WaitPid -WaitSec $WaitSec)) {
-      & $report 'failed' "the running app (pid $BpStopTarget) did not stop"
-      Say 'updateFailed'
-      return 1
-    }
 
     if (-not (Test-Path -LiteralPath (Join-Path $ReleaseRoot 'server\dist\index.js'))) {
       & $fail 'the release folder holds no built app (server\dist\index.js)'

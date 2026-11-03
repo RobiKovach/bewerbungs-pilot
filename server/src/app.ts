@@ -82,8 +82,10 @@ export interface AppDeps {
   /** What the daily update check found (spec 0.9.0, 3.3). */
   updates: {
     available: () => AvailableUpdate | null;
+    /** Whether the demo copy (its own program, started from this app) is running; an update must wait for it to be closed. */
+    demoRunning?: () => boolean;
     /** One-click update (0.11.0): production passes the real Updater and spawn; tests pass fakes. Shutdown is `onShutdown`. */
-    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<void>; statusFile: string; outcome: UpdateOutcome };
+    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => Promise<{ kill?: () => void } | void>; statusFile: string; outcome: UpdateOutcome; startWaitMs?: number };
   };
   /** Our cloud service for feedback (spec 0.11.0); tests inject `fetch` and a URL. Default: the real one. */
   cloud?: { url: string; fetch?: typeof fetch };
@@ -103,6 +105,7 @@ export interface AppDeps {
  */
 function browserWork<T extends { read?: (...a: never[]) => Promise<unknown>; readContact?: (...a: never[]) => Promise<unknown> }>(activity: Activity, inner: T): T {
   const wrap = <F extends (...a: never[]) => Promise<unknown>>(fn: F, self: unknown) => (async (...a: never[]) => {
+    activity.refuseDuringUpdate();
     const end = activity.begin('browser');
     try { return await fn.apply(self, a); } finally { end(); }
   }) as F;
@@ -273,7 +276,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       if (b && typeof b === 'object' && Object.keys(b).some((k) => k !== 'provider')) throw new AppError('BAD_REQUEST', 'only { provider } is accepted');
     },
     schema: { body: { type: 'object', additionalProperties: false, required: ['provider'], properties: { provider: { type: 'string', enum: [...PROVIDER_IDS] } } } },
-  }, async (req, reply) => reply.code(202).send(deps.install.start((req.body as { provider: ProviderId }).provider)));
+  }, async (req, reply) => {
+    deps.activity.refuseDuringUpdate();
+    return reply.code(202).send(deps.install.start((req.body as { provider: ProviderId }).provider));
+  });
 
   app.post('/api/llm/open-login', async (req) => {
     const id = providerOf((req.body as { provider?: string } | undefined)?.provider) ?? deps.providers.currentId();
@@ -318,12 +324,14 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerUsageRoutes(app, { settings: deps.settings, version: deps.version, url: deps.cloud?.url ?? cloudUrl(), fetch: deps.cloud?.fetch, logger: deps.logger });
-  const applier = deps.updates.apply ? new UpdateApplier({
+  // The demo copy has no one-click update (its installer would act on the real program and data).
+  const applier = deps.updates.apply && deps.demo?.active !== true ? new UpdateApplier({
     updater: deps.updates.apply.updater, activity: deps.activity, available: () => deps.updates.available(), version: deps.version,
-    enabled: () => deps.settings.get().updates.check, statusFile: deps.updates.apply.statusFile, spawn: deps.updates.apply.spawn,
+    enabled: () => deps.settings.get().updates.check, statusFile: deps.updates.apply.statusFile, spawn: deps.updates.apply.spawn, startWaitMs: deps.updates.apply.startWaitMs,
     shutdown: deps.onShutdown, logger: deps.logger,
     busy: () => {
       const active = deps.activity.active();
+      if (deps.updates.demoRunning?.()) return 'demo';
       if (active.includes('restore')) return 'restore';
       if (deps.searchJob.state().state === 'running') return 'search';
       if (deps.applicationJob.state().state === 'running') return 'package';
@@ -335,7 +343,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       return null;
     },
   }) : undefined;
-  await registerUpdateRoutes(app, { settings: deps.settings, version: deps.version, available: () => deps.updates.available(), apply: applier, outcome: deps.updates.apply?.outcome });
+  await registerUpdateRoutes(app, { settings: deps.settings, version: deps.version, available: () => deps.updates.available(), apply: applier, outcome: deps.updates.apply?.outcome, installable: deps.demo?.active !== true });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });
