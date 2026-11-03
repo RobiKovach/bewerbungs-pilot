@@ -12,6 +12,14 @@ const fixture = (name: string) => fileURLToPath(new URL(`./fixtures/${name}`, im
 const env = JSON.parse(process.env.BP_E2E ?? '{}') as E2eEnv;
 const mailDir = () => path.join(env.dataDir, 'tmp', 'fake-mail');
 
+interface CloudRequest { method: string; url: string; body: string }
+
+/** What the fake cloud service received, oldest first. */
+function cloudRequests(): CloudRequest[] {
+  if (!fs.existsSync(env.cloudLog)) return [];
+  return fs.readFileSync(env.cloudLog, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as CloudRequest);
+}
+
 interface FakeMail { to: string; subject: string; attachments: { filename: string; size: number }[] }
 
 /** Mails written by the fake mailer, oldest first (file names start with the time). */
@@ -24,10 +32,16 @@ test.describe.configure({ mode: 'serial' });
 
 let context: BrowserContext;
 let page: Page;
+/** Text of every answer the app gave the page: none may contain the install number. */
+const seenResponses: string[] = [];
 
 test.beforeAll(async ({ browser }: { browser: Browser }) => {
   context = await browser.newContext({ locale: 'en-US' });
   page = await context.newPage();
+  page.on('response', (res) => {
+    if (!res.url().startsWith(`${env.url}/api/`)) return;
+    void res.text().then((t) => { seenResponses.push(t); }, () => undefined);
+  });
 });
 
 test.afterAll(async () => {
@@ -171,6 +185,35 @@ test('a backup brings the profile back', async () => {
   await expect(page.getByRole('textbox', { name: 'Full name' })).toHaveValue('Max Mustermann');
 });
 
+test('feedback goes to the cloud service with exactly the announced fields, and the install number stays on the server', async () => {
+  await page.getByRole('link', { name: 'Settings' }).first().click();
+  await expect(page.getByRole('button', { name: 'Save backup' })).toBeVisible();
+  await page.getByRole('button', { name: 'Feedback' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Send feedback' });
+  await dialog.getByRole('radio', { name: 'Idea' }).check();
+  await dialog.getByRole('textbox', { name: 'Your message' }).fill('Please add a dark theme switch.');
+  await dialog.getByRole('textbox', { name: 'Your email (for our reply)' }).fill('max.mustermann@example.com');
+  await dialog.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByText('Thank you! Your message was sent.')).toBeVisible();
+
+  const feedback = cloudRequests().filter((r) => r.url === '/v1/feedback');
+  expect(feedback).toHaveLength(1);
+  expect(feedback[0].method).toBe('POST');
+  const body = JSON.parse(feedback[0].body) as Record<string, unknown>;
+  expect(Object.keys(body).sort()).toEqual(['email', 'installId', 'kind', 'language', 'text', 'version']);
+  expect(body).toMatchObject({ email: 'max.mustermann@example.com', kind: 'idea', language: 'en', text: 'Please add a dark theme switch.' });
+  expect(typeof body.version).toBe('string');
+  expect(typeof body.installId).toBe('string');
+  expect((body.installId as string).length).toBeGreaterThan(8);
+
+  // Reload so that settings and every other answer have been fetched at least once with the dialog behind us.
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Save backup' })).toBeVisible();
+  expect(seenResponses.length).toBeGreaterThan(0);
+  expect(seenResponses.filter((t) => t.includes(body.installId as string))).toHaveLength(0);
+});
+
 test('the update banner shows a newer version and stays hidden once dismissed', async () => {
   const banner = page.getByText('Version 99.0.0 is available');
   // The server's first check runs a minute after the start, and the page asks only when it loads.
@@ -178,6 +221,16 @@ test('the update banner shows a newer version and stays hidden once dismissed', 
     await page.reload();
     await expect(banner).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 120_000, intervals: [2_000, 5_000] });
+
+  // "Update now" against a download that cannot match the announced checksum: told, nothing installed, app works.
+  await page.getByRole('button', { name: 'Update now' }).click();
+  await expect(page.getByText(/does not match the published checksum/)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('status').getByRole('button', { name: 'Close' }).click();
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'Settings' }).first()).toBeVisible();
+  await expect(banner).toBeVisible({ timeout: 20_000 });
+  // The usage ping is off in test mode: after the first update check (a minute in) the cloud has seen no ping.
+  expect(cloudRequests().filter((r) => r.url.includes('ping'))).toHaveLength(0);
 
   await page.getByRole('button', { name: 'Hide until the next version' }).click();
   await expect(banner).toBeHidden();

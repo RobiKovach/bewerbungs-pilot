@@ -10,7 +10,7 @@ const FIXTURES = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const START_TIMEOUT_MS = 30_000;
 
 /** Everything the spec needs to reach the copy of the app started for the run. */
-export interface E2eEnv { url: string; port: number; key: string; dataDir: string; backupDir: string }
+export interface E2eEnv { url: string; port: number; key: string; dataDir: string; backupDir: string; cloudLog: string }
 
 export interface Running extends E2eEnv { stop(): Promise<void> }
 
@@ -29,9 +29,17 @@ export async function startApp(): Promise<Running> {
   const versionServer = await serveFile(path.join(FIXTURES, 'version-newer.json'));
   const versionUrl = `http://127.0.0.1:${(versionServer.address() as { port: number }).port}/version.json`;
 
+  // Our cloud service and the release download, both faked on this machine. The cloud writes what it receives to a
+  // file the spec reads; the "release" is bytes that cannot match the checksum announced in version-newer.json.
+  const cloudLog = path.join(base, 'cloud-requests.jsonl');
+  const cloudServer = await serveCloud(cloudLog);
+  const cloudUrl = `http://127.0.0.1:${(cloudServer.address() as { port: number }).port}`;
+  const releaseServer = await serveBytes(Buffer.from('this is not a release zip'));
+  const releaseUrl = `http://127.0.0.1:${(releaseServer.address() as { port: number }).port}/BewerbungsPilot-v99.0.0.zip`;
+
   const child = spawn(process.execPath, [path.join(ROOT, 'server', 'dist', 'index.js'), '--fake-llm', '--fake-mail', '--no-open'], {
     cwd: ROOT,
-    env: { ...process.env, BP_DATA_DIR: dataDir, BP_BACKUP_DIR: backupDir, BP_UPDATE_URL: versionUrl },
+    env: { ...process.env, BP_DATA_DIR: dataDir, BP_BACKUP_DIR: backupDir, BP_UPDATE_URL: versionUrl, BP_CLOUD_URL: cloudUrl, BP_DEV_UPDATE_SOURCE: releaseUrl },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   });
@@ -40,13 +48,13 @@ export async function startApp(): Promise<Running> {
   child.stderr?.on('data', (b: Buffer) => output.push(b.toString()));
 
   const info = await waitForServerFile(path.join(dataDir, 'server.json'), child, output);
-  const env: E2eEnv = { url: `http://127.0.0.1:${info.port}`, port: info.port, key: info.key, dataDir, backupDir };
+  const env: E2eEnv = { url: `http://127.0.0.1:${info.port}`, port: info.port, key: info.key, dataDir, backupDir, cloudLog };
 
   return {
     ...env,
     async stop() {
       await shutdown(env, child);
-      await new Promise<void>((resolve) => versionServer.close(() => resolve()));
+      for (const srv of [versionServer, cloudServer, releaseServer]) await new Promise<void>((resolve) => srv.close(() => resolve()));
       fs.rmSync(base, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     },
   };
@@ -57,6 +65,28 @@ function serveFile(file: string): Promise<http.Server> {
   const server = http.createServer((_req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(body);
+  });
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+function serveBytes(body: Buffer): Promise<http.Server> {
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'application/zip' });
+    res.end(body);
+  });
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+/** Answers like the cloud service (204) and appends every request as one JSON line: { method, url, body }. */
+function serveCloud(logFile: string): Promise<http.Server> {
+  const server = http.createServer((req, res) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (c: Buffer) => chunks.push(c));
+    req.on('end', () => {
+      fs.appendFileSync(logFile, JSON.stringify({ method: req.method, url: req.url, body: Buffer.concat(chunks).toString('utf8') }) + '\n');
+      res.writeHead(204);
+      res.end();
+    });
   });
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
