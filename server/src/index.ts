@@ -46,7 +46,7 @@ import { cleanOldUpdateFolders, readUpdateOutcome } from './updates/apply.js';
 import { UpdateChecker } from './updates/checker.js';
 import { devUpdateSource, Updater, zipUrlFor } from './updates/updater.js';
 import { UPDATE_URL } from './updates/version-file.js';
-import { cloudUrl } from './usage/cloud.js';
+import { cloudUrl, versionJsonUrl } from './usage/cloud.js';
 import { shouldPing, UsagePinger } from './usage/pinger.js';
 import { VacancyStore } from './vacancies/store.js';
 
@@ -151,12 +151,12 @@ async function main(): Promise<void> {
   const fakeMailDir = path.join(paths.tmp, 'fake-mail');
   const fileMailer = new FakeFileMailer(fakeMailDir);
   const updates = new UpdateChecker({
-    url: process.env.BP_UPDATE_URL || UPDATE_URL, stateFile: path.join(paths.root, 'update-state.json'),
+    url: versionJsonUrl(UPDATE_URL, process.env, process.argv, logger), stateFile: path.join(paths.root, 'update-state.json'),
     currentVersion: version, enabled: () => settings.get().updates.check, logger,
   });
   // No ping in demo / fake modes: tests and the demo are not users.
   const usage = shouldPing({ demo, fakeLlm, fakeMail }) ? new UsagePinger({
-    url: cloudUrl(), stateFile: path.join(paths.root, 'usage-state.json'), version,
+    url: cloudUrl(process.env, process.argv, logger), stateFile: path.join(paths.root, 'usage-state.json'), version,
     installId: () => settings.get().usage.installId, enabled: () => settings.get().usage.ping, logger,
   }) : null;
   // One-click update (0.11.0): what the installer reported last time (read once), and the leftovers of old attempts.

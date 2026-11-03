@@ -5,7 +5,7 @@ import path from 'node:path';
 import { SettingsStore } from '../src/data/settings.js';
 import type { Logger } from '../src/log.js';
 import { shouldPing, UsagePinger } from '../src/usage/pinger.js';
-import { CLOUD_URL, cloudUrl } from '../src/usage/cloud.js';
+import { CLOUD_URL, cloudUrl, versionJsonUrl } from '../src/usage/cloud.js';
 import { H, makeApp } from './helpers/app.js';
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -197,9 +197,21 @@ describe('shouldPing and the cloud URL', () => {
     expect(shouldPing({ demo: false, fakeLlm: true, fakeMail: false })).toBe(false);
     expect(shouldPing({ demo: false, fakeLlm: false, fakeMail: true })).toBe(false);
   });
-  it('BP_CLOUD_URL overrides the real one', () => {
-    expect(cloudUrl({})).toBe(CLOUD_URL);
-    expect(cloudUrl({ BP_CLOUD_URL: 'http://127.0.0.1:9/' })).toBe('http://127.0.0.1:9');
+  it('BP_CLOUD_URL and BP_UPDATE_URL are honoured only in test mode (data folder + fake mail)', () => {
+    const warn = vi.fn();
+    const logger = { warn } as unknown as Logger;
+    const test = { BP_DATA_DIR: 'x', BP_CLOUD_URL: 'http://127.0.0.1:9/', BP_UPDATE_URL: 'http://127.0.0.1:8/v.json' };
+    expect(cloudUrl({}, [])).toBe(CLOUD_URL);
+    expect(cloudUrl(test, ['--fake-mail'], logger)).toBe('http://127.0.0.1:9');
+    expect(versionJsonUrl('https://real/v.json', test, ['--fake-mail'], logger)).toBe('http://127.0.0.1:8/v.json');
+    expect(warn).not.toHaveBeenCalled();
+    expect(cloudUrl({ ...test, BP_FAKE_MAIL: '1' }, [])).toBe('http://127.0.0.1:9');
+    // Not allowed: no fake mail, or no data folder.
+    expect(cloudUrl(test, [], logger)).toBe(CLOUD_URL);
+    expect(versionJsonUrl('https://real/v.json', test, [], logger)).toBe('https://real/v.json');
+    expect(cloudUrl({ BP_CLOUD_URL: 'http://127.0.0.1:9' }, ['--fake-mail'], logger)).toBe(CLOUD_URL);
+    expect(warn).toHaveBeenCalledTimes(3);
+    expect(warn.mock.calls[0][0]).toBe('test_url_ignored');
   });
 });
 
