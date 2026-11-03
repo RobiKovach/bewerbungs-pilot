@@ -16,7 +16,11 @@
     "backingUp": "Saving a backup of your data ({0})…",
     "backupFailed": "The backup of your data could not be saved:",
     "continueWithoutBackup": "Continue the update without a backup? Your data is normally kept, but there is no copy if something goes wrong. (Y/N)",
-    "nothingChanged": "Nothing was changed. Start BewerbungsPilot again with its shortcut."
+    "nothingChanged": "Nothing was changed. Start BewerbungsPilot again with its shortcut.",
+    "updateRunning": "Updating BewerbungsPilot. This takes a minute; the app opens again by itself.",
+    "updateDone": "The update is installed. BewerbungsPilot is starting.",
+    "updateRolledBack": "The update did not work. Your previous version has been restored and is starting again. Your data was not changed.",
+    "updateFailed": "The update could not be installed. Nothing was changed."
   },
   "uk": {
     "title": "Інсталятор BewerbungsPilot",
@@ -35,7 +39,11 @@
     "backingUp": "Зберігаємо резервну копію ваших даних ({0})…",
     "backupFailed": "Не вдалося зберегти резервну копію ваших даних:",
     "continueWithoutBackup": "Продовжити оновлення без резервної копії? Зазвичай дані зберігаються, але якщо щось піде не так, копії не буде. (Y/N)",
-    "nothingChanged": "Нічого не змінено. Запустіть BewerbungsPilot знову ярликом."
+    "nothingChanged": "Нічого не змінено. Запустіть BewerbungsPilot знову ярликом.",
+    "updateRunning": "Оновлюємо BewerbungsPilot. Це займе хвилину; програма відкриється знову сама.",
+    "updateDone": "Оновлення встановлено. BewerbungsPilot запускається.",
+    "updateRolledBack": "Оновлення не вдалося. Попередню версію відновлено, вона знову запускається. Твої дані не змінились.",
+    "updateFailed": "Не вдалося встановити оновлення. Нічого не змінено."
   },
   "de": {
     "title": "BewerbungsPilot-Installer",
@@ -54,7 +62,11 @@
     "backingUp": "Sicherung Ihrer Daten wird gespeichert ({0})…",
     "backupFailed": "Die Sicherung Ihrer Daten konnte nicht gespeichert werden:",
     "continueWithoutBackup": "Das Update ohne Sicherung fortsetzen? Ihre Daten bleiben normalerweise erhalten, aber wenn etwas schiefgeht, gibt es keine Kopie. (J/N)",
-    "nothingChanged": "Es wurde nichts geändert. Starten Sie BewerbungsPilot wieder über die Verknüpfung."
+    "nothingChanged": "Es wurde nichts geändert. Starten Sie BewerbungsPilot wieder über die Verknüpfung.",
+    "updateRunning": "BewerbungsPilot wird aktualisiert. Das dauert eine Minute; die App öffnet sich danach von selbst wieder.",
+    "updateDone": "Das Update ist installiert. BewerbungsPilot startet.",
+    "updateRolledBack": "Das Update hat nicht funktioniert. Die vorherige Version wurde wiederhergestellt und startet wieder. Deine Daten wurden nicht verändert.",
+    "updateFailed": "Das Update konnte nicht installiert werden. Es wurde nichts verändert."
   },
   "ru": {
     "title": "Установщик BewerbungsPilot",
@@ -73,7 +85,11 @@
     "backingUp": "Сохраняем резервную копию ваших данных ({0})…",
     "backupFailed": "Не удалось сохранить резервную копию ваших данных:",
     "continueWithoutBackup": "Продолжить обновление без резервной копии? Обычно данные сохраняются, но если что-то пойдёт не так, копии не будет. (Д/Н)",
-    "nothingChanged": "Ничего не изменено. Запустите BewerbungsPilot снова ярлыком."
+    "nothingChanged": "Ничего не изменено. Запустите BewerbungsPilot снова ярлыком.",
+    "updateRunning": "Обновляем BewerbungsPilot. Это займёт минуту; программа откроется снова сама.",
+    "updateDone": "Обновление установлено. BewerbungsPilot запускается.",
+    "updateRolledBack": "Обновление не удалось. Предыдущая версия восстановлена и снова запускается. Твои данные не изменились.",
+    "updateFailed": "Не удалось установить обновление. Ничего не изменено."
   },
   "pl": {
     "title": "Instalator BewerbungsPilot",
@@ -92,7 +108,11 @@
     "backingUp": "Zapisywanie kopii zapasowej Twoich danych ({0})…",
     "backupFailed": "Nie udało się zapisać kopii zapasowej Twoich danych:",
     "continueWithoutBackup": "Kontynuować aktualizację bez kopii zapasowej? Dane zwykle zostają zachowane, ale jeśli coś pójdzie nie tak, nie będzie kopii. (T/N)",
-    "nothingChanged": "Nic nie zostało zmienione. Uruchom BewerbungsPilot ponownie skrótem."
+    "nothingChanged": "Nic nie zostało zmienione. Uruchom BewerbungsPilot ponownie skrótem.",
+    "updateRunning": "Aktualizujemy BewerbungsPilot. To potrwa minutę; aplikacja otworzy się ponownie sama.",
+    "updateDone": "Aktualizacja jest zainstalowana. BewerbungsPilot się uruchamia.",
+    "updateRolledBack": "Aktualizacja się nie udała. Poprzednia wersja została przywrócona i uruchamia się ponownie. Twoje dane nie zostały zmienione.",
+    "updateFailed": "Nie udało się zainstalować aktualizacji. Nic nie zostało zmienione."
   },
   "ro": {
     "title": "Program de instalare BewerbungsPilot",
@@ -111,6 +131,10 @@
     "backingUp": "Se salvează o copie de rezervă a datelor dumneavoastră ({0})…",
     "backupFailed": "Copia de rezervă a datelor dumneavoastră nu a putut fi salvată:",
     "continueWithoutBackup": "Continuați actualizarea fără copie de rezervă? De obicei datele se păstrează, dar dacă ceva nu merge bine, nu va exista nicio copie. (D/N)",
-    "nothingChanged": "Nu s-a schimbat nimic. Porniți din nou BewerbungsPilot cu scurtătura."
+    "nothingChanged": "Nu s-a schimbat nimic. Porniți din nou BewerbungsPilot cu scurtătura.",
+    "updateRunning": "Actualizăm BewerbungsPilot. Durează un minut; aplicația se deschide din nou singură.",
+    "updateDone": "Actualizarea este instalată. BewerbungsPilot pornește.",
+    "updateRolledBack": "Actualizarea nu a funcționat. Versiunea anterioară a fost restaurată și pornește din nou. Datele tale nu au fost modificate.",
+    "updateFailed": "Actualizarea nu a putut fi instalată. Nu s-a modificat nimic."
   }
 }
