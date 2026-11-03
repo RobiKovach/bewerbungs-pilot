@@ -6,8 +6,8 @@ email and keeps track of every answer. Nothing is made up: letters are built onl
 
 ![Job offers scored from 0 to 100 with the reasons, in the demo](docs/images/02-job-offers.png)
 
-**Status: v0.10** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
-update notices and a demo. Six languages: Українська · English · Deutsch · Русский · Polski · Română.
+**Status: v0.11** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
+feedback, one-click updates and a demo. Six languages: Українська · English · Deutsch · Русский · Polski · Română.
 
 ## Start in 5 steps
 
@@ -65,6 +65,20 @@ installer; your data is kept. Before an update the installer saves a backup of y
 (`Documents\BewerbungsPilot\Backups`, or `%USERPROFILE%\BewerbungsPilot\Backups` when Documents is synced with OneDrive,
 or the folder you chose in Settings → Backups) and keeps the three newest of its own backups (your manual backups are
 never deleted). What changed in each version: [CHANGELOG.md](CHANGELOG.md).
+
+From version 0.11.0 the update banner has an **Update now** button: the app downloads only the official release from this
+project's GitHub Releases, checks its checksum (published in `version.json`), saves a backup of your data, installs the new
+version and restarts. If anything fails, the old version keeps working and you are told why. If you still have 0.10.x or
+older, install 0.11.0 by hand once (download it from the banner or the Releases page); after that updates are one click.
+
+### What's new in 0.11.0
+
+- **Feedback button** in the top menu: a window (Problem or Idea, your message, your email, what exactly will be sent, a
+  warning if your text contains personal data) that sends your message to the developer through the BewerbungsPilot cloud
+  service (a Cloudflare Worker; mail via Resend).
+- **Daily anonymous "in use" signal**: a random install number and the app version, on by default, shown once as a notice;
+  switch it off in **Settings** next to "Check for updates".
+- **Update now** in the update banner (see above), with a rollback if the update fails.
 
 ## AI helper
 
@@ -204,6 +218,8 @@ Test modes (command line or environment only — never from the app's settings):
   Google) is written to `<data folder>/tmp/fake-mail/<time>-<n>.json` with attachment names and sizes. "Sign in with
   Google" and disconnecting still talk to Google for real — only sending is faked.
 - `BP_DATA_DIR`, `BP_BACKUP_DIR`, `BP_UPDATE_URL` point the data, the backups and the update check somewhere else.
+- `BP_CLOUD_URL` points the feedback and the usage signal at another service; `BP_DEV_UPDATE_SOURCE` makes "Update now"
+  download from a local address — honoured only with `BP_DATA_DIR` and fake mail (the end-to-end tests use both).
 
 The server log and the console say "FAKE MODE" when one of them is on.
 

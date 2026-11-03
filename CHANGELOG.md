@@ -2,6 +2,18 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.11.0
+
+- **Feedback.** A **Feedback** button in the top menu opens a window: Problem or Idea, your message, your email (for the
+  answer), exactly what will be sent and a warning if the text seems to contain personal data. The message goes through the
+  BewerbungsPilot cloud service (a Cloudflare Worker, mail via Resend) to the developer.
+- **Daily anonymous "in use" signal.** A random install number and the app version, once a day. On by default, shown once
+  as a notice; switch it off in **Settings** next to "Check for updates". The privacy policy describes it.
+- **Update now.** The update banner can update the app in one click: it downloads only the official release from GitHub
+  Releases, checks its sha256 from `version.json`, saves a backup of your data, installs silently and restarts. If anything
+  fails, the old version keeps working (rollback) and you are told why. If you have 0.10.x or older, install 0.11.0 by hand once.
+- Tests: the end-to-end run covers the feedback window, the absence of the signal in test mode and a failed update.
+
 ## What's new in 0.10.1
 
 - **Cookie banner closes by itself.** In **Find contact**, the Arbeitsagentur cookie banner is now dismissed as soon as it
