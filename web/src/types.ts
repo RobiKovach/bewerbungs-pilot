@@ -7,7 +7,7 @@ export type {
   ScoreState, Section, SectionDataMap, SectionId, SearchPhase, SearchRunState, SearchState, SearchWarning, SettingsView as Settings, SettingsPatch, SubmittedInfo,
   SkillItem, SkillLevel, Story, StoryAnswer, StoryInput, StoryKind, StoredFile, Vacancy, VacancyContact, VacancyListView,
   ContactFindView, ContactProposal, ContactSource,
-  TextPlace, UnsavedPackageText, UpdatesView, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
+  TextPlace, UnsavedPackageText, UpdateFailure, UpdateProgress, UpdatesView, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
 } from '@bp/shared';
 
 export type Route = 'home' | 'profile' | 'vacancies' | 'applications' | 'guide' | 'settings';

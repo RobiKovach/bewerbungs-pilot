@@ -1,7 +1,7 @@
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
-  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
+  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
 /** Password is optional: left out = keep the saved one. Language = the interface language of the test email. */
@@ -42,9 +42,16 @@ export function onNoSession(listener: () => void): () => void {
   return () => { noSessionListeners.delete(listener); };
 }
 
+let noSessionMuted = false;
+/**
+ * During an update the server goes away and a new one (with a new launch key) starts: the old tab must keep its own
+ * "Done…" text instead of switching to the "open via shortcut" screen. Muted from the moment the update is accepted.
+ */
+export function muteNoSession(on: boolean): void { noSessionMuted = on; }
+
 /** Shows the "open via shortcut" screen when the server refused a request for its launch key (also for raw fetches). */
 export function reportNoSession(status: number, code: string | undefined): void {
-  if (status === 401 && code === 'NO_SESSION') noSessionListeners.forEach((l) => l());
+  if (!noSessionMuted && status === 401 && code === 'NO_SESSION') noSessionListeners.forEach((l) => l());
 }
 
 async function send<T>(url: string, init: RequestInit): Promise<T> {
@@ -118,6 +125,9 @@ export const api = {
   /** Personal data in an unsent feedback text (the profile does not count as allowed here). */
   checkFeedbackText: (text: string, email: string, signal?: AbortSignal) =>
     request<{ warnings: PersonalFinding[] }>('POST', '/api/feedback/check-text', { text, email }, signal),
+  /** 202 when the update started; 409 updateRunning | noUpdate | busy (params.what). */
+  applyUpdate: () => request<UpdateProgress>('POST', '/api/updates/apply', {}),
+  updateProgress: () => request<UpdateProgress>('GET', '/api/updates/progress'),
   dismissUpdate: (version: string) => request<unknown>('POST', '/api/updates/dismiss', { version }),
 
   getProfile: () => request<ProfileView>('GET', '/api/profile'),

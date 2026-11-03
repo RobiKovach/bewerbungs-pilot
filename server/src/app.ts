@@ -33,6 +33,8 @@ import { registerBackupRoutes, type BackupRouteDeps } from './backup/routes.js';
 import type { Activity } from './runtime/activity.js';
 import type { AvailableUpdate } from './updates/checker.js';
 import { registerUpdateRoutes } from './updates/routes.js';
+import { UpdateApplier, UpdateOutcome, type SpawnOptions } from './updates/apply.js';
+import type { Updater } from './updates/updater.js';
 import { cloudUrl } from './usage/cloud.js';
 import { registerUsageRoutes } from './usage/routes.js';
 
@@ -78,7 +80,11 @@ export interface AppDeps {
   /** Backups (spec 0.9.0): the data folder, the backup folder, re-reading every store after a restore, Explorer. */
   backup: Pick<BackupRouteDeps, 'paths' | 'folder' | 'reload' | 'openFolder' | 'maxUploadBytes'>;
   /** What the daily update check found (spec 0.9.0, 3.3). */
-  updates: { available: () => AvailableUpdate | null };
+  updates: {
+    available: () => AvailableUpdate | null;
+    /** One-click update (0.11.0): production passes the real Updater and spawn; tests pass fakes. Shutdown is `onShutdown`. */
+    apply?: { updater: Pick<Updater, 'prepare'>; spawn: (file: string, args: string[], opts: SpawnOptions) => void; statusFile: string; outcome: UpdateOutcome };
+  };
   /** Our cloud service for feedback (spec 0.11.0); tests inject `fetch` and a URL. Default: the real one. */
   cloud?: { url: string; fetch?: typeof fetch };
   /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
@@ -300,7 +306,22 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   await registerUsageRoutes(app, { settings: deps.settings, version: deps.version, url: deps.cloud?.url ?? cloudUrl(), fetch: deps.cloud?.fetch, logger: deps.logger });
-  await registerUpdateRoutes(app, { settings: deps.settings, version: deps.version, available: () => deps.updates.available() });
+  const applier = deps.updates.apply ? new UpdateApplier({
+    updater: deps.updates.apply.updater, activity: deps.activity, available: () => deps.updates.available(), version: deps.version,
+    enabled: () => deps.settings.get().updates.check, statusFile: deps.updates.apply.statusFile, spawn: deps.updates.apply.spawn,
+    shutdown: deps.onShutdown, logger: deps.logger,
+    busy: () => {
+      const active = deps.activity.active();
+      if (active.includes('restore')) return 'restore';
+      if (deps.searchJob.state().state === 'running') return 'search';
+      if (deps.applicationJob.state().state === 'running') return 'package';
+      const q = deps.queue.status();
+      if (q.running || q.queued > 0) return 'ai';
+      if (active.includes('send')) return 'send';
+      return null;
+    },
+  }) : undefined;
+  await registerUpdateRoutes(app, { settings: deps.settings, version: deps.version, available: () => deps.updates.available(), apply: applier, outcome: deps.updates.apply?.outcome });
 
   if (deps.webDist && fs.existsSync(deps.webDist)) {
     await app.register(fastifyStatic, { root: deps.webDist, prefix: '/' });

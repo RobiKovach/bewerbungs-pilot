@@ -16,5 +16,6 @@ export function reasonParams(
   if (reason === 'fileTypeDetected' && typeof out.kind === 'string') {
     out.allowed = t(`errors.reasons.allowedTypes.${out.kind}`);
   }
+  if (reason === 'busy' && typeof out.what === 'string') out.what = t(`updates.busyWhat.${out.what}`);
   return out;
 }

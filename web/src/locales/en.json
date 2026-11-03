@@ -13,7 +13,7 @@
   },
   "language": { "label": "Language" },
   "unsaved": { "leave": "Some changes are not saved yet. If you leave now, they will be lost. Leave anyway?" },
-  "updates": { "available": "Version {{version}} is available", "whatsNew": "What's new", "download": "Download", "dismiss": "Hide until the next version" },
+  "updates": { "available": "Version {{version}} is available", "whatsNew": "What's new", "download": "Download", "dismiss": "Hide until the next version", "updateNow": "Update now", "step": { "downloading": "Downloading…", "checking": "Checking…", "installing": "Installing (a copy of your data is saved first)…", "restarting": "Restarting…" }, "done": "Done — the app opened in a new tab. You can close this one.", "notFinished": "The update did not finish. The old version keeps working and opened in a new tab with the reason.", "timeout": "If the app opened in a new tab, close this one. Otherwise start it from the shortcut.", "failed": "Update failed: {{reason}}. The old version keeps working.", "failedUnknown": "something went wrong", "startFailed": "The update could not be started. Please try again.", "justUpdated": "Updated to version {{version}}.", "close": "Close", "error": { "failed": "The update did not finish. The old version keeps working. Your data is unchanged.", "rollbackFailed": "The update failed and the old version could not be restored automatically. Your data is safe. Please install BewerbungsPilot again from the website.", "interrupted": "The last update was interrupted. If the app does not work properly, install BewerbungsPilot again from the website." }, "busyWhat": { "search": "A job search is still running.", "package": "An application package is still being prepared.", "ai": "The AI helper is still working.", "send": "An email is still being sent.", "restore": "A backup is still being restored." } },
   "feedback": { "title": "Send feedback", "button": "Feedback", "kind": "Type", "problem": "Problem", "idea": "Idea", "text": "Your message", "email": "Your email (for our reply)", "emailBad": "Please enter a valid email address.", "sent": "Sent: your text, this address, app version {{version}}, your language and a random install number. Nothing else from your data.", "personalTitle": "Your message contains personal data — it will go to the developer", "personalHint": "Remove it if the developer does not need it to help you.", "send": "Send", "sending": "Sending…", "thanks": "Thank you! Your message was sent.", "close": "Close" },
   "usageNotice": { "text": "Once a day the app anonymously reports that it is used: only a random number and the version. You can switch this off in Settings.", "ok": "OK", "settings": "Open Settings" },
   "home": {
@@ -532,6 +532,12 @@
       "backupFolderInData": "This folder is inside the BewerbungsPilot data itself. Please choose a folder outside it.",
       "backupFolderNotWritable": "BewerbungsPilot cannot create or write to this folder. Please choose another one (for example on drive D: or a USB stick).",
       "backupFolderUnavailable": "The backup folder is not available right now (for example the USB stick is not plugged in). Connect it, or choose another folder under Settings → Backups.",
+      "updateRunning": "An update is already running. Please wait a moment.",
+      "noUpdate": "There is no update that can be installed automatically. Use \"Download\" instead.",
+      "busy": "{{what}} Please wait until it is finished, then click \"Update now\" again.",
+      "updateDownload": "The download of the update failed. Check your internet connection and try again.",
+      "updateChecksum": "The downloaded update does not match the published checksum, so it was not installed.",
+      "updateInvalid": "The downloaded update is not a valid BewerbungsPilot release, so it was not installed.",
       "offline": "You are offline or the service cannot be reached. Check your internet connection and try again.",
       "limit": "You have sent several messages in a short time. Please try again later.",
       "server": "The service did not accept the message right now. Please try again later."

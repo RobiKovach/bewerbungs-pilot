@@ -300,3 +300,4 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .update-banner__actions { display: flex; align-items: center; gap: 0.75rem; }
 .update-banner__notes { flex-basis: 100%; margin: 0; white-space: pre-line; }
 .update-banner .notice-close { top: 0.45rem; }
+.update-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: var(--bg); }

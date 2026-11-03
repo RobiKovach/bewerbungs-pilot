@@ -42,7 +42,9 @@ import { AaContactWindow } from './vacancies/sources/aa-contact-window.js';
 import { HttpPdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
 import { SearchJob } from './vacancies/search-job.js';
+import { cleanOldUpdateFolders, readUpdateOutcome } from './updates/apply.js';
 import { UpdateChecker } from './updates/checker.js';
+import { devUpdateSource, Updater, zipUrlFor } from './updates/updater.js';
 import { UPDATE_URL } from './updates/version-file.js';
 import { cloudUrl } from './usage/cloud.js';
 import { shouldPing, UsagePinger } from './usage/pinger.js';
@@ -157,6 +159,18 @@ async function main(): Promise<void> {
     url: cloudUrl(), stateFile: path.join(paths.root, 'usage-state.json'), version,
     installId: () => settings.get().usage.installId, enabled: () => settings.get().usage.ping, logger,
   }) : null;
+  // One-click update (0.11.0): what the installer reported last time (read once), and the leftovers of old attempts.
+  const updatesTmp = path.join(paths.tmp, 'updates');
+  const statusFile = path.join(paths.root, 'update-status.json');
+  cleanOldUpdateFolders(updatesTmp, logger);
+  const outcome = readUpdateOutcome(statusFile, logger);
+  const updater = new Updater({
+    tmpDir: updatesTmp, logger, devSource: devUpdateSource(process.env, process.argv, logger),
+    source: () => {
+      const a = updates.available();
+      return a?.sha256 ? { version: a.version, zipUrl: zipUrlFor(a.version), sha256: a.sha256 } : null;
+    },
+  });
   const key = newLaunchKey();
   const app = await buildApp({
     settings, providers, install, queue, logger, version,
@@ -177,7 +191,14 @@ async function main(): Promise<void> {
         searchJob.init(); applicationJob.init();
       },
     },
-    updates,
+    updates: {
+      available: () => updates.available(),
+      apply: {
+        updater, statusFile, outcome,
+        // Detached: the installer outlives this process, which quits right after starting it.
+        spawn: (file, args, opts) => { spawn(file, args, opts).unref(); },
+      },
+    },
     demo: demo ? { active: true } : {
       active: false,
       start: (language) => new DemoLauncher({

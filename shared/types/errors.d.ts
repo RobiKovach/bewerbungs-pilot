@@ -106,4 +106,8 @@ export type ErrorReason =
   // One-click update (0.11.0): the download failed / differs from the published checksum / is not a valid release.
   | 'updateDownload'
   | 'updateChecksum'
-  | 'updateInvalid';
+  | 'updateInvalid'
+  // …and starting one: already running / nothing to install / other work is still running (params.what).
+  | 'updateRunning'
+  | 'noUpdate'
+  | 'busy';

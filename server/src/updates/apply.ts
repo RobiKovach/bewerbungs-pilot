@@ -1,0 +1,156 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import type { UpdateFailure, UpdateProgress } from '@bp/shared';
+import { AppError } from '../errors.js';
+import type { Logger } from '../log.js';
+import type { Activity } from '../runtime/activity.js';
+import type { AvailableUpdate } from './checker.js';
+import type { Updater, UpdateStep } from './updater.js';
+import { isNewer } from './version-file.js';
+
+/** Folders `update-*` older than this are removed at start (a just-finished installer may still run from its folder). */
+const OLD_UPDATE_FOLDER_MS = 30 * 60_000;
+/** A status file still saying "running" after this long: the installer died without writing its end. */
+const STALE_RUNNING_MS = 10 * 60_000;
+
+/** What the installer left in `update-status.json` for the previous run, read once at start. */
+export interface UpdateOutcomeData { justUpdated?: string; lastUpdateError?: UpdateFailure }
+
+/**
+ * Reads `update-status.json` once, keeps the answer in memory and deletes the file. `done` → the version we are now;
+ * `failed` / `rolledBack` → why it did not work; `running` for long → the installer was interrupted; `running` for a
+ * short time is left alone (an installer may still be working on it).
+ */
+export function readUpdateOutcome(file: string, logger: Logger, now: number = Date.now()): UpdateOutcome {
+  let raw: unknown;
+  try {
+    const text = fs.readFileSync(file, 'utf8');
+    raw = JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      logger.warn('update_status_unreadable', { code: (err as NodeJS.ErrnoException).code ?? 'PARSE' });
+      fs.rmSync(file, { force: true });
+    }
+    return new UpdateOutcome({});
+  }
+  const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const state = s.state;
+  const at = typeof s.at === 'string' ? Date.parse(s.at) : NaN;
+  const error = typeof s.error === 'string' ? s.error : '';
+  let data: UpdateOutcomeData = {};
+  if (state === 'done' && typeof s.to === 'string' && /^\d+\.\d+\.\d+$/.test(s.to)) {
+    data = { justUpdated: s.to };
+  } else if (state === 'failed' || state === 'rolledBack') {
+    // The installer's own words go to the log only; the person gets a fixed sentence per kind.
+    data = { lastUpdateError: /^rollback failed/i.test(error) ? 'rollbackFailed' : 'failed' };
+    logger.warn('update_failed', { state, step: typeof s.step === 'string' ? s.step : null, error: error.slice(0, 300) });
+  } else if (state === 'running') {
+    if (Number.isFinite(at) && now - at < STALE_RUNNING_MS) return new UpdateOutcome({});
+    data = { lastUpdateError: 'interrupted' };
+    logger.warn('update_interrupted', { step: typeof s.step === 'string' ? s.step : null });
+  }
+  fs.rmSync(file, { force: true });
+  return new UpdateOutcome(data);
+}
+
+/** Held in memory; `take()` hands it out once. */
+export class UpdateOutcome {
+  constructor(private data: UpdateOutcomeData) {}
+
+  take(): UpdateOutcomeData {
+    const d = this.data;
+    this.data = {};
+    return d;
+  }
+}
+
+/** Removes `update-*` folders under `dir` older than 30 minutes. Never throws. */
+export function cleanOldUpdateFolders(dir: string, logger: Logger, now: number = Date.now()): void {
+  let names: string[];
+  try { names = fs.readdirSync(dir); } catch { return; }
+  for (const name of names) {
+    if (!name.startsWith('update-')) continue;
+    const full = path.join(dir, name);
+    try {
+      if (now - fs.statSync(full).mtimeMs > OLD_UPDATE_FOLDER_MS) fs.rmSync(full, { recursive: true, force: true });
+    } catch (err) {
+      logger.warn('update_folder_cleanup_failed', { code: (err as NodeJS.ErrnoException).code ?? 'UNKNOWN' });
+    }
+  }
+}
+
+export interface SpawnOptions { detached: true; stdio: 'ignore'; windowsHide: true }
+
+export interface UpdateApplierDeps {
+  updater: Pick<Updater, 'prepare'>;
+  activity: Activity;
+  available: () => AvailableUpdate | null;
+  version: string;
+  /** Whether the check for updates is switched on (the banner is not shown otherwise, so nothing to install either). */
+  enabled: () => boolean;
+  /** `<data>\update-status.json`: where the installer reports. */
+  statusFile: string;
+  /** Other work that must finish first; each returns its name for the sentence or null. */
+  busy: () => string | null;
+  /** Starts the installer (detached). Injected: tests never run anything. */
+  spawn: (file: string, args: string[], opts: SpawnOptions) => void;
+  /** The server's normal shutdown path. */
+  shutdown: () => void;
+  pid?: number;
+  logger: Logger;
+}
+
+type Step = UpdateStep | 'installing';
+
+/**
+ * "Update now" (spec 0.11.0): downloads and checks the release, starts the unattended installer and quits so that the
+ * installer can replace the program. A failure before the installer starts leaves the old app running untouched.
+ */
+export class UpdateApplier {
+  private current: UpdateProgress = { state: 'idle' };
+
+  constructor(private readonly d: UpdateApplierDeps) {}
+
+  progress(): UpdateProgress {
+    return { ...this.current };
+  }
+
+  /** Throws the 409s; otherwise starts the work in the background and returns. */
+  apply(): void {
+    this.d.activity.refuseDuringUpdate();
+    const a = this.d.available();
+    if (!this.d.enabled() || !a || !a.sha256 || !isNewer(a.version, this.d.version)) {
+      throw new AppError('CONFLICT', 'no installable update', 'noUpdate');
+    }
+    const what = this.d.busy();
+    if (what) throw new AppError('CONFLICT', `busy: ${what}`, 'busy', { what });
+    const end = this.d.activity.begin('update');
+    this.current = { state: 'downloading' };
+    void this.run(end);
+  }
+
+  private set(step: Step): void {
+    this.current = { state: step };
+  }
+
+  private async run(end: () => void): Promise<void> {
+    try {
+      // Nothing aborts a running update (no Cancel button in the spec), so the signal never fires.
+      const { releaseRoot } = await this.d.updater.prepare((s) => this.set(s), new AbortController().signal);
+      this.set('installing');
+      const script = path.join(releaseRoot, 'installer', 'install.ps1');
+      this.d.spawn('powershell.exe', [
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script,
+        '-Unattended', '-StatusFile', this.d.statusFile, '-WaitPid', String(this.d.pid ?? process.pid),
+      ], { detached: true, stdio: 'ignore', windowsHide: true });
+      this.d.logger.info('update_installer_started', {});
+      // `activity` stays open: this server is going away and must not accept new work meanwhile.
+      this.d.shutdown();
+    } catch (err) {
+      end();
+      const reason = err instanceof AppError ? err.reason : undefined;
+      this.d.logger.warn('update_apply_failed', { reason: reason ?? 'unknown' });
+      this.current = { state: 'failed', error: reason ?? 'unknown' };
+    }
+  }
+}

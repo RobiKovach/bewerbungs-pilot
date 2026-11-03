@@ -46,7 +46,17 @@ export interface FeedbackInput { kind: FeedbackKind; email: string; text: string
 
 /** GET /api/updates: notes already in the UI language (English fallback); available null = no banner. */
 /** canInstall: the published version.json carries the zip checksum, so "Update now" can verify the download. */
-export interface UpdatesView { current: string; available: { version: string; url: string; notes: string; canInstall: boolean } | null }
+export type UpdateFailure = 'failed' | 'rollbackFailed' | 'interrupted';
+export interface UpdatesView {
+  current: string;
+  available: { version: string; url: string; notes: string; canInstall: boolean } | null;
+  /** Set once, in the first answer after an update finished: the version the app now is (0.11.0). */
+  justUpdated?: string;
+  /** Set once, in the first answer after an update that did not finish; the app is the old one (0.11.0). */
+  lastUpdateError?: UpdateFailure;
+}
+/** error = an errors.reasons id (updateDownload | updateChecksum | updateInvalid | unknown). */
+export interface UpdateProgress { state: 'idle' | 'downloading' | 'verifying' | 'extracting' | 'installing' | 'failed'; error?: string }
 
 export interface Availability { ok: boolean; reason?: 'not-installed' | 'not-logged-in' | 'error'; detail?: string }
 /** provider null = none chosen yet (availability is then { ok: false, reason: 'error' }). */
