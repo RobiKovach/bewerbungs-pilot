@@ -5,6 +5,7 @@ import type { LlmTask } from '../src/llm/types.js';
 import { packageContext } from '../src/applications/tasks/context.js';
 import { createPackageTask } from '../src/applications/tasks/create-package.js';
 import { offerReplyTask } from '../src/applications/tasks/offer-reply.js';
+import { feedbackTask, questionsTask } from '../src/interview/tasks.js';
 import { refreshCvTask } from '../src/applications/tasks/refresh-cv.js';
 import { reviseLetterTask } from '../src/applications/tasks/revise-letter.js';
 import { emptyProfile } from '../src/profile/schema.js';
@@ -32,6 +33,8 @@ const TASKS: Record<string, () => LlmTask> = {
   'revise letter': () => reviseLetterTask(ctx(), VAC, 'Text', pkg().letter, 'kürzer'),
   'refresh CV': () => refreshCvTask(ctx(), VAC, 'Text'),
   'offer reply': () => offerReplyTask(ctx(), pkg({ status: 'offer' }), '48.000 €', '55.000 €'),
+  'interview questions': () => questionsTask({ ctx: ctx(), pkg: pkg(), vacancyText: 'Text', language: 'de', uiLanguage: 'uk' }),
+  'interview feedback': () => feedbackTask({ ctx: ctx(), pkg: pkg(), vacancyText: 'Text', language: 'de', uiLanguage: 'uk' }, { id: 'q1', kind: 'theory', text: 'Frage', code: null, answer: null }, { text: 'Antwort', dontKnow: false }),
 };
 
 describe('strictProblems', () => {

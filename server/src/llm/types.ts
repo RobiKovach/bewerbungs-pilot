@@ -9,6 +9,7 @@ export type JsonSchema = Record<string, unknown>;
 export const LLM_TASK_IDS = [
   'probe', 'hello', 'extract-cv', 'follow-up', 'structure-stories', 'extract-manual', 'score',
   'create-package', 'refresh-cv', 'revise-letter', 'offer-reply', 'contact-name',
+  'interview-questions', 'interview-feedback', 'interview-summary',
 ] as const;
 export type LlmTaskId = typeof LLM_TASK_IDS[number];
 
@@ -18,6 +19,8 @@ export interface LlmTask {
   prompt: string;
   schema: JsonSchema;
   replyLanguage: Language;
+  /** Replaces the closing "write all text in <replyLanguage>" line, for an answer that mixes two languages. */
+  languageRule?: string;
   allowWebSearch?: boolean;
   /**
    * Absolute paths of files Claude should read. They are COPIED into the per-run folder as input/file-1.<ext>, ...

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import type { PackageVacancy } from '@bp/shared';
+import type { InterviewPrep, PackageVacancy, PrepFeedback, PrepQuestion } from '@bp/shared';
 import { checkCv, checkLetter } from '../src/applications/checks.js';
+import { feedbackTask, questionsTask, questionsViolations, summaryTask, summaryViolations, type QuestionsOutput, type SummaryOutput, type TaskCtx } from '../src/interview/tasks.js';
 import { packageContext, type CreateOutput, type CvOutput, type LetterOutput } from '../src/applications/tasks/context.js';
 import { createPackageTask } from '../src/applications/tasks/create-package.js';
 import { offerReplyTask, offerReplyViolations } from '../src/applications/tasks/offer-reply.js';
@@ -24,6 +25,13 @@ const PASTED = 'Webentwickler (m/w/d)\nMuster GmbH\n20095 Hamburg\nWir suchen Ve
 const CONTACT_WINDOW = 'Ihre Ansprechpartnerin\nFrau Erika Musterfrau\nE-Mail: bewerbung@muster.example';
 const ctx = (language: 'de' | 'en' = 'de') => packageContext(readyPackageProfile(), language, false);
 const id = (n: number) => () => `id-${n}`;
+const PREP_CTX = (): TaskCtx => ({ ctx: ctx(), pkg: pkg(), vacancyText: 'Wir suchen.', language: 'de', uiLanguage: 'uk' });
+const PREP_QUESTION: PrepQuestion = { id: 'q1', kind: 'theory', text: 'Was ist React?', code: null, answer: null };
+/** A set with one answered question per entry; the entry says whether the answer was weak. */
+const prepWith = (weak: boolean[]): InterviewPrep => ({
+  schemaVersion: 1, applicationId: 'app-1', language: 'de', createdAt: '2026-11-04T10:00:00.000Z', updatedAt: '2026-11-04T10:00:00.000Z', employerQuestions: [], summary: null,
+  questions: weak.map((w, i) => ({ ...PREP_QUESTION, id: `q${i + 1}`, answer: { text: 'Antwort', dontKnow: false, updatedAt: '2026-11-04T10:00:00.000Z', feedback: { weak: w, content: 'c', languageFixes: [], better: 'b' } } })),
+});
 
 /**
  * One real task per kind, built by the app's own task builders. Typed as Record<LlmTaskId, …> so a new task id
@@ -45,6 +53,9 @@ const TASKS: Record<LlmTaskId, () => LlmTask> = {
   'revise-letter': () => reviseLetterTask(ctx(), VAC, 'Wir suchen.', pkg().letter, 'Mach es kürzer'),
   'offer-reply': () => offerReplyTask(ctx(), pkg(), '50.000 €', '55.000 €'),
   'contact-name': () => contactNameTask(CONTACT_WINDOW, 'de'),
+  'interview-questions': () => questionsTask(PREP_CTX()),
+  'interview-feedback': () => feedbackTask(PREP_CTX(), PREP_QUESTION, { text: 'Eine ausreichend lange Antwort auf die Frage.', dontKnow: false }),
+  'interview-summary': () => summaryTask(PREP_CTX(), prepWith([false, true]), null),
 };
 
 describe('scriptedResponse (fake AI for end-to-end runs)', () => {
@@ -117,5 +128,27 @@ describe('scriptedResponse (fake AI for end-to-end runs)', () => {
     expect(out).toEqual({ salutation: 'Frau', name: 'Erika Musterfrau' });
     expect(withContactName(emptyContact(), out, CONTACT_WINDOW).name).toBe('Erika Musterfrau');
     expect(scriptedResponse(contactNameTask('Kontakt\nE-Mail: jobs@muster.example', 'de'))).toEqual({ salutation: '', name: '' });
+  });
+
+  it('interview-questions: 9 questions split 4/4/1, accepted by the app check', () => {
+    const out = scriptedResponse(TASKS['interview-questions']()) as QuestionsOutput;
+    expect(out.questions).toHaveLength(9);
+    expect(questionsViolations(out)).toEqual([]);
+  });
+
+  it.each([
+    ['dontKnow', { text: '', dontKnow: true }, true],
+    ['an answer of 19 characters', { text: 'x'.repeat(19), dontKnow: false }, true],
+    ['an answer of 20 characters', { text: 'x'.repeat(20), dontKnow: false }, false],
+  ])('interview-feedback: %s', (_name, answer, weak) => {
+    const out = scriptedResponse(feedbackTask(PREP_CTX(), PREP_QUESTION, answer)) as PrepFeedback;
+    expect(out.weak).toBe(weak);
+  });
+
+  it.each([[[false, false], 90], [[false, true], 80], [[true, true], 70]] as const)('interview-summary: weak %j gives %i%%', (weak, percent) => {
+    const prep = prepWith([...weak]);
+    const out = scriptedResponse(summaryTask(PREP_CTX(), prep, null)) as SummaryOutput;
+    expect(out.percent).toBe(percent);
+    expect(summaryViolations(out, prep)).toEqual([]);
   });
 });

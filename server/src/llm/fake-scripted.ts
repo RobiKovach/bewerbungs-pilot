@@ -132,6 +132,50 @@ function contactName(task: LlmTask) {
   return m ? { salutation: m[1], name: m[2] } : { salutation: '', name: '' };
 }
 
+/** 4 + 4 + 1 questions and 3 for the employer, in the interview language. */
+function interviewQuestions(task: LlmTask) {
+  const de = isGerman(task);
+  const experience = de
+    ? ['Erzählen Sie etwas über sich.', 'Was war Ihr schwierigstes Projekt?', 'Warum möchten Sie zu uns?', 'Warum suchen Sie eine neue Stelle?']
+    : ['Tell me about yourself.', 'What was your hardest project?', 'Why do you want to work for us?', 'Why are you looking for a new job?'];
+  const theory = de
+    ? ['Was ist der Unterschied zwischen var, let und const?', 'Was ist ein React-Hook?', 'Was unterscheidet GET und POST?', 'Was bedeutet Responsive Design?']
+    : ['What is the difference between var, let and const?', 'What is a React hook?', 'How do GET and POST differ?', 'What does responsive design mean?'];
+  return {
+    questions: [
+      ...experience.map((text) => ({ kind: 'experience', text, code: null })),
+      ...theory.map((text) => ({ kind: 'theory', text, code: null })),
+      { kind: 'practice', text: de ? 'Wo ist der Fehler in diesem Code?' : 'Where is the mistake in this code?', code: 'function sum(a) {\n  return a + b;\n}' },
+    ],
+    employerQuestions: de
+      ? ['Wie sieht ein typischer Arbeitstag aus?', 'Wie ist das Team aufgebaut?', 'Wie geht es nach diesem Gespräch weiter?']
+      : ['What does a typical working day look like?', 'How is the team organised?', 'What happens after this interview?'],
+  };
+}
+
+/** A short answer or "I don't know" is weak (fake AI answer): enough to walk through the whole flow. */
+function interviewFeedback(task: LlmTask) {
+  const { text, dontKnow } = fencedJson<{ text: string; dontKnow: boolean }>(task.prompt, 'answer');
+  const weak = dontKnow || text.length < 20;
+  return {
+    weak,
+    content: weak ? 'The answer is too short and names no concrete example (fake AI answer).' : 'The answer is concrete (fake AI answer).',
+    languageFixes: weak && !dontKnow ? [{ said: text || '…', correct: 'Ich habe …', why: 'A whole sentence sounds better (fake AI answer).' }] : [],
+    better: 'Eine kurze, konkrete Antwort mit einem echten Beispiel (fake AI answer).',
+  };
+}
+
+function interviewSummary(task: LlmTask) {
+  const answers = fencedJson<{ id: string; weak: boolean }[]>(task.prompt, 'answers');
+  const weak = answers.filter((a) => a.weak);
+  const note = 'Honest note on this area (fake AI answer).';
+  return {
+    percent: 90 - 10 * weak.length,
+    areas: { experience: note, theory: note, practice: note, language: note },
+    biggestRisk: { questionId: (weak[0] ?? answers[0])?.id ?? '', why: 'Repeat this one first (fake AI answer).' },
+  };
+}
+
 export function scriptedResponse(task: LlmTask): unknown {
   switch (task.id) {
     case 'probe': return { ok: true };
@@ -159,6 +203,9 @@ export function scriptedResponse(task: LlmTask): unknown {
     case 'revise-letter': return letter(task);
     case 'offer-reply': return offerReply(task);
     case 'contact-name': return contactName(task);
+    case 'interview-questions': return interviewQuestions(task);
+    case 'interview-feedback': return interviewFeedback(task);
+    case 'interview-summary': return interviewSummary(task);
     default: {
       const unknown: never = task.id;
       throw new Error(`fake AI: no scripted answer for task "${String(unknown)}"`);

@@ -11,5 +11,5 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
 };
 
 export function composePrompt(task: LlmTask): string {
-  return `${task.prompt}\n\nWrite all natural-language text in your answer in ${LANGUAGE_NAMES[task.replyLanguage]}.`;
+  return `${task.prompt}\n\n${task.languageRule ?? `Write all natural-language text in your answer in ${LANGUAGE_NAMES[task.replyLanguage]}.`}`;
 }
