@@ -5,12 +5,15 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useReportUnsaved } from '../profile/unsaved';
 import { AnswerView } from './AnswerView';
+import { LanguageChoice, NewQuestions } from './NewQuestions';
 import { QuestionCards } from './QuestionCards';
+import { SummaryView } from './SummaryView';
 import { isDraftUnsaved, isFinished, nextQuestion } from './format';
 import type { ApplicationView, InterviewPrep, InterviewPrepView, PrepQuestion } from '../types';
 
 type InterviewLanguage = InterviewPrepView['defaultLanguage'];
-const LANGUAGES: readonly InterviewLanguage[] = ['de', 'en'];
+/** What `selected` holds on the summary screen; question ids are "q1", "q2", … */
+const SUMMARY = '#summary';
 
 /** "Next": the first question still without feedback, not this one again; the cards when there is none. */
 const nextAfter = (questions: readonly PrepQuestion[], currentId: string): string | null =>
@@ -42,14 +45,7 @@ function StartPrep({ id, view, onView }: { id: string; view: InterviewPrepView; 
   return (
     <div className="card">
       <p>{t('interview.intro')}</p>
-      <div role="radiogroup" aria-label={t('interview.languageLabel')} className="filter-chips">
-        {LANGUAGES.map((l) => (
-          <label key={l} className={language === l ? 'chip active' : 'chip'}>
-            <input type="radio" name="interview-language" value={l} checked={language === l} disabled={working} onChange={() => setLanguage(l)} />
-            {t(`interview.language.${l}`)}
-          </label>
-        ))}
-      </div>
+      <LanguageChoice value={language} disabled={working} onChange={setLanguage} />
       {error ? <ErrorBanner error={error} /> : null}
       {working
         ? <ClaudeWorking textKey="interview.creating" onCancel={() => abort.current?.abort()} />
@@ -58,12 +54,19 @@ function StartPrep({ id, view, onView }: { id: string; view: InterviewPrepView; 
   );
 }
 
-function PrepOverview({ prep, readOnly, onOpen }: { prep: InterviewPrep; readOnly: boolean; onOpen: (id: string) => void }) {
+function PrepOverview({ id, prep, readOnly, onOpen, onSummary, onView }: {
+  id: string;
+  prep: InterviewPrep;
+  readOnly: boolean;
+  onOpen: (id: string) => void;
+  onSummary: () => void;
+  onView: (view: InterviewPrepView) => void;
+}) {
   const { t } = useTranslation();
   const done = prep.questions.filter(isFinished).length;
   const next = nextQuestion(prep.questions);
-  /** Task 7 opens the summary here. */
-  const openWhenAllDone = () => { if (prep.questions[0]) onOpen(prep.questions[0].id); };
+  // A closed application cannot ask for a summary any more: only one that exists can be opened.
+  const canOpenSummary = !next && (!readOnly || prep.summary !== null);
   return (
     <>
       <div className="question-progress">
@@ -71,11 +74,11 @@ function PrepOverview({ prep, readOnly, onOpen }: { prep: InterviewPrep; readOnl
           <strong>{t('interview.progress', { done, total: prep.questions.length })}</strong>
           <p className="muted">{t('interview.languageLine', { language: t(`interview.language.${prep.language}`) })}</p>
         </div>
-        {readOnly ? null : next
-          ? <button type="button" className="btn" onClick={() => onOpen(next.id)}>{t('interview.continue')}</button>
-          : <button type="button" className="btn" onClick={openWhenAllDone}>{t('interview.seeAnswers')}</button>}
+        {!readOnly && next ? <button type="button" className="btn" onClick={() => onOpen(next.id)}>{t('interview.continue')}</button> : null}
+        {canOpenSummary ? <button type="button" className="btn" onClick={onSummary}>{t('interview.summary.open')}</button> : null}
       </div>
       {readOnly ? <p className="notice" role="status">{t('interview.readOnly')}</p> : null}
+      {readOnly ? null : <NewQuestions applicationId={id} proposal={prep.language === 'de' ? 'en' : 'de'} labelKey="interview.newQuestions.changeLanguage" onView={onView} />}
       <QuestionCards questions={prep.questions} readOnly={readOnly} onOpen={onOpen} />
       <section className="card" aria-labelledby="employer-questions">
         <h2 id="employer-questions">{t('interview.employerTitle')}</h2>
@@ -93,21 +96,36 @@ export function InterviewPage({ id }: { id: string }) {
   const [application, setApplication] = useState<ApplicationView['application'] | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  // "Repeat all weak": the weak questions still to come; Next goes through them before anything else.
+  const [repeatQueue, setRepeatQueue] = useState<readonly string[]>([]);
+  // Drafts live here so that going back to the cards keeps them, and the leave warning still knows about them.
+  const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
+
+  /** Ids repeat between sets: whatever replaced the set (here or in another tab), a draft must not land on a different question. */
+  const setId = useRef<string | null>(null);
+  const applyView = useCallback((next: InterviewPrepView) => {
+    const created = next.prep?.createdAt ?? null;
+    if (setId.current !== created) {
+      setId.current = created;
+      setDrafts({});
+      setRepeatQueue([]);
+      setSelected(null);
+    }
+    setView(next);
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
     try {
       const [prepView, appView] = await Promise.all([api.interview(id), api.getApplication(id)]);
-      setView(prepView);
+      applyView(prepView);
       setApplication(appView.application);
     } catch (err) {
       setError(err);
     }
-  }, [id]);
+  }, [id, applyView]);
   useEffect(() => { void load(); }, [load]);
 
-  // Drafts live here so that going back to the cards keeps them, and the leave warning still knows about them.
-  const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
   const setDraft = (questionId: string, text: string | null) => setDrafts((prev) => {
     const next = { ...prev };
     if (text === null) delete next[questionId]; else next[questionId] = text;
@@ -116,32 +134,64 @@ export function InterviewPage({ id }: { id: string }) {
   useReportUnsaved(view?.prep?.questions.some((q) => isDraftUnsaved(q, drafts[q.id])) ?? false);
 
   /** Quietly: the page keeps working on what it has if this fails. */
-  const refresh = () => { api.interview(id).then(setView).catch(() => {}); };
+  const refresh = useCallback(() => { api.interview(id).then(applyView).catch(() => {}); }, [id, applyView]);
+  const openQuestion = (questionId: string) => { setRepeatQueue([]); setSelected(questionId); };
+  const backToCards = () => { setRepeatQueue([]); setSelected(null); };
 
   if (error) return <ErrorBanner error={error} onRetry={() => void load()} />;
   if (!view || !application) return <p className="muted">{t('common.loading')}</p>;
-  const question = view.prep?.questions.find((q) => q.id === selected) ?? null;
+  const prep = view.prep;
+  const question = prep?.questions.find((q) => q.id === selected) ?? null;
+  const allDone = prep?.questions.every(isFinished) ?? false;
+  // Never before the whole set has feedback, and for a closed application only a summary that exists.
+  const showSummary = selected === SUMMARY && allDone && (!view.readOnly || prep?.summary != null);
+
+  const next = (currentId: string) => {
+    if (repeatQueue.length > 0) {
+      setSelected(repeatQueue[0]);
+      setRepeatQueue(repeatQueue.slice(1));
+      return;
+    }
+    const open = prep ? nextAfter(prep.questions, currentId) : null;
+    setSelected(open ?? (allDone ? SUMMARY : null));
+  };
+  const repeatWeak = () => {
+    const weak = prep?.questions.filter((q) => q.answer?.feedback?.weak).map((q) => q.id) ?? [];
+    setSelected(weak[0] ?? null);
+    setRepeatQueue(weak.slice(1));
+  };
   return (
     <section>
       <p><a href={`#/applications/${id}`}>{t('interview.back')}</a></p>
       <h1>{t('interview.title')}</h1>
       <p className="muted">{application.vacancy.company} — {application.vacancy.title}</p>
-      {question && view.prep ? (
+      {question && prep ? (
         <AnswerView
           key={question.id}
           applicationId={id}
           question={question}
-          language={view.prep.language}
+          language={prep.language}
           readOnly={view.readOnly}
           draft={drafts[question.id]}
           onDraft={(text) => setDraft(question.id, text)}
-          onView={setView}
+          onView={applyView}
           onRefresh={refresh}
-          onNext={() => setSelected(view.prep ? nextAfter(view.prep.questions, question.id) : null)}
-          onBack={() => setSelected(null)}
+          onNext={() => next(question.id)}
+          onBack={backToCards}
         />
-      ) : view.prep ? <PrepOverview prep={view.prep} readOnly={view.readOnly} onOpen={setSelected} />
-          : view.canStart ? <StartPrep id={id} view={view} onView={setView} />
+      ) : prep && showSummary ? (
+        <SummaryView
+          applicationId={id}
+          prep={prep}
+          readOnly={view.readOnly}
+          onView={applyView}
+          onRefresh={refresh}
+          onOpen={openQuestion}
+          onRepeatWeak={repeatWeak}
+          onBack={backToCards}
+        />
+      ) : prep ? <PrepOverview id={id} prep={prep} readOnly={view.readOnly} onOpen={openQuestion} onSummary={() => setSelected(SUMMARY)} onView={applyView} />
+          : view.canStart ? <StartPrep id={id} view={view} onView={applyView} />
             : <p className="notice" role="status">{t('interview.notAvailable')}</p>}
     </section>
   );

@@ -327,3 +327,21 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .prep-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .language-fixes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; overflow-wrap: anywhere; }
 .language-fixes p { margin-top: 0.15rem; }
+.new-questions { margin: 0 0 1rem; }
+.new-questions .filter-chips { margin: 0.5rem 0; }
+.summary-view h2 { margin: 0 0 0.75rem; }
+.summary-view .new-questions { margin: 0.75rem 0 0; }
+.chance { padding: 0.75rem; border: 1px solid var(--border); border-radius: var(--radius); }
+.chance p { margin: 0.35rem 0 0; }
+.chance__label { font-weight: 600; }
+.chance__figures { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; }
+.chance__value { font-size: 2.25rem; line-height: 1.2; white-space: nowrap; }
+.summary-areas { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.75rem; }
+.summary-areas dt { font-weight: 600; }
+.summary-areas dd { margin: 0.1rem 0 0; }
+.summary-risk { text-align: left; overflow-wrap: anywhere; }
+.summary-list { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.summary-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.summary-list__text { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
+.summary-view details summary { cursor: pointer; font-weight: 600; }
+.summary-actions { margin-top: 1rem; }

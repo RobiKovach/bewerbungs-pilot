@@ -32,7 +32,8 @@ async function openQuestion(v: InterviewPrepView, routes: Record<string, RouteHa
   }, { pending });
   render(<UnsavedProvider onChange={onUnsaved}><ApplicationsPage pollMs={10} /></UnsavedProvider>);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole('button', { name: /^(Continue|See my answers)$/ }));
+  await screen.findAllByTestId('question-card');
+  await user.click(screen.queryByRole('button', { name: 'Continue' }) ?? screen.getAllByRole('button', { name: 'View' })[0]);
   return user;
 }
 const field = () => screen.getByRole('textbox', { name: /Your answer/ });
@@ -224,7 +225,7 @@ describe('answering a question', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
-  it('Next goes to the next question without feedback, and to the cards after the last', async () => {
+  it('Next goes to the next question without feedback', async () => {
     const after = view([question(1, { answer: answered() }), question(2)]);
     const user = await openQuestion(view([question(1), question(2)]), { [ANSWER_ROUTE]: () => ({ body: after }) });
     await user.click(screen.getByRole('button', { name: "I don't know" }));
@@ -233,10 +234,11 @@ describe('answering a question', () => {
     expect(field()).toHaveValue('');
   });
 
-  it('after the last question Next returns to the cards', async () => {
-    const user = await openQuestion(view([question(1, { answer: answered() })]));
+  it('after the last question Next opens the summary', async () => {
+    const done = view([question(1, { answer: answered() })]);
+    const user = await openQuestion(done, { 'POST /api/applications/app1/interview/summary': () => ({ status: 429, body: { error: { code: 'LLM_LIMIT', detailsForLog: 'limit' } } }) });
     await user.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getAllByTestId('question-card')).toHaveLength(1);
+    expect(await screen.findByRole('heading', { name: 'Summary' })).toBeInTheDocument();
   });
 
   it('typed text warns about leaving, keeps its place when going to the cards, and stops warning once saved', async () => {

@@ -161,12 +161,12 @@ describe('InterviewPage', () => {
     await user.click(screen.getByRole('button', { name: 'All questions' }));
     expect(screen.getAllByTestId('question-card')).toHaveLength(9);
   });
-  it('all with feedback: the top button still works and no figure is invented', async () => {
+  it('all with feedback: the top button opens the summary and no figure is invented', async () => {
     const qs = KINDS.map((_, i) => question(i, { answer: answered(FEEDBACK) }));
     const { user } = open(prepView({ prep: prep({}, qs) }));
-    await user.click(await screen.findByRole('button', { name: 'See my answers' }));
-    expect(screen.getByRole('heading', { name: 'Frage 1' })).toBeInTheDocument();
-    expect(screen.queryByText(/%/)).toBeNull();
+    await user.click(await screen.findByRole('button', { name: 'Summary' }));
+    expect(await screen.findByRole('heading', { name: 'Summary' })).toBeInTheDocument();
+    expect(screen.queryByText(/≈/)).toBeNull();
   });
   it('read-only: no Continue, a note, and the cards can still be opened', async () => {
     const { user } = open(prepView({ canStart: false, readOnly: true }));
