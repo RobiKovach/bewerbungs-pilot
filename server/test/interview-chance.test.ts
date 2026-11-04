@@ -27,8 +27,11 @@ describe('chancePercent', () => {
     expect(chancePercent(95, 0, 9)).toBe(95);
   });
 
-  it('a value that is not a number, or an empty set, gives the lowest honest figure', () => {
+  it('a value that is not a number gives the lowest figure', () => {
     expect(chancePercent(Number.NaN, 0, 9)).toBe(5);
+  });
+
+  it('an empty set counts as no strong answers: the cap for all weak', () => {
     expect(chancePercent(80, 0, 0)).toBe(10);
   });
 });

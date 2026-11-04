@@ -2,9 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
-import type { InterviewPrep } from '@bp/shared';
+import type { ApplicationView, InterviewPrep } from '@bp/shared';
+import { ApplicationStore } from '../src/applications/store.js';
 import { AppError } from '../src/errors.js';
 import { InterviewPrepStore } from '../src/interview/store.js';
+import { pkg } from './helpers/applications.js';
+import { post, sendTo, setup as sendingSetup } from './helpers/sending.js';
 
 const ID = 'app-1';
 const SECRET = 'Mein geheimer Antworttext';
@@ -92,13 +95,13 @@ describe('InterviewPrepStore', () => {
     expect(JSON.stringify(warnings)).not.toContain(SECRET);
   });
 
-  it('valid JSON that is not an object → put aside, null', () => {
-    const { store, dir, file } = setup();
-    fs.writeFileSync(file, 'null');
+  it.each([['null', 'null'], ['an array', '[1]']])('valid JSON that is %s → put aside, null', (_name, content) => {
+    const { store, dir, file, warnings } = setup();
+    fs.writeFileSync(file, content);
     expect(store.read(ID)).toBeNull();
-    fs.writeFileSync(file, '[1]');
-    expect(store.read(ID)).toBeNull();
-    expect(setAside(dir, 'invalid').length).toBeGreaterThan(0);
+    expect(fs.existsSync(file)).toBe(false);
+    expect(setAside(dir, 'invalid')).toHaveLength(1);
+    expect(warnings).toHaveLength(1);
   });
 
   it('an unsafe id is BAD_REQUEST and touches nothing outside', () => {
@@ -130,5 +133,52 @@ describe('InterviewPrepStore', () => {
     fs.rmSync(path.join(dir, ID), { recursive: true });
     expect(() => store.write(prep())).toThrowError(expect.objectContaining({ code: 'DATA_WRITE_FAILED' }));
     expect(fs.existsSync(path.join(dir, ID))).toBe(false);
+  });
+});
+
+describe('the prep file follows the application folder', () => {
+  function withPackage() {
+    const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp prep folder-')), 'applications');
+    const applications = new ApplicationStore(dir);
+    applications.load();
+    const p = pkg();
+    applications.save(p, { vacancyText: 'Volltext der Stelle' });
+    const prepStore = new InterviewPrepStore(dir);
+    prepStore.write(prep({ applicationId: p.id }));
+    return { dir, applications, prepStore, p };
+  }
+
+  it('removing the application removes its prep file', () => {
+    const { dir, applications, prepStore, p } = withPackage();
+    applications.remove(p.id);
+    expect(prepStore.read(p.id)).toBeNull();
+    expect(fs.existsSync(path.join(dir, p.id))).toBe(false);
+  });
+
+  it('a copy as a new draft starts without a prep, the original keeps its own', async () => {
+    const { ctx, id } = await sendingSetup();
+    expect((await sendTo(ctx, id)).statusCode).toBe(200);
+    const prepStore = new InterviewPrepStore(path.join(ctx.dir, 'applications'));
+    prepStore.write(prep({ applicationId: id }));
+    const r = await post(ctx, `/api/applications/${id}/copy`, {});
+    expect(r.statusCode).toBe(200);
+    const copyId = (r.json() as ApplicationView).application.id;
+    expect(copyId).not.toBe(id);
+    expect(prepStore.read(copyId)).toBeNull();
+    expect(prepStore.read(id)).toEqual(prep({ applicationId: id }));
+  });
+
+  it.each([['with the list', false], ['rebuilding from the folders', true]])('a reload %s does not take the prep file for a package or change the package', (_name, dropList) => {
+    const { dir, applications, prepStore, p } = withPackage();
+    const packageFile = path.join(dir, p.id, 'package.json');
+    const before = fs.readFileSync(packageFile);
+    if (dropList) fs.rmSync(path.join(dir, 'applications.json'));
+    const warnings: string[] = [];
+    const again = new ApplicationStore(dir, (event) => warnings.push(event));
+    expect(again.load().map((s) => s.id)).toEqual([p.id]);
+    expect(warnings).toEqual([]);
+    expect(again.require(p.id).updatedAt).toBe(applications.require(p.id).updatedAt);
+    expect(fs.readFileSync(packageFile).equals(before)).toBe(true);
+    expect(prepStore.read(p.id)).toEqual(prep({ applicationId: p.id }));
   });
 });
