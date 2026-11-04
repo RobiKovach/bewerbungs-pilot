@@ -76,6 +76,9 @@ describe('questionsTask', () => {
     expect(task.prompt).toContain('At most ONE question');
     expect(task.prompt).toContain('Lücke 2020');
   });
+  it('experience questions do not presuppose experience the person lacks', () => {
+    expect(questionsTask(taskCtx()).prompt).toContain('Never presuppose experience that is absent from the profile and the letter');
+  });
   it('the job ad, the letter and the profile are fenced', () => {
     const outside = outsideFences(questionsTask(taskCtx()).prompt);
     for (const text of ['Wir suchen einen Webentwickler', 'Absatz eins.', 'Lücke 2020']) expect(outside).not.toContain(text);
@@ -101,6 +104,21 @@ describe('feedbackTask', () => {
   it('carries the rules: no invented experience, weak, never-mention, no flattery', () => {
     const { prompt } = feedbackTask(taskCtx(), question(), { text: 'Antwort', dontKnow: false });
     for (const rule of ['Never invent', 'smaller language mistakes alone do not make it weak', 'directly asks about it', 'No flattery', 'said in this answer']) expect(prompt).toContain(rule);
+  });
+  it('claims about the person stay limited, while theory and practice get correct professional content', () => {
+    const { prompt } = feedbackTask(taskCtx(), question(), { text: 'Antwort', dontKnow: false });
+    expect(prompt).toContain('Every claim about the person (experience, projects, employers, skills, numbers) comes only from the profile');
+    expect(prompt).toContain('For a question of kind "experience": if the person has no such experience, give an honest answer');
+    expect(prompt).toContain('For a question of kind "theory" or "practice": give the correct professional content even if it is not in the profile');
+    expect(prompt).toContain('correct professional content for "theory" and "practice", an honest answer for "experience"');
+  });
+  it('never-mention topics are limited in "content" too', () => {
+    expect(feedbackTask(taskCtx(), question(), { text: 'Antwort', dontKnow: false }).prompt).toContain('use one in "content" or "better" only when');
+  });
+  it('without a job ad: no instruction to build questions', () => {
+    const { prompt } = feedbackTask(taskCtx({ vacancyText: '' }), question(), { text: 'Antwort', dontKnow: false });
+    expect(prompt).toContain('No job ad text is available.');
+    expect(prompt).not.toContain('Build the questions');
   });
   it('"I don\'t know" is always weak and shows what to say', () => {
     expect(feedbackTask(taskCtx(), question(), { text: '', dontKnow: true }).prompt).toContain('The person pressed "I don\'t know"');
@@ -132,6 +150,14 @@ describe('summaryTask', () => {
     expect(outsideFences(task.prompt)).not.toContain('GEHEIME-ANTWORT');
     expect(task.prompt).toContain('GEHEIME-ANTWORT');
     expect(task.replyLanguage).toBe('uk');
+  });
+  it('without a job ad: no instruction to build questions', () => {
+    const { prompt } = summaryTask(taskCtx({ vacancyText: '' }), prep(), null);
+    expect(prompt).toContain('No job ad text is available.');
+    expect(prompt).not.toContain('Build the questions');
+  });
+  it('leaves out the never-mention list', () => {
+    expect(summaryTask(taskCtx(), prep(), null).prompt).not.toContain('Lücke 2020');
   });
   it('a figure outside 0–100 fails at the AI step', () => {
     const { schema } = summaryTask(taskCtx(), prep(), null);
