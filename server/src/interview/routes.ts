@@ -46,6 +46,9 @@ export function normalizeQuestions(out: QuestionsOutput): PrepQuestion[] {
     .map((q, i) => ({ id: `q${i + 1}`, kind: q.kind, text: q.text.trim(), code: q.kind === 'practice' && q.code?.trim() ? q.code : null, answer: null }));
 }
 
+const allHaveFeedback = (prep: InterviewPrep): boolean => prep.questions.every((q) => q.answer?.feedback);
+const summaryFits = (prep: InterviewPrep): boolean => allHaveFeedback(prep) && prep.summary?.fingerprint === answersFingerprint(prep);
+
 /** "I don't know" is weak and has nothing to correct, whatever the AI said (spec 5.3). */
 const settledFeedback = (out: FeedbackOutput, dontKnow: boolean): PrepFeedback => (dontKnow ? { ...out, weak: true, languageFixes: [] } : out);
 
@@ -65,8 +68,10 @@ export async function registerInterviewRoutes(app: FastifyInstance, d: Interview
   };
 
   const viewOf = (p: ApplicationPackage): InterviewPrepView => {
-    const prep = readPrep(p.id);
+    const stored = readPrep(p.id);
     const canStart = OPEN.has(p.status);
+    // The file keeps an outdated summary as the source of previousPercent; the person sees only one that fits the answers.
+    const prep = stored && !summaryFits(stored) ? { ...stored, summary: null } : stored;
     return { prep, canStart, readOnly: CLOSED.has(p.status) || (!canStart && prep !== null), defaultLanguage: p.language };
   };
 
@@ -121,12 +126,12 @@ export async function registerInterviewRoutes(app: FastifyInstance, d: Interview
     return answer;
   };
 
-  /** While the AI worked the application may have been decided or deleted, or the set replaced: its result is then stale. */
+  /** While the AI worked the application may have been decided or deleted, or the set replaced: its result is then stale. Sent → interview is not. */
   const stillCurrent = (start: ApplicationPackage, createdAt: string | null): { pkg: ApplicationPackage; prep: InterviewPrep | null } => {
     const pkg = d.store.get(start.id);
     if (!pkg) throw new AppError('NOT_FOUND', `application ${start.id}`);
     const prep = readPrep(start.id);
-    if (pkg.status !== start.status || (prep?.createdAt ?? null) !== createdAt) throw new AppError('CONFLICT', 'changed while the AI worked', 'packageChanged');
+    if (!OPEN.has(pkg.status) || (prep?.createdAt ?? null) !== createdAt) throw new AppError('CONFLICT', 'changed while the AI worked', 'packageChanged');
     return { pkg, prep };
   };
 
@@ -185,9 +190,9 @@ export async function registerInterviewRoutes(app: FastifyInstance, d: Interview
     return exclusive(id, 'summary', async (start) => {
       const prep = readPrep(id);
       if (!prep) throw new AppError('NOT_FOUND', 'no preparation');
-      if (prep.questions.some((q) => !q.answer?.feedback)) throw new AppError('CONFLICT', 'not all questions are done', 'prepNotFinished');
+      if (!allHaveFeedback(prep)) throw new AppError('CONFLICT', 'not all questions are done', 'prepNotFinished');
+      if (summaryFits(prep)) return viewOf(start);
       const fingerprint = answersFingerprint(prep);
-      if (prep.summary?.fingerprint === fingerprint) return viewOf(start);
 
       const previousPercent = prep.summary?.percent ?? null;
       const out = await askChecked<SummaryOutput>(summaryTask(contextOf(start, prep.language), prep, previousPercent), (o) => summaryViolations(o, prep), 'summary', abortOnClose(reply));

@@ -16,8 +16,11 @@ export function chancePercent(raw: number, weak: number, total: number): number 
   return Math.floor(Math.max(MIN, Math.min(MAX, value)) / STEP) * STEP;
 }
 
-/** Changes only with the answers themselves, so the figure is not recalculated without a reason. */
+/**
+ * Changes only with the answers and their verdicts, so the figure is not recalculated without a reason, and a flipped
+ * verdict on the same text does recalculate: the figure can never exceed the cap for the stored verdicts.
+ */
 export function answersFingerprint(prep: InterviewPrep): string {
-  const answers = prep.questions.map((q) => [q.id, q.answer ? q.answer.text : null, q.answer ? q.answer.dontKnow : null]);
+  const answers = prep.questions.map((q) => [q.id, q.answer ? q.answer.text : null, q.answer ? q.answer.dontKnow : null, q.answer?.feedback ? q.answer.feedback.weak : null]);
   return crypto.createHash('sha256').update(JSON.stringify(answers), 'utf8').digest('hex');
 }

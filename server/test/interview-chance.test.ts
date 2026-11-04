@@ -47,6 +47,24 @@ describe('answersFingerprint', () => {
     expect(answersFingerprint(prep(undefined, undefined, true))).not.toBe(answersFingerprint(prep()));
   });
 
+  it('changes when the verdict changes, and having no feedback yet differs from both verdicts', () => {
+    const withVerdict = (weak: boolean | null) => {
+      const p = prep();
+      p.questions[0]!.answer!.feedback = weak === null ? null : { weak, content: 'c', languageFixes: [], better: 'b' };
+      return answersFingerprint(p);
+    };
+    expect(new Set([withVerdict(true), withVerdict(false), withVerdict(null)]).size).toBe(3);
+  });
+
+  it('does not change with updatedAt or the words of the feedback', () => {
+    const words = (content: string) => {
+      const p = prep();
+      p.questions[0]!.answer!.feedback = { weak: false, content, languageFixes: [], better: 'b' };
+      return answersFingerprint(p);
+    };
+    expect(words('eins')).toBe(words('zwei'));
+  });
+
   it('does not change with updatedAt', () => {
     expect(answersFingerprint(prep(undefined, '2030-01-01T00:00:00.000Z'))).toBe(answersFingerprint(prep()));
   });

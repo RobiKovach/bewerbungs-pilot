@@ -121,6 +121,17 @@ describe('interview preparation: starting', () => {
     expect(prep!.questions.every((q) => q.answer === null)).toBe(true);
   });
 
+  it('the application was deleted while the AI wrote the set: a clean 404 and nothing comes back', async () => {
+    const { ctx, id } = await sent();
+    const gate = held(ctx);
+    const pending = post(ctx, url(id), { language: 'de' });
+    await gate.running();
+    ctx.applicationStore.remove(id);
+    gate.release();
+    expect((await pending).statusCode).toBe(404);
+    expect(fs.existsSync(path.join(ctx.dir, 'applications', id))).toBe(false);
+  });
+
   it('a wrong set goes back to the AI once, then LLM_BAD_OUTPUT and nothing is written', async () => {
     const { ctx, id } = await sent();
     ctx.provider.respond = () => ({ questions: [{ kind: 'theory', text: 'Nur eine', code: null }], employerQuestions: ['A?'] });
@@ -220,6 +231,17 @@ describe('interview preparation: answering', () => {
     expect(store(ctx).read(id)!.questions[0].answer).toMatchObject({ text: LONG, feedback: null });
   });
 
+  it('sent → interview while the AI worked keeps the result', async () => {
+    const { ctx, id } = await started();
+    const gate = held(ctx);
+    const pending = answer(ctx, id, 'q1');
+    await gate.running();
+    expect((await post(ctx, `/api/applications/${id}/status`, { status: 'interview', date: '2026-10-08' })).statusCode).toBe(200);
+    gate.release();
+    expect((await pending).statusCode).toBe(200);
+    expect(store(ctx).read(id)!.questions[0].answer!.feedback).not.toBeNull();
+  });
+
   it('the application was deleted while the AI worked: a clean 404 and nothing comes back', async () => {
     const { ctx, id } = await started();
     const gate = held(ctx);
@@ -313,6 +335,83 @@ describe('interview preparation: summary', () => {
     expect(next.fingerprint).not.toBe(first.fingerprint);
     expect(calls(ctx, 'interview-summary')).toBe(n + 1);
     expect(ctx.provider.calls[ctx.provider.calls.length - 1].prompt).toContain('The previous figure was 70%');
+  });
+
+  it('the view hides an outdated summary, the file keeps it for previousPercent', async () => {
+    const { ctx, id } = await started();
+    await allAnswered(ctx, id, 2);
+    const first = ((await post(ctx, url(id, '/summary'), {})).json() as InterviewPrepView).prep!.summary!;
+    const n = calls(ctx, 'interview-summary');
+
+    // A changed answer: hidden.
+    const changed = (await answer(ctx, id, 'q1')).json() as InterviewPrepView;
+    expect(changed.prep!.summary).toBeNull();
+    expect((await get(ctx, id)).prep!.summary).toBeNull();
+    expect(store(ctx).read(id)!.summary).toEqual(first);
+
+    // The recalculation fails: still hidden, the old one still in the file.
+    ctx.provider.respond = () => { throw new AppError('LLM_LIMIT', 'limit'); };
+    expect((await post(ctx, url(id, '/summary'), {})).statusCode).toBe(429);
+    expect((await get(ctx, id)).prep!.summary).toBeNull();
+    expect(store(ctx).read(id)!.summary).toEqual(first);
+
+    // It succeeds: the new figure with the old one beside it.
+    scripted(ctx);
+    const next = ((await post(ctx, url(id, '/summary'), {})).json() as InterviewPrepView).prep!.summary!;
+    expect(next).toMatchObject({ percent: 80, previousPercent: first.percent });
+    expect((await get(ctx, id)).prep!.summary).toEqual(next);
+    expect(calls(ctx, 'interview-summary')).toBe(n + 2);
+  });
+
+  it('an answer without feedback hides the summary even though its text is unchanged', async () => {
+    const { ctx, id } = await started();
+    await allAnswered(ctx, id);
+    expect((await post(ctx, url(id, '/summary'), {})).statusCode).toBe(200);
+    ctx.provider.respond = () => { throw new AppError('LLM_LIMIT', 'limit'); };
+    await answer(ctx, id, 'q1');
+    expect((await get(ctx, id)).prep!.summary).toBeNull();
+  });
+
+  it('the same text with the same verdict shows the summary again without asking the AI', async () => {
+    const { ctx, id } = await started();
+    await allAnswered(ctx, id, 2);
+    const first = ((await post(ctx, url(id, '/summary'), {})).json() as InterviewPrepView).prep!.summary!;
+    const n = calls(ctx, 'interview-summary');
+    const same = (await answer(ctx, id, 'q9')).json() as InterviewPrepView;
+    expect(same.prep!.summary).toEqual(first);
+    expect(((await post(ctx, url(id, '/summary'), {})).json() as InterviewPrepView).prep!.summary).toEqual(first);
+    expect(calls(ctx, 'interview-summary')).toBe(n);
+  });
+
+  it('the same text with a flipped verdict recalculates, and the figure obeys the new cap', async () => {
+    const { ctx, id } = await started();
+    await allAnswered(ctx, id);
+    const first = ((await post(ctx, url(id, '/summary'), {})).json() as InterviewPrepView).prep!.summary!;
+    expect(first.percent).toBe(90);
+    const inner = ctx.provider.respond;
+    ctx.provider.respond = (task, signal) => {
+      const out = inner(task, signal) as Record<string, unknown>;
+      return task.id === 'interview-feedback' ? { ...out, weak: true } : { ...out, percent: 95 };
+    };
+    for (const q of ['q1', 'q2', 'q3', 'q4']) expect((await answer(ctx, id, q)).statusCode).toBe(200);
+    expect((await get(ctx, id)).prep!.summary).toBeNull();
+    expect(((await post(ctx, url(id, '/summary'), {})).json() as InterviewPrepView).prep!.summary!.percent).toBe(55);
+  });
+
+  it('the set was replaced while the AI wrote the summary: packageChanged and no summary is written', async () => {
+    const { ctx, id } = await started();
+    await allAnswered(ctx, id);
+    const gate = held(ctx);
+    const pending = post(ctx, url(id, '/summary'), {});
+    await gate.running();
+    const now = store(ctx).read(id)!;
+    const replaced: InterviewPrep = { ...now, createdAt: '2030-01-01T00:00:00.000Z' };
+    store(ctx).write(replaced);
+    gate.release();
+    const r = await pending;
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('packageChanged');
+    expect(store(ctx).read(id)).toEqual(replaced);
   });
 
   it('a risk with an unknown question goes back once, then LLM_BAD_OUTPUT and the summary stays empty', async () => {
