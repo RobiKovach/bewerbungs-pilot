@@ -49,7 +49,23 @@ const APPLICATION_BODY: Record<DocLanguage, (title: string) => string> = {
   de: (title) => `anbei sende ich Ihnen meine Bewerbung als ${title} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
   en: (title) => `please find attached my application for the position of ${title}, with my cover letter and CV. I look forward to hearing from you.`,
 };
-/** Unsolicited applications (Task 10c): no advertised position; the role is the card title without its prefix. */
+/** "Initiativbewerbung als <role>" / "Unsolicited application as <role>". Only an explicit "als"/"as": after a dash or "bei" there may be a company name. */
+const SUBJECT_ROLE = /^\s*(?:initiativ(?:e)?bewerbung|unsolicited application|initiative application)\s+(?:als|as)\s+(\S.*)$/iu;
+
+/**
+ * The role of an unsolicited application. The AI may choose a more precise role for the subject than the card title
+ * ("Initiativbewerbung – IT" → "Initiativbewerbung als Webentwickler"), and the email must say the same as the subject:
+ * the subject really sent, then the letter's subject, then the card title.
+ */
+function applicationRole(p: ApplicationPackage): string {
+  for (const subject of [p.sentEmail?.subject, p.letter.subject]) {
+    const role = subject === undefined ? undefined : SUBJECT_ROLE.exec(subject)?.[1]?.trim();
+    if (role) return role;
+  }
+  return initiativeRole(p.vacancy.title);
+}
+
+/** Unsolicited applications (Task 10c): no advertised position. */
 const INITIATIVE_APPLICATION_BODY: Record<DocLanguage, (role: string) => string> = {
   de: (role) => `anbei sende ich Ihnen meine Initiativbewerbung${role ? ` als ${role}` : ''} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
   en: (role) => `please find attached my unsolicited application${role ? ` as ${role}` : ''}, with my cover letter and CV. I look forward to hearing from you.`,
@@ -61,7 +77,7 @@ export function applicationEmail(p: ApplicationPackage): { subject: string; text
   const lang = p.language;
   const { fullName, phone, email } = p.snapshot.personal;
   const signature = [fullName, phone, email].filter((l) => l !== '');
-  const body = isInitiative(p.vacancy) ? INITIATIVE_APPLICATION_BODY[lang](initiativeRole(p.vacancy.title)) : APPLICATION_BODY[lang](positionTitle(p));
+  const body = isInitiative(p.vacancy) ? INITIATIVE_APPLICATION_BODY[lang](applicationRole(p)) : APPLICATION_BODY[lang](positionTitle(p));
   const text = [p.letter.salutation, '', body, '', CLOSING[lang], ...signature].join('\n');
   return { subject: p.letter.subject, text };
 }
@@ -107,7 +123,7 @@ function replyLayout(p: ApplicationPackage, body: string): string {
 /** The reminder ("write again"): same salutation as the application, no Claude. */
 export function followUpEmail(p: ApplicationPackage): { subject: string; text: string } {
   const body = isInitiative(p.vacancy)
-    ? INITIATIVE_FOLLOW_UP_BODY[p.language](initiativeRole(p.vacancy.title), sentDay(p), p.vacancy.company)
+    ? INITIATIVE_FOLLOW_UP_BODY[p.language](applicationRole(p), sentDay(p), p.vacancy.company)
     : FOLLOW_UP_BODY[p.language](positionTitle(p), sentDay(p));
   return { subject: replySubject(p), text: replyLayout(p, body) };
 }
@@ -115,7 +131,7 @@ export function followUpEmail(p: ApplicationPackage): { subject: string; text: s
 /** A polite answer to a rejection (template, no Claude). */
 export function rejectionReply(p: ApplicationPackage): { subject: string; text: string } {
   const body = isInitiative(p.vacancy)
-    ? INITIATIVE_REJECTION_BODY[p.language](initiativeRole(p.vacancy.title), p.vacancy.company)
+    ? INITIATIVE_REJECTION_BODY[p.language](applicationRole(p), p.vacancy.company)
     : REJECTION_BODY[p.language](positionTitle(p), p.vacancy.company);
   return { subject: replySubject(p), text: replyLayout(p, body) };
 }

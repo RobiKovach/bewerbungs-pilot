@@ -119,6 +119,40 @@ describe('0.9.0: initiative applications in the emails', () => {
     expect(followUpEmail(ordinary).text).toContain('an der Stelle interessiert');
   });
 
+  it('the role comes from the letter subject when the AI chose a different one than the card title', () => {
+    const p = initiative('Initiativbewerbung – IT');
+    p.letter = { ...p.letter, subject: 'Initiativbewerbung als Webentwickler' };
+    for (const text of [applicationEmail(p).text, followUpEmail(p).text, rejectionReply(p).text]) {
+      expect(text).toContain('Initiativbewerbung als Webentwickler');
+      expect(text).not.toContain('als IT');
+    }
+    const en = initiative('Initiativbewerbung – IT', true, 'en');
+    en.letter = { ...en.letter, subject: 'Unsolicited application as Web Developer' };
+    expect(applicationEmail(en).text).toContain('my unsolicited application as Web Developer, with');
+  });
+
+  it('reminder and rejection reply use the subject that was really sent', () => {
+    const p = initiative('Initiativbewerbung – IT');
+    p.letter = { ...p.letter, subject: 'Initiativbewerbung als Webentwickler' };
+    p.sentEmail = { to: 'jobs@itora.example', subject: 'Initiativbewerbung als Frontend-Entwickler', body: 'x', attachments: [] };
+    expect(followUpEmail(p).text).toContain('Initiativbewerbung als Frontend-Entwickler vom');
+    expect(rejectionReply(p).text).toContain('Initiativbewerbung als Frontend-Entwickler genommen');
+  });
+
+  it('a subject without an explicit "als" names no role: the card title stays', () => {
+    for (const subject of ['Initiativbewerbung bei ITORA GmbH', 'Initiativbewerbung – ITORA GmbH', 'Initiativbewerbung', 'Bewerbung als Webentwickler']) {
+      const p = initiative('Initiativbewerbung – Softwareentwickler');
+      p.letter = { ...p.letter, subject };
+      expect(applicationEmail(p).text).toContain('meine Initiativbewerbung als Softwareentwickler mit');
+    }
+  });
+
+  it('an ordinary application ignores the subject', () => {
+    const p = initiative('Webentwickler (m/w/d)', false);
+    p.letter = { ...p.letter, subject: 'Initiativbewerbung als Koch' };
+    expect(applicationEmail(p).text).toContain('meine Bewerbung als Webentwickler (m/w/d) mit');
+  });
+
   it('the stored flag makes a plain role title an initiative application', () => {
     expect(applicationEmail(initiative('Softwareentwickler')).text).toContain('meine Initiativbewerbung als Softwareentwickler mit');
   });
