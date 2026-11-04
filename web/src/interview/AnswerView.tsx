@@ -47,6 +47,8 @@ export function AnswerView({ applicationId, question, language, readOnly, draft,
     controller.current = c;
     setWorking(true);
     setError(null);
+    // The server replaces the saved text before it asks the AI: if the call does not finish, only this draft still has it.
+    if (dontKnow && text) onDraft(text);
     try {
       const view = await api.answerInterview(applicationId, question.id, { text: dontKnow ? '' : text.trim(), dontKnow }, c.signal);
       if (dontKnow) setTypedBefore(text);
@@ -69,6 +71,7 @@ export function AnswerView({ applicationId, question, language, readOnly, draft,
   };
 
   const showForm = editing && !readOnly;
+  const unsaved = isDraftUnsaved(question, draft);
   return (
     <div className="card answer-view">
       <span className="question-card__kind muted">{t(`interview.kind.${question.kind}`)}</span>
@@ -78,7 +81,7 @@ export function AnswerView({ applicationId, question, language, readOnly, draft,
       {working ? <ClaudeWorking textKey="interview.working" onCancel={() => controller.current?.abort()} /> : null}
       {showForm && !working ? (
         <>
-          {answer && !answer.feedback ? <p className="notice" role="status">{t('interview.pendingNote')}</p> : null}
+          {answer && !answer.feedback && !answer.dontKnow && !unsaved ? <p className="notice" role="status">{t('interview.pendingNote')}</p> : null}
           <p className="muted">{t('interview.languageLine', { language: t(`interview.language.${language}`) })}</p>
           <TextField multiline rows={8} label={t('interview.yourAnswer')} value={text} onChange={onDraft} maxLength={ANSWER_MAX} hint={`${text.length} / ${ANSWER_MAX}`} />
           <div className="btn-row">
@@ -90,7 +93,14 @@ export function AnswerView({ applicationId, question, language, readOnly, draft,
       ) : null}
       {!showForm && answer?.feedback ? <FeedbackView answer={answer} feedback={answer.feedback} language={language} /> : null}
       {!showForm && answer && !answer.feedback ? <YourAnswer answer={answer} /> : null}
-      {!showForm && !answer ? <p className="muted">{t('interview.noAnswer')}</p> : null}
+      {!showForm && !answer && !unsaved ? <p className="muted">{t('interview.noAnswer')}</p> : null}
+      {/* The application was closed while the person was typing: the field is gone, the text must not be. */}
+      {readOnly && unsaved ? (
+        <section className="feedback-block">
+          <p className="muted">{t('interview.unsavedDraft')}</p>
+          <p className="prep-text">{draft}</p>
+        </section>
+      ) : null}
       {working ? null : (
         <div className="btn-row">
           {!showForm && !readOnly ? (

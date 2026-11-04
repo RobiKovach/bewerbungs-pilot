@@ -22,8 +22,8 @@ export function ErrorBanner({ error, onRetry }: { error: unknown; onRetry?: () =
     && !window.location.hash.startsWith('#/settings');
   return (
     <div className="error-banner" role="alert">
-      <strong>{t(`errors.${key}.message`)}</strong>
-      {/* A reason can have a more accurate hint of its own (errors.<code>.hint_<reason>). */}
+      <strong>{reason && i18n.exists(`errors.${key}.message_${reason}`) ? t(`errors.${key}.message_${reason}`) : t(`errors.${key}.message`)}</strong>
+      {/* A reason can have a more accurate headline and hint of its own (errors.<code>.message_<reason>, hint_<reason>). */}
       <p>{reason && i18n.exists(`errors.${key}.hint_${reason}`) ? t(`errors.${key}.hint_${reason}`) : t(`errors.${key}.hint`)}</p>
       {details ? (
         <details>

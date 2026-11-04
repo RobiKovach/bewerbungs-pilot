@@ -92,6 +92,66 @@ describe('answering a question', () => {
     const language = await screen.findByRole('region', { name: 'Language mistakes' });
     expect(body).toEqual({ text: '', dontKnow: true });
     expect(within(language).queryByText('No language mistakes found.')).toBeNull();
+    expect(within(language).getByText('There was no answer, so the language was not checked.')).toBeInTheDocument();
+  });
+
+  describe('"I don\'t know" on a question whose answer is saved, when the AI call does not finish', () => {
+    /** The server overwrites the text before it asks the AI, so every later read returns it empty. */
+    const savedThenErased = () => {
+      const gets = { count: 0 };
+      const route = () => {
+        gets.count += 1;
+        return { body: view([question(1, { answer: gets.count === 1 ? answered({ feedback: null }) : answered({ text: '', dontKnow: true, feedback: null }) })]) };
+      };
+      return { gets, route };
+    };
+
+    it('a failure keeps the text in the field', async () => {
+      const { gets, route } = savedThenErased();
+      const user = await openQuestion(view([]), {
+        'GET /api/applications/app1/interview': route,
+        [ANSWER_ROUTE]: () => ({ status: 429, body: { error: { code: 'LLM_LIMIT', detailsForLog: 'limit' } } }),
+      });
+      await user.click(screen.getByRole('button', { name: "I don't know" }));
+      await screen.findByRole('alert');
+      await waitFor(() => expect(gets.count).toBe(2));
+      expect(await screen.findByRole('textbox', { name: /Your answer/ })).toHaveValue('Meine Antwort');
+    });
+
+    it('Cancel keeps the text in the field', async () => {
+      const { gets, route } = savedThenErased();
+      const user = await openQuestion(view([]), { 'GET /api/applications/app1/interview': route }, undefined, [ANSWER_ROUTE]);
+      await user.click(screen.getByRole('button', { name: "I don't know" }));
+      await user.click(await screen.findByRole('button', { name: 'Cancel' }));
+      await waitFor(() => expect(gets.count).toBe(2));
+      expect(await screen.findByRole('textbox', { name: /Your answer/ })).toHaveValue('Meine Antwort');
+    });
+  });
+
+  it('a refusal that makes the preparation read-only still shows the typed text, to copy', async () => {
+    let refused = false;
+    const user = await openQuestion(view([]), {
+      'GET /api/applications/app1/interview': () => ({ body: view([question(1)], { canStart: false, readOnly: refused }) }),
+      [ANSWER_ROUTE]: () => { refused = true; return { status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'prepReadOnly' } } }; },
+    });
+    await user.type(field(), 'Mein langer Text');
+    await user.click(getFeedback());
+    await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(screen.getByText('Mein langer Text')).toBeInTheDocument();
+    expect(screen.getByText(/not saved/)).toBeInTheDocument();
+  });
+
+  it('the "waiting for feedback" note is only there when the visible text is the saved one', async () => {
+    const user = await openQuestion(view([question(1, { answer: answered({ feedback: null }) })]));
+    expect(screen.getByText(/feedback is still missing/)).toBeInTheDocument();
+    await user.type(field(), ' und mehr');
+    expect(screen.queryByText(/feedback is still missing/)).toBeNull();
+  });
+
+  it('a waiting "I don\'t know" has no note about a saved answer', async () => {
+    await openQuestion(view([question(1, { answer: answered({ text: '', dontKnow: true, feedback: null }) })]));
+    expect(screen.queryByText(/feedback is still missing/)).toBeNull();
+    expect(screen.getByRole('button', { name: "I don't know" })).toBeEnabled();
   });
 
   it('text typed before "I don\'t know" comes back with Try again', async () => {
@@ -228,5 +288,15 @@ describe('refusals of the preparation', () => {
     await user.click(getFeedback());
     const alert = await screen.findByRole('alert');
     expect(alert.querySelector(':scope > p')).toHaveTextContent(text);
+    expect(alert.querySelector('strong')).toHaveTextContent('This could not be done right now.');
+  });
+
+  it('other conflicts keep their general headline', async () => {
+    const user = await openQuestion(view([question(1)]), {
+      [ANSWER_ROUTE]: () => ({ status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'packageChanged' } } }),
+    });
+    await user.type(field(), 'Text');
+    await user.click(getFeedback());
+    expect((await screen.findByRole('alert')).querySelector('strong')).toHaveTextContent('This was changed in the meantime.');
   });
 });
