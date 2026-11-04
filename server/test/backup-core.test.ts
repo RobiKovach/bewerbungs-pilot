@@ -135,6 +135,18 @@ describe('extractBackup', () => {
     expect(fs.existsSync(path.join(staging, 'mail-secret.bin'))).toBe(false);
   });
 
+  it('keeps the interview preparation of an application, but not a set-aside copy of it', async () => {
+    const root = dataRoot();
+    fs.writeFileSync(path.join(root, 'applications', 'x', 'interview-prep.json'), '{"schemaVersion":1}');
+    fs.writeFileSync(path.join(root, 'applications', 'x', 'interview-prep.corrupt-1.json'), 'broken');
+    const info = await createBackup(root, { dir: tempRoot(), kind: 'manual', appVersion: '0.9.0' });
+    expect(await entryNames(info.file)).toContain('applications/x/interview-prep.json');
+    expect(await entryNames(info.file)).not.toContain('applications/x/interview-prep.corrupt-1.json');
+    const staging = path.join(tempRoot(), 'stage');
+    await extractBackup(info.file, staging, { appVersion: '0.9.0' });
+    expect(fs.readFileSync(path.join(staging, 'applications', 'x', 'interview-prep.json'), 'utf8')).toBe('{"schemaVersion":1}');
+  });
+
   it('writes only inside staging and re-checks sizes', async () => {
     const parent = tempRoot();
     const staging = path.join(parent, 'stage');
