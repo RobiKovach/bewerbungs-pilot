@@ -30,7 +30,7 @@
     "mammoth": "^1.13.0",
     "nodemailer": "^10.1.7",
     "pdf-lib": "^1.17.1",
-    "puppeteer-core": "^25.14.0",
+    "puppeteer-core": "^25.15.0",
     "unpdf": "1.9.1",
     "yauzl": "3.4.0",
     "yazl": "3.3.1"
