@@ -4,9 +4,10 @@ import { isFinished, questionState } from './format';
 import type { PrepQuestion } from '../types';
 
 /** The set as cards with a picture by kind; a practical task with code shows the code instead. */
-export function QuestionCards({ questions, readOnly, onOpen }: {
+export function QuestionCards({ questions, readOnly, disabled, onOpen }: {
   questions: readonly PrepQuestion[];
   readOnly: boolean;
+  disabled?: boolean;
   onOpen: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ export function QuestionCards({ questions, readOnly, onOpen }: {
             <p className="question-card__text">{q.text}</p>
             <div className="question-card__foot">
               <span className={state === 'weak' ? 'badge warn' : 'badge'}>{t(`interview.state.${state}`)}</span>
-              <button type="button" className="btn ghost" onClick={() => onOpen(q.id)}>
+              <button type="button" className="btn ghost" disabled={disabled} onClick={() => onOpen(q.id)}>
                 {t(readOnly || isFinished(q) ? 'interview.view' : 'interview.answer')}
               </button>
             </div>

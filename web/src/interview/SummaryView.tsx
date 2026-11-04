@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
-import { NewQuestions } from './NewQuestions';
+import { NewQuestions, type ReplaceState } from './NewQuestions';
 import type { InterviewPrep, InterviewPrepView, PrepQuestion, PrepSummary } from '../types';
 
 const AREAS = ['experience', 'theory', 'practice', 'language'] as const;
@@ -33,10 +33,11 @@ function Chance({ summary }: { summary: PrepSummary }) {
   );
 }
 
-function QuestionList({ questions, language, action, onOpen }: {
+function QuestionList({ questions, language, action, disabled, onOpen }: {
   questions: readonly PrepQuestion[];
   language: 'de' | 'en';
   action: string;
+  disabled: boolean;
   onOpen: (id: string) => void;
 }) {
   return (
@@ -44,7 +45,7 @@ function QuestionList({ questions, language, action, onOpen }: {
       {questions.map((q) => (
         <li key={q.id}>
           <span className="summary-list__text" lang={language}>{q.text}</span>
-          <button type="button" className="btn ghost" onClick={() => onOpen(q.id)}>{action}</button>
+          <button type="button" className="btn ghost" disabled={disabled} onClick={() => onOpen(q.id)}>{action}</button>
         </li>
       ))}
     </ul>
@@ -55,11 +56,12 @@ function QuestionList({ questions, language, action, onOpen }: {
  * The end of a set, opened only once every question has feedback. Without a summary that fits the answers it asks for one
  * on opening; with one it never calls the AI, so the figure cannot change just by looking at it again.
  */
-export function SummaryView({ applicationId, prep, readOnly, onView, onRefresh, onOpen, onRepeatWeak, onBack }: {
+export function SummaryView({ applicationId, prep, readOnly, onView, onReplaced, onRefresh, onOpen, onRepeatWeak, onBack }: {
   applicationId: string;
   prep: InterviewPrep;
   readOnly: boolean;
   onView: (view: InterviewPrepView) => void;
+  onReplaced: (view: InterviewPrepView) => void;
   onRefresh: () => void;
   onOpen: (questionId: string) => void;
   onRepeatWeak: () => void;
@@ -69,7 +71,10 @@ export function SummaryView({ applicationId, prep, readOnly, onView, onRefresh, 
   const needed = !prep.summary && !readOnly;
   const [working, setWorking] = useState(needed);
   const [error, setError] = useState<unknown>(null);
-  const [replacing, setReplacing] = useState(false);
+  const [replace, setReplace] = useState<ReplaceState>('idle');
+  const replacing = replace !== 'idle';
+  // One click elsewhere would leave this screen, and leaving cancels the work.
+  const generating = replace === 'working';
   const controller = useRef<AbortController | null>(null);
 
   const run = useCallback(async () => {
@@ -121,7 +126,7 @@ export function SummaryView({ applicationId, prep, readOnly, onView, onRefresh, 
             </dl>
           </Block>
           <Block title={t('interview.summary.riskTitle')}>
-            {risk ? <p><button type="button" className="link-btn summary-risk" lang={prep.language} onClick={() => onOpen(risk.id)}>{risk.text}</button></p> : null}
+            {risk ? <p><button type="button" className="link-btn summary-risk" lang={prep.language} disabled={generating} onClick={() => onOpen(risk.id)}>{risk.text}</button></p> : null}
             <p className="prep-text">{summary.biggestRisk.why}</p>
           </Block>
         </>
@@ -130,7 +135,7 @@ export function SummaryView({ applicationId, prep, readOnly, onView, onRefresh, 
         <>
           <Block title={t('interview.summary.weakTitle')}>
             {weak.length > 0
-              ? <QuestionList questions={weak} language={prep.language} action={t(readOnly ? 'interview.view' : 'interview.summary.repeat')} onOpen={onOpen} />
+              ? <QuestionList questions={weak} language={prep.language} action={t(readOnly ? 'interview.view' : 'interview.summary.repeat')} disabled={generating} onOpen={onOpen} />
               : <p>{t('interview.summary.noWeak')}</p>}
             {weak.length > 0 && !readOnly && !replacing ? (
               <div className="btn-row"><button type="button" className="btn" onClick={onRepeatWeak}>{t('interview.summary.repeatWeak')}</button></div>
@@ -139,7 +144,7 @@ export function SummaryView({ applicationId, prep, readOnly, onView, onRefresh, 
           {good.length > 0 ? (
             <details className="feedback-block">
               <summary>{t('interview.summary.goodTitle', { n: good.length })}</summary>
-              <QuestionList questions={good} language={prep.language} action={t('interview.view')} onOpen={onOpen} />
+              <QuestionList questions={good} language={prep.language} action={t('interview.view')} disabled={generating} onOpen={onOpen} />
             </details>
           ) : null}
           {!replacing ? (
@@ -149,7 +154,7 @@ export function SummaryView({ applicationId, prep, readOnly, onView, onRefresh, 
             </div>
           ) : null}
           {readOnly ? null : (
-            <NewQuestions applicationId={applicationId} proposal={prep.language} labelKey="interview.newQuestions.button" onView={onView} onActiveChange={setReplacing} />
+            <NewQuestions applicationId={applicationId} proposal={prep.language} labelKey="interview.newQuestions.button" onReplaced={onReplaced} onRefresh={onRefresh} onStateChange={setReplace} />
           )}
         </>
       )}

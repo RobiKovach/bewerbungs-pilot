@@ -261,11 +261,64 @@ describe('new questions and another language', () => {
     await user.click(screen.getByRole('button', { name: 'Change language' }));
     await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Yes, create new ones' }));
     await screen.findByText('Neu q1');
+    expect(screen.queryByText('Alter Entwurf')).toBeNull();
+    expect(screen.queryByText(/replaced in the meantime/)).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('textbox', { name: /Your answer/ })).toHaveValue('');
   });
 
-  it('a set replaced elsewhere also drops the drafts and leaves the old question', async () => {
+  it('the warning names unsent text and has a visible language caption, and takes the focus', async () => {
+    const { user } = open(view({ questions: questions([2], [5]) }));
+    await user.click(await screen.findByRole('button', { name: 'Change language' }));
+    const dialog = screen.getByRole('alertdialog');
+    expect(within(dialog).getByText(/text you have not sent/)).toBeInTheDocument();
+    const group = within(dialog).getByRole('radiogroup', { name: /language/i });
+    const captionId = group.getAttribute('aria-labelledby') as string;
+    expect(document.getElementById(captionId)?.textContent).toMatch(/language/i);
+    expect(dialog).toHaveFocus();
+  });
+
+  it('while new questions are generated the cards cannot cancel them by a click', async () => {
+    const { user } = open(view({ questions: questions([2], [5]) }), {}, [START_ROUTE]);
+    await user.click(await screen.findByRole('button', { name: 'Change language' }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Yes, create new ones' }));
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: 'View' })[0]).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByRole('button', { name: 'Continue' })).toBeEnabled();
+    expect(screen.getAllByRole('button', { name: 'View' })[0]).toBeEnabled();
+  });
+
+  it('while new questions are generated the summary cannot cancel them by a click', async () => {
+    const { user } = open(view({ summary: SUMMARY }), {}, [START_ROUTE]);
+    await openSummary(user);
+    await user.click(await screen.findByRole('button', { name: 'New questions' }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Yes, create new ones' }));
+    expect(screen.getByRole('button', { name: 'Repeat' })).toBeDisabled();
+    const risk = screen.getByRole('region', { name: 'What to repeat first' });
+    expect(within(risk).getByRole('button', { name: 'Frage 2' })).toBeDisabled();
+  });
+
+  it('a failed replacement re-reads the preparation', async () => {
+    const { f, user } = open(view({ summary: SUMMARY }), { [START_ROUTE]: () => ({ status: 429, body: { error: { code: 'LLM_LIMIT', detailsForLog: 'limit' } } }) });
+    await openSummary(user);
+    await user.click(await screen.findByRole('button', { name: 'New questions' }));
+    const before = calls(f, 'GET /api/applications/app1/interview').length;
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Yes, create new ones' }));
+    await waitFor(() => expect(calls(f, 'GET /api/applications/app1/interview').length).toBeGreaterThan(before));
+  });
+
+  it('a cancelled replacement re-reads the preparation', async () => {
+    const { f, user } = open(view({ summary: SUMMARY }), {}, [START_ROUTE]);
+    await openSummary(user);
+    await user.click(await screen.findByRole('button', { name: 'New questions' }));
+    await user.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Yes, create new ones' }));
+    const before = calls(f, 'GET /api/applications/app1/interview').length;
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(calls(f, 'GET /api/applications/app1/interview').length).toBeGreaterThan(before));
+  });
+
+  it('a set replaced elsewhere keeps the unsent text to copy, away from the new questions, until dismissed', async () => {
     let current = view({ questions: questions([2], [1]) });
     const { user } = open(current, {
       'GET /api/applications/app1/interview': () => ({ body: current }),
@@ -278,8 +331,14 @@ describe('new questions and another language', () => {
     await user.type(await screen.findByRole('textbox', { name: /Your answer/ }), 'Alter Entwurf');
     await user.click(screen.getByRole('button', { name: 'Get feedback' }));
     expect(await screen.findByText('Neu q1')).toBeInTheDocument();
+    expect(screen.getByText(/replaced in the meantime/)).toBeInTheDocument();
+    expect(screen.getByText('Alter Entwurf')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('textbox', { name: /Your answer/ })).toHaveValue('');
+    await user.click(screen.getByRole('button', { name: 'All questions' }));
+    expect(screen.getByText('Alter Entwurf')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Remove this text' }));
+    expect(screen.queryByText('Alter Entwurf')).toBeNull();
   });
 
   it('a failed replacement keeps the set and says why', async () => {

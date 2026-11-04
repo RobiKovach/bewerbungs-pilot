@@ -5,7 +5,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useReportUnsaved } from '../profile/unsaved';
 import { AnswerView } from './AnswerView';
-import { LanguageChoice, NewQuestions } from './NewQuestions';
+import { LanguageChoice, NewQuestions, type ReplaceState } from './NewQuestions';
 import { QuestionCards } from './QuestionCards';
 import { SummaryView } from './SummaryView';
 import { isDraftUnsaved, isFinished, nextQuestion } from './format';
@@ -14,6 +14,26 @@ import type { ApplicationView, InterviewPrep, InterviewPrepView, PrepQuestion } 
 type InterviewLanguage = InterviewPrepView['defaultLanguage'];
 /** What `selected` holds on the summary screen; question ids are "q1", "q2", … */
 const SUMMARY = '#summary';
+
+/** Text typed for a question of a set that has since been replaced elsewhere. */
+interface OrphanDraft { key: string; question: string; text: string }
+
+/** It belongs to no question any more, so it is only offered for copying, until the person removes it. */
+function OrphanDrafts({ drafts, language, onDismiss }: { drafts: readonly OrphanDraft[]; language?: InterviewLanguage; onDismiss: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <section className="card notice orphan-drafts">
+      <p>{t('interview.orphanDrafts.title')}</p>
+      {drafts.map((d) => (
+        <div key={d.key} className="feedback-block">
+          <p className="muted prep-text" lang={language}>{d.question}</p>
+          <p className="prep-text">{d.text}</p>
+        </div>
+      ))}
+      <div className="btn-row"><button type="button" className="btn ghost" onClick={onDismiss}>{t('interview.orphanDrafts.dismiss')}</button></div>
+    </section>
+  );
+}
 
 /** "Next": the first question still without feedback, not this one again; the cards when there is none. */
 const nextAfter = (questions: readonly PrepQuestion[], currentId: string): string | null =>
@@ -54,15 +74,19 @@ function StartPrep({ id, view, onView }: { id: string; view: InterviewPrepView; 
   );
 }
 
-function PrepOverview({ id, prep, readOnly, onOpen, onSummary, onView }: {
+function PrepOverview({ id, prep, readOnly, onOpen, onSummary, onReplaced, onRefresh }: {
   id: string;
   prep: InterviewPrep;
   readOnly: boolean;
   onOpen: (id: string) => void;
   onSummary: () => void;
-  onView: (view: InterviewPrepView) => void;
+  onReplaced: (view: InterviewPrepView) => void;
+  onRefresh: () => void;
 }) {
   const { t } = useTranslation();
+  const [replace, setReplace] = useState<ReplaceState>('idle');
+  // One click elsewhere would leave this screen, and leaving cancels the work.
+  const generating = replace === 'working';
   const done = prep.questions.filter(isFinished).length;
   const next = nextQuestion(prep.questions);
   // A closed application cannot ask for a summary any more: only one that exists can be opened.
@@ -74,12 +98,12 @@ function PrepOverview({ id, prep, readOnly, onOpen, onSummary, onView }: {
           <strong>{t('interview.progress', { done, total: prep.questions.length })}</strong>
           <p className="muted">{t('interview.languageLine', { language: t(`interview.language.${prep.language}`) })}</p>
         </div>
-        {!readOnly && next ? <button type="button" className="btn" onClick={() => onOpen(next.id)}>{t('interview.continue')}</button> : null}
-        {canOpenSummary ? <button type="button" className="btn" onClick={onSummary}>{t('interview.summary.open')}</button> : null}
+        {!readOnly && next ? <button type="button" className="btn" disabled={generating} onClick={() => onOpen(next.id)}>{t('interview.continue')}</button> : null}
+        {canOpenSummary ? <button type="button" className="btn" disabled={generating} onClick={onSummary}>{t('interview.summary.open')}</button> : null}
       </div>
       {readOnly ? <p className="notice" role="status">{t('interview.readOnly')}</p> : null}
-      {readOnly ? null : <NewQuestions applicationId={id} proposal={prep.language === 'de' ? 'en' : 'de'} labelKey="interview.newQuestions.changeLanguage" onView={onView} />}
-      <QuestionCards questions={prep.questions} readOnly={readOnly} onOpen={onOpen} />
+      {readOnly ? null : <NewQuestions applicationId={id} proposal={prep.language === 'de' ? 'en' : 'de'} labelKey="interview.newQuestions.changeLanguage" onReplaced={onReplaced} onRefresh={onRefresh} onStateChange={setReplace} />}
+      <QuestionCards questions={prep.questions} readOnly={readOnly} disabled={generating} onOpen={onOpen} />
       <section className="card" aria-labelledby="employer-questions">
         <h2 id="employer-questions">{t('interview.employerTitle')}</h2>
         <p className="muted">{t('interview.employerHint')}</p>
@@ -100,19 +124,45 @@ export function InterviewPage({ id }: { id: string }) {
   const [repeatQueue, setRepeatQueue] = useState<readonly string[]>([]);
   // Drafts live here so that going back to the cards keeps them, and the leave warning still knows about them.
   const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
+  const [orphans, setOrphans] = useState<readonly OrphanDraft[]>([]);
 
-  /** Ids repeat between sets: whatever replaced the set (here or in another tab), a draft must not land on a different question. */
-  const setId = useRef<string | null>(null);
-  const applyView = useCallback((next: InterviewPrepView) => {
-    const created = next.prep?.createdAt ?? null;
-    if (setId.current !== created) {
-      setId.current = created;
-      setDrafts({});
-      setRepeatQueue([]);
-      setSelected(null);
-    }
-    setView(next);
+  // Read by callbacks that must stay stable, and written only where the state changes.
+  const shown = useRef<InterviewPrepView | null>(null);
+  const draftsNow = useRef<Readonly<Record<string, string>>>({});
+  const replaceDrafts = useCallback((next: Readonly<Record<string, string>>) => {
+    draftsNow.current = next;
+    setDrafts(next);
   }, []);
+  const leaveOldSet = useCallback(() => {
+    replaceDrafts({});
+    setRepeatQueue([]);
+    setSelected(null);
+  }, [replaceDrafts]);
+
+  /**
+   * Ids repeat between sets, so a draft must never land on a different question. A set replaced elsewhere (another tab) comes
+   * as a surprise: what the person had typed and not sent stays on screen to copy.
+   */
+  const applyView = useCallback((next: InterviewPrepView) => {
+    const before = shown.current;
+    if (before && (before.prep?.createdAt ?? null) !== (next.prep?.createdAt ?? null)) {
+      const old = before.prep;
+      const unsent = (old?.questions ?? [])
+        .filter((q) => isDraftUnsaved(q, draftsNow.current[q.id]) && draftsNow.current[q.id].trim() !== '')
+        .map((q) => ({ key: `${old?.createdAt}|${q.id}`, question: q.text, text: draftsNow.current[q.id] }));
+      if (unsent.length > 0) setOrphans((prev) => [...prev, ...unsent]);
+      leaveOldSet();
+    }
+    shown.current = next;
+    setView(next);
+  }, [leaveOldSet]);
+
+  /** This page's own, confirmed replacement: the person was warned that unsent text goes too, so nothing is kept. */
+  const applyReplaced = useCallback((next: InterviewPrepView) => {
+    leaveOldSet();
+    shown.current = next;
+    setView(next);
+  }, [leaveOldSet]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -126,12 +176,12 @@ export function InterviewPage({ id }: { id: string }) {
   }, [id, applyView]);
   useEffect(() => { void load(); }, [load]);
 
-  const setDraft = (questionId: string, text: string | null) => setDrafts((prev) => {
-    const next = { ...prev };
+  const setDraft = (questionId: string, text: string | null) => {
+    const next = { ...draftsNow.current };
     if (text === null) delete next[questionId]; else next[questionId] = text;
-    return next;
-  });
-  useReportUnsaved(view?.prep?.questions.some((q) => isDraftUnsaved(q, drafts[q.id])) ?? false);
+    replaceDrafts(next);
+  };
+  useReportUnsaved(orphans.length > 0 || (view?.prep?.questions.some((q) => isDraftUnsaved(q, drafts[q.id])) ?? false));
 
   /** Quietly: the page keeps working on what it has if this fails. */
   const refresh = useCallback(() => { api.interview(id).then(applyView).catch(() => {}); }, [id, applyView]);
@@ -165,6 +215,7 @@ export function InterviewPage({ id }: { id: string }) {
       <p><a href={`#/applications/${id}`}>{t('interview.back')}</a></p>
       <h1>{t('interview.title')}</h1>
       <p className="muted">{application.vacancy.company} — {application.vacancy.title}</p>
+      {orphans.length > 0 && !question && !showSummary ? <OrphanDrafts drafts={orphans} language={prep?.language} onDismiss={() => setOrphans([])} /> : null}
       {question && prep ? (
         <AnswerView
           key={question.id}
@@ -185,12 +236,13 @@ export function InterviewPage({ id }: { id: string }) {
           prep={prep}
           readOnly={view.readOnly}
           onView={applyView}
+          onReplaced={applyReplaced}
           onRefresh={refresh}
           onOpen={openQuestion}
           onRepeatWeak={repeatWeak}
           onBack={backToCards}
         />
-      ) : prep ? <PrepOverview id={id} prep={prep} readOnly={view.readOnly} onOpen={openQuestion} onSummary={() => setSelected(SUMMARY)} onView={applyView} />
+      ) : prep ? <PrepOverview id={id} prep={prep} readOnly={view.readOnly} onOpen={openQuestion} onSummary={() => setSelected(SUMMARY)} onReplaced={applyReplaced} onRefresh={refresh} />
           : view.canStart ? <StartPrep id={id} view={view} onView={applyView} />
             : <p className="notice" role="status">{t('interview.notAvailable')}</p>}
     </section>
