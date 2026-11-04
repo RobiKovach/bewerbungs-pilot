@@ -143,9 +143,11 @@ describe('the prep file follows the application folder', () => {
     applications.load();
     const p = pkg();
     applications.save(p, { vacancyText: 'Volltext der Stelle' });
+    const packageFile = path.join(dir, p.id, 'package.json');
+    const before = fs.readFileSync(packageFile);
     const prepStore = new InterviewPrepStore(dir);
     prepStore.write(prep({ applicationId: p.id }));
-    return { dir, applications, prepStore, p };
+    return { dir, applications, prepStore, p, packageFile, before };
   }
 
   it('removing the application removes its prep file', () => {
@@ -158,20 +160,24 @@ describe('the prep file follows the application folder', () => {
   it('a copy as a new draft starts without a prep, the original keeps its own', async () => {
     const { ctx, id } = await sendingSetup();
     expect((await sendTo(ctx, id)).statusCode).toBe(200);
-    const prepStore = new InterviewPrepStore(path.join(ctx.dir, 'applications'));
+    const applicationsDir = path.join(ctx.dir, 'applications');
+    const sourcePackage = path.join(applicationsDir, id, 'package.json');
+    const before = fs.readFileSync(sourcePackage);
+    const prepStore = new InterviewPrepStore(applicationsDir);
     prepStore.write(prep({ applicationId: id }));
     const r = await post(ctx, `/api/applications/${id}/copy`, {});
     expect(r.statusCode).toBe(200);
     const copyId = (r.json() as ApplicationView).application.id;
     expect(copyId).not.toBe(id);
+    // Checked before read(): read() would put a copied file aside and answer null, so it alone proves nothing.
+    expect(fs.readdirSync(path.join(applicationsDir, copyId)).filter((f) => f.startsWith('interview-prep'))).toEqual([]);
     expect(prepStore.read(copyId)).toBeNull();
+    expect(fs.readFileSync(sourcePackage).equals(before)).toBe(true);
     expect(prepStore.read(id)).toEqual(prep({ applicationId: id }));
   });
 
   it.each([['with the list', false], ['rebuilding from the folders', true]])('a reload %s does not take the prep file for a package or change the package', (_name, dropList) => {
-    const { dir, applications, prepStore, p } = withPackage();
-    const packageFile = path.join(dir, p.id, 'package.json');
-    const before = fs.readFileSync(packageFile);
+    const { dir, applications, prepStore, p, packageFile, before } = withPackage();
     if (dropList) fs.rmSync(path.join(dir, 'applications.json'));
     const warnings: string[] = [];
     const again = new ApplicationStore(dir, (event) => warnings.push(event));
