@@ -146,6 +146,12 @@ describe('InterviewPage', () => {
     expect(cards[0].querySelector('svg')).not.toBeNull();
     expect(cards[0].querySelector('img')).toBeNull();
   });
+  it('a practical task without code has a picture too', async () => {
+    open(prepView());
+    const cards = await screen.findAllByTestId('question-card');
+    expect(cards[8].querySelector('svg')).not.toBeNull();
+    expect(cards[8].querySelector('pre')).toBeNull();
+  });
   it('Continue opens the first question without feedback, and Back returns to the cards', async () => {
     const qs = KINDS.map((_, i) => question(i));
     qs[0] = question(0, { answer: answered(FEEDBACK) });

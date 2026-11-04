@@ -20,6 +20,9 @@ export const isFinished = (q: PrepQuestion) => q.answer?.feedback != null;
 /** The first question without feedback, or null when all have it. */
 export const nextQuestion = (questions: readonly PrepQuestion[]) => questions.find((q) => !isFinished(q)) ?? null;
 
+/** A draft is unsaved when it differs from the answer the server keeps (the server trims). */
+export const isDraftUnsaved = (q: PrepQuestion, draft: string | undefined) => draft !== undefined && draft.trim() !== (q.answer?.text ?? '');
+
 const OPEN: ReadonlySet<ApplicationStatus> = new Set<ApplicationStatus>(['sent', 'submitted', 'interview']);
 const CLOSED: ReadonlySet<ApplicationStatus> = new Set<ApplicationStatus>(['rejected', 'offer', 'withdrawn']);
 /** Preparation can start or go on. */

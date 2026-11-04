@@ -3,12 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
+import { useReportUnsaved } from '../profile/unsaved';
+import { AnswerView } from './AnswerView';
 import { QuestionCards } from './QuestionCards';
-import { isFinished, nextQuestion } from './format';
+import { isDraftUnsaved, isFinished, nextQuestion } from './format';
 import type { ApplicationView, InterviewPrep, InterviewPrepView, PrepQuestion } from '../types';
 
 type InterviewLanguage = InterviewPrepView['defaultLanguage'];
 const LANGUAGES: readonly InterviewLanguage[] = ['de', 'en'];
+
+/** "Next": the first question still without feedback, not this one again; the cards when there is none. */
+const nextAfter = (questions: readonly PrepQuestion[], currentId: string): string | null =>
+  nextQuestion(questions.filter((q) => q.id !== currentId))?.id ?? null;
 
 /** No set yet: the language of the interview, then the AI helper writes the questions. */
 function StartPrep({ id, view, onView }: { id: string; view: InterviewPrepView; onView: (v: InterviewPrepView) => void }) {
@@ -48,19 +54,6 @@ function StartPrep({ id, view, onView }: { id: string; view: InterviewPrepView; 
       {working
         ? <ClaudeWorking textKey="interview.creating" onCancel={() => abort.current?.abort()} />
         : <div className="btn-row"><button type="button" className="btn" onClick={() => void start()}>{t('interview.create')}</button></div>}
-    </div>
-  );
-}
-
-/** One question. Task 6 replaces this with answering and feedback. */
-function QuestionPanel({ question, onBack }: { question: PrepQuestion; onBack: () => void }) {
-  const { t } = useTranslation();
-  return (
-    <div className="card">
-      <span className="question-card__kind muted">{t(`interview.kind.${question.kind}`)}</span>
-      <h2>{question.text}</h2>
-      {question.code ? <pre className="question-code">{question.code}</pre> : null}
-      <div className="btn-row"><button type="button" className="btn ghost" onClick={onBack}>{t('interview.allQuestions')}</button></div>
     </div>
   );
 }
@@ -113,6 +106,18 @@ export function InterviewPage({ id }: { id: string }) {
   }, [id]);
   useEffect(() => { void load(); }, [load]);
 
+  // Drafts live here so that going back to the cards keeps them, and the leave warning still knows about them.
+  const [drafts, setDrafts] = useState<Readonly<Record<string, string>>>({});
+  const setDraft = (questionId: string, text: string | null) => setDrafts((prev) => {
+    const next = { ...prev };
+    if (text === null) delete next[questionId]; else next[questionId] = text;
+    return next;
+  });
+  useReportUnsaved(view?.prep?.questions.some((q) => isDraftUnsaved(q, drafts[q.id])) ?? false);
+
+  /** Quietly: the page keeps working on what it has if this fails. */
+  const refresh = () => { api.interview(id).then(setView).catch(() => {}); };
+
   if (error) return <ErrorBanner error={error} onRetry={() => void load()} />;
   if (!view || !application) return <p className="muted">{t('common.loading')}</p>;
   const question = view.prep?.questions.find((q) => q.id === selected) ?? null;
@@ -121,8 +126,21 @@ export function InterviewPage({ id }: { id: string }) {
       <p><a href={`#/applications/${id}`}>{t('interview.back')}</a></p>
       <h1>{t('interview.title')}</h1>
       <p className="muted">{application.vacancy.company} — {application.vacancy.title}</p>
-      {question ? <QuestionPanel question={question} onBack={() => setSelected(null)} />
-        : view.prep ? <PrepOverview prep={view.prep} readOnly={view.readOnly} onOpen={setSelected} />
+      {question && view.prep ? (
+        <AnswerView
+          key={question.id}
+          applicationId={id}
+          question={question}
+          language={view.prep.language}
+          readOnly={view.readOnly}
+          draft={drafts[question.id]}
+          onDraft={(text) => setDraft(question.id, text)}
+          onView={setView}
+          onRefresh={refresh}
+          onNext={() => setSelected(view.prep ? nextAfter(view.prep.questions, question.id) : null)}
+          onBack={() => setSelected(null)}
+        />
+      ) : view.prep ? <PrepOverview prep={view.prep} readOnly={view.readOnly} onOpen={setSelected} />
           : view.canStart ? <StartPrep id={id} view={view} onView={setView} />
             : <p className="notice" role="status">{t('interview.notAvailable')}</p>}
     </section>

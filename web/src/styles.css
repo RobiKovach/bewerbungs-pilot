@@ -316,3 +316,14 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .question-art--practice { color: #a85a14; }
 .question-code { margin: 0; padding: 0.6rem; border-radius: 8px; min-height: 4.5rem; background: #1f2733; color: #e8edf3; font-size: 0.8rem; overflow-x: auto; white-space: pre; }
 @media (prefers-color-scheme: dark) { .question-art--practice { color: #f0a868; } }
+.notice + .question-cards { margin-top: 1rem; }
+.answer-view h2 { margin: 0.25rem 0 0.75rem; overflow-wrap: anywhere; }
+.answer-view .question-code { margin-bottom: 0.75rem; }
+.answer-view .notice { margin: 0.75rem 0; }
+.answer-view > .badge { display: inline-block; margin: 0 0 0.25rem; }
+.feedback-block { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.feedback-block h3 { margin: 0 0 0.4rem; font-size: 1rem; }
+.feedback-block p { margin: 0; }
+.prep-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.language-fixes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; overflow-wrap: anywhere; }
+.language-fixes p { margin-top: 0.15rem; }
