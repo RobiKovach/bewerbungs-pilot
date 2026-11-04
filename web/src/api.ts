@@ -1,6 +1,6 @@
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
-  ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
+  ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
@@ -205,6 +205,10 @@ export const api = {
   sendReply: (id: string, mail: { to: string; subject: string; body: string }) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/reply/send`, mail),
   writeOfferReply: (id: string, body: { offered: string; wanted: string }, signal?: AbortSignal) => request<ApplicationView>('POST', `/api/applications/${encodeURIComponent(id)}/offer-reply`, body, signal),
   saveApplicationContact: (id: string, contact: VacancyContact | null) => request<ApplicationView>('PUT', `/api/applications/${encodeURIComponent(id)}/contact`, contact),
+  interview: (id: string) => request<InterviewPrepView>('GET', `/api/applications/${encodeURIComponent(id)}/interview`),
+  startInterview: (id: string, language: 'de' | 'en', replace = false, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview`, replace ? { language, replace } : { language }, signal),
+  answerInterview: (id: string, questionId: string, body: { text: string; dontKnow: boolean }, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview/questions/${encodeURIComponent(questionId)}/answer`, body, signal),
+  interviewSummary: (id: string, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview/summary`, {}, signal),
   saveOfferReply: (id: string, body: string) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/offer-reply`, { body }),
   checkText: (id: string, subject: string, body: string, signal?: AbortSignal) =>
     request<{ warnings: PersonalFinding[] }>('POST', `/api/applications/${encodeURIComponent(id)}/check-text`, { subject, body }, signal),

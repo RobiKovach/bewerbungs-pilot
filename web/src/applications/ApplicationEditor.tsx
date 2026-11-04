@@ -17,6 +17,7 @@ import { FollowUpNotice } from './FollowUpNotice';
 import { HistoryBlock } from './HistoryBlock';
 import { LetterTab } from './LetterTab';
 import { MailDraftDialog } from './MailDraftDialog';
+import { InterviewLink } from '../interview/InterviewLink';
 import { OfferReplyDialog } from './OfferReplyDialog';
 import { PersonalDataWarning } from './PersonalDataWarning';
 import { SendDialog } from './SendDialog';
@@ -222,6 +223,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         {a.status === 'approved' ? <button type="button" className="btn" disabled={!mailReady || dirty || busy || locked || sending} onClick={() => { setSentTo(null); setSending(true); }}>{t('applications.send.button')}</button> : null}
         {a.status === 'approved' ? <button type="button" className="btn ghost" disabled={busy || locked || dirty || sending} onClick={() => { setStatusOpen(false); setConfirm('submitted'); }}>{t('applications.submitted.button')}</button> : null}
         {frozen ? <button type="button" className="btn ghost" disabled={busy || error !== null} onClick={() => { setConfirm(null); setStatusOpen(true); }}>{t('applications.statusChange.button')}</button> : null}
+        {frozen ? <InterviewLink id={id} status={a.status} className="btn ghost" /> : null}
         {a.status === 'rejected' ? <button type="button" className="btn" disabled={busy || error !== null || replying !== null} onClick={() => setReplying('rejection')}>{t('applications.reply.rejection')}</button> : null}
         {a.status === 'offer' ? <button type="button" className="btn" disabled={busy || error !== null || replying !== null} onClick={() => setReplying('offerText')}>{t('applications.reply.offer')}</button> : null}
         {frozen ? null : <button type="button" className="btn ghost" disabled={locked || dirty || busy} onClick={() => setContactOpen(true)}>{t('contact.find')}</button>}

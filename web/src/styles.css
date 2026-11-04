@@ -301,3 +301,18 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .update-banner__notes { flex-basis: 100%; margin: 0; white-space: pre-line; }
 .update-banner .notice-close { top: 0.45rem; }
 .update-overlay { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: var(--bg); }
+
+/* Interview preparation */
+.question-progress { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 1rem 0; }
+.question-progress p { margin: 0.1rem 0 0; }
+.question-cards { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 0.75rem; }
+.question-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.question-card__kind { font-size: 0.8rem; font-weight: 600; }
+.question-card__text { margin: 0; overflow-wrap: anywhere; }
+.question-card__foot { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.question-art { height: 4.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, currentColor 13%, transparent); }
+.question-art--experience { color: var(--accent); }
+.question-art--theory { color: var(--ok); }
+.question-art--practice { color: #a85a14; }
+.question-code { margin: 0; padding: 0.6rem; border-radius: 8px; min-height: 4.5rem; background: #1f2733; color: #e8edf3; font-size: 0.8rem; overflow-x: auto; white-space: pre; }
+@media (prefers-color-scheme: dark) { .question-art--practice { color: #f0a868; } }

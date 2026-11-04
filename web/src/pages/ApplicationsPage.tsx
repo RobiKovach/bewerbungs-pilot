@@ -6,6 +6,9 @@ import { formatDay } from '../applications/format';
 import { StatsBlock } from '../applications/StatsBlock';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { WrittenBy } from '../components/WrittenBy';
+import { InterviewLink } from '../interview/InterviewLink';
+import { InterviewPage } from '../interview/InterviewPage';
+import { interviewRouteId } from '../interview/format';
 import type { ApplicationListView, ApplicationStats, ApplicationStatus } from '../types';
 
 type Row = ApplicationListView['applications'][number];
@@ -83,6 +86,7 @@ function ApplicationList() {
                 {a.followUpDue ? <span className="badge warn">{t('applications.followUp.badge')}</span> : null}
                 {a.profileChanged ? <span className="badge warn">{t('applications.profileChanged')}</span> : null}
                 <span className="muted">{t('applications.updated', { date: formatDay(a.updatedAt) })}</span>
+                <InterviewLink id={a.id} status={a.status} />
               </span>
             </li>
           ))}
@@ -100,6 +104,8 @@ export function ApplicationsPage({ pollMs }: { pollMs?: number } = {}) {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+  const interviewId = interviewRouteId(hash);
+  if (interviewId) return <InterviewPage key={interviewId} id={interviewId} />;
   const id = applicationIdFromHash(hash);
   return id ? <ApplicationEditor key={id} id={id} pollMs={pollMs} /> : <ApplicationList />;
 }
