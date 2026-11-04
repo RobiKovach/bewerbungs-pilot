@@ -16,6 +16,7 @@ import type { ProfileStore } from './profile/store.js';
 import type { ApplicationJob } from './applications/job.js';
 import type { PdfPrinter } from './applications/pdf.js';
 import { registerApplicationRoutes } from './applications/routes.js';
+import { registerInterviewRoutes } from './interview/routes.js';
 import type { ApplicationStore } from './applications/store.js';
 import type { GoogleAuth } from './mail/google-auth.js';
 import type { Mailer } from './mail/mailer.js';
@@ -313,6 +314,11 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     activity: deps.activity,
   });
 
+  await registerInterviewRoutes(app, {
+    store: deps.applicationStore, vacancies: deps.vacancyStore, profile: () => deps.profileStore.get(), settings: deps.settings,
+    queue: deps.queue, activity: deps.activity, logger: deps.logger,
+  });
+
   await registerMailRoutes(app, { settings: deps.settings, mailer: deps.mailer, secrets: deps.secrets, logger: deps.logger,
     googleAuth: deps.googleAuth, origin: deps.origin, activity: deps.activity, revokeTimeoutMs: deps.revokeTimeoutMs });
 
@@ -336,7 +342,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       if (deps.searchJob.state().state === 'running') return 'search';
       if (deps.applicationJob.state().state === 'running') return 'package';
       const q = deps.queue.status();
-      if (q.running || q.queued > 0) return 'ai';
+      if (q.running || q.queued > 0 || active.includes('interview')) return 'ai';
       if (active.includes('send')) return 'send';
       if (deps.install.status().state === 'running') return 'install';
       if (active.includes('browser')) return 'browser';

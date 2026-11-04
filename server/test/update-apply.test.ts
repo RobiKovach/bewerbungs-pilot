@@ -96,6 +96,15 @@ describe('POST /api/updates/apply', { timeout: 30_000 }, () => {
     }
   });
 
+  it('an interview preparation at work counts as the AI helper working', async () => {
+    const ctx = await setup().make();
+    const end = ctx.activity.begin('interview');
+    const res = await apply(ctx);
+    expect([res.statusCode, res.json().error.reason, res.json().error.params]).toEqual([409, 'busy', { what: 'ai' }]);
+    end();
+    expect((await apply(ctx)).statusCode).toBe(202);
+  });
+
   it('no installable update (nothing newer, no checksum, switched off) gives 409 noUpdate', async () => {
     const makers: (() => Promise<Ctx>)[] = [
       () => setup({ update: null }).make(),

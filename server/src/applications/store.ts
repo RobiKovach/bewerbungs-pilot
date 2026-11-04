@@ -23,7 +23,7 @@ const summaryOf = (p: ApplicationPackage): ApplicationSummary => ({
 export class ApplicationStore {
   private packages = new Map<string, ApplicationPackage>();
 
-  constructor(private readonly dir: string, private readonly warn: Warn = () => {}) {}
+  constructor(readonly dir: string, private readonly warn: Warn = () => {}) {}
 
   load(): ApplicationSummary[] {
     fs.mkdirSync(this.dir, { recursive: true });

@@ -112,4 +112,11 @@ export type ErrorReason =
   // …and starting one: already running / nothing to install / other work is still running (params.what).
   | 'updateRunning'
   | 'noUpdate'
-  | 'busy';
+  | 'busy'
+  // Interview preparation (0.12.0): not yet / no more / already there / one request at a time / questions open / file unreadable.
+  | 'prepNotAvailable'
+  | 'prepReadOnly'
+  | 'prepExists'
+  | 'prepBusy'
+  | 'prepNotFinished'
+  | 'prepUnreadable';

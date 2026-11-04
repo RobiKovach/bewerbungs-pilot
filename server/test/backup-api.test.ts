@@ -110,6 +110,7 @@ describe('backup API', { timeout: 30_000 }, () => {
       ['restoreBusySearch', (ctx) => { const s = vi.spyOn(ctx.searchJob, 'state').mockReturnValue({ ...ctx.searchJob.state(), state: 'running' }); return () => s.mockRestore(); }],
       ['restoreBusyPackage', (ctx) => { const s = vi.spyOn(ctx.applicationJob, 'state').mockReturnValue({ ...ctx.applicationJob.state(), state: 'running' }); return () => s.mockRestore(); }],
       ['restoreBusySend', (ctx) => ctx.activity.begin('send')],
+      ['restoreBusyAi', (ctx) => ctx.activity.begin('interview')],
     ];
     for (const [reason, makeBusy] of cases) {
       const ctx = await makeApp();

@@ -75,7 +75,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     if (d.searchJob.state().state === 'running') return 'restoreBusySearch';
     if (d.applicationJob.state().state === 'running') return 'restoreBusyPackage';
     const q = d.queue.status();
-    if (q.running || q.queued > 0) return 'restoreBusyAi';
+    if (q.running || q.queued > 0 || d.activity.active().includes('interview')) return 'restoreBusyAi';
     if (d.activity.active().includes('send')) return 'restoreBusySend';
     return null;
   };
