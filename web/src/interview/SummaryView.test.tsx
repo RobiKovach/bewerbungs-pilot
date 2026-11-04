@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
@@ -215,6 +215,61 @@ describe('the summary', () => {
     expect(await screen.findByText('Done: 9 of 9')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Summary' })).toBeNull();
     expect(calls(f, SUMMARY_ROUTE)).toHaveLength(0);
+  });
+});
+
+describe('moving between screens', () => {
+  it('goes to the top of the page on every change of screen', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const { user } = open(view({ summary: SUMMARY, questions: questions([2, 7]) }));
+    await screen.findByText('Done: 9 of 9');
+    expect(scrollTo).not.toHaveBeenCalled();
+    await openSummary(user);
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    await user.click(await screen.findByRole('button', { name: 'Repeat all weak' }));
+    expect(scrollTo).toHaveBeenCalledTimes(2);
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Frage 7' });
+    expect(scrollTo).toHaveBeenCalledTimes(3);
+    await user.click(screen.getByRole('button', { name: 'All questions' }));
+    expect(scrollTo).toHaveBeenCalledTimes(4);
+    expect(scrollTo).toHaveBeenLastCalledWith(0, 0);
+    scrollTo.mockRestore();
+  });
+
+  it('stays in place while typing and after a failed send', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const { user } = open(view({ questions: questions([2], [1]) }), {
+      'POST /api/applications/app1/interview/questions/q1/answer': () => ({ status: 429, body: { error: { code: 'LLM_LIMIT', detailsForLog: 'limit' } } }),
+    });
+    await user.click(await screen.findByRole('button', { name: 'Continue' }));
+    await screen.findByRole('heading', { name: 'Frage 1' });
+    scrollTo.mockClear();
+    await user.type(screen.getByRole('textbox', { name: /Your answer/ }), 'Text');
+    await user.click(screen.getByRole('button', { name: 'Get feedback' }));
+    await screen.findByRole('alert');
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollTo.mockRestore();
+  });
+
+  it('does not fail where the environment has no scrollTo', async () => {
+    const original = window.scrollTo;
+    (window as unknown as { scrollTo?: unknown }).scrollTo = undefined;
+    const { user } = open(view({ summary: SUMMARY }));
+    await openSummary(user);
+    expect(await screen.findByText('≈ 60%')).toBeInTheDocument();
+    window.scrollTo = original;
+  });
+
+  it('the feedback for "I don\'t know" says only that, under the heading', async () => {
+    const qs = questions([1]);
+    const first = qs[0].answer;
+    qs[0] = { ...qs[0], answer: first ? { ...first, text: '', dontKnow: true } : null };
+    const { user } = open(view({ questions: qs }));
+    await screen.findByText('Done: 9 of 9');
+    await user.click(screen.getAllByRole('button', { name: 'View' })[0]);
+    const block = await screen.findByRole('region', { name: 'Your answer' });
+    expect(within(block).getByText('"I don\'t know"')).toBeInTheDocument();
   });
 });
 

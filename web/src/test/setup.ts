@@ -6,6 +6,8 @@ import { initI18n, setAiProvider } from '../i18n';
 // Tests run as an existing user whose AI helper is Claude ({{ai}} = "Claude"), like baseSettings().
 initI18n('en');
 setAiProvider('claude');
+// jsdom has no scrolling: without this each move between screens prints "Not implemented".
+window.scrollTo = () => {};
 afterEach(() => {
   cleanup();
   setAiProvider('claude');

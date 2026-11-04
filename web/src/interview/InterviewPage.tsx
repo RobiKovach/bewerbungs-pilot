@@ -188,13 +188,23 @@ export function InterviewPage({ id }: { id: string }) {
   const openQuestion = (questionId: string) => { setRepeatQueue([]); setSelected(questionId); };
   const backToCards = () => { setRepeatQueue([]); setSelected(null); };
 
-  if (error) return <ErrorBanner error={error} onRetry={() => void load()} />;
-  if (!view || !application) return <p className="muted">{t('common.loading')}</p>;
-  const prep = view.prep;
+  const prep = view?.prep ?? null;
   const question = prep?.questions.find((q) => q.id === selected) ?? null;
   const allDone = prep?.questions.every(isFinished) ?? false;
   // Never before the whole set has feedback, and for a closed application only a summary that exists.
-  const showSummary = selected === SUMMARY && allDone && (!view.readOnly || prep?.summary != null);
+  const showSummary = selected === SUMMARY && allDone && (!view?.readOnly || prep?.summary != null);
+
+  // A new screen starts at its top, under the top bar. The same screen stays where it is: typing or a failed request must not move it.
+  const screenId = question?.id ?? (showSummary ? SUMMARY : 'cards');
+  const lastScreen = useRef(screenId);
+  useEffect(() => {
+    if (lastScreen.current === screenId) return;
+    lastScreen.current = screenId;
+    window.scrollTo?.(0, 0);
+  }, [screenId]);
+
+  if (error) return <ErrorBanner error={error} onRetry={() => void load()} />;
+  if (!view || !application) return <p className="muted">{t('common.loading')}</p>;
 
   const next = (currentId: string) => {
     if (repeatQueue.length > 0) {
