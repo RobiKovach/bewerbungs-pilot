@@ -1,14 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.10.1",
-  "released": "2026-11-02",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.10.1",
+  "latest": "0.11.0",
+  "released": "2026-11-04",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.11.0",
+  "sha256": "ebf9ca4b04afe752503deb10a4ba5f0127dd32f6965ddd10d39b8c300afc1fbb",
   "notes": {
-    "uk": "«Знайти контакт»: банер кукі Arbeitsagentur закривається сам («лише необхідні») — лишається тільки капча. Оновлення безпеки бібліотек.",
-    "en": "\"Find contact\": the Arbeitsagentur cookie banner now closes by itself (necessary cookies only) — you only solve the captcha. Security updates of libraries.",
-    "de": "„Kontakt finden“: Das Cookie-Banner der Arbeitsagentur schließt sich jetzt selbst (nur notwendige Cookies) — Sie lösen nur noch das Captcha. Sicherheitsupdates der Bibliotheken.",
-    "ru": "«Найти контакт»: баннер cookie Arbeitsagentur теперь закрывается сам («только необходимые») — остаётся только капча. Обновления безопасности библиотек.",
-    "pl": "„Znajdź kontakt”: baner cookies Arbeitsagentur zamyka się teraz sam (tylko niezbędne) — rozwiązujesz tylko captchę. Aktualizacje bezpieczeństwa bibliotek.",
-    "ro": "„Găsește contactul”: bannerul de cookie-uri al Arbeitsagentur se închide acum singur (doar cele necesare) — rezolvi doar captcha. Actualizări de securitate ale bibliotecilor."
+    "uk": "Кнопка «Відгук», щоденний анонімний сигнал «програма використовується» (можна вимкнути в налаштуваннях) і «Оновити зараз» — оновлення в один клік. Версії 0.10.x і старіші встановіть уручну один раз.",
+    "en": "A Feedback button, a daily anonymous \"in use\" signal (switch it off in Settings) and \"Update now\" — one-click updates. If you have 0.10.x or older, install this version by hand once.",
+    "de": "Feedback-Schaltfläche, tägliches anonymes „in Benutzung“-Signal (in den Einstellungen abschaltbar) und „Jetzt aktualisieren“ — Update mit einem Klick. Bei 0.10.x oder älter einmal von Hand installieren.",
+    "ru": "Кнопка «Отзыв», ежедневный анонимный сигнал «программа используется» (отключается в настройках) и «Обновить сейчас» — обновление в один клик. С 0.10.x и старше установите вручную один раз.",
+    "pl": "Przycisk „Opinia”, codzienny anonimowy sygnał „w użyciu” (można wyłączyć w ustawieniach) i „Zaktualizuj teraz” — aktualizacja jednym kliknięciem. Z wersji 0.10.x i starszych zainstaluj ręcznie raz.",
+    "ro": "Buton „Feedback”, semnal zilnic anonim „în uz” (se poate opri în setări) și „Actualizează acum” — actualizare dintr-un clic. De la 0.10.x și mai vechi, instalează o dată manual."
   }
 }
