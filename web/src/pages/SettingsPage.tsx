@@ -34,6 +34,12 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
     await reload();
     setRestores((n) => n + 1);
   };
+  // A file opened in the transfer card (which already re-read the settings) also left a new backup: the list is read again.
+  const [imports, setImports] = useState(0);
+  const onImported = () => {
+    setRestores((n) => n + 1);
+    setImports((n) => n + 1);
+  };
 
   // Arrived from an error's "Open Settings → AI helper" link: bring the AI block into view.
   useEffect(() => {
@@ -95,13 +101,13 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
       {demo ? null : (
         <div className="card settings-section">
           <h2>{t('settings.transferTitle')}</h2>
-          <TransferSection />
+          <TransferSection onImported={onImported} />
         </div>
       )}
 
       <div className="card settings-section">
         <h2>{t('settings.backupsTitle')}</h2>
-        <BackupsSection onRestored={onRestored} />
+        <BackupsSection key={imports} onRestored={onRestored} />
       </div>
 
       <div className="card settings-section">

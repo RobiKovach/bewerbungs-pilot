@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { TransferImport } from '../transfer/TransferImport';
 
 /** Reasons whose own sentence is the whole message (the file is too big for the import, or the data is being replaced). */
 const OWN_REASONS = new Set(['backupTooLarge', 'restoreRunning', 'updateRunning']);
@@ -12,9 +13,10 @@ const MAX_CHARS = 200;
 /**
  * Settings → "Move to another PC" (spec 2026-11-04 transfer, sections 3 and 8): save all data as one file, optionally
  * protected by a password. The passwords live only in this component's state and go into the one request; they are cleared
- * after a successful save and kept after a failure so the person can try again without typing twice.
+ * after a successful save and kept after a failure so the person can try again without typing twice. `onImported` lets the
+ * page reload what it shows after a file was opened here.
  */
-export function TransferSection() {
+export function TransferSection({ onImported }: { onImported?: () => void }) {
   const { t } = useTranslation();
   const passwordId = useId();
   const repeatId = useId();
@@ -55,35 +57,38 @@ export function TransferSection() {
   const edit = (set: (v: string) => void) => (e: { target: { value: string } }) => { set(e.target.value); setSaved(false); };
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); void save(); }}>
-      <p className="muted">{t('settings.transfer.intro')}</p>
-      <p>{t('settings.transfer.contents')}</p>
-      <p className="muted">{t('settings.transfer.notIncluded')}</p>
-      <div className="form-grid">
-        <div className="field">
-          <label className="field-head" htmlFor={passwordId}>{t('settings.transfer.passwordLabel')}</label>
-          <input id={passwordId} type="password" autoComplete="new-password" spellCheck={false} value={password}
-            disabled={busy} onChange={edit(setPassword)} />
-          <p className="field-hint">{t('settings.transfer.passwordHint')}</p>
+    <>
+      <form onSubmit={(e) => { e.preventDefault(); void save(); }}>
+        <p className="muted">{t('settings.transfer.intro')}</p>
+        <p>{t('settings.transfer.contents')}</p>
+        <p className="muted">{t('settings.transfer.notIncluded')}</p>
+        <div className="form-grid">
+          <div className="field">
+            <label className="field-head" htmlFor={passwordId}>{t('settings.transfer.passwordLabel')}</label>
+            <input id={passwordId} type="password" autoComplete="new-password" spellCheck={false} value={password}
+              disabled={busy} onChange={edit(setPassword)} />
+            <p className="field-hint">{t('settings.transfer.passwordHint')}</p>
+          </div>
+          <div className="field">
+            <label className="field-head" htmlFor={repeatId}>{t('settings.transfer.repeatLabel')}</label>
+            <input id={repeatId} type="password" autoComplete="new-password" spellCheck={false} value={repeat}
+              disabled={busy} onChange={edit(setRepeat)} />
+          </div>
         </div>
-        <div className="field">
-          <label className="field-head" htmlFor={repeatId}>{t('settings.transfer.repeatLabel')}</label>
-          <input id={repeatId} type="password" autoComplete="new-password" spellCheck={false} value={repeat}
-            disabled={busy} onChange={edit(setRepeat)} />
+        {problem ? <p className="notice notice-warn" role="status">{t(`settings.transfer.${problem}`)}</p> : null}
+        {typed ? <p className="notice notice-warn">{t('settings.transfer.forgot')}</p> : <p className="notice">{t('settings.transfer.noPassword')}</p>}
+        <div className="btn-row">
+          <button type="submit" className="btn" disabled={busy || problem !== null}>
+            {busy ? t('settings.transfer.saving') : t('settings.transfer.save')}
+          </button>
         </div>
-      </div>
-      {problem ? <p className="notice notice-warn" role="status">{t(`settings.transfer.${problem}`)}</p> : null}
-      {typed ? <p className="notice notice-warn">{t('settings.transfer.forgot')}</p> : <p className="notice">{t('settings.transfer.noPassword')}</p>}
-      <div className="btn-row">
-        <button type="submit" className="btn" disabled={busy || problem !== null}>
-          {busy ? t('settings.transfer.saving') : t('settings.transfer.save')}
-        </button>
-      </div>
-      {saved ? <p className="ok" role="status">{t('settings.transfer.saved')}</p> : null}
-      {ownReason ? (
-        <div className="error-banner" role="alert"><strong>{t(`errors.reasons.${ownReason}`)}</strong></div>
-      ) : error ? <ErrorBanner error={error} /> : null}
-      {/* Task 4 (import: "I already have a file") goes here, in this same card. */}
-    </form>
+        {saved ? <p className="ok" role="status">{t('settings.transfer.saved')}</p> : null}
+        {ownReason ? (
+          <div className="error-banner" role="alert"><strong>{t(`errors.reasons.${ownReason}`)}</strong></div>
+        ) : error ? <ErrorBanner error={error} /> : null}
+      </form>
+      <h3>{t('settings.transfer.importTitle')}</h3>
+      <TransferImport onDone={onImported} />
+    </>
   );
 }

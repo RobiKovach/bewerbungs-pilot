@@ -80,9 +80,13 @@ function request<T>(method: string, url: string, body?: unknown, signal?: AbortS
   return send<T>(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal });
 }
 
-/** One file as multipart/form-data. No Content-Type header: the browser adds it with the boundary. */
-function upload<T>(url: string, file: Blob, filename: string, signal?: AbortSignal): Promise<T> {
+/**
+ * One file as multipart/form-data. No Content-Type header: the browser adds it with the boundary.
+ * `fields` go before the file: the server reads them when the file starts, a later field would be timing-dependent.
+ */
+function upload<T>(url: string, file: Blob, filename: string, signal?: AbortSignal, fields: Record<string, string> = {}): Promise<T> {
   const form = new FormData();
+  for (const [name, value] of Object.entries(fields)) form.append(name, value);
   form.append('file', file, filename);
   return send<T>(url, { method: 'POST', headers: { ...CLIENT_HEADER }, body: form, signal });
 }
@@ -129,6 +133,12 @@ export const api = {
     }
     await downloadResponse(res, 'BewerbungsPilot-transfer.zip');
   },
+  /** Whether this PC already holds data an import would replace. */
+  transferStatus: () => request<{ hasData: boolean }>('GET', '/api/transfer/status'),
+  /** Opens a transfer file or a backup. The password only goes into this one request. */
+  importTransfer: (file: File, password: string | null) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>(
+    '/api/backups/restore-upload', file, fileName(file, 'backup.zip'), undefined, password ? { password } : {},
+  ),
   openBackupFolder: () => request<{ ok: true }>('POST', '/api/backups/open-folder', {}),
   getUpdates: () => request<UpdatesView>('GET', '/api/updates'),
   /** The developer's mailbox: 204 on success; FEEDBACK_FAILED (reason offline | limit | server) otherwise. */

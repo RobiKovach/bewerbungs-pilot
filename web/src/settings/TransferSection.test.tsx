@@ -152,6 +152,18 @@ describe('TransferSection', () => {
     }
   });
 
+  it('the warning and the validation line stand out as warnings', async () => {
+    await setup();
+    await userEvent.type(fields().pw, 'abc');
+    expect(screen.getByText(/cannot be recovered/)).toHaveClass('notice-warn');
+    expect(screen.getByText(/at least 8 characters/)).toHaveClass('notice-warn');
+  });
+
+  it('holds the import too, outside the save form (forms cannot be nested)', async () => {
+    await setup();
+    expect(screen.getByLabelText('Choose a file…').closest('form')).toBeNull();
+  });
+
   it('the password is not kept in the browser storage', async () => {
     await setup();
     await userEvent.type(fields().pw, PW);

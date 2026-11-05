@@ -15,12 +15,18 @@ const KIND_KEY: Record<BackupKind, string> = {
  * Reasons whose own sentence is the whole message: the restore waits for other work (search, package, AI, sending) or
  * another restore, or the file itself is the problem — say exactly that, not the generic "changed meanwhile" / CV size text.
  */
-const OWN_REASONS = new Set([
-  'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreBusyExport', 'restoreRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
-  'backupFolderInvalid', 'backupFolderInData', 'backupFolderNotWritable', 'backupFolderUnavailable',
+export const OWN_REASONS = new Set([
+  'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreBusyExport', 'restoreRunning', 'updateRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
+  'transferPasswordNeeded', 'transferCannotOpen', 'backupFolderInvalid', 'backupFolderInData', 'backupFolderNotWritable', 'backupFolderUnavailable',
 ]);
 /** Same limit as the server (unpacked ≤ 1 GB): refuse before sending a huge file. */
 const MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
+
+/** Why a chosen file is refused before any request, or null. */
+export function fileRefusal(file: File): 'backupNotZip' | 'backupTooLarge' | null {
+  if (!/\.zip$/i.test(file.name)) return 'backupNotZip';
+  return file.size > MAX_UPLOAD_BYTES ? 'backupTooLarge' : null;
+}
 
 type Target = { kind: 'name'; name: string } | { kind: 'file'; file: File };
 type Busy = null | 'saving' | 'restoring' | 'folder';
@@ -112,8 +118,8 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
   const choose = (file: File) => {
     setError(null);
     setFileReason(null);
-    if (!/\.zip$/i.test(file.name)) setFileReason('backupNotZip');
-    else if (file.size > MAX_UPLOAD_BYTES) setFileReason('backupTooLarge');
+    const refused = fileRefusal(file);
+    if (refused) setFileReason(refused);
     else setConfirm({ kind: 'file', file });
   };
 

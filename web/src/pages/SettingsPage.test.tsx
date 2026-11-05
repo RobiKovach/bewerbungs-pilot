@@ -169,4 +169,28 @@ describe('SettingsPage', () => {
     await screen.findByRole('heading', { name: 'Backups' });
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Move to another PC' })).toBeNull());
   });
+
+  it('a file opened in the transfer card: settings are read again and the backup list and mail block show the new data', async () => {
+    const server = settingsRoutes(baseSettings());
+    let lists = 0;
+    let mails = 0;
+    mockFetch({
+      ...server.routes,
+      ...mailRoutes,
+      'GET /api/transfer/status': () => ({ body: { hasData: true } }),
+      'GET /api/backups': () => { lists++; return { body: { dir: 'C:\\b', backups: [] } }; },
+      'GET /api/mail/settings': () => { mails++; return { body: { mail: null, passwordSaved: false } }; },
+      'POST /api/backups/restore-upload': () => ({ body: { restored: { format: 1 }, beforeRestore: { name: 'b.zip' } } }),
+    });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    const user = userEvent.setup();
+    const input = await screen.findByLabelText('Choose a file…');
+    await waitFor(() => expect(lists).toBe(1));
+    const mailsBefore = mails;
+    await user.upload(input, new File(['PK'], 'a.zip', { type: 'application/zip' }));
+    await user.click(await screen.findByRole('button', { name: 'Replace data and open' }));
+    await screen.findByText(/File opened/);
+    await waitFor(() => expect(lists).toBe(2));
+    await waitFor(() => expect(mails).toBeGreaterThan(mailsBefore));
+  });
 });

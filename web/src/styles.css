@@ -48,6 +48,9 @@ select { font: inherit; padding: 0.4rem 0.6rem; border-radius: 10px; border: 1px
 /* Same spacing the paragraph wrapper used to give. */
 .welcome-lang { margin: 1em 0; }
 /* «Try the demo» (spec 0.10.0): the offer on the first setup step and the banner on every page of the demo copy. */
+.welcome-import { margin-top: 1rem; }
+.import-notice { margin-bottom: 1rem; }
+.import-notice ul { margin: 0.2rem 0; padding-left: 1.2rem; }
 .demo-offer { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .demo-offer p { color: var(--muted); max-width: 60ch; }
 .demo-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; padding: 0.6rem 1.25rem;

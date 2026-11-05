@@ -185,6 +185,14 @@ describe('BackupsSection', () => {
     expect(await screen.findByText(/larger than 1 GB/)).toBeInTheDocument();
   });
 
+  it('reason transferPasswordNeeded shows its own sentence pointing to the transfer card', async () => {
+    setup({ 'POST /api/backups/restore-upload': () => ({ status: 422, body: { error: { code: 'BACKUP_INVALID', detailsForLog: 'x', reason: 'transferPasswordNeeded' } } }) });
+    const user = userEvent.setup();
+    await user.upload(await screen.findByLabelText('Choose file…'), new File(['BPENC'], 'b-encrypted.zip', { type: 'application/zip' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Restore' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/This file has a password.*Move to another PC/);
+  });
+
   it('a backup deleted meanwhile says so and the list reloads', async () => {
     let lists = 0;
     setup({

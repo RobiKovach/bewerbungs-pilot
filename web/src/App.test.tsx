@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsProvider } from './settings';
 import { App } from './App';
+import { dismissImportNotice } from './transfer/importNotice';
 import { mockFetch } from './test/fetchMock';
 import { baseSettings, settingsRoutes } from './test/fixtures';
 import { emptyProfile, viewOf } from './test/profileFixtures';
@@ -50,6 +51,55 @@ describe('App', () => {
     } finally {
       window.location.hash = '';
     }
+  });
+
+  it('a file opened on the first step: the home page follows, the notice stays on top, and it is not on the quit screen', async () => {
+    const server = settingsRoutes(baseSettings({ onboarding: { currentStep: 'welcome', completed: false } }));
+    mockFetch({
+      ...server.routes,
+      'GET /api/transfer/status': () => ({ body: { hasData: false } }),
+      'POST /api/shutdown': () => ({ body: { ok: true } }),
+      // What a restore does: the settings of the file take over.
+      'POST /api/backups/restore-upload': () => {
+        server.routes['PATCH /api/settings']!({ body: JSON.stringify({ onboarding: { completed: true, currentStep: null } }) });
+        return { body: { restored: { format: 1 }, beforeRestore: { name: 'b.zip' } } };
+      },
+    });
+    render(<SettingsProvider><App /></SettingsProvider>);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'I already have a file' }));
+    await user.upload(screen.getByLabelText('Choose a file…'), new File(['PK'], 'a.zip', { type: 'application/zip' }));
+    await user.click(await screen.findByRole('button', { name: 'Open file' }));
+    expect(await screen.findByRole('heading', { name: 'Welcome to BewerbungsPilot' })).toBeInTheDocument();
+    expect(screen.getByText(/sent after this file was made/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Settings' })).toHaveAttribute('href', '#/settings');
+    await user.click(screen.getByRole('button', { name: 'Quit' }));
+    expect(await screen.findByRole('heading', { name: 'BewerbungsPilot has been closed' })).toBeInTheDocument();
+    expect(screen.queryByText(/sent after this file was made/)).toBeNull();
+    // Module state: this notice must not reach the next test.
+    act(() => dismissImportNotice());
+  });
+
+  it('a file whose welcome steps were not finished: the wizard opens at its step, the notice is on top without a link', async () => {
+    const server = settingsRoutes(baseSettings({ onboarding: { currentStep: 'welcome', completed: false } }));
+    mockFetch({
+      ...server.routes,
+      'GET /api/transfer/status': () => ({ body: { hasData: false } }),
+      'GET /api/mail/settings': () => ({ body: { mail: null, passwordSaved: false } }),
+      'POST /api/backups/restore-upload': () => {
+        server.routes['PATCH /api/settings']!({ body: JSON.stringify({ onboarding: { currentStep: 'email' } }) });
+        return { body: { restored: { format: 1 }, beforeRestore: { name: 'b.zip' } } };
+      },
+    });
+    render(<SettingsProvider><App /></SettingsProvider>);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'I already have a file' }));
+    await user.upload(screen.getByLabelText('Choose a file…'), new File(['PK'], 'a.zip', { type: 'application/zip' }));
+    await user.click(await screen.findByRole('button', { name: 'Open file' }));
+    expect(await screen.findByText(/sent after this file was made/)).toBeInTheDocument();
+    expect(await screen.findByText('Step 4 of 5')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open Settings' })).toBeNull();
+    act(() => dismissImportNotice());
   });
 
   it('the demo copy says so on every page and closes with "Leave the demo"', async () => {

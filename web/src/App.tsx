@@ -11,6 +11,7 @@ import { HomePage } from './pages/HomePage';
 import { ProfilePage } from './pages/ProfilePage';
 import { QuitScreen } from './pages/QuitScreen';
 import { SettingsPage } from './pages/SettingsPage';
+import { ImportNotice } from './transfer/importNotice';
 import { VacanciesPage } from './pages/VacanciesPage';
 import { useSettings } from './settings';
 import type { Route } from './types';
@@ -57,6 +58,7 @@ export function App() {
     // App-wide: any form with unsaved changes makes leaving it (page, language, Quit, closing the tab) ask first.
     <UnsavedProvider onChange={setUnsaved}>
       <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding} demo={demo} onLeaveDemo={() => void onLeaveDemo()}>
+        <ImportNotice />
         {page}
       </Layout>
     </UnsavedProvider>
