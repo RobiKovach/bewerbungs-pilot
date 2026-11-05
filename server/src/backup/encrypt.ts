@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { AppError } from '../errors.js';
+import { removeTemp, type Warn } from './cleanup.js';
 
 /**
  * Password-protected transfer file (spec 2026-11-04 transfer, section 4).
@@ -41,7 +42,8 @@ export async function isEncryptedFile(file: string): Promise<boolean> {
   }
 }
 
-export async function encryptFile(input: string, output: string, password: string): Promise<void> {
+/** `warn` hears when a partial output could not be removed (the partial of a decryption holds personal data). */
+export async function encryptFile(input: string, output: string, password: string, warn?: Warn): Promise<void> {
   const partial = `${output}.partial`;
   try {
     const salt = crypto.randomBytes(16);
@@ -64,12 +66,12 @@ export async function encryptFile(input: string, output: string, password: strin
     await pipeline(Readable.from(source()), fs.createWriteStream(partial));
     await fs.promises.rename(partial, output);
   } catch (err) {
-    await fs.promises.rm(partial, { force: true }).catch(() => undefined);
+    await removeTemp(partial, 'transfer_partial_cleanup_failed', warn);
     throw err instanceof AppError ? err : diskFailed(err);
   }
 }
 
-export async function decryptFile(input: string, output: string, password: string): Promise<void> {
+export async function decryptFile(input: string, output: string, password: string, warn?: Warn): Promise<void> {
   const partial = `${output}.partial`;
   try {
     let header: Buffer;
@@ -124,7 +126,7 @@ export async function decryptFile(input: string, output: string, password: strin
     }
     await fs.promises.rename(partial, output).catch((err: unknown) => { throw diskFailed(err); });
   } catch (err) {
-    await fs.promises.rm(partial, { force: true }).catch(() => undefined);
+    await removeTemp(partial, 'transfer_partial_cleanup_failed', warn);
     throw err;
   }
 }

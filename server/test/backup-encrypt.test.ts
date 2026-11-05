@@ -57,6 +57,15 @@ describe('backup encryption', () => {
     fs.rmSync(p('enc'));
     const b = fs.readFileSync(await seal(data));
     expect(a.equals(b)).toBe(false);
+    expect(a.subarray(9, 25).equals(b.subarray(9, 25))).toBe(false); // salt
+    expect(a.subarray(25, 37).equals(b.subarray(25, 37))).toBe(false); // nonce
+  });
+
+  it('writes the agreed format: scrypt 17/8/1, header 37 + tag 16 around the body', async () => {
+    const plain = Buffer.from('format pin');
+    const raw = fs.readFileSync(await seal(plain));
+    expect([raw[5], raw[6], raw[7], raw[8]]).toEqual([1, 17, 8, 1]);
+    expect(raw.length).toBe(plain.length + 53);
   });
 
   it('Cyrillic password in NFC opens a file made with its NFD form', async () => {
@@ -118,6 +127,73 @@ describe('backup encryption', () => {
     vi.mocked(crypto.scrypt).mockClear();
     await expectCannotOpen(decryptFile(enc, p('out'), 'secret'));
     expect(crypto.scrypt).not.toHaveBeenCalled();
+  });
+
+  it('flipped scrypt p (still inside the limits)', async () => {
+    const enc = await seal(Buffer.from('some data to protect'));
+    const raw = fs.readFileSync(enc);
+    raw[8] = 2;
+    fs.writeFileSync(enc, raw);
+    await expectCannotOpen(decryptFile(enc, p('out'), 'secret'));
+  });
+
+  // Every header byte is checked first (magic, version), enters the key (logN, r, p, salt) or enters GCM (nonce), so no
+  // file edit reaches the AAD alone. Holding the derived key constant does: the only thing left to differ is the AAD.
+  it('the header is authenticated: flipped p fails with the same key', async () => {
+    const sameKey = (...args: unknown[]) => (args[4] as (e: Error | null, k: Buffer) => void)(null, Buffer.alloc(32, 7));
+    const scrypt = vi.mocked(crypto.scrypt);
+    scrypt.mockImplementationOnce(sameKey as never).mockImplementationOnce(sameKey as never).mockImplementationOnce(sameKey as never);
+    const enc = await seal(Buffer.from('some data to protect'));
+    await decryptFile(enc, p('control'), 'secret'); // the constant key alone does not break anything
+    expect(fs.readFileSync(p('control')).toString()).toBe('some data to protect');
+    const raw = fs.readFileSync(enc);
+    raw[8] = 2;
+    fs.writeFileSync(enc, raw);
+    await expectCannotOpen(decryptFile(enc, p('out'), 'secret'));
+    expect(scrypt).toHaveBeenCalledTimes(3);
+  });
+
+  it.each([
+    ['logN 0', 6, 0],
+    ['r over the limit', 7, 9],
+    ['r 0', 7, 0],
+    ['p over the limit', 8, 3],
+    ['p 0', 8, 0],
+  ])('%s in the header: refused before any key derivation', async (_name, offset, value) => {
+    const enc = await seal(Buffer.from('data'));
+    const raw = fs.readFileSync(enc);
+    raw[offset] = value;
+    fs.writeFileSync(enc, raw);
+    vi.mocked(crypto.scrypt).mockClear();
+    await expectCannotOpen(decryptFile(enc, p('out'), 'secret'));
+    expect(crypto.scrypt).not.toHaveBeenCalled();
+  });
+
+  it('a disk error is BACKUP_FAILED, not "cannot open"', async () => {
+    const enc = await seal(Buffer.from('data'));
+    const missing = path.join(dir, 'no such folder', 'out');
+    const dec = await decryptFile(enc, missing, 'secret').then(() => null, (e: unknown) => e);
+    expect((dec as AppError).code).toBe('BACKUP_FAILED');
+    expect((dec as AppError).reason).toBeUndefined();
+    const made = await encryptFile(p('plain'), missing, 'secret').then(() => null, (e: unknown) => e);
+    expect((made as AppError).code).toBe('BACKUP_FAILED');
+  });
+
+  it('removes the partial with retries, and says so when it cannot: code only', async () => {
+    const enc = await seal(Buffer.from('data'));
+    const raw = fs.readFileSync(enc);
+    raw[40] ^= 1;
+    fs.writeFileSync(enc, raw);
+    const rm = vi.spyOn(fs.promises, 'rm').mockRejectedValueOnce(Object.assign(new Error('locked C:/secret'), { code: 'EBUSY' }));
+    const warn = vi.fn();
+    try {
+      const err = await decryptFile(enc, p('out'), 'secret', warn).then(() => null, (e: unknown) => e);
+      expect((err as AppError).reason).toBe('transferCannotOpen'); // the cleanup failure does not replace the real error
+      expect(rm).toHaveBeenCalledWith(p('out.partial'), expect.objectContaining({ force: true, maxRetries: 3, retryDelay: 100 }));
+      expect(warn).toHaveBeenCalledWith('transfer_partial_cleanup_failed', { code: 'EBUSY' });
+    } finally {
+      rm.mockRestore();
+    }
   });
 
   it('isEncryptedFile', async () => {
