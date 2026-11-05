@@ -16,7 +16,7 @@ const KIND_KEY: Record<BackupKind, string> = {
  * another restore, or the file itself is the problem — say exactly that, not the generic "changed meanwhile" / CV size text.
  */
 const OWN_REASONS = new Set([
-  'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
+  'restoreBusySearch', 'restoreBusyPackage', 'restoreBusyAi', 'restoreBusySend', 'restoreBusyExport', 'restoreRunning', 'backupTooLarge', 'backupNotZip', 'backupGone',
   'backupFolderInvalid', 'backupFolderInData', 'backupFolderNotWritable', 'backupFolderUnavailable',
 ]);
 /** Same limit as the server (unpacked ≤ 1 GB): refuse before sending a huge file. */

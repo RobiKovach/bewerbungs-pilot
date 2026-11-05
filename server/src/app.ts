@@ -346,6 +346,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       const active = deps.activity.active();
       if (deps.updates.demoRunning?.()) return 'demo';
       if (active.includes('restore')) return 'restore';
+      if (active.includes('export')) return 'export';
       if (deps.searchJob.state().state === 'running') return 'search';
       if (deps.applicationJob.state().state === 'running') return 'package';
       const q = deps.queue.status();

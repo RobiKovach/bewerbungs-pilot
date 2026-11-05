@@ -88,6 +88,8 @@ export type ErrorReason =
   | 'restoreBusyPackage'
   | 'restoreBusyAi'
   | 'restoreBusySend'
+  // The data is being zipped for a transfer file (0.12.0): a restore or an update must wait for the copy.
+  | 'restoreBusyExport'
   // …and while it runs, nothing else may start (sending, search, package jobs, mailbox changes).
   | 'restoreRunning'
   // Backup files (spec 0.9.0, section 3.1).

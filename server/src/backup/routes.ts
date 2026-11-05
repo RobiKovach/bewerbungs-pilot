@@ -88,6 +88,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     const q = d.queue.status();
     if (q.running || q.queued > 0 || d.activity.active().includes('interview')) return 'restoreBusyAi';
     if (d.activity.active().includes('send')) return 'restoreBusySend';
+    if (d.activity.active().includes('export')) return 'restoreBusyExport';
     return null;
   };
 
@@ -144,7 +145,14 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   });
 
   app.post('/api/backups', async () => {
-    const info = await createBackup(d.paths.root, { dir: await writeDir(), kind: 'manual', appVersion: d.version });
+    const dir = await writeDir();
+    const end = d.activity.begin('export');
+    let info: BackupInfo;
+    try {
+      info = await createBackup(d.paths.root, { dir, kind: 'manual', appVersion: d.version });
+    } finally {
+      end();
+    }
     d.logger.info('backup_created', { kind: info.kind, sizeBytes: info.sizeBytes });
     return info;
   });

@@ -77,7 +77,14 @@ export async function registerTransferRoutes(app: FastifyInstance, d: TransferRo
     try {
       await fs.promises.mkdir(d.paths.tmp, { recursive: true });
       dir = await fs.promises.mkdtemp(path.join(d.paths.tmp, `transfer-${now.getTime()}-`));
-      const backup = await createBackup(d.paths.root, { dir, kind: 'manual', appVersion: d.version, now });
+      // Only the zipping: a restore or an update replacing the data meanwhile would give a mixed copy.
+      const end = d.activity.begin('export');
+      let backup: Awaited<ReturnType<typeof createBackup>>;
+      try {
+        backup = await createBackup(d.paths.root, { dir, kind: 'manual', appVersion: d.version, now });
+      } finally {
+        end();
+      }
       file = backup.file;
       if (password) {
         file = path.join(dir, 'encrypted.zip');

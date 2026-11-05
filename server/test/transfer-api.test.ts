@@ -288,6 +288,79 @@ describe('transfer API', { timeout: 60_000 }, () => {
     await tmpClean(ctx);
   });
 
+  it('Cyrillic password: export and import through the real routes bring the profile back', async () => {
+    const ctx = await start();
+    await setName(ctx, 'Max Mustermann');
+    const cyr = 'пароль-переносу';
+    const res = await doExport(ctx, cyr);
+    expect(res.statusCode).toBe(200);
+    await setName(ctx, 'Erika Musterfrau');
+    expect(errorOf(await ctx.app.inject(upload('x-encrypted.zip', res.rawPayload, { value: 'пароль-переносу-не' })))).toEqual([422, 'BACKUP_INVALID', 'transferCannotOpen']);
+    expect((await ctx.app.inject(upload('x-encrypted.zip', res.rawPayload, { value: cyr }))).statusCode).toBe(200);
+    expect(name(ctx)).toBe('Max Mustermann');
+  });
+
+  /** Holds the zipping of the export (createBackup renames its .partial file last) until released. */
+  function holdZip() {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => { release = r; });
+    const real = fs.promises.rename.bind(fs.promises);
+    vi.spyOn(fs.promises, 'rename').mockImplementation(async (from, to) => {
+      if (/.zip.partial$/.test(String(from))) await gate;
+      return real(from, to);
+    });
+    return release;
+  }
+
+  it('a restore during the zipping of an export refuses and the data stays; export is not left open', async () => {
+    const ctx = await start();
+    await setName(ctx, 'Max Mustermann');
+    const plain = await doExport(ctx);
+    await setName(ctx, 'Erika Musterfrau');
+    const release = holdZip();
+    const running = doExport(ctx);
+    await vi.waitFor(() => expect(ctx.activity.active()).toContain('export'));
+    const res = await ctx.app.inject(upload('x.zip', plain.rawPayload));
+    expect(errorOf(res)).toEqual([409, 'CONFLICT', 'restoreBusyExport']);
+    expect(name(ctx)).toBe('Erika Musterfrau');
+    release();
+    expect((await running).statusCode).toBe(200);
+    expect(ctx.activity.active()).not.toContain('export');
+    expect((await ctx.app.inject(upload('x.zip', plain.rawPayload))).statusCode).toBe(200);
+  });
+
+  it('end() runs when the zipping fails', async () => {
+    const ctx = await start();
+    const real = fs.promises.rename.bind(fs.promises);
+    vi.spyOn(fs.promises, 'rename').mockImplementation(async (from, to) => {
+      if (/.zip.partial$/.test(String(from))) throw new Error('disk full');
+      return real(from, to);
+    });
+    const res = await doExport(ctx, PASSWORD);
+    expect(errorOf(res)).toEqual([500, 'BACKUP_FAILED', undefined]);
+    expect(ctx.activity.active()).toEqual([]);
+    await tmpClean(ctx);
+  });
+
+  it('a client that leaves before the stream starts (still zipping) leaves nothing behind', async () => {
+    let host = '';
+    const ctx = await start({ allowedHosts: () => [host] });
+    const address = await ctx.app.listen({ port: 0, host: '127.0.0.1' });
+    const { hostname, port } = new URL(address);
+    host = `${hostname}:${port}`;
+    const release = holdZip();
+    const req = http.request({ hostname, port, path: '/api/transfer/export', method: 'POST', headers: { ...H, 'content-type': 'application/json' } });
+    req.on('error', () => {});
+    req.end(JSON.stringify({ password: PASSWORD }));
+    await vi.waitFor(() => expect(ctx.activity.active()).toContain('export'));
+    expect(tmpLeft(ctx)).toHaveLength(1);
+    req.destroy();
+    await new Promise((r) => setTimeout(r, 200));
+    release();
+    await tmpClean(ctx);
+    expect(ctx.activity.active()).toEqual([]);
+  });
+
   it('removeTransferLeftovers removes upload-*.zip and transfer-* and leaves other tmp files alone', async () => {
     const tmp = tempRoot();
     fs.writeFileSync(path.join(tmp, 'upload-1.zip'), 'x');
