@@ -229,6 +229,19 @@ describe('backup API', { timeout: 30_000 }, () => {
     expect((await ctx.app.inject({ method: 'POST', url: '/api/vacancies/search', headers: H })).json().error?.reason).not.toBe('restoreRunning');
   });
 
+  it('saving a backup during a restore is refused and leaves the restore alone', async () => {
+    const ctx = await makeApp();
+    await save(ctx);
+    const before = (await list(ctx)).backups.length;
+    const end = ctx.activity.begin('restore');
+    const res = await ctx.app.inject({ method: 'POST', url: '/api/backups', headers: H });
+    expect([res.statusCode, res.json().error?.reason]).toEqual([409, 'restoreRunning']);
+    expect(ctx.activity.active()).toContain('restore');
+    expect((await list(ctx)).backups).toHaveLength(before);
+    end();
+    expect((await ctx.app.inject({ method: 'POST', url: '/api/backups', headers: H })).statusCode).toBe(200);
+  });
+
   it('a different mailbox: the saved key is gone when the restore answers, the revoke runs in the background', async () => {
     const ctx = await makeApp();
     ctx.settings.setMail(SMTP_B);

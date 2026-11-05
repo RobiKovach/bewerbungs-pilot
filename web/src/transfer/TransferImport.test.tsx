@@ -180,6 +180,17 @@ describe('TransferImport', () => {
     expect(input.value).toBe('');
   });
 
+  it('a failed settings reload after a successful import still shows success and calls onDone', async () => {
+    const onDone = vi.fn();
+    let reads = 0;
+    setup({ 'GET /api/settings': () => { reads++; return reads === 1 ? { body: baseSettings() } : { status: 500, body: { error: { code: 'UNKNOWN', detailsForLog: 'x' } } }; } }, { onDone });
+    const user = await choose(plainFile());
+    await user.click(await openButton());
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(screen.getByText(/File opened/)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('success calls settings reload and markImported, and clears the password', async () => {
     const onDone = vi.fn();
     const { f } = setup({}, { onDone });

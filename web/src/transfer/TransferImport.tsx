@@ -75,7 +75,8 @@ export function TransferImport({ onDone, onBusyChange }: { onDone?: () => void; 
       setChosen(null);
       setDone(true);
       markImported();
-      await ctx?.reload();
+      // The import itself worked: a failed re-read of the settings must not turn it into an error (the next page load reads them).
+      try { await ctx?.reload(); } catch { /* stale until the next load */ }
       onDone?.();
     } catch (err) {
       // The page could not read the first bytes, the server could: this is simply the question for the password.

@@ -145,6 +145,8 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   });
 
   app.post('/api/backups', async () => {
+    // A backup made while the data folders are being swapped would catch half of each.
+    d.activity.refuseDuringRestore();
     const dir = await writeDir();
     const end = d.activity.begin('export');
     let info: BackupInfo;
