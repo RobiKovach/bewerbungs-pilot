@@ -333,7 +333,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await removeTransferLeftovers(deps.backup.paths.tmp, (event, data) => deps.logger.warn(event, data));
   await registerTransferRoutes(app, {
     paths: deps.backup.paths, version: deps.version, activity: deps.activity, logger: deps.logger, maxUploadBytes: deps.backup.maxUploadBytes,
-    hasData: () => deps.vacancyStore.list().length > 0 || deps.applicationStore.list().length > 0 || profileHasData(deps.profileStore.get()),
+    // A connected mailbox counts too: an import forgets its key (and revokes the Google one).
+    hasData: () => deps.vacancyStore.list().length > 0 || deps.applicationStore.list().length > 0 || profileHasData(deps.profileStore.get()) || deps.settings.get().mail !== null,
   });
 
   await registerUsageRoutes(app, { settings: deps.settings, version: deps.version, url: deps.cloud?.url ?? cloudUrl(), fetch: deps.cloud?.fetch, logger: deps.logger });

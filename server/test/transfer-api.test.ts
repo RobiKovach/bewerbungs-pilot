@@ -459,6 +459,14 @@ describe('transfer API', { timeout: 60_000 }, () => {
     expect(await status()).toEqual({ hasData: true });
   });
 
+  it('status: hasData is true for a connected mailbox alone', async () => {
+    const ctx = await start();
+    ctx.settings.setMail({ kind: 'google', address: 'max@example.com', senderName: 'Max', provider: 'gmail' });
+    expect((await ctx.app.inject({ method: 'GET', url: '/api/transfer/status', headers: H })).json()).toEqual({ hasData: true });
+    ctx.settings.setMail(null);
+    expect((await ctx.app.inject({ method: 'GET', url: '/api/transfer/status', headers: H })).json()).toEqual({ hasData: false });
+  });
+
   it('status: hasData is true for an application or a filled profile alone', async () => {
     const a = await start();
     a.applicationStore.save(pkg({ id: 'app1' }), {});
