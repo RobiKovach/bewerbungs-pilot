@@ -82,7 +82,7 @@ describe('InterviewPrepStore', () => {
   });
 
   it.each([
-    ['another schema version', { schemaVersion: 2 }],
+    ['an unknown schema version', { schemaVersion: 0 }],
     ['another application', { applicationId: 'app-2' }],
     ['a wrong shape', { questions: 'nope' }],
   ])('%s → put aside, null, the warning has no content', (_name, over) => {
@@ -93,6 +93,18 @@ describe('InterviewPrepStore', () => {
     expect(setAside(dir, 'invalid')).toHaveLength(1);
     expect(warnings).toHaveLength(1);
     expect(JSON.stringify(warnings)).not.toContain(SECRET);
+  });
+
+  it('a newer schema version is not damage: read refuses, the file stays untouched, nothing is logged', () => {
+    const { store, dir, file, warnings } = setup();
+    fs.writeFileSync(file, JSON.stringify({ ...prep(), schemaVersion: 999 }));
+    const before = fs.readFileSync(file);
+    let err: unknown;
+    try { store.read(ID); } catch (e) { err = e; }
+    expect(err).toMatchObject({ code: 'CONFLICT', reason: 'prepUnreadable' });
+    expect(fs.readFileSync(file).equals(before)).toBe(true);
+    expect(fs.readdirSync(path.join(dir, ID))).toEqual(['interview-prep.json']);
+    expect(warnings).toHaveLength(0);
   });
 
   it.each([['null', 'null'], ['an array', '[1]']])('valid JSON that is %s → put aside, null', (_name, content) => {

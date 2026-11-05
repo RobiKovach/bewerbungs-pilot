@@ -4,7 +4,7 @@ import type { InterviewPrep } from '@bp/shared';
 import { APPLICATION_ID, forLog } from '../applications/schema.js';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
-import { validatePrep } from './schema.js';
+import { PREP_SCHEMA_VERSION, validatePrep } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 const FILE = 'interview-prep.json';
@@ -32,6 +32,9 @@ export class InterviewPrepStore {
       if (fs.existsSync(file)) this.setAside(id, 'invalid', 'not a preparation');
       return null;
     }
+    // Written by a newer program: not damage. Left exactly where it is, and never overwritten from here.
+    const version = (raw as { schemaVersion?: unknown }).schemaVersion;
+    if (typeof version === 'number' && version > PREP_SCHEMA_VERSION) throw new AppError('CONFLICT', 'preparation file is from a newer version', 'prepUnreadable');
     const problem = validatePrep(raw) ?? ((raw as InterviewPrep).applicationId === id ? null : 'belongs to another application');
     if (problem) {
       this.setAside(id, 'invalid', forLog(problem));

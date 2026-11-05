@@ -486,6 +486,20 @@ describe('interview preparation: the frozen package, the log, broken files', () 
     expect(ctx.activity.active()).toEqual([]);
   });
 
+  it('a file from a newer version stays where it is, byte for byte, and every route answers prepUnreadable', async () => {
+    const { ctx, id } = await started();
+    const newer = JSON.stringify({ ...JSON.parse(fs.readFileSync(prepFile(ctx, id), 'utf8')), schemaVersion: 999 });
+    fs.writeFileSync(prepFile(ctx, id), newer);
+    const calls0 = ctx.provider.calls.length;
+    for (const r of [await ctx.app.inject({ method: 'GET', url: url(id) }), await post(ctx, url(id), { language: 'de', replace: true }), await answer(ctx, id, 'q1'), await post(ctx, url(id, '/summary'), {})]) {
+      expect(r.statusCode).toBe(409);
+      expect(r.json().error).toMatchObject({ code: 'CONFLICT', reason: 'prepUnreadable' });
+    }
+    expect(fs.readFileSync(prepFile(ctx, id), 'utf8')).toBe(newer);
+    expect(fs.readdirSync(path.dirname(prepFile(ctx, id))).filter((f) => f.startsWith('interview-prep.'))).toEqual(['interview-prep.json']);
+    expect(ctx.provider.calls.length).toBe(calls0);
+  });
+
   it('a damaged file that cannot be put aside gives the same clean error', async () => {
     const { ctx, id } = await started();
     fs.writeFileSync(prepFile(ctx, id), '{ not json');
