@@ -78,6 +78,8 @@ export async function registerTransferRoutes(app: FastifyInstance, d: TransferRo
       await fs.promises.mkdir(d.paths.tmp, { recursive: true });
       dir = await fs.promises.mkdtemp(path.join(d.paths.tmp, `transfer-${now.getTime()}-`));
       // Only the zipping: a restore or an update replacing the data meanwhile would give a mixed copy.
+      // Checked again: one may have started during the awaits above.
+      d.activity.refuseDuringRestore();
       const end = d.activity.begin('export');
       let backup: Awaited<ReturnType<typeof createBackup>>;
       try {

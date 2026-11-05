@@ -83,7 +83,7 @@ describe('POST /api/updates/apply', { timeout: 30_000 }, () => {
   });
 
   it('while other work runs gives 409 busy naming it; nothing starts', async () => {
-    for (const what of ['send', 'restore', 'browser']) {
+    for (const what of ['send', 'restore', 'browser', 'export']) {
       const s = setup();
       const ctx = await s.make();
       const end = ctx.activity.begin(what);

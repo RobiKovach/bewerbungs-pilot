@@ -329,6 +329,31 @@ describe('transfer API', { timeout: 60_000 }, () => {
     expect((await ctx.app.inject(upload('x.zip', plain.rawPayload))).statusCode).toBe(200);
   });
 
+  it('Save backup (POST /api/backups) holds the same activity while zipping', async () => {
+    const ctx = await start();
+    const release = holdZip();
+    const running = ctx.app.inject({ method: 'POST', url: '/api/backups', headers: H });
+    await vi.waitFor(() => expect(ctx.activity.active()).toContain('export'));
+    release();
+    expect((await running).statusCode).toBe(200);
+    expect(ctx.activity.active()).not.toContain('export');
+  });
+
+  it('a restore that starts while the export prepares its folder stops the export before the zipping', async () => {
+    const ctx = await start();
+    let end = () => {};
+    const real = fs.promises.mkdtemp.bind(fs.promises);
+    vi.spyOn(fs.promises, 'mkdtemp').mockImplementation((async (prefix: string) => {
+      end = ctx.activity.begin('restore');
+      return real(prefix);
+    }) as typeof fs.promises.mkdtemp);
+    const res = await doExport(ctx, PASSWORD);
+    end();
+    expect(errorOf(res)).toEqual([409, 'CONFLICT', 'restoreRunning']);
+    expect(ctx.activity.active()).toEqual([]);
+    await tmpClean(ctx);
+  });
+
   it('end() runs when the zipping fails', async () => {
     const ctx = await start();
     const real = fs.promises.rename.bind(fs.promises);

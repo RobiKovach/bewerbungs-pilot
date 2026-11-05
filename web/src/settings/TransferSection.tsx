@@ -59,19 +59,21 @@ export function TransferSection() {
       <p className="muted">{t('settings.transfer.intro')}</p>
       <p>{t('settings.transfer.contents')}</p>
       <p className="muted">{t('settings.transfer.notIncluded')}</p>
-      <div className="field">
-        <label className="field-head" htmlFor={passwordId}>{t('settings.transfer.passwordLabel')}</label>
-        <input id={passwordId} type="password" autoComplete="new-password" spellCheck={false} value={password}
-          disabled={busy} onChange={edit(setPassword)} />
-        <p className="field-hint">{t('settings.transfer.passwordHint')}</p>
+      <div className="form-grid">
+        <div className="field">
+          <label className="field-head" htmlFor={passwordId}>{t('settings.transfer.passwordLabel')}</label>
+          <input id={passwordId} type="password" autoComplete="new-password" spellCheck={false} value={password}
+            disabled={busy} onChange={edit(setPassword)} />
+          <p className="field-hint">{t('settings.transfer.passwordHint')}</p>
+        </div>
+        <div className="field">
+          <label className="field-head" htmlFor={repeatId}>{t('settings.transfer.repeatLabel')}</label>
+          <input id={repeatId} type="password" autoComplete="new-password" spellCheck={false} value={repeat}
+            disabled={busy} onChange={edit(setRepeat)} />
+        </div>
       </div>
-      <div className="field">
-        <label className="field-head" htmlFor={repeatId}>{t('settings.transfer.repeatLabel')}</label>
-        <input id={repeatId} type="password" autoComplete="new-password" spellCheck={false} value={repeat}
-          disabled={busy} onChange={edit(setRepeat)} />
-      </div>
-      {problem ? <p className="notice" role="status">{t(`settings.transfer.${problem}`)}</p> : null}
-      {typed ? <p className="notice">{t('settings.transfer.forgot')}</p> : <p className="notice">{t('settings.transfer.noPassword')}</p>}
+      {problem ? <p className="notice notice-warn" role="status">{t(`settings.transfer.${problem}`)}</p> : null}
+      {typed ? <p className="notice notice-warn">{t('settings.transfer.forgot')}</p> : <p className="notice">{t('settings.transfer.noPassword')}</p>}
       <div className="btn-row">
         <button type="submit" className="btn" disabled={busy || problem !== null}>
           {busy ? t('settings.transfer.saving') : t('settings.transfer.save')}

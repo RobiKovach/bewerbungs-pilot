@@ -111,6 +111,7 @@ describe('backup API', { timeout: 30_000 }, () => {
       ['restoreBusyPackage', (ctx) => { const s = vi.spyOn(ctx.applicationJob, 'state').mockReturnValue({ ...ctx.applicationJob.state(), state: 'running' }); return () => s.mockRestore(); }],
       ['restoreBusySend', (ctx) => ctx.activity.begin('send')],
       ['restoreBusyAi', (ctx) => ctx.activity.begin('interview')],
+      ['restoreBusyExport', (ctx) => ctx.activity.begin('export')],
     ];
     for (const [reason, makeBusy] of cases) {
       const ctx = await makeApp();
