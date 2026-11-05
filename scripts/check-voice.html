@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Перевірка голосу</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 42rem; margin: 2rem auto; padding: 0 1rem; }
+  .warn { border: 1px solid #b8860b; background: rgba(255, 200, 0, .15); padding: .75rem 1rem; border-radius: 6px; }
+  .row { margin: 1rem 0; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  button, select { font: inherit; padding: .4rem .9rem; }
+  .box { border: 1px solid #888; border-radius: 6px; padding: .5rem .75rem; min-height: 3rem; white-space: pre-wrap; }
+  .err { color: #c0392b; font-weight: 600; }
+  small { opacity: .75; }
+</style>
+</head>
+<body>
+<h1>Перевірка голосу</h1>
+<p class="warn">Увага: браузер, найімовірніше, передає твій голос на сервери Microsoft (Edge) або Google (Chrome) для розпізнавання. Ця сторінка сама нічого не зберігає й не надсилає.</p>
+<p>Браузер: <strong id="browser"></strong></p>
+<div class="row">
+  <label for="lang">Мова:</label>
+  <select id="lang"><option value="de-DE">de-DE</option><option value="en-US">en-US</option></select>
+  <button id="start" type="button">Почати</button>
+  <button id="stop" type="button" disabled>Стоп</button>
+</div>
+<p id="status" role="status"></p>
+<h2>Поточний текст</h2>
+<div class="box" id="interim"></div>
+<h2>Кінцевий текст</h2>
+<div class="box" id="final"></div>
+<h2>Помилка</h2>
+<p id="error" class="err" role="alert"></p>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ua = navigator.userAgent;
+  var name = /Edg\//.test(ua) ? 'Microsoft Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Google Chrome' : /Safari\//.test(ua) ? 'Safari' : 'невідомий';
+  $('browser').textContent = name;
+
+  var messages = {
+    'not-allowed': 'Мікрофон заборонено (або дозвіл не дано). Дозволь доступ до мікрофона для цієї адреси в налаштуваннях браузера.',
+    'service-not-allowed': 'Браузер не дозволяє службу розпізнавання мови.',
+    'audio-capture': 'Мікрофон не знайдено або він недоступний.',
+    'no-speech': 'Мови не почув. Спробуй ще раз і говори ближче до мікрофона.',
+    'network': 'Немає зв’язку зі службою розпізнавання (вона працює через інтернет).',
+    'aborted': 'Розпізнавання перервано.',
+    'language-not-supported': 'Ця мова не підтримується.'
+  };
+  function showError(text) { $('error').textContent = text; }
+
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showError('У цьому браузері немає Web Speech API (SpeechRecognition). Спробуй Edge або Chrome.');
+    $('start').disabled = true;
+    return;
+  }
+
+  var rec = null;
+  function setRunning(on) { $('start').disabled = on; $('stop').disabled = !on; }
+
+  $('start').addEventListener('click', function () {
+    showError(''); $('interim').textContent = ''; $('final').textContent = '';
+    try {
+      rec = new SR();
+      rec.lang = $('lang').value;
+      rec.interimResults = true;
+      rec.continuous = true;
+      rec.onstart = function () { $('status').textContent = 'Слухаю… говори.'; setRunning(true); };
+      rec.onresult = function (e) {
+        var interim = '', fin = '';
+        for (var i = 0; i < e.results.length; i++) {
+          var t = e.results[i][0].transcript;
+          if (e.results[i].isFinal) fin += t + ' '; else interim += t;
+        }
+        $('interim').textContent = interim;
+        $('final').textContent = fin;
+      };
+      rec.onerror = function (e) {
+        showError((messages[e.error] || 'Помилка розпізнавання.') + ' (event.error: ' + e.error + ')');
+      };
+      rec.onend = function () { $('status').textContent = 'Зупинено.'; setRunning(false); };
+      rec.start();
+    } catch (err) {
+      showError('Не вдалося запустити розпізнавання: ' + (err && err.message ? err.message : err));
+      setRunning(false);
+    }
+  });
+  $('stop').addEventListener('click', function () { if (rec) rec.stop(); });
+})();
+</script>
+</body>
+</html>
