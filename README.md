@@ -6,8 +6,8 @@ email and keeps track of every answer. Nothing is made up: letters are built onl
 
 ![Job offers scored from 0 to 100 with the reasons, in the demo](docs/images/02-job-offers.png)
 
-**Status: v0.11** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
-feedback, one-click updates and a demo. Six languages: Українська · English · Deutsch · Русский · Polski · Română.
+**Status: v0.12** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
+feedback, one-click updates, a demo and interview preparation. Six languages: Українська · English · Deutsch · Русский · Polski · Română.
 
 ## Start in 5 steps
 
@@ -70,6 +70,15 @@ From version 0.11.0 the update banner has an **Update now** button: the app down
 project's GitHub Releases, checks its checksum (published in `version.json`), saves a backup of your data, installs the new
 version and restarts. If anything fails, the old version keeps working and you are told why. If you still have 0.10.x or
 older, install 0.11.0 by hand once (download it from the banner or the Releases page); after that updates are one click.
+
+### What's new in 0.12.0
+
+- **Interview preparation.** Once an application is sent, a button on it opens a practice for the interview. The AI helper
+  writes questions for this job (about your own path, theory and one practical task) in German or English, as you choose.
+  You answer each one in your own words and see what was weak, your language mistakes and a short example of a better
+  answer. At the end you get a summary with a rough chance of passing, shown with a note that it is only an estimate, and
+  the weak answers can be repeated. Everything stays on your PC, next to the application; the AI helper you chose sees your
+  answers (see the privacy policy).
 
 ### What's new in 0.11.0
 

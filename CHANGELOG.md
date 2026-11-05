@@ -2,6 +2,16 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.12.0
+
+- **Interview preparation.** A sent application now has an **Interview preparation** button. The AI helper writes questions for
+  that job: about your own experience, theory for the role and one practical task, in German or English. You answer each
+  one in your own words and get feedback: what was weak, your language mistakes and a short example of a better answer. At the
+  end there is a summary by area, the biggest risk, a rough chance of passing (always shown with a note that it is only an
+  estimate) and a list of weak answers you can repeat. Repeating shows the earlier figure next to the new one.
+- The preparation is saved on your PC next to the application and removed with it. The application itself is not changed.
+- The privacy policy now lists what the interview preparation sends to your AI helper.
+
 ## What's new in 0.11.0
 
 - **Feedback.** A **Feedback** button in the top menu opens a window: Problem or Idea, your message, your email (for the

@@ -185,6 +185,71 @@ test('a backup brings the profile back', async () => {
   await expect(page.getByRole('textbox', { name: 'Full name' })).toHaveValue('Max Mustermann');
 });
 
+/** The folder of the only application that has a saved preparation, found by the file the preparation leaves there. */
+function preparedApplicationFolder(): string | null {
+  const walk = (dir: string): string | null => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'tmp') continue;
+        const found = walk(full);
+        if (found) return found;
+      } else if (entry.name === 'interview-prep.json') return dir;
+    }
+    return null;
+  };
+  return walk(env.dataDir);
+}
+
+test('interview preparation: questions, feedback, summary, repeat', async () => {
+  const longAnswer = (n: number) => `Answer number ${n}: in my last project I built a concrete feature together with the team and measured the result.`;
+  const shortAnswer = 'Not sure.';
+
+  await page.getByRole('link', { name: 'Applications' }).first().click();
+  await page.getByRole('link', { name: 'Interview preparation' }).click();
+  await page.getByRole('button', { name: 'Create the questions' }).click();
+  await expect(page.getByTestId('question-card')).toHaveCount(9, { timeout: 60_000 });
+
+  // The package itself must stay untouched by everything below: the preparation lives in its own file.
+  const folder = preparedApplicationFolder();
+  expect(folder).not.toBeNull();
+  const packageFile = path.join(folder as string, 'package.json');
+  const before = (JSON.parse(fs.readFileSync(packageFile, 'utf8')) as { updatedAt: string }).updatedAt;
+  expect(typeof before).toBe('string');
+
+  // Nine answers; the third and the sixth are short, which the scripted helper rates as weak.
+  for (let i = 1; i <= 9; i++) {
+    if (i === 1) await page.getByRole('button', { name: 'Continue' }).click();
+    const field = page.getByRole('textbox', { name: 'Your answer' });
+    await expect(field).toBeVisible();
+    await field.fill(i === 3 || i === 6 ? shortAnswer : longAnswer(i));
+    await page.getByRole('button', { name: 'Get feedback' }).click();
+    await expect(page.getByText('Weak in content')).toBeVisible({ timeout: 60_000 });
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+  }
+
+  // After the last feedback, "Next" leads to the summary, which asks for the figure once.
+  await expect(page.getByRole('heading', { name: 'Summary' })).toBeVisible();
+  await expect(page.getByText('≈ 70%', { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/this is no promise and no forecast of the result/)).toBeVisible();
+  const weakBlock = page.getByRole('region', { name: 'Still weak' });
+  await expect(weakBlock.getByRole('listitem')).toHaveCount(2);
+
+  // Repeat one weak question with a long answer: the old figure is stale, a new call gives a higher one, and the old one stays visible.
+  await weakBlock.getByRole('button', { name: 'Repeat', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await page.getByRole('textbox', { name: 'Your answer' }).fill(longAnswer(0));
+  await page.getByRole('button', { name: 'Get feedback' }).click();
+  await expect(page.getByText('The answer is concrete')).toBeVisible({ timeout: 60_000 });
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByText('≈ 80%', { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText('Before: ≈ 70%')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Still weak' }).getByRole('listitem')).toHaveCount(1);
+
+  const after = (JSON.parse(fs.readFileSync(packageFile, 'utf8')) as { updatedAt: string }).updatedAt;
+  expect(after).toBe(before);
+});
+
 test('feedback goes to the cloud service with exactly the announced fields, and the install number stays on the server', async () => {
   await page.getByRole('link', { name: 'Settings' }).first().click();
   await expect(page.getByRole('button', { name: 'Save backup' })).toBeVisible();
