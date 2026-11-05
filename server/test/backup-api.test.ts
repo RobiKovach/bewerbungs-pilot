@@ -309,7 +309,7 @@ describe('backup API', { timeout: 30_000 }, () => {
   it('without the launch key every backup route is 401', async () => {
     const { app } = await makeApp({ autoKey: false });
     const C = { 'x-bp-client': '1' };
-    for (const [method, url] of [['GET', '/api/backups'], ['POST', '/api/backups'], ['POST', '/api/backups/restore'], ['POST', '/api/backups/restore-upload'], ['POST', '/api/backups/open-folder']] as const) {
+    for (const [method, url] of [['GET', '/api/backups'], ['POST', '/api/backups'], ['POST', '/api/backups/restore'], ['POST', '/api/backups/restore-upload'], ['POST', '/api/backups/open-folder'], ['GET', '/api/transfer/status'], ['POST', '/api/transfer/export']] as const) {
       const res = await app.inject({ method, url, headers: C });
       expect([url, res.statusCode, res.json().error.code]).toEqual([url, 401, 'NO_SESSION']);
     }

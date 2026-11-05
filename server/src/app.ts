@@ -31,6 +31,7 @@ import type { SearchJob } from './vacancies/search-job.js';
 import type { VacancySource } from './vacancies/sources/types.js';
 import type { VacancyStore } from './vacancies/store.js';
 import { registerBackupRoutes, type BackupRouteDeps } from './backup/routes.js';
+import { profileHasData, registerTransferRoutes, removeTransferLeftovers } from './backup/transfer-routes.js';
 import type { Activity } from './runtime/activity.js';
 import type { AvailableUpdate } from './updates/checker.js';
 import { registerUpdateRoutes } from './updates/routes.js';
@@ -327,6 +328,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     ...deps.backup, version: deps.version, searchJob: deps.searchJob, applicationJob: deps.applicationJob, queue: deps.queue,
     activity: deps.activity, settings: deps.settings, secrets: deps.secrets, googleAuth: deps.googleAuth, logger: deps.logger,
     revokeTimeoutMs: deps.revokeTimeoutMs,
+  });
+
+  await removeTransferLeftovers(deps.backup.paths.tmp, (event, data) => deps.logger.warn(event, data));
+  await registerTransferRoutes(app, {
+    paths: deps.backup.paths, version: deps.version, activity: deps.activity, logger: deps.logger, maxUploadBytes: deps.backup.maxUploadBytes,
+    hasData: () => deps.vacancyStore.list().length > 0 || deps.applicationStore.list().length > 0 || profileHasData(deps.profileStore.get()),
   });
 
   await registerUsageRoutes(app, { settings: deps.settings, version: deps.version, url: deps.cloud?.url ?? cloudUrl(), fetch: deps.cloud?.fetch, logger: deps.logger });

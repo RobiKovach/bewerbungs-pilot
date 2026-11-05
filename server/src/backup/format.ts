@@ -80,8 +80,18 @@ export function compareVersions(a: string, b: string): number {
   return 0;
 }
 
+/** `YYYY-MM-DD-HHMM` in the person's local time. */
+function localStamp(now: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}`;
+}
+
 /** `BewerbungsPilot-backup-YYYY-MM-DD-HHMM.zip` in the person's local time. */
 export function backupFileName(now: Date): string {
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `BewerbungsPilot-backup-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}.zip`;
+  return `BewerbungsPilot-backup-${localStamp(now)}.zip`;
+}
+
+/** `BewerbungsPilot-transfer-YYYY-MM-DD-HHMM.zip`, or `…-encrypted.zip` when it has a password. */
+export function transferFileName(now: Date, encrypted: boolean): string {
+  return `BewerbungsPilot-transfer-${localStamp(now)}${encrypted ? '-encrypted' : ''}.zip`;
 }

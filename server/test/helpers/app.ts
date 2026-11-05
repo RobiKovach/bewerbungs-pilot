@@ -35,7 +35,7 @@ export const H = { 'x-bp-client': '1', 'x-bp-key': TEST_KEY };
  * `autoKey` (default true): every `app.inject` carries the launch key unless the test sets its own `x-bp-key`
  * or cookie, so tests about other things need not repeat it. Launch-key tests pass `autoKey: false`.
  */
-export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; pdfFetcher?: FakePdfFetcher; contactWindow?: FakeContactWindow; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null; maxBackupUploadBytes?: number; documents?: string; backupEnv?: NodeJS.ProcessEnv; demo?: AppDeps['demo']; cloud?: AppDeps['cloud']; updateApply?: NonNullable<AppDeps['updates']['apply']>; demoRunning?: () => boolean } = {}) {
+export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakeProvider; chosen?: ProviderId | null; settingsFile?: unknown; webDist?: string | null; allowedHosts?: () => string[]; source?: FakeSource; pageReader?: FakePageReader; pdfFetcher?: FakePdfFetcher; contactWindow?: FakeContactWindow; printer?: FakePrinter; logger?: Logger; revokeTimeoutMs?: number; installMode?: string; autoKey?: boolean; update?: AvailableUpdate | null; updateSource?: () => AvailableUpdate | null; maxBackupUploadBytes?: number; documents?: string; backupEnv?: NodeJS.ProcessEnv; demo?: AppDeps['demo']; cloud?: AppDeps['cloud']; updateApply?: NonNullable<AppDeps['updates']['apply']>; demoRunning?: () => boolean; beforeBuild?: (dir: string) => void } = {}) {
   // Spaces + Cyrillic on purpose: real user folders look like C:\Users\Ольга Коваль\.
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp app Дані-'));
   const settings = new SettingsStore(path.join(dir, 'settings.json'));
@@ -84,6 +84,8 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const sentUnsaved = new SentUnsavedLog(path.join(dir, 'applications', 'sent-unsaved.json'));
   sentUnsaved.load();
   const activity = new Activity();
+  // What is already in the data folder when the server starts (leftovers of an earlier run).
+  opts.beforeBuild?.(dir);
   // Outside the data folder, like Documents: a backup never contains the backups. The real folder rules run against a
   // stand-in Documents folder and an environment without OneDrive (opts.backupEnv / opts.documents change both).
   const documents = opts.documents ?? fs.mkdtempSync(path.join(os.tmpdir(), 'bp documents-'));

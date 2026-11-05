@@ -15,7 +15,9 @@ import type { SecretStore } from '../mail/secret.js';
 import { mapUploadError } from '../profile/upload.js';
 import type { Activity } from '../runtime/activity.js';
 import type { SearchJob } from '../vacancies/search-job.js';
+import { removeTemp, type Warn } from './cleanup.js';
 import { createBackup } from './create.js';
+import { decryptFile, isEncryptedFile } from './encrypt.js';
 import { checkChosenFolder, createFolder } from './folder.js';
 import { listBackups } from './extract.js';
 import { MAX_UNPACKED_BYTES } from './format.js';
@@ -56,6 +58,15 @@ const folderBody = {
   type: 'object', additionalProperties: false, required: ['folder'],
   properties: { folder: { type: ['string', 'null'], maxLength: 400 } },
 } as const;
+
+/** Longest password an export accepts: a longer one cannot have made the file. */
+const MAX_PASSWORD_CHARS = 200;
+
+/** The multipart "password" field. Anything but one plain text value (a file, a repeated field, JSON that is no string, empty) is no password. */
+function passwordField(field: unknown): string | null {
+  const f = field as { type?: unknown; value?: unknown } | undefined;
+  return f?.type === 'field' && typeof f.value === 'string' && f.value !== '' ? f.value : null;
+}
 
 export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteDeps): Promise<void> {
   const where = () => d.folder(d.settings.get().backups.folder);
@@ -156,7 +167,8 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     if (!req.isMultipart()) throw new AppError('BAD_REQUEST', 'expected multipart/form-data');
     let part;
     try {
-      part = await req.file({ limits: { fileSize: maxUpload, files: 1 } });
+      // The global limits (profile/routes.ts) allow no fields; this one route takes the password, before the file.
+      part = await req.file({ limits: { fileSize: maxUpload, files: 1, fields: 1, parts: 2 } });
     } catch (err) {
       throw tooLarge(mapUploadError(err));
     }
@@ -167,6 +179,9 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     }
     await fs.promises.mkdir(d.paths.tmp, { recursive: true });
     const target = path.join(d.paths.tmp, `upload-${Date.now()}.zip`);
+    const plain = target.replace(/\.zip$/, '-plain.zip');
+    const warn: Warn = (event, data) => d.logger.warn(event, data);
+    const password = passwordField(part.fields.password);
     try {
       try {
         await pipeline(part.file, fs.createWriteStream(target));
@@ -174,9 +189,15 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
         throw tooLarge(mapUploadError(err));
       }
       if (part.file.truncated) throw new AppError('FILE_TOO_LARGE', 'backup is larger than 1 GB', 'backupTooLarge');
-      return await restore(target);
+      if (!(await isEncryptedFile(target))) return await restore(target);
+      // Decrypted first: a wrong password must not even make the before-restore backup.
+      if (password === null) throw new AppError('BACKUP_INVALID', 'encrypted file without a password', 'transferPasswordNeeded');
+      if ([...password].length > MAX_PASSWORD_CHARS) throw new AppError('BACKUP_INVALID', 'password too long', 'transferCannotOpen');
+      await decryptFile(target, plain, password, warn);
+      return await restore(plain);
     } finally {
-      await fs.promises.rm(target, { force: true }).catch(() => {});
+      await removeTemp(target, 'transfer_upload_cleanup_failed', warn);
+      await removeTemp(plain, 'transfer_upload_cleanup_failed', warn);
     }
   });
 
