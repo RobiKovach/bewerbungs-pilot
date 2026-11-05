@@ -78,6 +78,18 @@ describe('answering a question', () => {
     expect(within(screen.getByRole('region', { name: 'How to say it better' })).getByText('Ich bin zum Kunden gegangen.')).toBeInTheDocument();
   });
 
+  it('a good answer is not shown under the heading Weak in content', async () => {
+    const good = answered({ feedback: { ...FEEDBACK, weak: false, content: 'Concrete and complete.' } });
+    const user = await openQuestion(view([question(1), question(2)]), {
+      [ANSWER_ROUTE]: () => ({ body: view([question(1, { answer: good }), question(2)]) }),
+    });
+    await user.type(field(), 'Meine Antwort');
+    await user.click(getFeedback());
+    const content = await screen.findByRole('region', { name: 'Content' });
+    expect(within(content).getByText('Concrete and complete.')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Weak in content' })).toBeNull();
+  });
+
   it('an answer without language mistakes says so', async () => {
     await openQuestion(view([question(1, { answer: answered({ feedback: { ...FEEDBACK, languageFixes: [] } }) })]));
     expect(within(screen.getByRole('region', { name: 'Language mistakes' })).getByText('No language mistakes found.')).toBeInTheDocument();

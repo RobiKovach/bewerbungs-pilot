@@ -225,7 +225,8 @@ test('interview preparation: questions, feedback, summary, repeat', async () => 
     await expect(field).toBeVisible();
     await field.fill(i === 3 || i === 6 ? shortAnswer : longAnswer(i));
     await page.getByRole('button', { name: 'Get feedback' }).click();
-    await expect(page.getByText('Weak in content')).toBeVisible({ timeout: 60_000 });
+    // The content heading differs for weak and good answers; the language-tips block is always there.
+    await expect(page.getByRole('region', { name: 'How to say it better' })).toBeVisible({ timeout: 60_000 });
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
 

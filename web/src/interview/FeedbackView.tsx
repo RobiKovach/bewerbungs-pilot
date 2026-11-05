@@ -19,7 +19,7 @@ export function FeedbackView({ answer, feedback, language }: { answer: PrepAnswe
     <>
       <p className={feedback.weak ? 'badge warn' : 'badge'}>{t(`interview.state.${feedback.weak ? 'weak' : 'done'}`)}</p>
       <YourAnswer answer={answer} />
-      <Block title={t('interview.feedback.content')}>
+      <Block title={t(feedback.weak ? 'interview.feedback.content' : 'interview.feedback.contentOk')}>
         <p className="prep-text">{feedback.content}</p>
       </Block>
       <Block title={t('interview.feedback.language')}>
