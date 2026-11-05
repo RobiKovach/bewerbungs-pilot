@@ -228,7 +228,7 @@ export const api = {
   saveApplicationContact: (id: string, contact: VacancyContact | null) => request<ApplicationView>('PUT', `/api/applications/${encodeURIComponent(id)}/contact`, contact),
   interview: (id: string) => request<InterviewPrepView>('GET', `/api/applications/${encodeURIComponent(id)}/interview`),
   startInterview: (id: string, language: 'de' | 'en', replace = false, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview`, replace ? { language, replace } : { language }, signal),
-  answerInterview: (id: string, questionId: string, body: { text: string; dontKnow: boolean }, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview/questions/${encodeURIComponent(questionId)}/answer`, body, signal),
+  answerInterview: (id: string, questionId: string, body: { text: string; dontKnow: boolean; setCreatedAt: string }, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview/questions/${encodeURIComponent(questionId)}/answer`, body, signal),
   interviewSummary: (id: string, signal?: AbortSignal) => request<InterviewPrepView>('POST', `/api/applications/${encodeURIComponent(id)}/interview/summary`, {}, signal),
   saveOfferReply: (id: string, body: string) => request<ApplicationView>('PATCH', `/api/applications/${encodeURIComponent(id)}/offer-reply`, { body }),
   checkText: (id: string, subject: string, body: string, signal?: AbortSignal) =>

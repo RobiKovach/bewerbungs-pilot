@@ -33,8 +33,8 @@ const idParams = { type: 'object', required: ['id'], properties: { id: ID } };
 const questionParams = { type: 'object', required: ['id', 'qid'], properties: { id: ID, qid: ID } };
 const startBody = { type: 'object', additionalProperties: false, required: ['language'], properties: { language: LANGUAGE, replace: { type: 'boolean' } } };
 const answerBody = {
-  type: 'object', additionalProperties: false, required: ['text', 'dontKnow'],
-  properties: { text: { type: 'string', maxLength: PREP_LIMITS.answer }, dontKnow: { type: 'boolean' } },
+  type: 'object', additionalProperties: false, required: ['text', 'dontKnow', 'setCreatedAt'],
+  properties: { text: { type: 'string', maxLength: PREP_LIMITS.answer }, dontKnow: { type: 'boolean' }, setCreatedAt: { type: 'string', maxLength: 64 } },
 };
 const emptyBody = { type: 'object', additionalProperties: false, properties: {} };
 
@@ -159,11 +159,13 @@ export async function registerInterviewRoutes(app: FastifyInstance, d: Interview
 
   app.post('/api/applications/:id/interview/questions/:qid/answer', { schema: { params: questionParams, body: answerBody } }, async (req, reply) => {
     const { id, qid } = req.params as { id: string; qid: string };
-    const body = req.body as { text: string; dontKnow: boolean };
+    const body = req.body as { text: string; dontKnow: boolean; setCreatedAt: string };
     if (!body.dontKnow && !body.text.trim()) throw new AppError('BAD_REQUEST', 'an answer needs a text');
     const text = body.dontKnow ? '' : body.text.trim();
     return exclusive(id, 'answer', async (start) => {
       const prep = readPrep(id);
+      // Question ids repeat between sets: an answer written for the set a stale page showed must not land on another.
+      if (prep && prep.createdAt !== body.setCreatedAt) throw new AppError('CONFLICT', 'question set changed', 'packageChanged');
       const question = prep?.questions.find((q) => q.id === qid);
       if (!prep || !question) throw new AppError('NOT_FOUND', 'no such question');
       // Saved first: a failed or cancelled AI call never costs the person the answer.

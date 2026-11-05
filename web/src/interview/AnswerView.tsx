@@ -14,8 +14,10 @@ const ANSWER_MAX = 5000;
  * One question: the person answers first, without hints, then sees the feedback. The draft lives in the page, so going back
  * to the cards does not lose it. Mount with `key={question.id}`.
  */
-export function AnswerView({ applicationId, question, language, readOnly, draft, onDraft, onView, onRefresh, onNext, onBack, extraActions }: {
+export function AnswerView({ applicationId, setCreatedAt, question, language, readOnly, draft, onDraft, onView, onRefresh, onNext, onBack, extraActions }: {
   applicationId: string;
+  /** The set this view shows: the server refuses an answer meant for another set (ids repeat between sets). */
+  setCreatedAt: string;
   question: PrepQuestion;
   language: 'de' | 'en';
   readOnly: boolean;
@@ -50,7 +52,7 @@ export function AnswerView({ applicationId, question, language, readOnly, draft,
     // The server replaces the saved text before it asks the AI: if the call does not finish, only this draft still has it.
     if (dontKnow && text) onDraft(text);
     try {
-      const view = await api.answerInterview(applicationId, question.id, { text: dontKnow ? '' : text.trim(), dontKnow }, c.signal);
+      const view = await api.answerInterview(applicationId, question.id, { text: dontKnow ? '' : text.trim(), dontKnow, setCreatedAt }, c.signal);
       if (dontKnow) setTypedBefore(text);
       onDraft(null);
       setEditing(false);

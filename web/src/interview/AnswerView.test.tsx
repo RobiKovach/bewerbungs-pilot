@@ -69,7 +69,7 @@ describe('answering a question', () => {
     await user.type(field(), ' Meine Antwort ');
     await user.click(getFeedback());
     const content = await screen.findByRole('region', { name: 'Weak in content' });
-    expect(body).toEqual({ text: 'Meine Antwort', dontKnow: false });
+    expect(body).toEqual({ text: 'Meine Antwort', dontKnow: false, setCreatedAt: '2026-11-04T08:00:00.000Z' });
     expect(within(content).getByText('The example is missing.')).toBeInTheDocument();
     const language = screen.getByRole('region', { name: 'Language mistakes' });
     expect(within(language).getByText('ich habe gegangen')).toBeInTheDocument();
@@ -91,7 +91,7 @@ describe('answering a question', () => {
     });
     await user.click(screen.getByRole('button', { name: "I don't know" }));
     const language = await screen.findByRole('region', { name: 'Language mistakes' });
-    expect(body).toEqual({ text: '', dontKnow: true });
+    expect(body).toEqual({ text: '', dontKnow: true, setCreatedAt: '2026-11-04T08:00:00.000Z' });
     expect(within(language).queryByText('No language mistakes found.')).toBeNull();
     expect(within(language).getByText('There was no answer, so the language was not checked.')).toBeInTheDocument();
   });
@@ -140,6 +140,27 @@ describe('answering a question', () => {
     await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
     expect(screen.getByText('Mein langer Text')).toBeInTheDocument();
     expect(screen.getByText(/not saved/)).toBeInTheDocument();
+  });
+
+  it('sends the set it shows; when the set was replaced elsewhere the typed text stays on screen to copy', async () => {
+    let replaced = false;
+    let sent: { setCreatedAt?: string } = {};
+    const newSet = view([question(1, { text: 'Neue Frage 1' })]);
+    newSet.prep!.createdAt = '2026-11-05T10:00:00.000Z';
+    const user = await openQuestion(view([]), {
+      'GET /api/applications/app1/interview': () => ({ body: replaced ? newSet : view([question(1)]) }),
+      [ANSWER_ROUTE]: (init) => {
+        sent = JSON.parse(String(init?.body)) as { setCreatedAt?: string };
+        replaced = true;
+        return { status: 409, body: { error: { code: 'CONFLICT', detailsForLog: 'x', reason: 'packageChanged' } } };
+      },
+    });
+    await user.type(field(), 'Mein langer Text');
+    await user.click(getFeedback());
+    await waitFor(() => expect(screen.queryByRole('textbox')).toBeNull());
+    expect(sent.setCreatedAt).toBe('2026-11-04T08:00:00.000Z');
+    expect(await screen.findByText('Mein langer Text')).toBeInTheDocument();
+    expect(screen.getByText(/questions were replaced/)).toBeInTheDocument();
   });
 
   it('the "waiting for feedback" note is only there when the visible text is the saved one', async () => {
@@ -204,7 +225,7 @@ describe('answering a question', () => {
     expect(screen.getByText(/feedback is still missing/)).toBeInTheDocument();
     await user.click(getFeedback());
     await screen.findByRole('region', { name: 'Weak in content' });
-    expect(body).toEqual({ text: 'Meine Antwort', dontKnow: false });
+    expect(body).toEqual({ text: 'Meine Antwort', dontKnow: false, setCreatedAt: '2026-11-04T08:00:00.000Z' });
   });
 
   it('Cancel stops the wait without an error and keeps the text', async () => {

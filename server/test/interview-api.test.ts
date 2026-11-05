@@ -14,7 +14,12 @@ const LONG = 'Eine ausreichend lange und konkrete Antwort auf die Frage.';
 const SECRET = 'GEHEIMTEXT-ANTWORT-4711';
 
 const get = async (ctx: Ctx, id: string) => (await ctx.app.inject({ method: 'GET', url: url(id) })).json() as InterviewPrepView;
-const answer = (ctx: Ctx, id: string, qid: string, body: unknown = { text: LONG, dontKnow: false }) => post(ctx, url(id, `/questions/${qid}/answer`), body);
+/** The page sends the createdAt of the set it shows; here that is the stored one (read raw: reading must not set a damaged file aside). */
+const currentSet = (ctx: Ctx, id: string): string => {
+  try { return (JSON.parse(fs.readFileSync(prepFile(ctx, id), 'utf8')) as { createdAt?: string }).createdAt ?? ''; } catch { return ''; }
+};
+const answer = (ctx: Ctx, id: string, qid: string, body: object = { text: LONG, dontKnow: false }) =>
+  post(ctx, url(id, `/questions/${qid}/answer`), { setCreatedAt: currentSet(ctx, id), ...body });
 const scripted = (ctx: Ctx) => { ctx.provider.respond = (task: LlmTask) => scriptedResponse(task); };
 const prepFile = (ctx: Ctx, id: string) => path.join(ctx.dir, 'applications', id, 'interview-prep.json');
 const store = (ctx: Ctx) => new InterviewPrepStore(path.join(ctx.dir, 'applications'));
@@ -185,6 +190,18 @@ describe('interview preparation: answering', () => {
     expect((await answer(ctx, id, 'q1', { text: 'x'.repeat(5000), dontKnow: false })).statusCode).toBe(200);
     expect((await answer(ctx, id, 'q99')).statusCode).toBe(404);
     expect(store(ctx).read(id)!.questions[1].answer).toBeNull();
+  });
+
+  it('an answer meant for another set is refused before anything is written or asked', async () => {
+    const { ctx, id } = await started();
+    const before = fs.readFileSync(prepFile(ctx, id));
+    const n = ctx.provider.calls.length;
+    const r = await answer(ctx, id, 'q3', { text: LONG, dontKnow: false, setCreatedAt: '2020-01-01T00:00:00.000Z' });
+    expect(r.statusCode).toBe(409);
+    expect(r.json().error.reason).toBe('packageChanged');
+    expect(fs.readFileSync(prepFile(ctx, id)).equals(before)).toBe(true);
+    expect(ctx.provider.calls.length).toBe(n);
+    expect((await answer(ctx, id, 'q3')).statusCode).toBe(200);
   });
 
   it('no set yet: answering is 404', async () => {

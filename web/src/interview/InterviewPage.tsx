@@ -230,6 +230,7 @@ export function InterviewPage({ id }: { id: string }) {
         <AnswerView
           key={question.id}
           applicationId={id}
+          setCreatedAt={prep.createdAt}
           question={question}
           language={prep.language}
           readOnly={view.readOnly}
