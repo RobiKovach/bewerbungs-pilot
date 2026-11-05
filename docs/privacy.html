@@ -51,7 +51,8 @@
     delete all of it by deleting that folder.
   </p>
   <p>
-    Backups (the ones you save in Settings → Backups and the ones the installer saves before an update) are zip files with
+    Backups (the ones you save in Settings → Backups, the ones the installer saves before an update and the copy the app
+    makes of your current data before a restore or an import) are zip files with
     the same data. They are saved in <code>Documents\BewerbungsPilot\Backups</code> — unless your Documents folder is
     synced with OneDrive: then they go to <code>%USERPROFILE%\BewerbungsPilot\Backups</code> on your PC, so that your data
     does not end up in a cloud by itself. You can choose another folder in Settings → Backups; the app warns you if that
@@ -59,7 +60,9 @@
   </p>
   <p>
     A transfer file (Settings → Move to another PC) is created only when you ask for it and holds the same data as a backup
-    (never your email password or the Google sign-in key). The app saves it where you choose and sends it nowhere. Without
+    (never your email password or the Google sign-in key). Your browser saves it in the place you choose or in your
+    downloads folder; the app sends it nowhere. Deleting the app's data folder does not delete this file: delete it
+    yourself when you no longer need it. Without
     a password the file is not encrypted: anyone who gets it can read it. With a password it is encrypted on your PC
     (AES-256). The password is stored nowhere and cannot be recovered: if you forget it, the file can no longer be opened.
   </p>

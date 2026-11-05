@@ -145,9 +145,10 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
   });
 
   app.post('/api/backups', async () => {
-    // A backup made while the data folders are being swapped would catch half of each.
+    // Refused while a restore is running; checked again after the awaits, since one may have started meanwhile.
     d.activity.refuseDuringRestore();
     const dir = await writeDir();
+    d.activity.refuseDuringRestore();
     const end = d.activity.begin('export');
     let info: BackupInfo;
     try {

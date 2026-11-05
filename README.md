@@ -79,7 +79,6 @@ older, install 0.11.0 by hand once (download it from the banner or the Releases 
   answer. At the end you get a summary with a rough chance of passing, shown with a note that it is only an estimate, and
   the weak answers can be repeated. Everything stays on your PC, next to the application; the AI helper you chose sees your
   answers (see the privacy policy).
-
 - **Move to another PC.** **Settings → Move to another PC** saves your data in one file, with or without a password. On the
   new PC choose **I already have a file** in the first welcome step. Your email password and the Google sign-in key are not
   in the file, so you connect your email again; the app tells you what is left to do. A password-protected file is encrypted

@@ -254,9 +254,17 @@ test('interview preparation: questions, feedback, summary, repeat', async () => 
 test('transfer: a password-protected file opens on an empty install from the first step', async ({ browser }: { browser: Browser }) => {
   const password = 'перенос-пароль-1';
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-e2e-transfer-'));
-  const second = await startApp();
-  const stranger = await browser.newContext({ locale: 'en-US' });
+  let second: Awaited<ReturnType<typeof startApp>> | null = null;
+  let stranger: BrowserContext | null = null;
   try {
+    // Export must only read: these two files of the first copy are compared after the second copy opened the file.
+    const folder = preparedApplicationFolder();
+    expect(folder).not.toBeNull();
+    const watched = [path.join(folder as string, 'package.json'), path.join(env.dataDir, 'profile', 'profile.json')];
+    const readWatched = () => watched.map((f) => fs.readFileSync(f, 'utf8'));
+    const before = readWatched();
+    const copy2 = (second = await startApp());
+    const visitor = (stranger = await browser.newContext({ locale: 'en-US' }));
     // Save the file on the first copy: with a password, in the way a person does it.
     await page.getByRole('link', { name: 'Settings' }).first().click();
     await page.getByRole('textbox', { name: 'Password for the file (optional)' }).fill(password);
@@ -271,8 +279,8 @@ test('transfer: a password-protected file opens on an empty install from the fir
     await expect(page.getByText(/^The browser received the file/)).toBeVisible();
 
     // A second copy of the app on empty folders: the first welcome step offers the file.
-    const other = await stranger.newPage();
-    await other.goto(`${second.url}/open?key=${encodeURIComponent(second.key)}`);
+    const other = await visitor.newPage();
+    await other.goto(`${copy2.url}/open?key=${encodeURIComponent(copy2.key)}`);
     await other.getByRole('button', { name: 'I already have a file' }).click();
     await other.locator('input[type=file]').setInputFiles(file);
     const field = other.getByLabel('Password for this file');
@@ -302,10 +310,12 @@ test('transfer: a password-protected file opens on an empty install from the fir
     await expect(other.getByRole('textbox', { name: 'Full name' })).toHaveValue('Max Mustermann');
     await other.getByRole('link', { name: 'Applications' }).first().click();
     await expect(other.getByText('Frontend-Entwickler').first()).toBeVisible();
+
+    // The first copy was only read: its application and profile files are byte for byte what they were.
+    expect(readWatched()).toEqual(before);
   } finally {
-    await stranger.close();
-    await second.stop();
-    fs.rmSync(tmp, { recursive: true, force: true });
+    try { await stranger?.close(); } catch { /* the context is gone anyway */ }
+    try { await second?.stop(); } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   }
 });
 
@@ -366,7 +376,7 @@ test('the update banner shows a newer version and stays hidden once dismissed', 
 test('without the launch key the app shows only the shortcut page', async ({ browser }: { browser: Browser }) => {
   const stranger = await browser.newContext({ locale: 'en-US' });
   try {
-    const other = await stranger.newPage();
+    const other = await (stranger as BrowserContext).newPage();
     await other.goto(`${env.url}/`);
     await expect(other.getByRole('heading', { name: 'Open BewerbungsPilot with its shortcut' })).toBeVisible();
     await expect(other.getByRole('link', { name: 'Profile' })).toHaveCount(0);

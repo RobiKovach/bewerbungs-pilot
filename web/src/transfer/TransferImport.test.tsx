@@ -188,6 +188,7 @@ describe('TransferImport', () => {
     await user.click(await openButton());
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     expect(screen.getByText(/File opened/)).toBeInTheDocument();
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
