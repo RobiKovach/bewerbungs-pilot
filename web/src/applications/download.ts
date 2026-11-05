@@ -36,5 +36,5 @@ export async function downloadResponse(res: Response, fallbackName: string): Pro
   document.body.appendChild(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
 }
