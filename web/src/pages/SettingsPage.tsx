@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { AiHelperCards } from '../ai/AiHelperCards';
 import { api } from '../api';
 import { AI_SETTINGS_HASH, ErrorBanner } from '../components/ErrorBanner';
+import { useIsDemo } from '../components/DemoBanner';
 import { InfoTip } from '../components/InfoTip';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { MailSettingsBlock } from '../mail/MailSettingsBlock';
 import { useSettings } from '../settings';
 import { BackupsSection } from '../settings/BackupsSection';
+import { TransferSection } from '../settings/TransferSection';
 import type { Language } from '../types';
 
 type TestState =
@@ -20,6 +22,7 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
   const { t, i18n } = useTranslation();
   const { settings, update, reload } = useSettings();
   const chosen = settings.llm.provider !== null;
+  const demo = useIsDemo();
   const [test, setTest] = useState<TestState>({ kind: 'idle' });
   const [error, setError] = useState<unknown>(null);
   // The chosen helper's card already shows "Open sign-in window" — then the general button below is hidden.
@@ -87,6 +90,14 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
         <h2>{t('settings.mailTitle')}</h2>
         <MailSettingsBlock key={restores} />
       </div>
+
+      {/* The demo copy has its own data folder: a transfer file from it would be of no use. */}
+      {demo ? null : (
+        <div className="card settings-section">
+          <h2>{t('settings.transferTitle')}</h2>
+          <TransferSection />
+        </div>
+      )}
 
       <div className="card settings-section">
         <h2>{t('settings.backupsTitle')}</h2>

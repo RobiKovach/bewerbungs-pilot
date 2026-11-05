@@ -1,3 +1,4 @@
+import { downloadResponse } from './applications/download';
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
@@ -118,6 +119,16 @@ export const api = {
   createBackup: () => request<BackupInfo>('POST', '/api/backups', {}),
   restoreBackup: (name: string) => request<{ restored: BackupMeta; beforeRestore: BackupInfo }>('POST', '/api/backups/restore', { name }),
   restoreBackupUpload: (file: File) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>('/api/backups/restore-upload', file, fileName(file, 'backup.zip')),
+  /** Saves the transfer file (with a password when given). The password only goes into this one request. */
+  exportTransfer: async (password: string | null): Promise<void> => {
+    let res: Response;
+    try {
+      res = await fetch('/api/transfer/export', { method: 'POST', headers: { ...CLIENT_HEADER, 'Content-Type': 'application/json' }, body: JSON.stringify(password ? { password } : {}) });
+    } catch (err) {
+      throw new ApiError('SERVER_UNREACHABLE', String(err));
+    }
+    await downloadResponse(res, 'BewerbungsPilot-transfer.zip');
+  },
   openBackupFolder: () => request<{ ok: true }>('POST', '/api/backups/open-folder', {}),
   getUpdates: () => request<UpdatesView>('GET', '/api/updates'),
   /** The developer's mailbox: 204 on success; FEEDBACK_FAILED (reason offline | limit | server) otherwise. */

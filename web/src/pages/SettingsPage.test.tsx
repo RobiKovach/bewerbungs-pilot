@@ -155,4 +155,18 @@ describe('SettingsPage', () => {
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Quit BewerbungsPilot' }));
     expect(onQuit).toHaveBeenCalledOnce();
   });
+
+  it('has the "Move to another PC" card before the backups, but not in the demo copy', async () => {
+    const server = settingsRoutes(baseSettings());
+    mockFetch({ ...server.routes, ...mailRoutes, 'GET /api/health': () => ({ body: { ok: true, app: 'bewerbungs-pilot', version: '0.12.0' } }) });
+    const { unmount } = render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    const heading = await screen.findByRole('heading', { name: 'Move to another PC' });
+    expect(heading.compareDocumentPosition(screen.getByRole('heading', { name: 'Backups' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    unmount();
+
+    mockFetch({ ...server.routes, ...mailRoutes, 'GET /api/health': () => ({ body: { ok: true, app: 'bewerbungs-pilot', version: '0.12.0', demo: true } }) });
+    render(<SettingsProvider><SettingsPage onQuit={() => {}} /></SettingsProvider>);
+    await screen.findByRole('heading', { name: 'Backups' });
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Move to another PC' })).toBeNull());
+  });
 });

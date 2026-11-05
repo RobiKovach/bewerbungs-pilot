@@ -158,6 +158,8 @@
     "usagePing": "Anonimowo zgłaszaj, że aplikacja jest używana",
     "usageExplain": "Raz dziennie aplikacja wysyła na serwer BewerbungsPilot losowy numer (niepowiązany z Tobą) i numer wersji. Nic więcej. Programista tylko dowiaduje się, ile osób korzysta z aplikacji. Opinia, którą piszesz, to osobna sprawa i nigdy nie jest wysyłana bez Twojego kliknięcia „Wyślij”.",
     "backupsTitle": "Kopie zapasowe",
+    "transferTitle": "Przenieś na inny komputer",
+    "transfer": {"intro":"Zapisz swoje dane w jednym pliku, aby otworzyć je w BewerbungsPilot na innym komputerze.","contents":"W pliku: profil ze zdjęciem i dokumentami, oferty pracy, zgłoszenia z historią oraz ustawienia.","notIncluded":"Hasło do poczty i klucz logowania Google nie trafiają do pliku: na nowym komputerze trzeba ponownie podłączyć pocztę.","passwordLabel":"Hasło do pliku (opcjonalnie)","repeatLabel":"Powtórz hasło","passwordHint":"Od 8 do 200 znaków.","noPassword":"To Twoje dane osobowe. Bez hasła każdy, kto znajdzie plik, może go otworzyć. Nie wrzucaj go do chmury i nie dawaj obcym.","forgot":"Jeśli zapomnisz hasła, nie da się go odzyskać, a plik nie otworzy się już nigdy.","tooShort":"Hasło musi mieć co najmniej 8 znaków.","tooLong":"Hasło może mieć najwyżej 200 znaków.","mismatch":"Hasła się nie zgadzają.","save":"Zapisz plik","saving":"Przygotowuję plik…","saved":"Plik zapisany. Szukaj go w folderze pobranych plików przeglądarki."},
     "backups": {
       "intro": "Kopia zapasowa zawiera Twój profil, oferty pracy i aplikacje ze wszystkimi plikami. Hasło do poczty ani klucz Google nigdy się w niej nie znajdują.",
       "folder": "Folder:",
