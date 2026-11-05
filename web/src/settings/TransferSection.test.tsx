@@ -35,13 +35,13 @@ afterEach(() => { vi.restoreAllMocks(); });
 describe('TransferSection', () => {
   it('saving without a password calls export with null and shows the note about personal data and cloud', async () => {
     const { sent, click } = await setup();
-    expect(screen.getByText(/Do not put it in a cloud/)).toBeInTheDocument();
+    expect(screen.getByText(/For a cloud folder, set a password/)).toBeInTheDocument();
     await userEvent.click(saveButton());
     await waitFor(() => expect(click).toHaveBeenCalledOnce());
     expect(sent).toHaveLength(1);
     expect(sent[0]!.body).toEqual({});
     expect(sent[0]!.headers).toMatchObject({ 'X-BP-Client': '1' });
-    expect(await screen.findByText(/The file is saved/)).toBeInTheDocument();
+    expect(await screen.findByText(/The browser received the file/)).toBeInTheDocument();
   });
 
   it('says what the file holds and what it does not', async () => {
@@ -111,7 +111,7 @@ describe('TransferSection', () => {
     await userEvent.type(pw, PW);
     await userEvent.type(again, PW);
     await userEvent.click(saveButton());
-    await screen.findByText(/The file is saved/);
+    await screen.findByText(/The browser received the file/);
     expect(sent[0]!.body).toEqual({ password: PW });
     expect(pw).toHaveValue('');
     expect(again).toHaveValue('');
@@ -126,7 +126,7 @@ describe('TransferSection', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(pw).toHaveValue(PW);
     expect(again).toHaveValue(PW);
-    expect(screen.queryByText(/The file is saved/)).toBeNull();
+    expect(screen.queryByText(/The browser received the file/)).toBeNull();
   });
 
   it.each([['backupTooLarge', 413, /larger than 1 GB/], ['restoreRunning', 409, /restored right now/]] as const)('reason %s gets its own sentence', async (reason, status, text) => {
@@ -141,7 +141,7 @@ describe('TransferSection', () => {
     await userEvent.click(saveButton());
     expect(await screen.findByRole('alert')).toBeInTheDocument();
     expect(click).not.toHaveBeenCalled();
-    expect(screen.queryByText(/The file is saved/)).toBeNull();
+    expect(screen.queryByText(/The browser received the file/)).toBeNull();
   });
 
   it('fields are type=password with autoComplete="new-password"', async () => {
