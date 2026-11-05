@@ -102,8 +102,10 @@ export function parseClaudeOutput(stdout: string, stderr: string, exitCode: numb
     // handled below
   }
   if (!obj) {
-    if (AUTH_ERROR_RE.test(all)) return { ok: false, code: 'LLM_NOT_LOGGED_IN', detail: all.slice(0, 2000) };
-    return { ok: false, code: exitCode === 0 ? 'LLM_BAD_OUTPUT' : 'LLM_FAILED', detail: all.slice(0, 2000) };
+    // stdout may be the model's own text, so only stderr and a length reach the log.
+    const safe = `${stderr.trim().slice(0, 2000)}\nunparseable output, ${stdout.length} chars`.trim();
+    if (AUTH_ERROR_RE.test(all)) return { ok: false, code: 'LLM_NOT_LOGGED_IN', detail: safe };
+    return { ok: false, code: exitCode === 0 ? 'LLM_BAD_OUTPUT' : 'LLM_FAILED', detail: safe };
   }
   if (obj.is_error === true || (obj.subtype !== undefined && obj.subtype !== 'success')) {
     const msg = String(obj.result ?? obj.subtype ?? 'error');
@@ -113,7 +115,7 @@ export function parseClaudeOutput(stdout: string, stderr: string, exitCode: numb
   if (typeof obj.result === 'string') {
     try { return { ok: true, value: JSON.parse(obj.result) }; } catch { /* fall through */ }
   }
-  return { ok: false, code: 'LLM_BAD_OUTPUT', detail: stdout.slice(0, 2000) };
+  return { ok: false, code: 'LLM_BAD_OUTPUT', detail: `unparseable reply, ${stdout.length} chars` };
 }
 
 export class ClaudeCodeProvider implements LlmProvider {

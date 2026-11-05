@@ -110,7 +110,7 @@ export function parseCodexOutput(stdout: string, stderr: string, exitCode: numbe
     if (v && typeof v === 'object' && !Array.isArray(v)) return { ok: true, value: v };
   } catch { /* below */ }
   const errorText = errors.join('\n');
-  return { ok: false, code: classify(errorText, 'LLM_BAD_OUTPUT'), detail: (text || errorText || 'no agent message').slice(0, 2000) };
+  return { ok: false, code: classify(errorText, 'LLM_BAD_OUTPUT'), detail: text ? `unparseable reply, ${text.length} chars` : (errorText || 'no agent message').slice(0, 2000) };
 }
 
 /**

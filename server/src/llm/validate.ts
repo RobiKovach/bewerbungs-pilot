@@ -23,5 +23,5 @@ export function validatorFor(schema: JsonSchema): ValidateFunction {
 export function validateOutput(schema: JsonSchema, value: unknown): { ok: true } | { ok: false; errors: string } {
   const validate = validatorFor(schema);
   if (validate(value)) return { ok: true };
-  return { ok: false, errors: ajv.errorsText(validate.errors, { separator: '; ' }) + ` (got ${JSON.stringify(value)?.slice(0, 300)})` };
+  return { ok: false, errors: ajv.errorsText(validate.errors, { separator: '; ' }) };
 }

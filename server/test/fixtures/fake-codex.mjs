@@ -34,6 +34,8 @@ switch (mode) {
   case 'ok': answer('{"greeting":"Hallo!"}'); break;
   case 'bad-then-ok': answer(call === 0 ? '{"wrong":1}' : '{"greeting":"second try"}'); break;
   case 'always-bad': answer('Sorry, I cannot help with that.'); break;
+  case 'secret-schema': answer('{"wrong":"SECRET-ANSWER"}'); break;
+  case 'secret-text': answer('SECRET-ANSWER is not json'); break;
   case 'always-empty': answer('{}'); break;
   case 'no-message': ev({ type: 'turn.completed', usage: {} }); break;
   case 'limit': fail("You've hit your usage limit. Try again later. (429 Too Many Requests)"); break;

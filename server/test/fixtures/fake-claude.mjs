@@ -34,6 +34,15 @@ switch (mode) {
   case 'always-bad':
     result({ result: 'nope', structured_output: { wrong: 1 } });
     break;
+  case 'secret-schema':
+    result({ result: 'x', structured_output: { wrong: 'SECRET-ANSWER' } });
+    break;
+  case 'secret-text':
+    result({ result: 'SECRET-ANSWER is not json' });
+    break;
+  case 'secret-plain':
+    console.log('SECRET-ANSWER plain text');
+    break;
   case 'not-json':
     console.log('this is not json');
     break;

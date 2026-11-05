@@ -20,6 +20,7 @@ function provider(mode: string, extraEnv: Record<string, string> = {}, timeoutMs
   return { p, tmpRoot };
 }
 const signal = () => new AbortController().signal;
+const forbidden = 'SECRET-ANSWER';
 
 describe('buildClaudeArgs', () => {
   it('uses JSON output, the schema, dontAsk and a minimal tool list', () => {
@@ -98,6 +99,18 @@ describe('ClaudeCodeProvider.run', () => {
   });
   it('gives up with LLM_BAD_OUTPUT after the retry', async () => {
     await expect(provider('always-bad').p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_BAD_OUTPUT' });
+  });
+  it('never puts the model reply into the log or the error details', async () => {
+    for (const mode of ['secret-schema', 'secret-text', 'secret-plain']) {
+      const seen: string[] = [];
+      const logger = { info: (e: string, d?: unknown) => seen.push(JSON.stringify([e, d])), warn: (e: string, d?: unknown) => seen.push(JSON.stringify([e, d])), error: (e: string, d?: unknown) => seen.push(JSON.stringify([e, d])) };
+      const tmpRoot = path.join(tmp(), 'tmp');
+      const p = new ClaudeCodeProvider({ tmpRoot, timeoutMs: () => 10_000, logger, command: { file: process.execPath, argsPrefix: [FAKE] }, env: { ...process.env, FAKE_CLAUDE_MODE: mode } });
+      const err = await p.run(helloTask('en'), signal()).then(() => null, (e: unknown) => e as { code: string; detailsForLog: string; message: string });
+      expect(err?.code, mode).toBe('LLM_BAD_OUTPUT');
+      expect(JSON.stringify([err?.detailsForLog, err?.message, seen]), mode).not.toContain(forbidden);
+      expect(seen.length, mode).toBeGreaterThan(0);
+    }
   });
   it('reports garbage output as LLM_BAD_OUTPUT', async () => {
     await expect(provider('not-json').p.run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_BAD_OUTPUT' });

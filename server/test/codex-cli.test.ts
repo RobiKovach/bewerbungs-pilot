@@ -141,6 +141,16 @@ describe('CodexCliProvider', () => {
       expect(fs.readFileSync(counter, 'utf8'), mode).toBe('2');
     }
   });
+  it('never puts the model reply into the log or the error details', async () => {
+    for (const mode of ['secret-schema', 'secret-text']) {
+      const seen: string[] = [];
+      const logger: Logger = { info: (e, d) => void seen.push(JSON.stringify([e, d])), warn: (e, d) => void seen.push(JSON.stringify([e, d])), error: (e, d) => void seen.push(JSON.stringify([e, d])) };
+      const err = await provider(mode, {}, logger).run(helloTask('en'), signal()).then(() => null, (e: unknown) => e as { code: string; detailsForLog: string; message: string });
+      expect(err?.code, mode).toBe('LLM_BAD_OUTPUT');
+      expect(JSON.stringify([err?.detailsForLog, err?.message, seen]), mode).not.toContain('SECRET-ANSWER');
+      expect(seen.length, mode).toBeGreaterThan(0);
+    }
+  });
   it('limit: no retry', async () => {
     const counter = path.join(tmp(), 'n');
     await expect(provider('limit', { FAKE_CODEX_COUNTER: counter }).run(helloTask('en'), signal())).rejects.toMatchObject({ code: 'LLM_LIMIT' });
