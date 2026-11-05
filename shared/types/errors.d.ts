@@ -93,6 +93,9 @@ export type ErrorReason =
   // Backup files (spec 0.9.0, section 3.1).
   | 'backupTooLarge'
   | 'backupNotZip'
+  // Password-protected transfer file (spec 2026-11-04 transfer, section 4).
+  | 'transferPasswordNeeded'
+  | 'transferCannotOpen'
   | 'backupGone'
   // The backup folder chosen in Settings (0.9.0): not an absolute local path / inside the app data / not writable.
   | 'backupFolderInvalid'
