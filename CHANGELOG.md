@@ -11,6 +11,10 @@ Newest first. The short version of every release is also on the [Releases page](
   estimate) and a list of weak answers you can repeat. Repeating shows the earlier figure next to the new one.
 - The preparation is saved on your PC next to the application and removed with it. The application itself is not changed.
 - The privacy policy now lists what the interview preparation sends to your AI helper.
+- **Move to another PC.** **Settings → Move to another PC** saves all your data as one file, optionally encrypted with a password
+  (AES-256; it cannot be recovered). On the new PC, **I already have a file** in the first welcome step opens it. The email
+  password and the Google sign-in key are not in the file; a notice lists what is left to do (AI helper, mail, do not resend).
+- The privacy policy describes the transfer file.
 
 ## What's new in 0.11.0
 

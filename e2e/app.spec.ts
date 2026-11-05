@@ -1,8 +1,9 @@
 import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { E2eEnv } from './server';
+import { startApp, type E2eEnv } from './server';
 
 // The whole app once, start to finish, as a person uses it (spec 0.9.0, 3.5). The steps build on each other,
 // so they share one browser tab and run in order. AI answers are scripted (--fake-llm), mail goes to files
@@ -248,6 +249,64 @@ test('interview preparation: questions, feedback, summary, repeat', async () => 
 
   const after = (JSON.parse(fs.readFileSync(packageFile, 'utf8')) as { updatedAt: string }).updatedAt;
   expect(after).toBe(before);
+});
+
+test('transfer: a password-protected file opens on an empty install from the first step', async ({ browser }: { browser: Browser }) => {
+  const password = 'перенос-пароль-1';
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-e2e-transfer-'));
+  const second = await startApp();
+  const stranger = await browser.newContext({ locale: 'en-US' });
+  try {
+    // Save the file on the first copy: with a password, in the way a person does it.
+    await page.getByRole('link', { name: 'Settings' }).first().click();
+    await page.getByRole('textbox', { name: 'Password for the file (optional)' }).fill(password);
+    await page.getByRole('textbox', { name: 'Repeat the password' }).fill(password);
+    const downloading = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Save file' }).click();
+    const download = await downloading;
+    expect(download.suggestedFilename()).toMatch(/^BewerbungsPilot-transfer-\d{4}-\d{2}-\d{2}-\d{4}-encrypted\.zip$/);
+    const file = path.join(tmp, download.suggestedFilename());
+    await download.saveAs(file);
+    expect(fs.readFileSync(file).subarray(0, 5).toString('latin1')).toBe('BPENC');
+    await expect(page.getByText(/^The browser received the file/)).toBeVisible();
+
+    // A second copy of the app on empty folders: the first welcome step offers the file.
+    const other = await stranger.newPage();
+    await other.goto(`${second.url}/open?key=${encodeURIComponent(second.key)}`);
+    await other.getByRole('button', { name: 'I already have a file' }).click();
+    await other.locator('input[type=file]').setInputFiles(file);
+    const field = other.getByLabel('Password for this file');
+    const open = other.getByRole('button', { name: 'Open file' });
+    await expect(field).toBeVisible();
+    await expect(open).toBeDisabled();
+
+    // The wrong password: told, nothing opened, the file stays chosen.
+    await field.fill('falsches-passwort-1');
+    await open.click();
+    await expect(other.getByRole('alert')).toContainText('the password is wrong or the file is damaged');
+    await expect(other.getByText(path.basename(file))).toBeVisible();
+    await expect(other.getByRole('link', { name: 'Profile' })).toHaveCount(0);
+
+    // The right one: no welcome steps, the three things left to do, and the data is there.
+    await field.fill(password);
+    await open.click();
+    await expect(other.getByRole('link', { name: 'Profile' }).first()).toBeVisible({ timeout: 60_000 });
+    const notice = other.locator('.import-notice');
+    await expect(notice).toBeVisible();
+    await expect(notice.getByRole('listitem')).toHaveCount(3);
+    await notice.getByRole('button', { name: 'Hide this message' }).click();
+    await expect(notice).toBeHidden();
+
+    await other.getByRole('link', { name: 'Profile' }).first().click();
+    await other.getByRole('button', { name: 'Edit' }).first().click();
+    await expect(other.getByRole('textbox', { name: 'Full name' })).toHaveValue('Max Mustermann');
+    await other.getByRole('link', { name: 'Applications' }).first().click();
+    await expect(other.getByText('Frontend-Entwickler').first()).toBeVisible();
+  } finally {
+    await stranger.close();
+    await second.stop();
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test('feedback goes to the cloud service with exactly the announced fields, and the install number stays on the server', async () => {
