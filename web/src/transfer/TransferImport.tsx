@@ -98,7 +98,7 @@ export function TransferImport({ onDone, onBusyChange }: { onDone?: () => void; 
       </div>
       {chosen ? (
         <form onSubmit={(e) => { e.preventDefault(); if (!busy && !(chosen.encrypted && password === '')) void open(chosen); }}>
-          <p><strong>{chosen.file.name}</strong></p>
+          <p className="chosen-file"><strong>{chosen.file.name}</strong></p>
           {chosen.encrypted ? (
             <div className="field">
               <label className="field-head" htmlFor={passwordId}>{t('settings.transfer.importPasswordLabel')}</label>

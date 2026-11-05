@@ -27,7 +27,11 @@ h2 { font-size: 1.15rem; margin: 0 0 0.4rem; }
 .nav a { padding: 0.4rem 0.8rem; border-radius: 999px; color: var(--muted); text-decoration: none; white-space: nowrap; }
 .nav a.active, .nav a:hover { background: var(--bg); color: var(--text); }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
-@media (max-width: 640px) { .topbar { position: static; } }
+/* On a phone the actions take their own wrapping row: all of them stay visible, inside the width. */
+@media (max-width: 640px) {
+  .topbar { position: static; gap: 0.5rem 1.5rem; }
+  .topbar-actions { margin-left: 0; flex-wrap: wrap; max-width: 100%; }
+}
 .content { max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow); margin: 1rem 0; }
@@ -292,6 +296,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 
 /* Settings → Backups */
 .backup-dir { word-break: break-all; }
+.chosen-file { overflow-wrap: anywhere; }
 .backup-folder-form { margin: 0.6rem 0; }
 .backup-list { list-style: none; padding: 0; margin: 1rem 0 0; }
 .backup-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--border); }

@@ -199,7 +199,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
       {confirm ? (
         <div className="card notice" role="dialog" aria-label={t('settings.backups.confirmTitle')}>
           <h3>{t('settings.backups.confirmTitle')}</h3>
-          <p><strong>{confirm.kind === 'name' ? confirm.name : confirm.file.name}</strong></p>
+          <p className="chosen-file"><strong>{confirm.kind === 'name' ? confirm.name : confirm.file.name}</strong></p>
           <p>{t('settings.backups.confirmText')}</p>
           <div className="btn-row">
             <button type="button" className="btn" onClick={() => void restore(confirm)}>{t('settings.backups.restore')}</button>
