@@ -84,7 +84,8 @@
   // Per port: the image size only the server listening on that very port can give (same formula as the server).
   var want = {};
   var busy = {}, dropped = {};
-  if (!window.crypto || !crypto.subtle) { stuck(); return; }
+  // Without WebCrypto the page cannot check a proof: it keeps "Starting…" and the server opens the browser itself after ~10 s.
+  if (!window.crypto || !crypto.subtle) return;
   function probe(port) {
     if (done || busy[port] || dropped[port]) return;
     busy[port] = true;
@@ -125,7 +126,7 @@
       })(p));
     }
     return Promise.all(all);
-  }).then(tick, stuck);
+  }).then(tick, function () { /* as above: the server's fallback opens the app */ });
 })();
 </script>
 </body>
