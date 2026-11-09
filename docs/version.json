@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.12.2",
+  "latest": "0.12.3",
   "released": "2026-11-09",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.12.2",
-  "sha256": "58e10585ff6a3713dc54fd4193ed6e5a4db96c2ddff5a380cec0d72c2c5fa670",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.12.3",
+  "sha256": "78bf157e5dae084493041e10d4c7bf74eb17087c5cd42e5f02a62e08acc93af0",
   "notes": {
-    "uk": "Оновлення бібліотек (PDF, переклади, інструменти збирання). Програма працює як і раніше. З 0.12.1 — «Оновити зараз»; з 0.12.0 чи старшої — встанови вручну один раз: «Завантажити» → install.bat.",
-    "en": "Library updates (PDF making, translations, build tools). The app works as before. From 0.12.1: \"Update now\"; from 0.12.0 or older, install by hand once: Download → install.bat.",
-    "de": "Aktualisierte Bibliotheken (PDF, Übersetzungen, Build-Werkzeuge). Die App funktioniert wie bisher. Ab 0.12.1: „Jetzt aktualisieren“; ab 0.12.0 oder älter einmal von Hand installieren: Herunterladen → install.bat.",
-    "ru": "Обновление библиотек (PDF, переводы, инструменты сборки). Программа работает как раньше. С 0.12.1 — «Обновить сейчас»; с 0.12.0 и старше — установите вручную один раз: «Скачать» → install.bat.",
-    "pl": "Aktualizacja bibliotek (PDF, tłumaczenia, narzędzia budowania). Aplikacja działa jak dotąd. Od 0.12.1: „Zaktualizuj teraz”; z 0.12.0 lub starszej zainstaluj ręcznie raz: Pobierz → install.bat.",
-    "ro": "Actualizări de biblioteci (PDF, traduceri, unelte de build). Aplicația funcționează ca înainte. De la 0.12.1: „Actualizează acum”; de la 0.12.0 sau mai veche, instalează manual o dată: Descarcă → install.bat."
+    "uk": "Установка й робота програми тепер вдаються й тоді, коли антивірус перевіряє HTTPS або є корпоративний проксі (помилка SELF_SIGNED_CERT_IN_CHAIN): Node.js бере сертифікати Windows.",
+    "en": "Installing and using the app now also works when an antivirus checks HTTPS or behind a company proxy (error SELF_SIGNED_CERT_IN_CHAIN): Node.js uses the certificates Windows trusts.",
+    "de": "Installation und Nutzung funktionieren jetzt auch, wenn ein Antivirenprogramm HTTPS prüft oder hinter einem Firmen-Proxy (Fehler SELF_SIGNED_CERT_IN_CHAIN): Node.js nutzt die Zertifikate von Windows.",
+    "ru": "Установка и работа программы теперь удаются и тогда, когда антивирус проверяет HTTPS или есть корпоративный прокси (ошибка SELF_SIGNED_CERT_IN_CHAIN): Node.js берёт сертификаты Windows.",
+    "pl": "Instalacja i praca aplikacji działają teraz także, gdy antywirus sprawdza HTTPS lub za firmowym proxy (błąd SELF_SIGNED_CERT_IN_CHAIN): Node.js korzysta z certyfikatów Windows.",
+    "ro": "Instalarea și folosirea aplicației merg acum și când antivirusul verifică HTTPS sau în spatele unui proxy al firmei (eroarea SELF_SIGNED_CERT_IN_CHAIN): Node.js folosește certificatele Windows."
   }
 }
