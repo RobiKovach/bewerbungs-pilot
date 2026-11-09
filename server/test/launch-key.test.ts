@@ -91,7 +91,8 @@ describe('API needs the launch key', () => {
       stack.push(m[2]);
       routes.push({ url: stack.join(''), methods: m[3].split(', ').filter((x) => x !== 'HEAD') });
     }
-    const PUBLIC = new Set(['/open', '/api/health', '/oauth/google/callback']);
+    // /launch/* = the "Starting…" tab (0.12.0): only a one-time code from the shortcut opens anything there.
+    const PUBLIC = new Set(['/open', '/launch/:code', '/launch/:code/ready.gif', '/api/health', '/oauth/google/callback']);
     const checked = routes.filter((r) => !PUBLIC.has(r.url));
     expect(checked.length).toBeGreaterThan(40);
     for (const r of checked) {

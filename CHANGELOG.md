@@ -15,6 +15,11 @@ Newest first. The short version of every release is also on the [Releases page](
   (AES-256; it cannot be recovered). On the new PC, **I already have a file** in the first welcome step opens it. The email
   password and the Google sign-in key are not in the file; a notice lists what is left to do (AI helper, mail, do not resend).
 - The privacy policy describes the transfer file.
+- **Faster start.** The libraries for PDFs, Word files, mail and the browser windows are loaded the first time they are
+  needed, not at every start: about 600 fewer files to read, which matters most for the first start after switching on the PC.
+- **"Starting BewerbungsPilot…"** The shortcut now opens a browser tab at once, and the same tab switches to the app as
+  soon as it is ready. A second click while the app runs opens it in a new tab the same way. If that tab cannot open,
+  the app opens the browser itself after about 10 seconds, as before.
 
 ## What's new in 0.11.0
 

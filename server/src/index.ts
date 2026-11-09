@@ -35,6 +35,7 @@ import { Activity } from './runtime/activity.js';
 import { openBrowser, openFolder } from './runtime/browser.js';
 import { findRunningInstance, isAlive, waitForRunningInstance, type RunningInstance, type ServerInfo } from './runtime/instance.js';
 import { cookieName, newLaunchKey, openUrl } from './runtime/launch-key.js';
+import { LAUNCH_CODE, LaunchCodes, removeOldLaunchPages, waitForRedeem } from './runtime/launch-code.js';
 import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
 import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
@@ -65,18 +66,49 @@ const CLOSE_TIMEOUT_MS = 3000;
 /** Where the browser goes: with the key, /open turns it into the session cookie; a pre-0.8.3 server has none. */
 const appUrl = (r: RunningInstance) => (r.key ? openUrl(HOST, r.port, r.key) : `http://${HOST}:${r.port}/`);
 
+// The shortcut's one-time code for its "Starting…" tab (runtime/launch-code.ts). Taken out of the environment at
+// once, so no child (demo copy, installer, AI helpers) inherits it.
+const launchCode = LAUNCH_CODE.test(process.env.BP_LAUNCH_CODE ?? '') ? process.env.BP_LAUNCH_CODE! : null;
+delete process.env.BP_LAUNCH_CODE;
+
+/**
+ * Another copy already runs: hand it this click's code, so the "Starting…" tab opens it. Without a tab within a few
+ * seconds (or with an older copy that does not know codes), the browser is opened directly, as before.
+ */
+async function openRunning(r: RunningInstance): Promise<'tab' | 'browser' | 'none'> {
+  if (noOpen) return 'none';
+  if (launchCode && r.key) {
+    const base = `http://${HOST}:${r.port}/api/launch-code`;
+    const headers = { 'x-bp-key': r.key, 'x-bp-client': '1', 'content-type': 'application/json' };
+    try {
+      const res = await fetch(base, { method: 'POST', headers, body: JSON.stringify({ code: launchCode }), signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        const used = await waitForRedeem(async () => {
+          const st = await fetch(`${base}/${launchCode}`, { headers, signal: AbortSignal.timeout(2000) });
+          return st.ok && ((await st.json()) as { redeemed?: boolean }).redeemed === true;
+        });
+        if (used) return 'tab';
+      }
+    } catch { /* an older copy or no answer: open the browser below */ }
+  }
+  openBrowser(appUrl(r));
+  return 'browser';
+}
+
 /** The demo's own folder unless the launcher (or a test) gave one: the demo never runs on the person's data. */
 const dataRoot = () => (demo && !process.env.BP_DATA_DIR ? demoDataRoot(resolveDataRoot()) : resolveDataRoot());
 
 async function main(): Promise<void> {
   const paths = dataPaths(dataRoot());
   ensureDataDirs(paths);
+  // The shortcut's "Starting…" pages of earlier clicks (this click's page is younger than a minute).
+  removeOldLaunchPages(path.join(paths.tmp, 'launch'));
   const logger = createFileLogger(paths.logs);
 
   const running = await findRunningInstance(paths.server);
   if (running !== null) {
-    if (!noOpen) openBrowser(appUrl(running));
-    logger.info('already_running', { port: running.port });
+    const opened = await openRunning(running);
+    logger.info('already_running', { port: running.port, opened });
     return;
   }
 
@@ -84,8 +116,8 @@ async function main(): Promise<void> {
   const lock = acquireInstanceLock(paths.lock);
   if (!lock) {
     const winner = await waitForRunningInstance(paths.server, WINNER_WAIT_MS);
-    logger.info('lost_start_race', { port: winner?.port ?? null });
-    if (winner !== null && !noOpen) openBrowser(appUrl(winner));
+    const opened = winner !== null ? await openRunning(winner) : 'none';
+    logger.info('lost_start_race', { port: winner?.port ?? null, opened });
     return;
   }
   process.on('exit', () => lock.release());
@@ -173,6 +205,8 @@ async function main(): Promise<void> {
     },
   });
   const key = newLaunchKey();
+  const launchCodes = new LaunchCodes();
+  if (launchCode) launchCodes.register(launchCode);
   const app = await buildApp({
     settings, providers, install, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
@@ -183,6 +217,7 @@ async function main(): Promise<void> {
     mailer: fakeMail ? new MailRouter(fileMailer, fileMailer) : new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets, sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,
     session: { key, cookieName: cookieName(port) },
+    launchCodes,
     activity: new Activity(),
     backup: {
       paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
@@ -249,7 +284,13 @@ async function main(): Promise<void> {
   updates.start();
   usage?.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
-  else openBrowser(openUrl(HOST, port, key));
+  else if (launchCode && await waitForRedeem(() => launchCodes.redeemed(launchCode))) logger.info('opened_by_launch_tab');
+  else {
+    // No "Starting…" tab came (none was opened, another program opens .html files, or the browser blocked it):
+    // open the app directly; the late tab can no longer open a second one.
+    if (launchCode) { launchCodes.cancel(launchCode); logger.warn('launch_tab_missing'); }
+    openBrowser(openUrl(HOST, port, key));
+  }
 }
 
 main().catch((err: unknown) => {

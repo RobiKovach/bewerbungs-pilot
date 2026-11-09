@@ -1,0 +1,97 @@
+<!doctype html>
+<!--
+  "Starting BewerbungsPilot…" (0.12.0). launch.vbs copies this file to <data>\tmp\launch\starting-<…>.html with the
+  one-time launch code in place of __BP_LAUNCH_CODE__, opens it at once and starts the server. The page asks the
+  app's ports for /launch/<code>/ready.gif; the server that knows the code answers, and the page moves to the app.
+  No launch key and no personal data are in this file. Everything is inline: the page runs from a local file.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BewerbungsPilot</title>
+<style>
+  :root { --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #5b6475; --accent: #2f6fdb; --line: #dfe3ea; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171d; --card: #1d222b; --text: #e8ebf1; --muted: #a3acbb; --accent: #6ea0ff; --line: #2c333f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px;
+         background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { width: 100%; max-width: 440px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+         padding: 28px 24px; text-align: center; }
+  h1 { font-size: 1.25rem; margin: 16px 0 8px; font-weight: 600; }
+  p { margin: 0; color: var(--muted); }
+  .spinner { width: 36px; height: 36px; margin: 0 auto; border-radius: 50%;
+             border: 3px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+  .stuck .spinner { display: none; }
+</style>
+</head>
+<body>
+<main id="box" role="status" aria-live="polite">
+  <div class="spinner" aria-hidden="true"></div>
+  <h1 id="title">Starting BewerbungsPilot…</h1>
+  <p id="hint">The first start after switching on the computer can take up to half a minute.</p>
+</main>
+<script>
+(function () {
+  var CODE = '__BP_LAUNCH_CODE__';
+  var FIRST_PORT = 4280, LAST_PORT = 4299, STEP_MS = 400, GIVE_UP_MS = 90000;
+  var T = {
+    uk: ['Запускаю BewerbungsPilot…', 'Перший запуск після ввімкнення комп’ютера може тривати до пів хвилини.',
+         'Програма не відповіла.', 'Якщо вона вже відкрилась в іншій вкладці, цю можна закрити. Інакше запусти її ще раз через ярлик.'],
+    de: ['BewerbungsPilot wird gestartet…', 'Der erste Start nach dem Einschalten des Computers kann bis zu einer halben Minute dauern.',
+         'Das Programm hat nicht geantwortet.', 'Wenn es schon in einem anderen Tab offen ist, kannst du diesen schließen. Sonst starte es noch einmal über die Verknüpfung.'],
+    en: ['Starting BewerbungsPilot…', 'The first start after switching on the computer can take up to half a minute.',
+         'The program did not answer.', 'If it already opened in another tab, you can close this one. Otherwise start it again from the shortcut.'],
+    ru: ['Запускаю BewerbungsPilot…', 'Первый запуск после включения компьютера может занять до полуминуты.',
+         'Программа не ответила.', 'Если она уже открылась в другой вкладке, эту можно закрыть. Иначе запусти её ещё раз через ярлык.'],
+    pl: ['Uruchamiam BewerbungsPilot…', 'Pierwsze uruchomienie po włączeniu komputera może potrwać do pół minuty.',
+         'Program nie odpowiedział.', 'Jeśli otworzył się już w innej karcie, tę możesz zamknąć. W przeciwnym razie uruchom go ponownie ze skrótu.'],
+    ro: ['Pornesc BewerbungsPilot…', 'Prima pornire după ce ai deschis calculatorul poate dura până la jumătate de minut.',
+         'Programul nu a răspuns.', 'Dacă s-a deschis deja în altă filă, o poți închide pe aceasta. Altfel pornește-l din nou din scurtătură.']
+  };
+  var langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en']);
+  var lang = 'en';
+  for (var i = 0; i < langs.length; i++) { var l = String(langs[i]).slice(0, 2).toLowerCase(); if (T[l]) { lang = l; break; } }
+  var t = T[lang];
+  document.documentElement.lang = lang;
+  document.getElementById('title').textContent = t[0];
+  document.getElementById('hint').textContent = t[1];
+  document.title = t[0];
+
+  function stuck() {
+    done = true;
+    document.getElementById('box').className = 'stuck';
+    document.getElementById('title').textContent = t[2];
+    document.getElementById('hint').textContent = t[3];
+  }
+
+  var done = false;
+  if (!/^[0-9a-f]{64}$/.test(CODE)) { stuck(); return; }
+  var busy = {};
+  function probe(port) {
+    if (done || busy[port]) return;
+    busy[port] = true;
+    var img = new Image();
+    img.onload = function () {
+      if (done) return;
+      done = true;
+      location.replace('http://127.0.0.1:' + port + '/launch/' + CODE);
+    };
+    img.onerror = function () { busy[port] = false; };
+    img.src = 'http://127.0.0.1:' + port + '/launch/' + CODE + '/ready.gif?t=' + Date.now();
+  }
+  var started = Date.now();
+  (function tick() {
+    if (done) return;
+    if (Date.now() - started > GIVE_UP_MS) { stuck(); return; }
+    for (var p = FIRST_PORT; p <= LAST_PORT; p++) probe(p);
+    setTimeout(tick, STEP_MS);
+  })();
+})();
+</script>
+</body>
+</html>
