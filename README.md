@@ -71,6 +71,10 @@ project's GitHub Releases, checks its checksum (published in `version.json`), sa
 version and restarts. If anything fails, the old version keeps working and you are told why. If you have 0.12.0 or
 older, install 0.12.1 by hand once (download it from the banner or the Releases page); after that updates are one click.
 
+### What's new in 0.12.2
+
+- Library updates (PDF making, translations, build tools). Nothing changes in how the app works.
+
 ### What's new in 0.12.1
 
 - **"Update now" works.** In 0.11.0 and 0.12.0 the button could not start the installer. Install 0.12.1 by hand once.
