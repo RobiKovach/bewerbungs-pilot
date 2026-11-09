@@ -21,6 +21,7 @@ import { ProviderRegistry } from './llm/providers.js';
 import { LlmQueue } from './llm/queue.js';
 import type { LlmProvider } from './llm/types.js';
 import { createFileLogger } from './log.js';
+import { startHidden } from './updates/start-hidden.js';
 import { FakeFileMailer } from './mail/fake-file-mailer.js';
 import { GmailApiMailer } from './mail/gmail-api.js';
 import { LibraryGoogleAuth } from './mail/google-auth.js';
@@ -242,16 +243,14 @@ async function main(): Promise<void> {
       },
       apply: {
         updater, statusFile, outcome,
-        // Detached: the installer outlives this process, which quits right after starting it.
-        spawn: (file, args, opts) => new Promise<{ kill: () => void }>((resolve, reject) => {
+        // The installer must outlive this process, which quits right after starting it — started through wscript, hidden
+        // (a detached PowerShell exits without running the script: see updates/start-hidden.ts, 0.12.1).
+        spawn: async (file, args, opts) => {
           // A test data folder never starts the real installer: it would replace the installed app in %LOCALAPPDATA%
           // while this copy runs on other data.
-          if (process.env.BP_DATA_DIR) { reject(new Error('BP_DATA_DIR is set: no real install from a test data folder')); return; }
-          // Resolves when the child really started; a start failure (missing file, no access) arrives as an 'error' event.
-          const child = spawn(file, args, opts);
-          child.once('error', reject);
-          child.once('spawn', () => { child.on('error', () => undefined); child.unref(); resolve({ kill: () => { try { child.kill(); } catch { /* already gone */ } } }); });
-        }),
+          if (process.env.BP_DATA_DIR) throw new Error('BP_DATA_DIR is set: no real install from a test data folder');
+          return startHidden(file, args, { cwd: opts.cwd, env: opts.env });
+        },
       },
     },
     demo: demo ? { active: true } : {

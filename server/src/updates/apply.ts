@@ -208,8 +208,9 @@ export class UpdateApplier {
         throw new AppError('CONFLICT', `installer did not start: ${String(err)}`, 'updateStart');
       }
       // "Process started" is not "installer took over": it writes `running` first thing. Without it (blocked script,
-      // broken messages.json, …) nobody would restart the old app after a shutdown — so the old app stays up and the
-      // child is stopped, otherwise its Stop-BpOldApp would shut this server down anyway.
+      // broken messages.json, …) nobody would restart the old app after a shutdown — so the old app stays up. `kill`
+      // stops only the starter (wscript, see start-hidden.ts); an installer that starts late still does a whole update
+      // with its own rollback.
       const deadline = startedAt + (this.d.startWaitMs ?? 15_000);
       // The installer's clock and ours are the same PC; two seconds of slack for the timestamp's rounding.
       while (!installerReportedRunning(this.d.statusFile, startedAt - 2000)) {

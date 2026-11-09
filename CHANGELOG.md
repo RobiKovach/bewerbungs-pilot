@@ -2,6 +2,12 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.12.1
+
+- **"Update now" works.** In 0.11.0 and 0.12.0 the button could not start the installer on Windows (the old version kept
+  running and said the installer could not be started). Install 0.12.1 by hand once; from then on "Update now" installs new
+  versions by itself.
+
 ## What's new in 0.12.0
 
 - **Interview preparation.** A sent application now has an **Interview preparation** button. The AI helper writes questions for
