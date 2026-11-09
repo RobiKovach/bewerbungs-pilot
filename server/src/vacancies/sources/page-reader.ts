@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import puppeteer, { type Browser, type Page } from 'puppeteer-core';
-import { findBrowser, removeProfileDir } from '../../applications/pdf.js';
+import { type Browser, type Page } from 'puppeteer-core';
+import { findBrowser, removeProfileDir, loadPuppeteer } from '../../applications/pdf.js';
 import { AppError } from '../../errors.js';
 import { checkPublicUrl, isPublicAddress } from './safe-address.js';
 
@@ -141,7 +141,7 @@ export class BrowserPageReader implements PageReader {
     signal.addEventListener('abort', stop);
     try {
       try {
-        browser = await (this.opts.launch ?? ((o) => puppeteer.launch(o)))(launchOptions(executablePath, profile, timeoutMs));
+        browser = await (this.opts.launch ?? (async (o) => (await loadPuppeteer()).launch(o)))(launchOptions(executablePath, profile, timeoutMs));
       } catch (err) {
         throw new AppError('BROWSER_MISSING', `browser did not start: ${String(err).slice(0, 300)}`);
       }

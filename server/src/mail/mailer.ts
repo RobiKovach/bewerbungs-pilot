@@ -1,4 +1,3 @@
-import nodemailer from 'nodemailer';
 import type { MailSettings, SmtpMailSettings } from '@bp/shared';
 import { AppError } from '../errors.js';
 
@@ -60,6 +59,8 @@ export function mailErrorFrom(err: unknown, opts: { secrets?: string[] } = {}): 
 export class SmtpMailer implements Mailer {
   async send(config: MailSettings, password: string, mail: OutgoingMail): Promise<SentMail> {
     if (config.kind !== 'smtp') throw new AppError('MAIL_NOT_CONFIGURED', 'not an SMTP mailbox');
+    // Loaded on first use, not at start (faster cold start).
+    const nodemailer = (await import('nodemailer')).default;
     const transport = nodemailer.createTransport(transportOptions(config, password));
     try {
       const info = await transport.sendMail({

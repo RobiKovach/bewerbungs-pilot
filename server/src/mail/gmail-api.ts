@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import MailComposer from 'nodemailer/lib/mail-composer';
 import type { MailSettings } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { googleErrorFrom, type GoogleAuth } from './google-auth.js';
@@ -25,6 +24,8 @@ export function sendRequest(raw: Buffer, threadId?: string): { url: string; cont
 }
 
 export async function rawMessage(mail: OutgoingMail): Promise<Buffer> {
+  // Loaded on first use, not at start (faster cold start).
+  const MailComposer = (await import('nodemailer/lib/mail-composer')).default;
   const node = new MailComposer({
     from: { name: mail.from.name, address: mail.from.address },
     to: mail.to,

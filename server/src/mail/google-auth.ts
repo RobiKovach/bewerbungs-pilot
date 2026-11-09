@@ -1,4 +1,4 @@
-import { CodeChallengeMethod, OAuth2Client } from 'google-auth-library';
+import type { OAuth2Client } from 'google-auth-library';
 import { AppError } from '../errors.js';
 import { GOOGLE_CLIENT, GOOGLE_SCOPES } from './google-client.js';
 
@@ -42,26 +42,36 @@ export function grantsSending(scope: string | null | undefined): boolean {
   return scope.split(/\s+/).includes(SEND_SCOPE);
 }
 
+// Loaded on first use, not at start: a cold start reads every imported file from disk (0.12.0, faster start).
+let lib: typeof import('google-auth-library') | null = null;
+const loadLib = async () => (lib ??= await import('google-auth-library'));
+
 export class LibraryGoogleAuth implements GoogleAuth {
   constructor(private readonly client: { id: string; secret: string } = GOOGLE_CLIENT) {}
 
-  private oauth(): OAuth2Client {
-    return new OAuth2Client({ clientId: this.client.id, clientSecret: this.client.secret, transporterOptions: { timeout: 30_000 } });
+  private async oauth(): Promise<OAuth2Client> {
+    return this.clientOf(await loadLib());
+  }
+
+  private clientOf(l: typeof import('google-auth-library')): OAuth2Client {
+    return new l.OAuth2Client({ clientId: this.client.id, clientSecret: this.client.secret, transporterOptions: { timeout: 30_000 } });
   }
 
   async newVerifier(): Promise<{ verifier: string; challenge: string }> {
-    const r = await this.oauth().generateCodeVerifierAsync();
+    const r = await (await this.oauth()).generateCodeVerifierAsync();
     return { verifier: r.codeVerifier, challenge: r.codeChallenge as string };
   }
 
   authUrl(o: { redirectUri: string; state: string; challenge: string; loginHint?: string }): string {
-    return this.oauth().generateAuthUrl({
+    // newVerifier() always runs first (GoogleSignIn.start) and has loaded the library.
+    if (!lib) throw new AppError('MAIL_CONNECT', 'google library not loaded: newVerifier() first');
+    return this.clientOf(lib).generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
       scope: [...GOOGLE_SCOPES],
       state: o.state,
       redirect_uri: o.redirectUri,
-      code_challenge_method: CodeChallengeMethod.S256,
+      code_challenge_method: lib.CodeChallengeMethod.S256,
       code_challenge: o.challenge,
       ...(o.loginHint ? { login_hint: o.loginHint } : {}),
     });
@@ -69,7 +79,7 @@ export class LibraryGoogleAuth implements GoogleAuth {
 
   async exchange(o: { code: string; verifier: string; redirectUri: string }): Promise<GoogleTokens> {
     try {
-      const client = this.oauth();
+      const client = await this.oauth();
       const { tokens } = await client.getToken({ code: o.code, codeVerifier: o.verifier, redirect_uri: o.redirectUri });
       if (!tokens.refresh_token || !tokens.id_token) throw new AppError('MAIL_CONNECT', 'google returned no refresh token');
       if (!grantsSending(tokens.scope)) {
@@ -88,7 +98,7 @@ export class LibraryGoogleAuth implements GoogleAuth {
 
   async accessToken(refreshToken: string): Promise<string> {
     try {
-      const c = this.oauth();
+      const c = await this.oauth();
       c.setCredentials({ refresh_token: refreshToken });
       const { token } = await c.getAccessToken();
       if (!token) throw new AppError('MAIL_REAUTH', 'google returned no access token');
@@ -100,7 +110,7 @@ export class LibraryGoogleAuth implements GoogleAuth {
 
   async revoke(refreshToken: string): Promise<void> {
     try {
-      await this.oauth().revokeToken(refreshToken);
+      await (await this.oauth()).revokeToken(refreshToken);
     } catch (err) {
       throw googleErrorFrom(err);
     }

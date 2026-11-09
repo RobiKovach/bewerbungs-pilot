@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import puppeteer, { type Browser, type Frame, type Page } from 'puppeteer-core';
-import { findBrowser, removeProfileDir } from '../../applications/pdf.js';
+import { type Browser, type Frame, type Page } from 'puppeteer-core';
+import { findBrowser, removeProfileDir, loadPuppeteer } from '../../applications/pdf.js';
 import { AppError } from '../../errors.js';
 import { isAaHost, jobdetailUrl } from '../aa-links.js';
 import { parseContact } from '../contact-parse.js';
@@ -301,7 +301,7 @@ export class AaContactWindow implements ContactWindow {
     };
     try {
       try {
-        browser = await (this.opts.launch ?? ((o) => puppeteer.launch(o)))(contactLaunchOptions(executablePath, profile, 30_000));
+        browser = await (this.opts.launch ?? (async (o) => (await loadPuppeteer()).launch(o)))(contactLaunchOptions(executablePath, profile, 30_000));
       } catch (err) {
         throw new AppError('BROWSER_MISSING', `browser did not start: ${String(err).slice(0, 300)}`);
       }

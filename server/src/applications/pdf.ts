@@ -1,8 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { PDFDocument } from 'pdf-lib';
-import puppeteer, { type Browser } from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import { AppError } from '../errors.js';
+
+// Loaded on first use, not at start: a cold start reads every imported file from disk (0.12.0, faster start).
+export const loadPuppeteer = async () => (await import('puppeteer-core')).default;
+const loadPdfLib = async () => (await import('pdf-lib')).PDFDocument;
 
 export interface PdfPrinter {
   available(): boolean;
@@ -81,7 +84,7 @@ export class BrowserPrinter implements PdfPrinter {
     let browser: Browser | null = null;
     try {
       try {
-        browser = await puppeteer.launch({
+        browser = await (await loadPuppeteer()).launch({
           executablePath, headless: true, userDataDir: profile, timeout: PRINT_TIMEOUT_MS,
           args: ['--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-sync', '--disable-background-networking'],
         });
@@ -106,13 +109,14 @@ export class BrowserPrinter implements PdfPrinter {
 }
 
 export async function countPages(pdf: Uint8Array): Promise<number> {
-  return (await PDFDocument.load(pdf)).getPageCount();
+  return (await (await loadPdfLib()).load(pdf)).getPageCount();
 }
 
 export interface BundlePart { name: string; data: Uint8Array }
 
 /** Letter → CV → attachments as one PDF (spec, decision 8). */
 export async function bundlePdfs(parts: BundlePart[]): Promise<Buffer> {
+  const PDFDocument = await loadPdfLib();
   const out = await PDFDocument.create();
   for (const part of parts) {
     try {

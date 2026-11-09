@@ -90,8 +90,8 @@ describe('Gmail API mailer', () => {
     expect(await new GmailApiMailer(auth, fetchImpl).send(GOOGLE, 'r', MAIL)).toEqual({ messageId: 'gmail:unknown' });
   });
 
-  it('Google token calls are bounded by a 30 s timeout', () => {
-    const client = (new LibraryGoogleAuth({ id: 'id', secret: 's' }) as unknown as { oauth(): { transporter: { defaults?: { timeout?: number } } } }).oauth();
+  it('Google token calls are bounded by a 30 s timeout', async () => {
+    const client = await (new LibraryGoogleAuth({ id: 'id', secret: 's' }) as unknown as { oauth(): Promise<{ transporter: { defaults?: { timeout?: number } } }> }).oauth();
     expect(client.transporter.defaults?.timeout).toBe(30_000);
   });
 
