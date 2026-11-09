@@ -5,7 +5,9 @@ import { AppError } from '../errors.js';
 
 // Loaded on first use, not at start: a cold start reads every imported file from disk (0.12.0, faster start).
 export const loadPuppeteer = async () => (await import('puppeteer-core')).default;
-const loadPdfLib = async () => (await import('pdf-lib')).PDFDocument;
+const loadPdfLib = async () => {
+  try { return (await import('pdf-lib')).PDFDocument; } catch (err) { throw new AppError('BROWSER_MISSING', `pdf-lib did not load: ${String(err).slice(0, 200)}`); }
+};
 
 export interface PdfPrinter {
   available(): boolean;

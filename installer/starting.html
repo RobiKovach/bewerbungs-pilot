@@ -1,8 +1,9 @@
 <!doctype html>
 <!--
   "Starting BewerbungsPilot…" (0.12.0). launch.vbs copies this file to <data>\tmp\launch\starting-<…>.html with the
-  one-time launch code in place of __BP_LAUNCH_CODE__, opens it at once and starts the server. The page asks the
-  app's ports for /launch/<code>/ready.gif; the server that knows the code answers, and the page moves to the app.
+  one-time launch code in place of __BP_LAUNCH_CODE__, opens it at once and starts the server. Any program may listen
+  on one of the app's ports, so the page sends only the public part P of the code everywhere; a port must answer with an
+  image whose size proves it knows the hidden part Q, and only then gets the secret part S (server/src/runtime/launch-code.ts).
   No launch key and no personal data are in this file. Everything is inline: the page runs from a local file.
 -->
 <html lang="en">
@@ -41,17 +42,23 @@
   var FIRST_PORT = 4280, LAST_PORT = 4299, STEP_MS = 400, GIVE_UP_MS = 90000;
   var T = {
     uk: ['Запускаю BewerbungsPilot…', 'Перший запуск після ввімкнення комп’ютера може тривати до пів хвилини.',
-         'Програма не відповіла.', 'Якщо вона вже відкрилась в іншій вкладці, цю можна закрити. Інакше запусти її ще раз через ярлик.'],
+         'Програма не відповіла.', 'Якщо вона вже відкрилась в іншій вкладці, цю можна закрити. Інакше запусти її ще раз через ярлик.',
+         'BewerbungsPilot уже відкрито в іншій вкладці.', 'Цю вкладку можна закрити.'],
     de: ['BewerbungsPilot wird gestartet…', 'Der erste Start nach dem Einschalten des Computers kann bis zu einer halben Minute dauern.',
-         'Das Programm hat nicht geantwortet.', 'Wenn es schon in einem anderen Tab offen ist, kannst du diesen schließen. Sonst starte es noch einmal über die Verknüpfung.'],
+         'Das Programm hat nicht geantwortet.', 'Wenn es schon in einem anderen Tab offen ist, kannst du diesen schließen. Sonst starte es noch einmal über die Verknüpfung.',
+         'BewerbungsPilot ist schon in einem anderen Tab offen.', 'Du kannst diesen Tab schließen.'],
     en: ['Starting BewerbungsPilot…', 'The first start after switching on the computer can take up to half a minute.',
-         'The program did not answer.', 'If it already opened in another tab, you can close this one. Otherwise start it again from the shortcut.'],
+         'The program did not answer.', 'If it already opened in another tab, you can close this one. Otherwise start it again from the shortcut.',
+         'BewerbungsPilot is already open in another tab.', 'You can close this tab.'],
     ru: ['Запускаю BewerbungsPilot…', 'Первый запуск после включения компьютера может занять до полуминуты.',
-         'Программа не ответила.', 'Если она уже открылась в другой вкладке, эту можно закрыть. Иначе запусти её ещё раз через ярлык.'],
+         'Программа не ответила.', 'Если она уже открылась в другой вкладке, эту можно закрыть. Иначе запусти её ещё раз через ярлык.',
+         'BewerbungsPilot уже открыт в другой вкладке.', 'Эту вкладку можно закрыть.'],
     pl: ['Uruchamiam BewerbungsPilot…', 'Pierwsze uruchomienie po włączeniu komputera może potrwać do pół minuty.',
-         'Program nie odpowiedział.', 'Jeśli otworzył się już w innej karcie, tę możesz zamknąć. W przeciwnym razie uruchom go ponownie ze skrótu.'],
+         'Program nie odpowiedział.', 'Jeśli otworzył się już w innej karcie, tę możesz zamknąć. W przeciwnym razie uruchom go ponownie ze skrótu.',
+         'BewerbungsPilot jest już otwarty w innej karcie.', 'Możesz zamknąć tę kartę.'],
     ro: ['Pornesc BewerbungsPilot…', 'Prima pornire după ce ai deschis calculatorul poate dura până la jumătate de minut.',
-         'Programul nu a răspuns.', 'Dacă s-a deschis deja în altă filă, o poți închide pe aceasta. Altfel pornește-l din nou din scurtătură.']
+         'Programul nu a răspuns.', 'Dacă s-a deschis deja în altă filă, o poți închide pe aceasta. Altfel pornește-l din nou din scurtătură.',
+         'BewerbungsPilot este deja deschis în altă filă.', 'Poți închide această filă.']
   };
   var langs = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en']);
   var lang = 'en';
@@ -62,27 +69,39 @@
   document.getElementById('hint').textContent = t[1];
   document.title = t[0];
 
-  function stuck() {
+  function show(title, hint) {
     done = true;
     document.getElementById('box').className = 'stuck';
-    document.getElementById('title').textContent = t[2];
-    document.getElementById('hint').textContent = t[3];
+    document.getElementById('title').textContent = title;
+    document.getElementById('hint').textContent = hint;
   }
+  function stuck() { show(t[2], t[3]); }
 
   var done = false;
   if (!/^[0-9a-f]{64}$/.test(CODE)) { stuck(); return; }
-  var busy = {};
+  var P = CODE.slice(0, 16), Q = parseInt(CODE.slice(16, 22), 16), S = CODE.slice(22);
+  var WANT_W = 1 + (Q >> 12), WANT_H = 1 + (Q & 0xfff), CLOSED_W = 4100, CLOSED_H = 1;
+  var busy = {}, dropped = {};
   function probe(port) {
-    if (done || busy[port]) return;
+    if (done || busy[port] || dropped[port]) return;
     busy[port] = true;
     var img = new Image();
     img.onload = function () {
+      busy[port] = false;
       if (done) return;
-      done = true;
-      location.replace('http://127.0.0.1:' + port + '/launch/' + CODE);
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (w === WANT_W && h === WANT_H) {
+        // This port knows the hidden part: only now does the secret part leave the page.
+        done = true;
+        location.replace('http://127.0.0.1:' + port + '/launch/' + P + S);
+      } else if (w === CLOSED_W && h === CLOSED_H) {
+        show(t[4], t[5]);
+      } else {
+        dropped[port] = true; // a wrong answer: never asked again, and it never sees S
+      }
     };
     img.onerror = function () { busy[port] = false; };
-    img.src = 'http://127.0.0.1:' + port + '/launch/' + CODE + '/ready.gif?t=' + Date.now();
+    img.src = 'http://127.0.0.1:' + port + '/launch/' + P + '/ready.svg?t=' + Date.now();
   }
   var started = Date.now();
   (function tick() {

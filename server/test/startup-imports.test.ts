@@ -24,7 +24,8 @@ describe('heavy libraries are not loaded at start', () => {
     const offenders: string[] = [];
     for (const f of files(src)) {
       const text = fs.readFileSync(f, 'utf8');
-      for (const m of text.matchAll(/^import\s[^;]*?from\s+'([^']+)';/gms)) {
+      // import … from '…', export … from '…' and side-effect imports (import '…'), with either quote.
+      for (const m of text.matchAll(/^(?:import|export)\s[^;]*?['"]([^'"]+)['"];/gms)) {
         const lib = LAZY.find((l) => m[1] === l || m[1].startsWith(`${l}/`));
         if (lib && !typeOnly(m[0])) offenders.push(`${path.relative(src, f)}: ${m[0].split('\n')[0]}`);
       }
@@ -37,5 +38,7 @@ describe('heavy libraries are not loaded at start', () => {
     expect(typeOnly("import { PDFDocument } from 'pdf-lib';")).toBe(false);
     expect(typeOnly("import { type Browser, type Page } from 'puppeteer-core';")).toBe(true);
     expect(typeOnly("import type { OAuth2Client } from 'google-auth-library';")).toBe(true);
+    expect(typeOnly("import 'puppeteer-core';")).toBe(false);
+    expect(typeOnly("export { PDFDocument } from 'pdf-lib';")).toBe(false);
   });
 });

@@ -6,7 +6,7 @@ import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, settingsView,
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
 import { keyMatches, readCookie } from './runtime/launch-key.js';
-import { LAUNCH_CODE, LaunchCodes, READY_GIF } from './runtime/launch-code.js';
+import { LAUNCH_CODE, LAUNCH_PROBE, LAUNCH_TOKEN, LaunchCodes, sizedSvg } from './runtime/launch-code.js';
 import type { LlmQueue } from './llm/queue.js';
 import type { InstallJob } from './llm/install.js';
 import type { ProviderRegistry } from './llm/providers.js';
@@ -117,8 +117,10 @@ function browserWork<T extends { read?: (...a: never[]) => Promise<unknown>; rea
   return { ...inner, ...(inner.read ? { read: wrap(inner.read, inner) } : {}), ...(inner.readContact ? { readContact: wrap(inner.readContact, inner) } : {}) };
 }
 
-const PUBLIC_ROUTES = new Set(['/open', '/launch/:code', '/launch/:code/ready.gif', '/api/health', '/oauth/google/callback', '/', '/*']);
+const PUBLIC_ROUTES = new Set(['/open', '/launch/:part', '/launch/:part/ready.svg', '/api/health', '/oauth/google/callback', '/', '/*']);
 const launchCodeParams = { type: 'object', required: ['code'], properties: { code: { type: 'string', pattern: LAUNCH_CODE.source } } } as const;
+const launchProbeParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_PROBE.source } } } as const;
+const launchTokenParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_TOKEN.source } } } as const;
 
 const settingsPatchSchema = {
   type: 'object',
@@ -244,28 +246,38 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     return reply.code(303).header('Location', '/').send();
   });
 
-  // "Starting…" tab (0.12.0, runtime/launch-code.ts): the local page asks every port whether it knows its code…
+  // "Starting…" tab (0.12.0, runtime/launch-code.ts): the local page asks every port about the public part of its code;
+  // only the server that knows the whole code can answer with the right image size…
   const launchCodes = deps.launchCodes ?? new LaunchCodes();
   const sessionCookie = () => `${deps.session.cookieName}=${deps.session.key}; HttpOnly; SameSite=Strict; Path=/`;
-  app.get('/launch/:code/ready.gif', { schema: { params: launchCodeParams } }, async (req, reply) => {
-    const { code } = req.params as { code: string };
+  app.get('/launch/:part/ready.svg', { schema: { params: launchProbeParams } }, async (req, reply) => {
+    const size = launchCodes.probe((req.params as { part: string }).part);
     reply.header('Cache-Control', 'no-store');
-    if (!launchCodes.pending(code)) return reply.code(404).send();
-    return reply.type('image/gif').send(READY_GIF);
+    if (!size) return reply.code(404).send();
+    return reply.type('image/svg+xml').send(sizedSvg(size));
   });
-  // …and then goes here once: the code becomes the session cookie, like /open?key=… (a used or unknown code just
-  // goes on to the app, which then shows "open via the shortcut").
-  app.get('/launch/:code', { schema: { params: launchCodeParams } }, async (req, reply) => {
-    const { code } = req.params as { code: string };
-    if (launchCodes.redeem(code)) reply.header('Set-Cookie', sessionCookie());
+  // …and then the page sends the secret part here, once: it becomes the session cookie, like /open?key=… (a used or
+  // wrong one just goes on to the app, which then shows "open via the shortcut").
+  app.get('/launch/:part', { schema: { params: launchTokenParams } }, async (req, reply) => {
+    const { part: token } = req.params as { part: string };
+    if (launchCodes.redeem(token)) reply.header('Set-Cookie', sessionCookie());
     return reply.code(303).header('Cache-Control', 'no-store').header('Location', '/').send();
   });
   // A second click on the shortcut while the app runs: the new process hands its code to this one (with the key).
-  app.post('/api/launch-code', { schema: { body: { type: 'object', additionalProperties: false, required: ['code'], properties: { code: { type: 'string', pattern: LAUNCH_CODE.source } } } } }, async (req) => {
+  const launchCodeBody = { type: 'object', additionalProperties: false, required: ['code'], properties: { code: { type: 'string', pattern: LAUNCH_CODE.source } } } as const;
+  app.post('/api/launch-code', { schema: { body: launchCodeBody } }, async (req) => {
     if (!launchCodes.register((req.body as { code: string }).code)) throw new AppError('CONFLICT', 'too many launch codes');
     return { ok: true };
   });
-  app.get('/api/launch-code/:code', { schema: { params: launchCodeParams } }, async (req) => ({ redeemed: launchCodes.redeemed((req.params as { code: string }).code) }));
+  // The second click gave up waiting and opened the browser itself: its late page must not open another tab.
+  app.delete('/api/launch-code', { schema: { body: launchCodeBody } }, async (req) => {
+    launchCodes.cancel((req.body as { code: string }).code);
+    return { ok: true };
+  });
+  app.get('/api/launch-code/:code', { schema: { params: launchCodeParams } }, async (req) => {
+    const { code } = req.params as { code: string };
+    return { redeemed: launchCodes.redeemed(code), seen: launchCodes.seen(code) };
+  });
 
   app.get('/api/settings', async () => settingsView(deps.settings.get()));
 

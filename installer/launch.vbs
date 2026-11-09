@@ -23,6 +23,8 @@ If page <> "" Then sh.Environment("PROCESS")("BP_LAUNCH_CODE") = code
 sh.CurrentDirectory = appDir
 sh.Run """" & nodeExe & """ """ & appDir & "\server\dist\index.js""", 0, False
 If page <> "" Then
+  ' Only the server gets the code: a browser started below would otherwise keep it in its environment.
+  sh.Environment("PROCESS").Remove "BP_LAUNCH_CODE"
   On Error Resume Next
   sh.Run """" & page & """", 1, False
   On Error GoTo 0

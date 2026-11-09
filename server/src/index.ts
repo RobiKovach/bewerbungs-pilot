@@ -83,10 +83,13 @@ async function openRunning(r: RunningInstance): Promise<'tab' | 'browser' | 'non
     try {
       const res = await fetch(base, { method: 'POST', headers, body: JSON.stringify({ code: launchCode }), signal: AbortSignal.timeout(3000) });
       if (res.ok) {
-        const used = await waitForRedeem(async () => {
+        const status = async () => {
           const st = await fetch(`${base}/${launchCode}`, { headers, signal: AbortSignal.timeout(2000) });
-          return st.ok && ((await st.json()) as { redeemed?: boolean }).redeemed === true;
-        });
+          return st.ok ? ((await st.json()) as { redeemed?: boolean; seen?: boolean }) : {};
+        };
+        const used = await waitForRedeem(async () => (await status()).redeemed === true, { seen: async () => (await status()).seen === true });
+        // Too late now: the page must not open a second tab after the browser was opened below.
+        if (!used) await fetch(base, { method: 'DELETE', headers, body: JSON.stringify({ code: launchCode }), signal: AbortSignal.timeout(2000) }).catch(() => undefined);
         if (used) return 'tab';
       }
     } catch { /* an older copy or no answer: open the browser below */ }
@@ -284,7 +287,7 @@ async function main(): Promise<void> {
   updates.start();
   usage?.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
-  else if (launchCode && await waitForRedeem(() => launchCodes.redeemed(launchCode))) logger.info('opened_by_launch_tab');
+  else if (launchCode && await waitForRedeem(() => launchCodes.redeemed(launchCode), { seen: () => launchCodes.seen(launchCode) })) logger.info('opened_by_launch_tab');
   else {
     // No "Starting…" tab came (none was opened, another program opens .html files, or the browser blocked it):
     // open the app directly; the late tab can no longer open a second one.
