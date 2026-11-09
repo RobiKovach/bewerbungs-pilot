@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.11.0",
-  "released": "2026-11-04",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.11.0",
-  "sha256": "ebf9ca4b04afe752503deb10a4ba5f0127dd32f6965ddd10d39b8c300afc1fbb",
+  "latest": "0.12.0",
+  "released": "2026-11-09",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.12.0",
+  "sha256": "1c715cb4122664488386af1afe2aa8e25cdf9dfd327e577c4f8ecdc3fb65ff42",
   "notes": {
-    "uk": "Кнопка «Відгук», щоденний анонімний сигнал «програма використовується» (можна вимкнути в налаштуваннях) і «Оновити зараз» — оновлення в один клік. Версії 0.10.x і старіші встановіть уручну один раз.",
-    "en": "A Feedback button, a daily anonymous \"in use\" signal (switch it off in Settings) and \"Update now\" — one-click updates. If you have 0.10.x or older, install this version by hand once.",
-    "de": "Feedback-Schaltfläche, tägliches anonymes „in Benutzung“-Signal (in den Einstellungen abschaltbar) und „Jetzt aktualisieren“ — Update mit einem Klick. Bei 0.10.x oder älter einmal von Hand installieren.",
-    "ru": "Кнопка «Отзыв», ежедневный анонимный сигнал «программа используется» (отключается в настройках) и «Обновить сейчас» — обновление в один клик. С 0.10.x и старше установите вручную один раз.",
-    "pl": "Przycisk „Opinia”, codzienny anonimowy sygnał „w użyciu” (można wyłączyć w ustawieniach) i „Zaktualizuj teraz” — aktualizacja jednym kliknięciem. Z wersji 0.10.x i starszych zainstaluj ręcznie raz.",
-    "ro": "Buton „Feedback”, semnal zilnic anonim „în uz” (se poate opri în setări) și „Actualizează acum” — actualizare dintr-un clic. De la 0.10.x și mai vechi, instalează o dată manual."
+    "uk": "Підготовка до співбесіди з відгуком на кожну відповідь, «Перенести на інший ПК» одним файлом (за бажанням з паролем) і швидший запуск із вкладкою «Запускаю BewerbungsPilot…».",
+    "en": "Interview preparation with feedback on every answer, \"Move to another PC\" as one file (optionally with a password) and a faster start with a \"Starting BewerbungsPilot…\" tab.",
+    "de": "Vorbereitung aufs Vorstellungsgespräch mit Feedback zu jeder Antwort, „Auf anderen PC umziehen“ als eine Datei (optional mit Passwort) und schnellerer Start mit Tab „BewerbungsPilot wird gestartet…“.",
+    "ru": "Подготовка к собеседованию с отзывом на каждый ответ, «Перенести на другой ПК» одним файлом (по желанию с паролем) и более быстрый запуск со вкладкой «Запускаю BewerbungsPilot…».",
+    "pl": "Przygotowanie do rozmowy kwalifikacyjnej z opinią o każdej odpowiedzi, „Przenieś na inny komputer” jako jeden plik (opcjonalnie z hasłem) i szybsze uruchamianie z kartą „Uruchamiam BewerbungsPilot…”.",
+    "ro": "Pregătire pentru interviu cu feedback la fiecare răspuns, „Mută pe alt PC” ca un singur fișier (opțional cu parolă) și pornire mai rapidă cu fila „Pornesc BewerbungsPilot…”."
   }
 }
