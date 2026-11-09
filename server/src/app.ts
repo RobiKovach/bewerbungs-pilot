@@ -6,7 +6,7 @@ import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, settingsView,
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
 import { keyMatches, readCookie } from './runtime/launch-key.js';
-import { LAUNCH_CODE, LAUNCH_PROBE, LAUNCH_TOKEN, LaunchCodes, sizedSvg } from './runtime/launch-code.js';
+import { LAUNCH_CODE, LAUNCH_PROBE, LaunchCodes, sizedSvg } from './runtime/launch-code.js';
 import type { LlmQueue } from './llm/queue.js';
 import type { InstallJob } from './llm/install.js';
 import type { ProviderRegistry } from './llm/providers.js';
@@ -120,7 +120,7 @@ function browserWork<T extends { read?: (...a: never[]) => Promise<unknown>; rea
 const PUBLIC_ROUTES = new Set(['/open', '/launch/:part', '/launch/:part/ready.svg', '/api/health', '/oauth/google/callback', '/', '/*']);
 const launchCodeParams = { type: 'object', required: ['code'], properties: { code: { type: 'string', pattern: LAUNCH_CODE.source } } } as const;
 const launchProbeParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_PROBE.source } } } as const;
-const launchTokenParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_TOKEN.source } } } as const;
+const launchTokenParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_CODE.source } } } as const;
 
 const settingsPatchSchema = {
   type: 'object',
@@ -248,7 +248,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   // "Starting…" tab (0.12.0, runtime/launch-code.ts): the local page asks every port about the public part of its code;
   // only the server that knows the whole code can answer with the right image size…
-  const launchCodes = deps.launchCodes ?? new LaunchCodes();
+  const launchCodes = deps.launchCodes ?? new LaunchCodes(Number(new URL(deps.origin()).port) || 80);
   const sessionCookie = () => `${deps.session.cookieName}=${deps.session.key}; HttpOnly; SameSite=Strict; Path=/`;
   app.get('/launch/:part/ready.svg', { schema: { params: launchProbeParams } }, async (req, reply) => {
     const size = launchCodes.probe((req.params as { part: string }).part);

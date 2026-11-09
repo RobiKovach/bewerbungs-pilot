@@ -208,7 +208,7 @@ async function main(): Promise<void> {
     },
   });
   const key = newLaunchKey();
-  const launchCodes = new LaunchCodes();
+  const launchCodes = new LaunchCodes(port);
   if (launchCode) launchCodes.register(launchCode);
   const app = await buildApp({
     settings, providers, install, queue, logger, version,

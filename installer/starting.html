@@ -3,7 +3,8 @@
   "Starting BewerbungsPilot…" (0.12.0). launch.vbs copies this file to <data>\tmp\launch\starting-<…>.html with the
   one-time launch code in place of __BP_LAUNCH_CODE__, opens it at once and starts the server. Any program may listen
   on one of the app's ports, so the page sends only the public part P of the code everywhere; a port must answer with an
-  image whose size proves it knows the hidden part Q, and only then gets the secret part S (server/src/runtime/launch-code.ts).
+  image whose size is HMAC-SHA256(secret S, "bp-launch|" + that port) — bound to the port, so a relayed answer from
+  another port does not fit — and only then gets the code (server/src/runtime/launch-code.ts).
   No launch key and no personal data are in this file. Everything is inline: the page runs from a local file.
 -->
 <html lang="en">
@@ -79,9 +80,11 @@
 
   var done = false;
   if (!/^[0-9a-f]{64}$/.test(CODE)) { stuck(); return; }
-  var P = CODE.slice(0, 16), Q = parseInt(CODE.slice(16, 22), 16), S = CODE.slice(22);
-  var WANT_W = 1 + (Q >> 12), WANT_H = 1 + (Q & 0xfff), CLOSED_W = 4100, CLOSED_H = 1;
+  var P = CODE.slice(0, 16), S = CODE.slice(16);
+  // Per port: the image size only the server listening on that very port can give (same formula as the server).
+  var want = {};
   var busy = {}, dropped = {};
+  if (!window.crypto || !crypto.subtle) { stuck(); return; }
   function probe(port) {
     if (done || busy[port] || dropped[port]) return;
     busy[port] = true;
@@ -89,12 +92,12 @@
     img.onload = function () {
       busy[port] = false;
       if (done) return;
-      var w = img.naturalWidth, h = img.naturalHeight;
-      if (w === WANT_W && h === WANT_H) {
-        // This port knows the hidden part: only now does the secret part leave the page.
+      var w = img.naturalWidth, h = img.naturalHeight, q = want[port];
+      if (w === 1 + (q >> 12) && h === 1 + (q & 0xfff)) {
+        // This port proved it knows the code: only now does the code leave the page.
         done = true;
-        location.replace('http://127.0.0.1:' + port + '/launch/' + P + S);
-      } else if (w === CLOSED_W && h === CLOSED_H) {
+        location.replace('http://127.0.0.1:' + port + '/launch/' + CODE);
+      } else if (w === 4097 + (q & 0x3ff) && h === 1) {
         show(t[4], t[5]);
       } else {
         dropped[port] = true; // a wrong answer: never asked again, and it never sees S
@@ -104,12 +107,25 @@
     img.src = 'http://127.0.0.1:' + port + '/launch/' + P + '/ready.svg?t=' + Date.now();
   }
   var started = Date.now();
-  (function tick() {
+  function tick() {
     if (done) return;
     if (Date.now() - started > GIVE_UP_MS) { stuck(); return; }
     for (var p = FIRST_PORT; p <= LAST_PORT; p++) probe(p);
     setTimeout(tick, STEP_MS);
-  })();
+  }
+  var enc = new TextEncoder();
+  crypto.subtle.importKey('raw', enc.encode(S), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']).then(function (key) {
+    var all = [];
+    for (var p = FIRST_PORT; p <= LAST_PORT; p++) {
+      all.push((function (port) {
+        return crypto.subtle.sign('HMAC', key, enc.encode('bp-launch|' + port)).then(function (sig) {
+          var b = new Uint8Array(sig);
+          want[port] = (b[0] << 16) | (b[1] << 8) | b[2];
+        });
+      })(p));
+    }
+    return Promise.all(all);
+  }).then(tick, stuck);
 })();
 </script>
 </body>

@@ -8,35 +8,41 @@ import path from 'node:path';
  *
  * The page cannot know the server's port (4280–4299), and any program on this PC may listen on a free port in that
  * range, so the page never sends the secret part of the code to a port that has not proven it knows the code:
- *   code (64 hex, two random Windows GUIDs) = probe P (16 hex, also the page's file name) + proof Q (6 hex) + secret S (42 hex)
+ *   code (64 hex, two random Windows GUIDs) = probe P (16 hex, also the page's file name) + secret S (48 hex)
  *   1. The page asks every port for /launch/<P>/ready.svg.
- *   2. The server that knows P answers with an image whose size encodes Q (width = 1 + Q>>12, height = 1 + Q&0xfff).
- *      Q itself is never sent by the page; a port answering with any other size is dropped (one 1-in-2^24 guess).
+ *   2. The server that knows P answers with an image whose size encodes the first 24 bits of
+ *      HMAC-SHA256(key = S, "bp-launch|" + the port it itself listens on). The proof is bound to that port: a program
+ *      on another port that relays the real server's answer gives the wrong size for its own port (review C1).
+ *      A port answering with any other size is dropped (one 1-in-2^24 guess).
  *   3. Only then the page goes to /launch/<P><S> on that port, which turns into the session cookie exactly like
  *      /open?key=… does: once, and only within CODE_TTL_MS.
- * A code the server no longer accepts (used, or cancelled by the fallback) answers with CLOSED_SIZE, so the page can
- * say at once that the app already opened elsewhere.
+ * A code the server no longer accepts (used, or cancelled by the fallback) answers with closedSize() — also bound to the
+ * port, wider than any proof — so the page can say at once that the app already opened elsewhere.
  *
  * If the page never comes (another program opens .html files, the browser blocks the local page), the server opens the
  * browser itself after FALLBACK_MS, as before 0.12.0; a page that was seen gets SEEN_GRACE_MS more to arrive.
  */
 export const LAUNCH_CODE = /^[0-9a-f]{64}$/;
 export const LAUNCH_PROBE = /^[0-9a-f]{16}$/;
-export const LAUNCH_TOKEN = /^[0-9a-f]{58}$/;
 export const CODE_TTL_MS = 2 * 60_000;
 export const FALLBACK_MS = 10_000;
 export const SEEN_GRACE_MS = 5_000;
-export const CLOSED_SIZE = { width: 4100, height: 1 } as const;
 const MAX_PENDING = 20;
 
 const probeOf = (code: string) => code.slice(0, 16);
-const proofOf = (code: string) => parseInt(code.slice(16, 22), 16);
-const secretOf = (code: string) => code.slice(22);
 
-/** The image size that proves the server knows the code (both sides at most 4096). */
-export function proofSize(code: string): { width: number; height: number } {
-  const q = proofOf(code);
+/** The image size that proves the server on `port` knows the code (both sides 1..4096). Same formula in starting.html. */
+const mac24 = (code: string, port: number) => {
+  const mac = crypto.createHmac('sha256', code.slice(16)).update(`bp-launch|${port}`).digest();
+  return (mac[0] << 16) | (mac[1] << 8) | mac[2];
+};
+export function proofSize(code: string, port: number): { width: number; height: number } {
+  const q = mac24(code, port);
   return { width: 1 + (q >> 12), height: 1 + (q & 0xfff) };
+}
+/** "Already opened elsewhere": width 4097..5120 (never a proof), height 1; bound to the port like the proof. */
+export function closedSize(code: string, port: number): { width: number; height: number } {
+  return { width: 4097 + (mac24(code, port) & 0x3ff), height: 1 };
 }
 
 type State = { code: string; expires: number; state: 'pending' | 'redeemed' | 'cancelled'; seen: boolean };
@@ -45,7 +51,8 @@ export class LaunchCodes {
   /** By probe P: the page's first request names only P. */
   private readonly codes = new Map<string, State>();
 
-  constructor(private readonly now: () => number = Date.now) {}
+  /** `port`: the one this server listens on (never taken from a request). */
+  constructor(private readonly port: number, private readonly now: () => number = Date.now) {}
 
   /** A code from the shortcut; anything not shaped like one is ignored (false). */
   register(code: unknown): boolean {
@@ -67,18 +74,18 @@ export class LaunchCodes {
   probe(probe: string): { width: number; height: number } | null {
     const s = this.live(probe);
     if (!s) return null;
-    if (s.state !== 'pending') return CLOSED_SIZE;
+    if (s.state !== 'pending') return closedSize(s.code, this.port);
     s.seen = true;
-    return proofSize(s.code);
+    return proofSize(s.code, this.port);
   }
 
-  /** Step 3: P + S. Uses the code up; true only the first time, within its time. */
+  /** Step 3: the whole code (P + S). Uses it up; true only the first time, within its time. */
   redeem(token: string): boolean {
-    if (!LAUNCH_TOKEN.test(token)) return false;
-    const s = this.live(token.slice(0, 16));
+    if (!LAUNCH_CODE.test(token)) return false;
+    const s = this.live(probeOf(token));
     if (!s || s.state !== 'pending') return false;
-    const given = Buffer.from(token.slice(16));
-    const want = Buffer.from(secretOf(s.code));
+    const given = Buffer.from(token);
+    const want = Buffer.from(s.code);
     if (given.length !== want.length || !crypto.timingSafeEqual(given, want)) return false;
     s.state = 'redeemed';
     return true;
