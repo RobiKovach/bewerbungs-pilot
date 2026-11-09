@@ -1,14 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.12.0",
+  "latest": "0.12.1",
   "released": "2026-11-09",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.12.0",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.12.1",
+  "sha256": "8566580aea0ad84e68770bf48cc150909d9dcb65dbfdc478c2f2fcef5d17232c",
   "notes": {
-    "uk": "Підготовка до співбесіди з відгуком на кожну відповідь, «Перенести на інший ПК» одним файлом (за бажанням з паролем) і швидший запуск із вкладкою «Запускаю BewerbungsPilot…». Оновлення в один клік тут не працює — встанови вручну: «Завантажити» → install.bat.",
-    "en": "Interview preparation with feedback on every answer, \"Move to another PC\" as one file (optionally with a password) and a faster start with a \"Starting BewerbungsPilot…\" tab. One-click update does not work for this one — install by hand: Download → install.bat.",
-    "de": "Interview-Vorbereitung mit Feedback zu jeder Antwort, „Auf anderen PC umziehen“ als eine Datei (optional mit Passwort) und schnellerer Start mit Tab „BewerbungsPilot wird gestartet…“. Das Ein-Klick-Update funktioniert hier nicht — bitte von Hand installieren: Herunterladen → install.bat.",
-    "ru": "Подготовка к собеседованию с отзывом на каждый ответ, «Перенести на другой ПК» одним файлом (по желанию с паролем) и более быстрый запуск со вкладкой «Запускаю BewerbungsPilot…». Обновление в один клик здесь не работает — установите вручную: «Скачать» → install.bat.",
-    "pl": "Przygotowanie do rozmowy kwalifikacyjnej z opinią o każdej odpowiedzi, „Przenieś na inny komputer” jako jeden plik (opcjonalnie z hasłem) i szybsze uruchamianie z kartą „Uruchamiam BewerbungsPilot…”. Aktualizacja jednym kliknięciem tu nie działa — zainstaluj ręcznie: Pobierz → install.bat.",
-    "ro": "Pregătire pentru interviu cu feedback la fiecare răspuns, „Mută pe alt PC” ca un singur fișier (opțional cu parolă) și pornire mai rapidă cu fila „Pornesc BewerbungsPilot…”. Actualizarea dintr-un clic nu funcționează aici — instalează manual: Descarcă → install.bat."
+    "uk": "«Оновити зараз» тепер працює (у 0.11.0 і 0.12.0 кнопка не могла запустити інсталятор). Якщо в тебе 0.12.0 чи старша — встанови 0.12.1 вручну один раз: «Завантажити» → install.bat. Далі оновлення — в один клік.",
+    "en": "\"Update now\" works now (in 0.11.0 and 0.12.0 the button could not start the installer). If you have 0.12.0 or older, install 0.12.1 by hand once: Download → install.bat. After that, updates are one click.",
+    "de": "„Jetzt aktualisieren“ funktioniert jetzt (in 0.11.0 und 0.12.0 konnte die Schaltfläche das Installationsprogramm nicht starten). Bei 0.12.0 oder älter 0.12.1 einmal von Hand installieren: Herunterladen → install.bat. Danach reicht ein Klick.",
+    "ru": "«Обновить сейчас» теперь работает (в 0.11.0 и 0.12.0 кнопка не могла запустить установщик). Если у вас 0.12.0 или старше — установите 0.12.1 вручную один раз: «Скачать» → install.bat. Дальше обновления в один клик.",
+    "pl": "„Zaktualizuj teraz” teraz działa (w 0.11.0 i 0.12.0 przycisk nie mógł uruchomić instalatora). Jeśli masz 0.12.0 lub starszą, zainstaluj 0.12.1 ręcznie raz: Pobierz → install.bat. Potem aktualizacja jednym kliknięciem.",
+    "ro": "„Actualizează acum” funcționează acum (în 0.11.0 și 0.12.0 butonul nu putea porni programul de instalare). Dacă ai 0.12.0 sau mai veche, instalează 0.12.1 manual o dată: Descarcă → install.bat. Apoi actualizarea e dintr-un clic."
   }
 }
