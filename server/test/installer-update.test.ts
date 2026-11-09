@@ -50,7 +50,7 @@ function fixture(dirName = 'bp оновлення-'): Fixture {
 }
 
 interface RunOptions {
-  node?: boolean;          // false: node lookup finds nothing
+  node?: boolean | string; // false: node lookup finds nothing; a string: that real node.exe (its NODE_OPTIONS are logged)
   npmExit?: number;
   probe?: string | null;   // version the health probe reports for the new app (null = no answer)
   backupDir?: string;
@@ -62,7 +62,8 @@ interface RunOptions {
 }
 
 function runUpdate(fx: Fixture, o: RunOptions = {}) {
-  const node = o.node === false ? '$null' : `'C:\\fake\\node.exe'`;
+  const node = o.node === false ? '$null' : typeof o.node === 'string' ? psString(o.node) : `'C:\\fake\\node.exe'`;
+  const logOptions = typeof o.node === 'string' ? ` Add-Content -Encoding UTF8 -LiteralPath $log -Value ("npm NODE_OPTIONS=" + $env:NODE_OPTIONS);` : '';
   const probe = o.probe === null ? '$null' : `'${o.probe ?? '2.0.0'}'`;
   const script = [
     o.noReadHost === false ? '' : `function Read-Host { throw 'Read-Host must not be called in unattended mode' };`,
@@ -71,7 +72,7 @@ function runUpdate(fx: Fixture, o: RunOptions = {}) {
     `$findNode = { ${o.findNodeThrows ? "throw 'boom'" : node} };`,
     // The fake npm records what the world looked like while the new app was being installed.
     `$npm = { param($dir) $st = Get-Content -Raw -LiteralPath ${psString(fx.status)} | ConvertFrom-Json; ` +
-      `Add-Content -Encoding UTF8 -LiteralPath $log -Value ("npm dir=" + $dir + " previous=" + (Test-Path -LiteralPath ${psString(fx.previous)}) + " state=" + $st.state + " step=" + $st.step); ${o.npmExit ?? 0} };`,
+      `Add-Content -Encoding UTF8 -LiteralPath $log -Value ("npm dir=" + $dir + " previous=" + (Test-Path -LiteralPath ${psString(fx.previous)}) + " state=" + $st.state + " step=" + $st.step);${logOptions} ${o.npmExit ?? 0} };`,
     // Starting the new app makes it "write" server.json; starting the old one (rollback) does not.
     `$start = { param($dir) $v = (Get-Content -Raw -LiteralPath (Join-Path $dir 'package.json') | ConvertFrom-Json).version; ` +
       `Add-Content -Encoding UTF8 -LiteralPath $log -Value ("start " + $v); ` +
@@ -108,6 +109,8 @@ describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
     expect(fs.existsSync(path.join(fx.app, 'old.txt'))).toBe(false);
     expect(fs.existsSync(fx.previous)).toBe(false);
     expect(fs.readFileSync(path.join(fx.app, 'installer', 'node-path.txt'), 'utf16le').replace(/^\uFEFF/, '').trim()).toBe('C:\\fake\\node.exe');
+    // A node that cannot be asked (here: not there) gets no --use-system-ca.
+    expect(fs.existsSync(path.join(fx.app, 'installer', 'node-options.txt'))).toBe(false);
     // While npm ran the old app was still on disk as .previous, and the status said "running / installing".
     expect(r.log[0]).toBe(`npm dir=${fx.app} previous=True state=running step=installing`);
     expect(r.log).toContain('shortcuts');
@@ -119,6 +122,16 @@ describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
     const bytes = fs.readFileSync(fx.status);
     expect(bytes[0]).toBe(0x7b);
     expect(fs.existsSync(`${fx.status}.tmp`)).toBe(false);
+  }, 90_000);
+
+  // 0.12.3: a tester's antivirus HTTPS scanning made npm fail with SELF_SIGNED_CERT_IN_CHAIN. A node that accepts
+  // --use-system-ca (this test's own node) gets it for npm, and launch.vbs is told through node-options.txt.
+  it('a node that can use the Windows certificate store gets --use-system-ca for npm and the app', () => {
+    const fx = fixture();
+    const r = runUpdate(fx, { node: process.execPath });
+    expect(r.code).toBe(0);
+    expect(r.log).toContain('npm NODE_OPTIONS=--use-system-ca');
+    expect(fs.readFileSync(path.join(fx.app, 'installer', 'node-options.txt'), 'utf16le').replace(/^\uFEFF/, '').trim()).toBe('--use-system-ca');
   }, 90_000);
 
   it('never asks anything: missing Node is a failure, nothing is touched', () => {

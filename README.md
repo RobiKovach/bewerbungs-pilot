@@ -49,6 +49,11 @@ Both warnings are normal for a free app from a single developer; neither means s
   Until Google verifies it, at most 100 people in total can sign in this way; if it stops working for you, use another
   mailbox (for example GMX or WEB.DE) or send the PDFs yourself.
 
+- **`SELF_SIGNED_CERT_IN_CHAIN`** while installing. *Why:* an antivirus that checks HTTPS (Avast, AVG, Kaspersky,
+  ESET, …) or a company proxy puts its own certificate into Windows, and older Node.js does not look there. From 0.12.3
+  the installer uses the Windows certificates (Node.js 22.15 or newer; with an older one it offers to install a newer
+  one for your Windows user). If it still fails, switch off "HTTPS scanning" in the antivirus for the installation.
+
 ## Screens
 
 | | |
@@ -70,6 +75,11 @@ The update banner has an **Update now** button (it really works from 0.12.1): th
 project's GitHub Releases, checks its checksum (published in `version.json`), saves a backup of your data, installs the new
 version and restarts. If anything fails, the old version keeps working and you are told why. If you have 0.12.0 or
 older, install 0.12.1 by hand once (download it from the banner or the Releases page); after that updates are one click.
+
+### What's new in 0.12.3
+
+- Installing and using the app now also works behind antivirus HTTPS scanning or a company proxy
+  (`SELF_SIGNED_CERT_IN_CHAIN`): Node.js uses the certificates Windows trusts.
 
 ### What's new in 0.12.2
 

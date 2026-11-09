@@ -2,6 +2,14 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.12.3
+
+- **Works behind antivirus HTTPS scanning and company proxies.** The installation stopped with
+  `SELF_SIGNED_CERT_IN_CHAIN` when an antivirus that checks HTTPS (or a company proxy) put its own certificate into
+  Windows: Node.js only knew its own list. The installer and the shortcut now start Node.js with
+  `--use-system-ca` (Node.js 22.15 or newer), so it trusts the certificates Windows trusts. With an older Node.js the
+  installer offers to install a newer one for your Windows user; your own Node.js stays.
+
 ## What's new in 0.12.2
 
 - Library updates (PDF making, translations, build tools). Nothing changes in how the app works. This is also the first version you can get with **Update now** from 0.12.1.

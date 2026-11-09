@@ -3,7 +3,7 @@
 ' 0.12.0: a "Starting..." tab opens at once (installer\starting.html with a one-time launch code); it moves to the
 ' app as soon as the server answers. If anything here fails, the server opens the browser itself, as before.
 Option Explicit
-Dim fso, sh, appDir, nodeExe, nodePathFile, f, code, page
+Dim fso, sh, appDir, nodeExe, nodePathFile, f, code, page, optFile, opt, savedOptions, optionsChanged
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set sh = CreateObject("WScript.Shell")
 appDir = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))
@@ -15,6 +15,25 @@ If fso.FileExists(nodePathFile) Then
   f.Close
 End If
 
+' 0.12.3: the installer writes node-options.txt when this Node can use Windows' certificate store (--use-system-ca),
+' so HTTPS works behind antivirus HTTPS scanning and company proxies. Only that one flag is taken; the server and
+' everything it starts inherit it. The person's own NODE_OPTIONS stay and are restored for the browser below.
+optFile = appDir & "\installer\node-options.txt"
+savedOptions = sh.Environment("PROCESS")("NODE_OPTIONS")
+optionsChanged = False
+If fso.FileExists(optFile) Then
+  On Error Resume Next
+  opt = ""
+  Set f = fso.OpenTextFile(optFile, 1, False, -1)
+  If Not f.AtEndOfStream Then opt = Trim(f.ReadLine)
+  f.Close
+  On Error GoTo 0
+  If opt = "--use-system-ca" And InStr(" " & savedOptions & " ", " --use-system-ca ") = 0 Then
+    sh.Environment("PROCESS")("NODE_OPTIONS") = Trim(savedOptions & " " & opt)
+    optionsChanged = True
+  End If
+End If
+
 code = NewCode()
 page = ""
 If code <> "" Then page = WriteStartingPage(code)
@@ -22,6 +41,13 @@ If page <> "" Then sh.Environment("PROCESS")("BP_LAUNCH_CODE") = code
 
 sh.CurrentDirectory = appDir
 sh.Run """" & nodeExe & """ """ & appDir & "\server\dist\index.js""", 0, False
+If optionsChanged Then
+  If savedOptions = "" Then
+    sh.Environment("PROCESS").Remove "NODE_OPTIONS"
+  Else
+    sh.Environment("PROCESS")("NODE_OPTIONS") = savedOptions
+  End If
+End If
 If page <> "" Then
   ' Only the server gets the code: a browser started below would otherwise keep it in its environment.
   sh.Environment("PROCESS").Remove "BP_LAUNCH_CODE"

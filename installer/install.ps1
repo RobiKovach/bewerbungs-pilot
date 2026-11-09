@@ -297,6 +297,29 @@ function New-BpShortcuts([string]$Dir) {
     $lnk.Save()
   }
 }
+# 0.12.3: Node with Windows' own certificate store (--use-system-ca, Node 22.15+ / 23.8+). Antivirus HTTPS scanning
+# and company proxies put their own root certificate into Windows; Node's built-in list does not know it, so npm (and
+# later the app's own HTTPS calls) failed with SELF_SIGNED_CERT_IN_CHAIN. True when this node accepts the flag.
+function Test-BpSystemCa([string]$Exe) {
+  if (-not $Exe -or -not (Test-Path -LiteralPath $Exe)) { return $false }
+  $saved = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = 'Continue'
+    & $Exe --use-system-ca -e "0" 2>$null | Out-Null
+    return ($LASTEXITCODE -eq 0)
+  } catch { return $false } finally { $ErrorActionPreference = $saved }
+}
+function Add-BpSystemCa {
+  # For npm below and everything this installer starts (the new app included). Never twice.
+  $current = [string]$env:NODE_OPTIONS
+  if ($current -notmatch '(^|\s)--use-system-ca(\s|$)') { $env:NODE_OPTIONS = ($current + ' --use-system-ca').Trim() }
+}
+function Write-BpNodeOptions([string]$AppDir, [bool]$SystemCa) {
+  # launch.vbs reads it, so the app started from the shortcut gets the same flag. Only this one flag is ever written.
+  $file = Join-Path $AppDir 'installer\node-options.txt'
+  if ($SystemCa) { Set-Content -LiteralPath $file -Value '--use-system-ca' -Encoding Unicode }
+  else { Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue }
+}
 function Find-BpUpdateNode([string]$AppDir) {
   # The node the installed app actually runs on comes first (launch.vbs reads the same file), then the usual search.
   try {
@@ -439,6 +462,8 @@ function Invoke-BpUnattendedUpdate {
       & $fail 'Node.js 22.12 or newer was not found (unattended mode does not download it)'
       return 1
     }
+    $useSystemCa = Test-BpSystemCa $nodeExe
+    if ($useSystemCa) { Add-BpSystemCa }
 
     # 2. Backup of the person's data. No backup, no update.
     $step = 'backup'
@@ -474,6 +499,7 @@ function Invoke-BpUnattendedUpdate {
       if ($npmExit -ne 0) { throw "npm ci exit code $npmExit $BpNpmTail".Trim() }
       # UTF-16 so launch.vbs can read paths with non-Latin letters.
       Set-Content -LiteralPath (Join-Path $AppDir 'installer\node-path.txt') -Value $nodeExe -Encoding Unicode
+      Write-BpNodeOptions $AppDir $useSystemCa
       # Shortcuts point to the same path as before: failing to write them is no reason to undo the update.
       try { & $CreateShortcuts $AppDir | Out-Null } catch { }
 
@@ -559,8 +585,22 @@ if ($MyInvocation.InvocationName -ne '.') {
     $NodeExe = Find-Node
     if (-not $NodeExe) { Say 'nodeInstallFailed'; Fail 'node not found after installation' }
   }
+  $UseSystemCa = Test-BpSystemCa $NodeExe
+  # 0.12.3: a Node older than 22.15 cannot use Windows' certificates; behind antivirus HTTPS scanning or a company
+  # proxy npm then fails. Offer our own newer Node next to it (the person's Node is not touched).
+  if (-not $UseSystemCa) {
+    if (Ask 'nodeOld') {
+      Say 'downloadingNode'
+      try {
+        Install-PortableNode
+        $portable = Join-Path $NodeHome 'node.exe'
+        if ((Test-Path -LiteralPath $portable) -and (Test-BpSystemCa $portable)) { $NodeExe = $portable; $UseSystemCa = $true }
+      } catch { Say 'nodeInstallFailed'; Write-Host $_.Exception.Message -ForegroundColor Yellow }
+    }
+  }
   # npm below must be the one that belongs to this node.
   $env:Path = (Split-Path -Parent $NodeExe) + ';' + $env:Path
+  if ($UseSystemCa) { Add-BpSystemCa }
 
   # 2. A browser for PDFs (Edge or Chrome). Only a warning: everything else works without it.
   Say 'checkingBrowser'
@@ -638,6 +678,7 @@ if ($MyInvocation.InvocationName -ne '.') {
   } finally { Pop-Location }
   # UTF-16 so launch.vbs can read paths with non-Latin letters.
   Set-Content -LiteralPath (Join-Path $AppDir 'installer\node-path.txt') -Value $NodeExe -Encoding Unicode
+  Write-BpNodeOptions $AppDir $UseSystemCa
   # A leftover of an earlier one-click update is of no use now (best effort).
   if (Test-Path -LiteralPath "$AppDir.previous") { try { Remove-Item -LiteralPath "$AppDir.previous" -Recurse -Force } catch { } }
 
