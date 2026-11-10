@@ -22,15 +22,15 @@
     "vitest": "5.0.5"
   },
   "dependencies": {
-    "@fastify/multipart": "^10.1.4",
-    "@fastify/static": "^10.1.6",
+    "@fastify/multipart": "^10.1.6",
+    "@fastify/static": "^10.1.7",
     "ajv": "^8.20.0",
     "fastify": "^5.12.7",
     "google-auth-library": "11.3.1",
     "mammoth": "^1.13.0",
-    "nodemailer": "^10.1.7",
+    "nodemailer": "^10.2.1",
     "pdf-lib": "^1.17.1",
-    "puppeteer-core": "^25.15.0",
+    "puppeteer-core": "^25.16.0",
     "unpdf": "1.9.1",
     "yauzl": "3.4.0",
     "yazl": "3.3.1"
