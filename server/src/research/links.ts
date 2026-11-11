@@ -15,19 +15,22 @@ export const APPLY_SERVICES: string[] = [
   'greenhouse.io', 'lever.co', 'empfehlungsbund.de', 'dvinci-hr.com', 'onlyfy.jobs', 'join.com', 'recruitee.com',
 ];
 
-/** Job boards: the vacancy is listed there, but the company lives elsewhere. */
+/** Job boards: the vacancy is listed there, but the company lives elsewhere. `name.*` = that name on any TLD. */
 export const JOB_BOARDS: string[] = [
-  'stepstone.de', 'indeed.com', 'indeed.de', 'itsax.de', 'get-in-it.de', 'remotely.de', 'jobvector.de', 'jobijoba.de',
-  'jooble.org', 'jobleads.com', 'wearedevelopers.com', 'xing.com', 'linkedin.com', 'arbeitsagentur.de', 'monster.de', 'kimeta.de',
+  'stepstone.*', 'indeed.*', 'itsax.de', 'get-in-it.de', 'remotely.de', 'jobvector.de', 'jobijoba.de',
+  'jooble.org', 'jobleads.com', 'wearedevelopers.com', 'xing.*', 'linkedin.*', 'arbeitsagentur.de', 'monster.de', 'kimeta.de',
 ];
 
-/** Social networks, maps, fonts, counters, consent tools, review sites: never a company site. `name.*` = any TLD. */
+/**
+ * Social networks, maps, fonts, counters, consent tools, review sites and the boards' own group sites: never a
+ * company site. `name.*` = that name on any TLD.
+ */
 export const IGNORED_HOSTS: string[] = [
   'google.*', 'googleapis.com', 'gstatic.com', 'googletagmanager.com', 'google-analytics.com', 'doubleclick.net', 'goo.gl',
   'apple.com', 'play.google.com', 'cookiebot.com', 'usercentrics.eu', 'onetrust.com', 'consentmanager.net',
   'youtube.com', 'youtu.be', 'vimeo.com', 'facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com',
   'pinterest.com', 'whatsapp.com', 't.me', 'openstreetmap.org', 'bing.com', 'hotjar.com', 'matomo.cloud', 'etracker.com',
-  'kununu.com', 'glassdoor.*', 'wikipedia.org',
+  'kununu.*', 'glassdoor.*', 'trustpilot.*', 'wikipedia.org', 'thestepstonegroup.com', 'stepstone.group',
 ];
 
 /** Mail providers anyone can use: their domain says nothing about the company. */
@@ -50,8 +53,12 @@ const KIND_RULES: Array<[PageKind, RegExp]> = [
   ['careers', /\bkarriere|\bcareers?\b|\bjobs?\b|\bstellen/],
   ['about', /über[\s_-]*uns|ueber[\s_-]*uns|\babout\b|\bunternehmen\b/],
 ];
+/** Privacy, cookie and terms pages: never a contact or job page, even when they mention applications. */
+const NOT_A_PAGE_KIND = /datenschutz|privacy|cookie|\bagb\b|nutzungsbedingungen/;
 
 const MAX_CANDIDATES = 6;
+/** Places kept for name guesses, so external links cannot push them all out. */
+const GUESS_SLOTS = 4;
 
 function hostMatches(host: string, list: string[]): boolean {
   const h = host.toLowerCase().replace(/\.$/, '');
@@ -88,8 +95,17 @@ export function siteOf(url: string): string {
 /** The address as a site to open: scheme and host only (port kept). */
 const originOf = (u: URL) => `${u.protocol}//${u.host.toLowerCase()}`;
 
+/** The path of a link (decoded; no host, no query, no `#…`); '' for anything that is not a URL. */
+function pathOf(href: string): string {
+  if (!URL.canParse(href)) return '';
+  const p = new URL(href).pathname;
+  try { return decodeURIComponent(p); } catch { return p; }
+}
+
+/** The kind of page a link leads to, from its text and its path only — never its host or its `#…` part. */
 export function pageKind(link: PageLink): PageKind | null {
-  const hay = `${link.text} ${link.href}`.toLowerCase();
+  const hay = `${link.text} ${pathOf(link.href)}`.toLowerCase();
+  if (NOT_A_PAGE_KIND.test(hay)) return null;
   for (const [kind, rule] of KIND_RULES) if (rule.test(hay)) return kind;
   return null;
 }
@@ -100,60 +116,114 @@ function coreName(company: string): string {
 }
 
 const UMLAUTS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
+const wordsOf = (s: string) => s.split(/[^a-z0-9]+/).filter((w) => w !== '');
 
+/** Slugs of the name: hyphenated, joined and — when the name has "&" — joined with "und" ("helmundwalter", R8). */
 export function companySlugs(company: string): string[] {
   const core = coreName(company).replace(/[äöüß]/g, (c) => UMLAUTS[c] ?? c);
-  const words = core.split(/[^a-z0-9]+/).filter((w) => w !== '');
+  const words = wordsOf(core);
   const joined = words.join('');
   if ((joined.match(/[a-z]/g) ?? []).length < 3 || GENERIC_NAMES.has(joined)) return [];
-  return words.length > 1 ? [words.join('-'), joined] : [joined];
+  if (words.length === 1) return [joined];
+  const slugs = [words.join('-'), joined];
+  if (core.includes('&')) {
+    const und = core.split('&').map((part) => wordsOf(part).join('')).filter((p) => p !== '').join('und');
+    if (und && !slugs.includes(und)) slugs.push(und);
+  }
+  return slugs;
 }
 
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Domain-like tokens (`isax.de`, `www.isax.com`, the part after `@`): a name inside them is no evidence. */
+const DOMAIN_TOKEN = /(?:www\.)?[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.[a-z]{2,}(?![\p{L}\p{N}])/gu;
+const LEGAL_AFTER = String.raw`\s*(?:gmbh|mbh|ag|se|kg|ug|e\.\s?v\.)(?![\p{L}\p{N}])`;
+/** Words of a legal notice: a one-word name standing shortly after one of them is the company itself. */
+const NOTICE = /impressum|angaben gem(?:ä|ae)(?:ß|ss) ?§ ?5|gesch(?:ä|ae)ftsf(?:ü|ue)hr|handelsregister/g;
+const NOTICE_WINDOW = 300;
+
+/**
+ * Does the page name the company (so a guessed or unchecked site may be used)? Whole words only, never inside a
+ * domain ("isax.de steht zum Verkauf" is no evidence). A one-word name ("iSAX", "Data") also needs its legal form
+ * right after it ("isax gmbh") or must stand within 300 characters after a legal-notice word (Impressum, Angaben
+ * gemäß § 5, Geschäftsführer, Handelsregister).
+ */
 export function nameOnPage(company: string, text: string): boolean {
   const core = coreName(company);
   if (companySlugs(company).length === 0 || core.length < 3) return false;
-  return text.toLowerCase().replace(/\s+/g, ' ').includes(core);
+  const hay = text.toLowerCase().replace(DOMAIN_TOKEN, ' ').replace(/\s+/g, ' ');
+  const word = String.raw`(?<![\p{L}\p{N}])${esc(core).replace(/ /g, '\\s')}(?![\p{L}\p{N}])`;
+  if (core.includes(' ')) return new RegExp(word, 'u').test(hay);
+  if (new RegExp(word + LEGAL_AFTER, 'u').test(hay)) return true;
+  const near = new RegExp(word, 'u');
+  for (const m of hay.matchAll(NOTICE)) {
+    const from = (m.index ?? 0) + m[0].length;
+    if (near.test(hay.slice(from, from + NOTICE_WINDOW))) return true;
+  }
+  return false;
 }
 
 /**
- * Where the company's own site may be, best first (spec 4.2 step 2): 1) a link from a job board or an apply service
- * to another, not ignored host; 2) the domain of a non-free e-mail; 3) the page itself when it is neither a board nor
- * an apply service; 4) guesses from the name (`https://www.<slug>.de`, `.com`) — the caller accepts a guess only when
- * the opened page names the company (`nameOnPage`). No repeats (compared without `www.`), at most 6.
+ * A possible company site (Ruling R7). `nameCheck: true` = not trusted yet: the caller (research collect, Task 6)
+ * must open it and use it only when `nameOnPage(company, text)` holds. `false` only for the page itself (rule 2.3)
+ * and for a linked or e-mail site whose host contains a slug of the company name.
  */
-export function websiteCandidates(input: { pageUrl: string; links: PageLink[]; emails: string[]; company: string }): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  const add = (site: string) => {
-    const key = siteOf(site);
-    if (!key || seen.has(key) || out.length >= MAX_CANDIDATES) return;
-    seen.add(key);
-    out.push(site);
-  };
+export interface WebsiteCandidate { url: string; nameCheck: boolean }
+
+/**
+ * Where the company's own site may be, best first (spec 4.2 step 2): linked or e-mail sites whose host contains a
+ * slug of the name; then the page itself when it is neither a board nor an apply service; then other links from a
+ * board or an apply service to a not ignored host and domains of non-free e-mails; then guesses from the name
+ * (`https://www.<slug>.de` for every slug, then `.com`). No repeats (compared without `www.`), at most 6, with up to
+ * 4 places kept for the guesses.
+ */
+export function websiteCandidates(input: { pageUrl: string; links: PageLink[]; emails: string[]; company: string }): WebsiteCandidate[] {
+  const slugs = companySlugs(input.company);
+  const hasSlug = (host: string) => slugs.some((s) => host.toLowerCase().includes(s));
   const page = webUrl(input.pageUrl);
   const pageHost = page?.hostname ?? '';
   const pageIsListing = page !== null && (isBoard(pageHost) || isApplyService(pageHost));
 
+  const found: Array<{ url: string; host: string }> = [];
   if (pageIsListing) {
     for (const l of input.links) {
       const u = webUrl(l.href);
       if (!u) continue;
       const h = u.hostname;
       if (siteOf(l.href) === siteOf(input.pageUrl) || isBoard(h) || isApplyService(h) || isIgnored(h)) continue;
-      add(originOf(u));
+      found.push({ url: originOf(u), host: h });
     }
   }
   for (const email of input.emails) {
     const domain = email.trim().toLowerCase().split('@')[1] ?? '';
     if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) continue;
     if (hostMatches(domain, FREE_MAIL) || isBoard(domain) || isApplyService(domain) || isIgnored(domain)) continue;
-    add(`https://${domain}`);
+    found.push({ url: `https://${domain}`, host: domain });
   }
-  if (page && !pageIsListing && !isIgnored(pageHost)) add(originOf(page));
-  for (const slug of companySlugs(input.company)) {
-    add(`https://www.${slug}.de`);
-    add(`https://www.${slug}.com`);
-  }
+
+  const ordered: WebsiteCandidate[] = [
+    ...found.filter((f) => hasSlug(f.host)).map((f) => ({ url: f.url, nameCheck: false })),
+    ...(page && !pageIsListing && !isIgnored(pageHost) ? [{ url: originOf(page), nameCheck: false }] : []),
+    ...found.filter((f) => !hasSlug(f.host)).map((f) => ({ url: f.url, nameCheck: true })),
+  ];
+  const guesses: WebsiteCandidate[] = [
+    ...slugs.map((s) => ({ url: `https://www.${s}.de`, nameCheck: true })),
+    ...slugs.map((s) => ({ url: `https://www.${s}.com`, nameCheck: true })),
+  ];
+
+  const out: WebsiteCandidate[] = [];
+  const seen = new Set<string>();
+  const take = (list: WebsiteCandidate[], limit: number) => {
+    for (const c of list) {
+      if (out.length >= limit) return;
+      const key = siteOf(c.url);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(c);
+    }
+  };
+  take(ordered, MAX_CANDIDATES - Math.min(GUESS_SLOTS, guesses.length));
+  take(guesses, MAX_CANDIDATES);
+  take(ordered, MAX_CANDIDATES);
   return out;
 }
 
