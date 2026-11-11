@@ -111,7 +111,7 @@ export function pageKind(link: PageLink): PageKind | null {
 }
 
 /** The name without its legal form (and dangling "&", commas), whitespace collapsed, lower case. */
-function coreName(company: string): string {
+export function coreName(company: string): string {
   return company.toLowerCase().replace(LEGAL_FORM, ' ').replace(/\s+/g, ' ').replace(/^[\s&,.-]+|[\s&,.-]+$/g, '').trim();
 }
 

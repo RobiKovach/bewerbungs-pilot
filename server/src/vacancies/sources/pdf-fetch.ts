@@ -1,10 +1,7 @@
-import dns from 'node:dns';
-import http, { type IncomingMessage } from 'node:http';
-import https from 'node:https';
-import type { LookupFunction } from 'node:net';
 import { countLetters, MIN_PDF_LETTERS, pdfBufferToText } from '../../profile/pdf-text.js';
 import { AppError } from '../../errors.js';
-import { checkPublicUrl, isPublicAddress, type Lookup } from './safe-address.js';
+import type { Lookup } from './safe-address.js';
+import { readBody, safeGet, SafeGetError, type Check, type SafeGetWhy } from './safe-get.js';
 
 export type PdfResult =
   | { ok: true; text: string; host: string }
@@ -15,17 +12,17 @@ export interface PdfFetcher {
   fetch(url: string, signal: AbortSignal, budgetMs?: number): Promise<PdfResult>;
 }
 
-type Check = typeof checkPublicUrl;
 type Log = (event: string, data: { host: string; result: 'ok' | PdfFail }) => void;
 type PdfFail = Extract<PdfResult, { ok: false }>['why'];
 
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
-const MAX_REDIRECTS = 5;
-const REDIRECTS = new Set([301, 302, 303, 307, 308]);
 const MAGIC = '%PDF-';
+/** What a failed safe GET means for a PDF link. */
+const PDF_WHY: Record<SafeGetWhy, PdfFail> = {
+  blocked: 'blocked', timeout: 'failed', tooBig: 'too-large', status: 'failed', content: 'not-pdf', network: 'failed',
+};
 const HEADERS = { 'user-agent': 'BewerbungsPilot', accept: 'application/pdf,*/*' };
 
-const defaultLookup: Lookup = async (host) => (await dns.promises.lookup(host, { all: true })).map((a) => a.address);
 const hostOf = (url: string) => { try { return new URL(url).hostname; } catch { return ''; } };
 
 /** A remote problem that ends the download with this result (thrown inside, caught in `fetchOnce`). */
@@ -64,16 +61,15 @@ export class HttpPdfFetcher implements PdfFetcher {
     const timer = setTimeout(() => { timedOut = true; stop.abort(); }, budgetMs);
     const onAbort = () => stop.abort();
     signal.addEventListener('abort', onAbort);
-    const state = { blocked: false };
     let result: PdfResult;
     try {
-      result = { ok: true, host, text: await this.download(url, stop.signal, state) };
+      result = { ok: true, host, text: await this.download(url, stop.signal) };
     } catch (err) {
       if (signal.aborted && !timedOut) {
         this.opts.log?.('vacancy.pdfRead', { host, result: 'failed' });
         throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
       }
-      const why: PdfFail = err instanceof Stop ? err.why : state.blocked ? 'blocked' : 'failed';
+      const why: PdfFail = err instanceof Stop ? err.why : 'failed';
       result = { ok: false, host, why };
     } finally {
       clearTimeout(timer);
@@ -83,82 +79,19 @@ export class HttpPdfFetcher implements PdfFetcher {
     return result;
   }
 
-  /** The DNS step of the connection: every address must be public, else it fails and the download is 'blocked'. */
-  private pinnedLookup(state: { blocked: boolean }): LookupFunction {
-    const resolve = this.opts.lookup ?? defaultLookup;
-    const isPublic = this.opts.isPublic ?? isPublicAddress;
-    return (hostname, options, cb) => {
-      resolve(hostname).then((addresses) => {
-        if (addresses.length === 0 || !addresses.every(isPublic)) {
-          state.blocked = true;
-          throw new Error('blocked: not a public address');
-        }
-        const all = addresses.map((address) => ({ address, family: address.includes(':') ? 6 : 4 }));
-        if (options.all) cb(null, all);
-        else cb(null, all[0].address, all[0].family);
-      }).catch((err: Error) => cb(err as NodeJS.ErrnoException, '', 0));
-    };
-  }
-
-  private async download(start: string, signal: AbortSignal, state: { blocked: boolean }): Promise<string> {
-    const check = this.opts.check ?? checkPublicUrl;
-    const lookup = this.pinnedLookup(state);
-    let url = start;
-    for (let hop = 0; ; hop++) {
-      if (!(await check(url)).ok) { state.blocked = true; throw new Stop('blocked'); }
-      const res = await get(url, lookup, signal);
-      const status = res.statusCode ?? 0;
-      if (REDIRECTS.has(status)) {
-        discard(res);
-        const location = res.headers.location;
-        if (hop >= MAX_REDIRECTS || typeof location !== 'string') throw new Stop('failed');
-        try { url = new URL(location, url).toString(); } catch { throw new Stop('failed'); }
-        continue;
-      }
-      if (status < 200 || status >= 300) { discard(res); throw new Stop('failed'); }
-      const bytes = await readPdfBody(res);
-      let text: string;
-      // pdf.js may take over the bytes it is given, so they are not used after this call.
-      try { text = await pdfBufferToText(bytes); } catch { throw new Stop('failed'); }
-      if (countLetters(text) < MIN_PDF_LETTERS) throw new Stop('no-text');
-      return text;
+  private async download(url: string, signal: AbortSignal): Promise<string> {
+    let bytes: Uint8Array;
+    try {
+      const res = await safeGet(url, { signal, headers: HEADERS, check: this.opts.check, lookup: this.opts.lookup, isPublic: this.opts.isPublic });
+      bytes = await readBody(res, { maxBytes: MAX_PDF_BYTES, prefix: MAGIC });
+    } catch (err) {
+      throw err instanceof SafeGetError ? new Stop(PDF_WHY[err.why]) : err;
     }
+    let text: string;
+    // pdf.js may take over the bytes it is given, so they are not used after this call.
+    try { text = await pdfBufferToText(bytes); } catch { throw new Stop('failed'); }
+    if (countLetters(text) < MIN_PDF_LETTERS) throw new Stop('no-text');
+    return text;
   }
 }
 
-/**
- * One GET without a shared agent (no reused connection, so every hop goes through `lookup`); the name is resolved
- * by `lookup` and the socket connects to exactly the address it hands back. TLS still checks the certificate of the name.
- */
-function get(url: string, lookup: LookupFunction, signal: AbortSignal): Promise<IncomingMessage> {
-  return new Promise((resolve, reject) => {
-    const lib = new URL(url).protocol === 'https:' ? https : http;
-    const req = lib.request(url, { method: 'GET', headers: HEADERS, lookup, agent: false, signal }, resolve);
-    req.on('error', reject);
-    req.end();
-  });
-}
-
-/** The body, at most MAX_PDF_BYTES; stops at once when the first bytes are not `%PDF-`. */
-async function readPdfBody(res: IncomingMessage): Promise<Uint8Array> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  let checked = false;
-  for await (const chunk of res as AsyncIterable<Buffer>) {
-    size += chunk.length;
-    if (size > MAX_PDF_BYTES) { discard(res); throw new Stop('too-large'); }
-    chunks.push(chunk);
-    if (!checked && size >= MAGIC.length) {
-      if (Buffer.concat(chunks).subarray(0, MAGIC.length).toString('latin1') !== MAGIC) { discard(res); throw new Stop('not-pdf'); }
-      checked = true;
-    }
-  }
-  if (!checked) throw new Stop('not-pdf');
-  return new Uint8Array(Buffer.concat(chunks, size));
-}
-
-/** Drops a response without reading it (closes its socket); a late error from it is of no interest. */
-function discard(res: IncomingMessage): void {
-  res.on('error', () => undefined);
-  res.destroy();
-}
