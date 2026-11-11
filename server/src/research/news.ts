@@ -76,5 +76,8 @@ export async function fetchNews(
     return null;
   }
   if (signal.aborted) throw cancelled();
-  return parseNewsRss(new TextDecoder().decode(bytes), new Date());
+  const xml = new TextDecoder().decode(bytes);
+  // A 200 that is not a feed (Google's consent or "unusual traffic" page) means the news could not be fetched.
+  if (!/<rss[\s>]/.test(xml) || !/<channel[\s>][\s\S]*<\/channel>/.test(xml)) return null;
+  return parseNewsRss(xml, new Date());
 }

@@ -85,13 +85,18 @@ describe('research news', () => {
     expect(opts).toMatchObject({ maxBytes: 1024 * 1024, timeoutMs: 10_000, signal, allowHosts: ['news.google.com'] });
   });
 
+  it('valid RSS with no items → [] (nothing found, not a failure)', async () => {
+    const empty = vi.fn<typeof safeGetBytes>(async () => bytes(rss()));
+    expect(await fetchNews('Symate GmbH', new AbortController().signal, empty)).toEqual([]);
+  });
+
   it('network error → null, cancel → LLM_CANCELLED', async () => {
     const failing = vi.fn<typeof safeGetBytes>(async () => { throw new SafeGetError('network'); });
     expect(await fetchNews('Symate GmbH', new AbortController().signal, failing)).toBeNull();
     const blocked = vi.fn<typeof safeGetBytes>(async () => { throw new SafeGetError('blocked'); });
     expect(await fetchNews('Symate GmbH', new AbortController().signal, blocked)).toBeNull();
     const garbage = vi.fn<typeof safeGetBytes>(async () => bytes('<html>nope</html>'));
-    expect(await fetchNews('Symate GmbH', new AbortController().signal, garbage)).toEqual([]);
+    expect(await fetchNews('Symate GmbH', new AbortController().signal, garbage)).toBeNull();
 
     const ctl = new AbortController();
     const slow = vi.fn<typeof safeGetBytes>((_url, opts) => new Promise((_, reject) => {
