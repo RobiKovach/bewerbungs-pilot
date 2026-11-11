@@ -134,10 +134,13 @@ test('a pasted job offer becomes an approved application package', async () => {
   await expect(approve).toBeEnabled({ timeout: 60_000 });
   await approve.click();
   await expect(page.getByRole('region', { name: 'History' }).getByRole('listitem').filter({ hasText: 'Approved' })).toBeVisible();
+  await page.getByRole('button', { name: /^Download/ }).click();
   const downloads = page.getByRole('group', { name: 'Download' });
-  for (const name of ['Cover letter (PDF)', 'CV (PDF)', 'Zeugnis Ausbildung (PDF)', 'Everything as one PDF']) {
+  for (const name of ['Cover letter (PDF)', 'CV (PDF)', 'Zeugnis Ausbildung (PDF)', /^Everything as one PDF/]) {
     await expect(downloads.getByRole('button', { name })).toBeVisible();
   }
+  await page.keyboard.press('Escape');
+  await expect(downloads).toBeHidden();
 });
 
 test('the package is sent by mail and marked as sent', async () => {

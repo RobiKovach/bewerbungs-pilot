@@ -401,7 +401,11 @@
       "letter": "Scrisoare de intenție (PDF)",
       "cv": "CV (PDF)",
       "attachment": "{{name}} (PDF)",
-      "bundle": "Totul într-un singur PDF"
+      "bundle": "Totul într-un singur PDF",
+      "bundleHint": "Scrisoarea, CV-ul și anexele împreună — așa cum le primește angajatorul",
+      "separately": "Separat",
+      "busy": "Se descarcă…",
+      "saveFirst": "Salvați mai întâi modificările — se descarcă versiunea salvată."
     },
     "approve": "Aprobă",
     "unapprove": "Înapoi la ciornă",

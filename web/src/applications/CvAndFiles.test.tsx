@@ -111,17 +111,40 @@ describe('Attachments tab and downloads', () => {
     const patch = f.mock.calls.find(([url]) => url === '/api/applications/app1/attachments');
     expect(JSON.parse(String(patch![1]!.body)).ids).toEqual([DOC.id, '33333333-2222-4333-8444-555555555555']);
   });
-  it('download buttons: letter, CV, each chosen attachment, everything as one PDF; errors are shown', async () => {
+  it('one Download menu: everything as one PDF first, then letter, CV and each chosen attachment; errors are shown', async () => {
     const spy = vi.mocked(download);
     const { user } = setup({}, appView({ attachments: [DOC] }));
-    const row = await screen.findByRole('group', { name: 'Download' });
-    await user.click(within(row).getByRole('button', { name: 'Cover letter (PDF)' }));
+    const toggle = await screen.findByRole('button', { name: /^Download/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('group', { name: 'Download' })).not.toBeInTheDocument();
+    await user.click(toggle);
+    let menu = screen.getByRole('group', { name: 'Download' });
+    const names = within(menu).getAllByRole('button').map((b) => b.textContent);
+    expect(names[0]).toMatch(/^Everything as one PDF/);
+    expect(names.slice(1)).toEqual(['Cover letter (PDF)', 'CV (PDF)', 'Zeugnis (PDF)']);
+    await user.click(within(menu).getByRole('button', { name: 'Cover letter (PDF)' }));
     expect(spy).toHaveBeenLastCalledWith('/api/applications/app1/pdf/letter', 'Anschreiben.pdf');
-    await user.click(within(row).getByRole('button', { name: 'Zeugnis (PDF)' }));
+    // A choice closes the menu.
+    expect(screen.queryByRole('group', { name: 'Download' })).not.toBeInTheDocument();
+    await user.click(toggle);
+    await user.click(within(screen.getByRole('group', { name: 'Download' })).getByRole('button', { name: 'Zeugnis (PDF)' }));
     expect(spy).toHaveBeenLastCalledWith(`/api/applications/app1/pdf/attachment/${DOC.id}`, 'Zeugnis.pdf');
     spy.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'ApiError' }));
-    await user.click(within(row).getByRole('button', { name: 'Everything as one PDF' }));
+    await user.click(toggle);
+    menu = screen.getByRole('group', { name: 'Download' });
+    await user.click(within(menu).getByRole('button', { name: /^Everything as one PDF/ }));
     expect(spy).toHaveBeenLastCalledWith('/api/applications/app1/pdf/bundle', 'Bewerbung.pdf');
     expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+  it('the Download menu closes on Escape (focus back on the button) and on a click outside', async () => {
+    const { user } = setup({}, appView({ attachments: [DOC] }));
+    const toggle = await screen.findByRole('button', { name: /^Download/ });
+    await user.click(toggle);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'Download' })).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+    await user.click(toggle);
+    await user.click(document.body);
+    expect(screen.queryByRole('group', { name: 'Download' })).not.toBeInTheDocument();
   });
 });

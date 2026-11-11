@@ -401,7 +401,11 @@
       "letter": "Cover letter (PDF)",
       "cv": "CV (PDF)",
       "attachment": "{{name}} (PDF)",
-      "bundle": "Everything as one PDF"
+      "bundle": "Everything as one PDF",
+      "bundleHint": "Letter, CV and attachments together — as the employer gets them",
+      "separately": "Separately",
+      "busy": "Downloading…",
+      "saveFirst": "Save your changes first — downloads use the saved version."
     },
     "approve": "Approve",
     "unapprove": "Back to draft",

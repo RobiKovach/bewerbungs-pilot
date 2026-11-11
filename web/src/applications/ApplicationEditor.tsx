@@ -12,6 +12,7 @@ import { ContactDialog } from './ContactDialog';
 import { CvTab } from './CvTab';
 import { isStale } from './dialog';
 import { download } from './download';
+import { DownloadMenu } from './DownloadMenu';
 import { isFrozen } from './format';
 import { FollowUpNotice } from './FollowUpNotice';
 import { HistoryBlock } from './HistoryBlock';
@@ -194,13 +195,21 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {tab === 'cv' ? <CvTab key={a.updatedAt} view={view} locked={locked} frozen={frozen} busy={busy} onView={setView} onDirty={setCvDirty} onUnsaved={setCvUnsaved} onRefresh={(keepProfil, keepHeadline) => void job.start(() => api.refreshCv(id, keepProfil, keepHeadline))} /> : null}
       {tab === 'attachments' ? <AttachmentsTab view={view} locked={locked} onView={setView} /> : null}
 
-      <div className="btn-row downloads" role="group" aria-label={t('applications.download.title')}>
-        <button type="button" className="btn ghost" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'letter'), 'Anschreiben.pdf')}>{t('applications.download.letter')}</button>
-        <button type="button" className="btn ghost" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'cv'), 'Lebenslauf.pdf')}>{t('applications.download.cv')}</button>
-        {view.attachments.filter((x) => x.selected && !x.missing).map((x) => (
-          <button key={x.id} type="button" className="btn ghost" disabled={downloading || dirty} onClick={() => void save(api.attachmentUrl(id, x.id), `${x.label || 'Anlage'}.pdf`)}>{t('applications.download.attachment', { name: x.label })}</button>
-        ))}
-        <button type="button" className="btn" disabled={downloading || dirty} onClick={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}>{t('applications.download.bundle')}</button>
+      <div className="downloads">
+        <DownloadMenu
+          disabled={dirty}
+          busy={downloading}
+          bundle={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}
+          separate={[
+            { key: 'letter', label: t('applications.download.letter'), onPick: () => void save(api.pdfUrl(id, 'letter'), 'Anschreiben.pdf') },
+            { key: 'cv', label: t('applications.download.cv'), onPick: () => void save(api.pdfUrl(id, 'cv'), 'Lebenslauf.pdf') },
+            ...view.attachments.filter((x) => x.selected && !x.missing).map((x) => ({
+              key: `att-${x.id}`, label: t('applications.download.attachment', { name: x.label }),
+              onPick: () => void save(api.attachmentUrl(id, x.id), `${x.label || 'Anlage'}.pdf`),
+            })),
+          ]}
+        />
+        {dirty ? <span className="muted download-menu__note">{t('applications.download.saveFirst')}</span> : null}
       </div>
 
       {a.sentEmail ? (

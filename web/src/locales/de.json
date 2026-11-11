@@ -401,7 +401,11 @@
       "letter": "Anschreiben (PDF)",
       "cv": "Lebenslauf (PDF)",
       "attachment": "{{name}} (PDF)",
-      "bundle": "Alles als eine PDF"
+      "bundle": "Alles als eine PDF",
+      "bundleHint": "Anschreiben, Lebenslauf und Anlagen zusammen — so, wie der Arbeitgeber sie bekommt",
+      "separately": "Einzeln",
+      "busy": "Wird heruntergeladen…",
+      "saveFirst": "Speichern Sie zuerst Ihre Änderungen — heruntergeladen wird die gespeicherte Fassung."
     },
     "approve": "Freigeben",
     "unapprove": "Zurück zum Entwurf",

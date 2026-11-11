@@ -401,7 +401,11 @@
       "letter": "List motywacyjny (PDF)",
       "cv": "CV (PDF)",
       "attachment": "{{name}} (PDF)",
-      "bundle": "Wszystko w jednym PDF"
+      "bundle": "Wszystko w jednym PDF",
+      "bundleHint": "List, CV i załączniki razem — tak, jak dostanie je pracodawca",
+      "separately": "Osobno",
+      "busy": "Pobieram…",
+      "saveFirst": "Najpierw zapisz zmiany — pobierana jest zapisana wersja."
     },
     "approve": "Zatwierdź",
     "unapprove": "Wróć do wersji roboczej",

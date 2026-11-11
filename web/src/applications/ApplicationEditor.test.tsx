@@ -184,11 +184,10 @@ describe('ApplicationEditor — letter', () => {
   it('downloads wait while there are unsaved edits (they use the saved state)', async () => {
     const { user } = setup({});
     await user.type(await screen.findByLabelText('Subject'), 'X');
-    expect(screen.getByRole('button', { name: 'Cover letter (PDF)' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'CV (PDF)' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Everything as one PDF' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Download/ })).toBeDisabled();
+    expect(screen.getByText('Save your changes first — downloads use the saved version.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Discard changes' }));
-    expect(screen.getByRole('button', { name: 'Everything as one PDF' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^Download/ })).toBeEnabled();
   });
 
   it('LETTER_TOO_LONG from approve reloads the package so the red page mark shows', async () => {
@@ -253,6 +252,7 @@ describe('ApplicationEditor — sending and the frozen package', () => {
       expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
     }
     expect(screen.getByRole('button', { name: 'Delete package' })).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: /^Download/ }));
     expect(screen.getByRole('button', { name: 'Cover letter (PDF)' })).toBeEnabled();
     await user.click(screen.getByRole('tab', { name: 'CV' }));
     expect(screen.queryByRole('button', { name: 'Update CV' })).not.toBeInTheDocument();

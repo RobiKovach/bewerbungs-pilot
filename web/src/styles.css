@@ -213,7 +213,18 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .app-actions { margin-top: 1rem; }
 @media (prefers-color-scheme: dark) { .error-text { color: #f4a49b; } }
 .attachment-list { list-style: none; padding: 0; display: grid; gap: 0.4rem; }
-.downloads { margin-top: 1rem; }
+.downloads { margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.download-menu { position: relative; display: inline-block; }
+.download-menu__panel { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 17rem; max-width: min(24rem, calc(100vw - 32px));
+  display: grid; padding: 0.35rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); }
+.download-menu__item { display: grid; gap: 0.1rem; text-align: left; font: inherit; color: var(--text); background: transparent; border: 0;
+  border-radius: 7px; padding: 0.5rem 0.65rem; cursor: pointer; }
+.download-menu__item:hover, .download-menu__item:focus-visible { background: var(--bg); }
+.download-menu__item--main > span:first-child { font-weight: 600; }
+.download-menu__hint { font-size: 0.85rem; }
+.download-menu__sep { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.55rem 0.65rem 0.2rem;
+  border-top: 1px solid var(--border); margin-top: 0.3rem; }
+.download-menu__note { font-size: 0.9rem; }
 
 /* The links editor (LinksField.tsx) spans the whole form row and looks like the other fields. */
 .links-field { border: 0; padding: 0; margin: 0; min-width: 0; }
