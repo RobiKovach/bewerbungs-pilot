@@ -137,12 +137,26 @@ export function emptyContact(): VacancyContact {
 }
 
 export function parseContact(text: string): ParsedContact {
+  return fromText(text, false) ?? { contact: emptyContact(), found: [] };
+}
+
+/**
+ * Only the page's contact block (the AA "Kontaktadresse" block, or the part after a "Kontakt"/"Ansprechpartner"
+ * heading that holds a contact) \u2014 never the rest of the page; null when the page has no such block. For pages whose
+ * other text is not the employer's (a job board's header, footer and hotline).
+ */
+export function parseContactBlock(text: string): VacancyContact | null {
+  return fromText(text, true)?.contact ?? null;
+}
+
+function fromText(text: string, blockOnly: boolean): ParsedContact | null {
   const t = text.replace(/\r\n?/g, '\n').replace(/\u00a0/g, ' ');
   const found = findBlock(t);
+  if (blockOnly && !found) return null;
   const block = found?.block ?? '';
 
-  const email = (block && firstEmail(block)) || firstEmail(t);
-  const phone = (block && firstPhone(block)) || firstPhone(t);
+  const email = (block && firstEmail(block)) || (blockOnly ? '' : firstEmail(t));
+  const phone = (block && firstPhone(block)) || (blockOnly ? '' : firstPhone(t));
 
   let salutation: Salutation = '';
   let name: string;

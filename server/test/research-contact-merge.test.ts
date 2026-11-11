@@ -37,6 +37,18 @@ describe('research contact: merge without overwriting', () => {
     expect(named.auto).toEqual([]);
   });
 
+  it('a found name whose salutation contradicts the card goes to differing; the card keeps its salutation', () => {
+    const r = mergeContact({ ...empty, salutation: 'Herr' }, { ...empty, name: 'Erika Muster', salutation: 'Frau', email: 'jobs@firma.de' }, undefined);
+    expect(r.contact).toMatchObject({ salutation: 'Herr', name: '', email: 'jobs@firma.de' });
+    expect(r.differing).toEqual({ name: 'Erika Muster', salutation: 'Frau' });
+    expect(r.auto).toEqual(['email']);
+    // Same salutation on the card: the name is filled, the salutation stays the person's own (not marked auto).
+    const same = mergeContact({ ...empty, salutation: 'Frau' }, { ...empty, name: 'Erika Muster', salutation: 'Frau' }, undefined);
+    expect(same.contact).toMatchObject({ salutation: 'Frau', name: 'Erika Muster' });
+    expect(same.auto).toEqual(['name']);
+    expect(same.differing).toEqual({});
+  });
+
   it('nothing found and nothing there → null contact', () => {
     expect(mergeContact(null, empty, undefined)).toEqual({ contact: null, auto: [], differing: {} });
   });
@@ -88,13 +100,43 @@ describe('research contact: from pages', () => {
     expect(contactFromPages(onlyInfo, 'https://firma.de').email).toBe('info@firma.de');
   });
 
-  it('takes the name from the vacancy page before the Impressum, and nothing at all from no pages', () => {
+  it('ITsax: name and phone from the ad’s contact block on the board, e-mail and address from the company site', () => {
     const pages = [
-      page({ url: 'https://firma.de/impressum', kind: 'impressum', text: 'Geschäftsführer: Herr Hans Chef\nE-Mail: info@firma.de' }),
-      page({ url: 'https://www.itsax.de/jobs/1', kind: 'vacancy', text: 'Ihr Ansprechpartner\nHerr Martin Juhrisch\nTel.: +49 351 82126-300' }),
+      page({ url: 'https://symate.de/impressum', kind: 'impressum', text: 'Geschäftsführer: Herr Hans Chef\nSymate GmbH\nAm Lagerplatz 8\n01099 Dresden\nE-Mail: info@symate.de' }),
+      page({
+        url: 'https://www.itsax.de/jobs/1', kind: 'vacancy',
+        text: 'itsax.de – Jobs in Sachsen\nSoftwareentwickler (m/w/d)\nIhr Ansprechpartner\nHerr Martin Juhrisch\nTel.: +49 351 82126-300\n\nFußzeile\nitsax.de\nHauptstraße 1\n01097 Dresden',
+      }),
     ];
-    const c = contactFromPages(pages, 'https://firma.de');
-    expect(c).toMatchObject({ name: 'Martin Juhrisch', salutation: 'Herr', phone: '+49 351 82126-300', email: 'info@firma.de' });
-    expect(contactFromPages([], 'https://firma.de')).toEqual(empty);
+    const c = contactFromPages(pages, 'https://symate.de');
+    expect(c).toEqual({ ...empty, name: 'Martin Juhrisch', salutation: 'Herr', phone: '+49 351 82126-300', email: 'info@symate.de', street: 'Am Lagerplatz 8', postcode: '01099', city: 'Dresden' });
+    expect(contactFromPages([], 'https://symate.de')).toEqual(empty);
+  });
+
+  it('a name only in the Impressum (managing director) or on a news page is never taken', () => {
+    const pages = [page({ url: 'https://firma.de/impressum', kind: 'impressum', text: 'Geschäftsführer: Herr Hans Chef\nE-Mail: info@firma.de' })];
+    expect(contactFromPages(pages, 'https://firma.de')).toMatchObject({ name: '', salutation: '', email: 'info@firma.de' });
+    const news = [page({ url: 'https://firma.de/news/1', kind: 'news', text: 'Ansprechpartner: Frau Eva Presse\nE-Mail: presse@firma.de' })];
+    expect(contactFromPages(news, 'https://firma.de')).toMatchObject({ name: '', email: '' });
+  });
+
+  it('a board page without a contact block gives no phone and no address (hotline in the footer)', () => {
+    const pages = [page({
+      url: 'https://www.stepstone.de/job/1', kind: 'vacancy',
+      text: 'Senior Entwickler (m/w/d)\nWir freuen uns auf Sie.\nHotline: Tel. 0800 1234567\nStepStone Deutschland GmbH\nVölklinger Straße 1\n40219 Düsseldorf',
+      links: [{ text: '0800 1234567', href: 'tel:08001234567' }],
+    })];
+    expect(contactFromPages(pages, 'https://firma.de')).toEqual(empty);
+  });
+
+  it('the company’s own domain (or a subdomain) wins over an agency e-mail in the footer', () => {
+    const pages = [page({
+      url: 'https://firma.de/karriere', kind: 'careers',
+      text: 'Karriere\nBewerbung an jobs@firma.de\nWebdesign: info@agentur.de',
+      links: [mailto('info@agentur.de'), mailto('jobs@firma.de')],
+    })];
+    expect(contactFromPages(pages, 'https://firma.de').email).toBe('jobs@firma.de');
+    const sub = [page({ url: 'https://firma.de/karriere', kind: 'careers', links: [mailto('bewerbung@agentur.de'), mailto('info@karriere.firma.de')] })];
+    expect(contactFromPages(sub, 'https://firma.de').email).toBe('info@karriere.firma.de');
   });
 });

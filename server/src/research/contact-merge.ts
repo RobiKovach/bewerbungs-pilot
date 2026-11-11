@@ -1,5 +1,5 @@
 import type { ContactField, VacancyContact } from '@bp/shared';
-import { emptyContact, parseContact } from '../vacancies/contact-parse.js';
+import { emptyContact, parseContact, parseContactBlock } from '../vacancies/contact-parse.js';
 import type { PageLink } from '../vacancies/sources/page-reader.js';
 import { VACANCY_LIMITS } from '../vacancies/schema.js';
 import { isApplyService, isBoard, siteOf, type PageKind } from './links.js';
@@ -19,7 +19,10 @@ const PER_PAGE = 5;
 
 /** The vacancy and apply pages say whom to write to; the Impressum has the legal (general) address. */
 const CONTACT_ORDER: Record<PageKind, number> = { vacancy: 0, apply: 0, contact: 1, impressum: 2, careers: 3, about: 3, home: 3, news: 4 };
-/** The address comes from the legal notice first: a vacancy page's address is often the work place, not the office. */
+/**
+ * The address comes from the legal notice first (Ruling R9): a vacancy page's address is often the work place, not
+ * the office. Never from a job board's own pages.
+ */
 const ADDRESS_ORDER: Record<PageKind, number> = { impressum: 0, contact: 1, vacancy: 2, apply: 2, careers: 3, about: 3, home: 3, news: 4 };
 
 const EMAIL = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
@@ -27,6 +30,9 @@ const EMAIL_ONLY = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const NEVER_LOCAL = /^(?:privacy|datenschutz|no-?reply|do-?not-?reply|donotreply|webmaster)$/i;
 const RECRUITING_LOCAL = /bewerbung|jobs?|karriere|career|^hr$|^hr[._-]|personal/i;
 const GENERAL_LOCAL = /^(?:info|kontakt|contact|office|mail|hallo|hello)$/i;
+
+/** Pages that may name the person to write to (Ruling R10): an Impressum names the managing director, not the recruiter. */
+const NAME_KINDS = new Set<PageKind>(['vacancy', 'apply', 'contact']);
 
 const clip = (s: string, max: number) => s.trim().slice(0, max);
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -79,19 +85,41 @@ function pageEmails(p: FoundPage, site: string): string[] {
   return out.slice(0, PER_PAGE);
 }
 
-/** Recruiting boxes before personal or other ones, general boxes (info@, kontakt@) last. */
-function emailRank(email: string): number {
-  const local = email.slice(0, email.lastIndexOf('@'));
-  if (RECRUITING_LOCAL.test(local)) return 0;
-  return GENERAL_LOCAL.test(local) ? 2 : 1;
+/** The company site's own domain or a subdomain of it (`site`: `https://host` without www.). */
+function ownDomain(email: string, site: string): boolean {
+  const host = site.replace(/^https:\/\//, '');
+  const domain = email.slice(email.lastIndexOf('@') + 1).replace(/^www\./, '');
+  return host !== '' && (domain === host || domain.endsWith(`.${host}`));
 }
 
-/** Up to PER_PAGE numbers of one page: `tel:` links (not on a board's own pages), then the labelled number of the text. */
+/**
+ * Within one page: the company's own domain before any other (a footer "Webdesign: info@agentur.de" is not the
+ * employer), then recruiting boxes before personal or other ones, general boxes (info@, kontakt@) last.
+ */
+function emailRank(email: string, site: string): number {
+  const local = email.slice(0, email.lastIndexOf('@'));
+  const kind = RECRUITING_LOCAL.test(local) ? 0 : GENERAL_LOCAL.test(local) ? 2 : 1;
+  return (ownDomain(email, site) ? 0 : 10) + kind;
+}
+
+/** A job board's own page (not the company site): its header, footer and hotline are not the employer's. */
+const onBoard = (p: FoundPage, site: string) => isBoard(hostOf(p.url)) && siteOf(p.url) !== site;
+
+/**
+ * What the text of a page says about the contact: on a board's own page only the ad's contact block (Ruling R11),
+ * elsewhere the whole page.
+ */
+const parsedOf = (p: FoundPage, site: string): VacancyContact | null =>
+  onBoard(p, site) ? parseContactBlock(p.text) : parseContact(p.text).contact;
+
+/**
+ * Up to PER_PAGE numbers of one page: `tel:` links (not on a board's own pages), then the labelled number of the
+ * text (on a board page: only from the ad's contact block).
+ */
 function pagePhones(p: FoundPage, site: string): string[] {
   const out: string[] = [];
-  const onBoard = isBoard(hostOf(p.url)) && siteOf(p.url) !== site;
-  if (!onBoard) for (const l of p.links) if (/^tel:/i.test(l.href)) { const n = telNumber(l.href); if (n && !out.some((x) => digits(x) === digits(n))) out.push(n); }
-  const fromText = parseContact(p.text).contact.phone;
+  if (!onBoard(p, site)) for (const l of p.links) if (/^tel:/i.test(l.href)) { const n = telNumber(l.href); if (n && !out.some((x) => digits(x) === digits(n))) out.push(n); }
+  const fromText = parsedOf(p, site)?.phone ?? '';
   if (fromText && !out.some((x) => digits(x) === digits(fromText))) out.push(fromText);
   return out.slice(0, PER_PAGE);
 }
@@ -105,23 +133,25 @@ const byOrder = (order: Record<PageKind, number>, pages: FoundPage[]) =>
 
 /**
  * The contact found on `pages` (`site`: the company site key, `siteOf`). E-mail and phone come from the most
- * relevant page that has one (vacancy/apply → contact → Impressum → others); on that page a recruiting box wins over
- * info@. The name too; the address from the Impressum first.
+ * relevant page that has one (vacancy/apply → contact → Impressum → others; never e-mails from news pages); on that
+ * page the company's own domain and a recruiting box win. The name only from vacancy/apply/contact pages (R10), on a
+ * board page only from the ad's contact block (R11); the address from the Impressum first, never from a board page.
  */
 export function contactFromPages(pages: FoundPage[], site: string): VacancyContact {
   const c = emptyContact();
   for (const p of byOrder(CONTACT_ORDER, pages)) {
-    if (!c.email) {
+    if (!c.email && p.kind !== 'news') {
       const emails = pageEmails(p, site);
-      if (emails.length) c.email = [...emails].sort((a, b) => emailRank(a) - emailRank(b))[0];
+      if (emails.length) c.email = [...emails].sort((a, b) => emailRank(a, site) - emailRank(b, site))[0];
     }
     if (!c.phone) c.phone = pagePhones(p, site)[0] ?? '';
-    if (!c.name) {
-      const parsed = parseContact(p.text).contact;
-      if (parsed.name) { c.name = parsed.name; c.salutation = parsed.salutation; }
+    if (!c.name && NAME_KINDS.has(p.kind)) {
+      const parsed = parsedOf(p, site);
+      if (parsed?.name) { c.name = parsed.name; c.salutation = parsed.salutation; }
     }
   }
   for (const p of byOrder(ADDRESS_ORDER, pages)) {
+    if (onBoard(p, site)) continue;
     const a = parseContact(p.text).contact;
     if (a.street || a.postcode) { c.street = a.street; c.postcode = a.postcode; c.city = a.city; break; }
   }
@@ -140,7 +170,8 @@ function same(field: ContactField, a: string, b: string): boolean {
 /**
  * Joins a found contact into the card's: only empty fields are filled (and marked as found automatically); a filled
  * field is never changed — a different found value is returned in `differing` for the person to take or leave.
- * The salutation is filled only together with a name that was filled here. All fields empty → `contact: null`.
+ * The salutation is filled only together with a name that was filled here, and never replaces one the card has; a
+ * found name whose salutation contradicts the card's goes to `differing` instead. All fields empty → `contact: null`.
  */
 export function mergeContact(current: VacancyContact | null, found: VacancyContact, auto: ContactField[] | undefined): {
   contact: VacancyContact | null; auto: ContactField[]; differing: Partial<VacancyContact>;
@@ -152,10 +183,14 @@ export function mergeContact(current: VacancyContact | null, found: VacancyConta
     if (f === 'salutation') continue;
     const v = found[f];
     if (!v) continue;
-    if (next[f] === '') {
+    if (f === 'name' && next.name === '' && next.salutation !== '' && found.salutation !== '' && next.salutation !== found.salutation) {
+      // The person's "Herr" never sits next to a found "Frau X": offer the found pair instead.
+      differing.name = v;
+      differing.salutation = found.salutation;
+    } else if (next[f] === '') {
       next[f] = v;
       marked.add(f);
-      if (f === 'name' && found.salutation) { next.salutation = found.salutation; marked.add('salutation'); }
+      if (f === 'name' && found.salutation && next.salutation === '') { next.salutation = found.salutation; marked.add('salutation'); }
     } else if (!same(f, next[f], v)) {
       (differing as Record<string, string>)[f] = v;
       if (f === 'name' && found.salutation) differing.salutation = found.salutation;
