@@ -177,3 +177,61 @@ describe('research collect', () => {
       .rejects.toMatchObject({ code: 'BROWSER_MISSING' });
   });
 });
+
+describe('research collect — fix round 1', () => {
+  it('a malformed mailto does not break the research; a list of addresses gives the first', async () => {
+    const f = fakeReader({
+      'https://www.itsax.de/stellen/123': page('https://www.itsax.de/stellen/123', 'Webentwickler bei Symate GmbH',
+        [['Mail', 'mailto:%E0@x.de'], ['Bewerbung', 'mailto:jobs@symate.de,b@y.de']]),
+      'https://symate.de': page('https://symate.de', 'Symate GmbH'),
+    });
+    const out = await collect(input(), 'contact', { reader: f.reader, fetchNews: noNews, now: f.clock }, new AbortController().signal);
+    expect(out.website).toBe('https://symate.de');
+    expect(f.opened.some((u) => u.includes('y.de') && !u.includes('symate'))).toBe(false);
+  });
+
+  it('an unreadable Impressum does not block a second Impressum link', async () => {
+    const f = fakeReader({
+      'https://www.symate.de/stellen/1': page('https://www.symate.de/stellen/1', 'Symate GmbH',
+        [['Impressum', 'https://www.symate.de/impressum'], ['Impressum', 'https://www.symate.de/de/impressum']]),
+      'https://www.symate.de/impressum': 'fail',
+      'https://www.symate.de/de/impressum': page('https://www.symate.de/de/impressum', 'Impressum Symate GmbH E-Mail: info@symate.de'),
+    });
+    const out = await collect(input({ vacancyUrl: 'https://www.symate.de/stellen/1' }), 'contact',
+      { reader: f.reader, fetchNews: noNews, now: f.clock }, new AbortController().signal);
+    expect(f.opened).toEqual(['https://www.symate.de/stellen/1', 'https://www.symate.de/impressum', 'https://www.symate.de/de/impressum']);
+    expect(out.pages.map((p) => p.kind)).toEqual(['vacancy', 'impressum']);
+  });
+
+  it('a missing browser means no news request at all', async () => {
+    const news = vi.fn(async () => null);
+    const reader: PageReader = { read: async () => '', session: async () => { throw new AppError('BROWSER_MISSING', 'none'); } };
+    await expect(collect(input(), 'full', { reader, fetchNews: news as unknown as typeof fetchNews, now: () => NOW }, new AbortController().signal))
+      .rejects.toMatchObject({ code: 'BROWSER_MISSING' });
+    expect(news).not.toHaveBeenCalled();
+  });
+
+  it('news gets its own signal, aborted when the research ends with an error', async () => {
+    let newsSignal: AbortSignal | null = null;
+    const news = vi.fn((_c: string, s: AbortSignal) => { newsSignal = s; return new Promise<null>(() => undefined); });
+    const ctrl = new AbortController();
+    const f = fakeReader(ITSAX, { onOpen: () => ctrl.abort() });
+    await expect(collect(input(), 'full', { reader: f.reader, fetchNews: news as unknown as typeof fetchNews, now: f.clock }, ctrl.signal))
+      .rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+    expect(newsSignal).not.toBeNull();
+    expect(newsSignal!.aborted).toBe(true);
+  });
+
+  it('the address a page redirected to is not opened again', async () => {
+    const f = fakeReader({
+      'https://www.symate.de/stellen/1': page('https://www.symate.de/stellen/1', 'Symate GmbH',
+        [['Kontakt', 'https://www.symate.de/kontakt'], ['Impressum', 'https://www.symate.de/impressum-alt']]),
+      'https://www.symate.de/impressum-alt': page('https://www.symate.de/kontakt', 'Kontakt Symate GmbH',
+        [['Kontakt', 'https://www.symate.de/kontakt']]),
+      'https://www.symate.de/kontakt': page('https://www.symate.de/kontakt', 'Kontakt Symate GmbH'),
+    });
+    await collect(input({ vacancyUrl: 'https://www.symate.de/stellen/1' }), 'contact',
+      { reader: f.reader, fetchNews: noNews, now: f.clock }, new AbortController().signal);
+    expect(f.opened).toEqual(['https://www.symate.de/stellen/1', 'https://www.symate.de/impressum-alt']);
+  });
+});

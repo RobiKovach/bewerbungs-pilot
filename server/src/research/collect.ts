@@ -2,7 +2,7 @@ import type { ResearchNews, ResearchSource, VacancyContact } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { isAaHost } from '../vacancies/aa-links.js';
 import type { PageLink, PageReader, ReadSession } from '../vacancies/sources/page-reader.js';
-import { contactFromPages, type FoundPage } from './contact-merge.js';
+import { contactFromPages, mailtoAddress, type FoundPage } from './contact-merge.js';
 import { nameOnPage, nextPages, siteOf, websiteCandidates, type PageKind } from './links.js';
 import type { fetchNews as FetchNews } from './news.js';
 
@@ -49,9 +49,8 @@ function safeLinks(links: PageLink[]): PageLink[] {
 }
 
 function emailsOf(page: FoundPage): string[] {
-  const fromLinks = page.links
-    .filter((l) => l.href.toLowerCase().startsWith('mailto:'))
-    .map((l) => decodeURIComponent(l.href.slice(7).split('?')[0] ?? ''));
+  // The same safe reading as the contact (a malformed `%..` never throws; a list gives its first address).
+  const fromLinks = page.links.filter((l) => /^mailto:/i.test(l.href)).map((l) => mailtoAddress(l.href));
   return [...new Set([...fromLinks, ...(page.text.match(EMAIL) ?? [])].map((e) => e.trim().toLowerCase()).filter((e) => e))];
 }
 
@@ -67,9 +66,12 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
   if (signal.aborted) throw cancelled();
   const deadline = deps.now().getTime() + COLLECT_BUDGET_MS;
 
-  // News run beside the page reading; a rejection (only LLM_CANCELLED) is held until it is awaited.
-  const newsTask: Promise<ResearchNews[] | null> | null = mode === 'full' ? deps.fetchNews(input.company, signal) : null;
-  newsTask?.catch(() => undefined);
+  // News run beside the page reading, but only once a browser exists (no browser → nothing leaves the PC), under
+  // their own signal: when the research ends — fine or not — a still running news request is stopped.
+  const newsStop = new AbortController();
+  const stopNews = () => newsStop.abort();
+  signal.addEventListener('abort', stopNews, { once: true });
+  let newsTask: Promise<ResearchNews[] | null> | null = null;
 
   const pages: FoundPage[] = [];
   const opened = new Set<string>();
@@ -88,6 +90,7 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
     try {
       const read = await session.open(url);
       if (signal.aborted) throw cancelled();
+      if (read.url) opened.add(read.url); // a redirect target is never opened again
       const page: FoundPage = { url: read.url || url, kind, text: read.text, links: safeLinks(read.links) };
       pages.push(page);
       return page;
@@ -104,6 +107,10 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
   let website = '';
   try {
     session = await deps.reader.session(signal, deadline);
+    if (mode === 'full') {
+      newsTask = deps.fetchNews(input.company, newsStop.signal);
+      newsTask.catch(() => undefined); // held until awaited below; never an unhandled rejection
+    }
 
     // 1. The vacancy page — or, for Arbeitsagentur, the employer's partner page.
     let firstUrl = '';
@@ -137,8 +144,8 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
       const links = pages.flatMap((p) => p.links);
       const next = nextPages(website, links, opened).find((n) => !seenKinds.has(n.kind));
       if (!next) break;
-      seenKinds.add(next.kind);
-      await open(next.url, next.kind);
+      // A kind counts as done only when its page was read: a broken first Impressum link leaves room for a second.
+      if (await open(next.url, next.kind)) seenKinds.add(next.kind);
     }
 
     const news = newsTask ? await newsTask : null;
@@ -149,6 +156,8 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
     ];
     return { website, pages, contact: contactFromPages(pages, siteOf(website)), news, sources };
   } finally {
+    signal.removeEventListener('abort', stopNews);
+    newsStop.abort();
     await session?.close().catch(() => undefined);
   }
 }

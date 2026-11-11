@@ -50,7 +50,7 @@ function decode(s: string): string {
 }
 
 /** The address of a `mailto:` link (the first one; `?subject=…` dropped). */
-function mailtoAddress(href: string): string {
+export function mailtoAddress(href: string): string {
   const rest = href.replace(/^mailto:/i, '').split('?')[0] ?? '';
   return normEmail(decode(rest).split(',')[0] ?? '');
 }
