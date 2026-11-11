@@ -264,3 +264,50 @@ describe('0.9.1: vacancies file v3 → v4', () => {
     }
   });
 });
+
+describe('0.13.0: vacancies file v4 → v5 (company research, contactAuto)', () => {
+  const research = (over: Record<string, unknown> = {}) => ({
+    state: 'done', startedAt: '2026-11-11T10:00:00.000Z', finishedAt: '2026-11-11T10:01:00.000Z', provider: 'chatgpt', language: 'uk',
+    website: 'https://www.muster.example', websiteByPerson: false, about: 'Muster baut Software für Werkstätten.',
+    news: [{ title: 'Muster eröffnet Büro in Dresden', date: '2026-10-01', source: 'Sächsische', url: 'https://news.example/1' }],
+    newsFailed: false,
+    redFlags: [],
+    facts: [{ id: 'f1', text: 'Produkt weasl für Werker', sourceUrl: 'https://www.muster.example/about' }, { id: 'f2', text: 'Neues Büro', sourceUrl: 'https://news.example/1', hidden: true }],
+    sources: [{ url: 'https://www.muster.example/about', kind: 'about' }, { url: 'https://news.example/1', kind: 'news' }],
+    error: null,
+    ...over,
+  });
+
+  it('v4 file migrates to v5 without changing any vacancy', () => {
+    const { paths } = setup();
+    const cards = [vacancy({ id: 'a' }), { ...vacancy({ id: 'b' }), contact: null, initiative: true }];
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 4, vacancies: cards }));
+    const events: string[] = [];
+    const store = new VacancyStore(paths, (e) => events.push(e));
+    store.load();
+    expect(events).toEqual([]);
+    expect(VACANCIES_SCHEMA_VERSION).toBe(5);
+    expect(store.list()).toEqual(cards);
+  });
+
+  it('v5 accepts research and contactAuto, rejects unknown fields and >3 facts', () => {
+    const { paths } = setup();
+    const ok = { ...vacancy({ id: 'ok' }), research: research(), contactAuto: ['email', 'phone'] };
+    fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 5, vacancies: [ok] }));
+    expect(new VacancyStore(paths).load()).toEqual([ok]);
+    const fact = (i: number) => ({ id: `f${i}`, text: `Fakt ${i}`, sourceUrl: 'https://www.muster.example/' });
+    const bad = [
+      { ...vacancy({ id: 'x' }), research: { ...research(), extra: 1 } },
+      { ...vacancy({ id: 'x' }), research: research({ facts: [fact(1), fact(2), fact(3), fact(4)] }) },
+      { ...vacancy({ id: 'x' }), research: research({ facts: [{ ...fact(1), sourceUrl: 'javascript:alert(1)' }] }) },
+      { ...vacancy({ id: 'x' }), contactAuto: ['email', 'fax'] },
+      { ...vacancy({ id: 'x' }), research: research({ state: 'paused' }) },
+    ];
+    for (const card of bad) {
+      fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 5, vacancies: [card] }));
+      const events: string[] = [];
+      expect(new VacancyStore(paths, (e) => events.push(e)).load()).toEqual([]);
+      expect(events).toEqual(['vacancies_invalid']);
+    }
+  });
+});

@@ -16,6 +16,36 @@ export type PublishedWithinDays = 1 | 3 | 7 | 14 | 30;
  * what the person saved. phone/street/postcode/city since 0.9.1 ('' = unknown).
  */
 export interface VacancyContact { email: string; salutation: Salutation; name: string; phone: string; street: string; postcode: string; city: string }
+/** A field of VacancyContact (0.13.0: which fields the app filled in by itself, see Vacancy.contactAuto). */
+export type ContactField = keyof VacancyContact;
+
+/** Company research (0.13.0, spec 2026-11-11). queued/running while the research job has it; done/failed after. */
+export type ResearchState = 'queued' | 'running' | 'done' | 'failed';
+/** A page or news feed the research read; facts and red flags point to one of these by url. */
+export interface ResearchSource { url: string; kind: 'vacancy' | 'impressum' | 'contact' | 'apply' | 'careers' | 'about' | 'home' | 'news' }
+/** One news item, only as the feed gave it (title, date, source, link); articles are never read. */
+export interface ResearchNews { title: string; date: string; source: string; url: string }
+/** A fact for the letter or a red flag (never in the letter); always with the url it came from. */
+export interface ResearchPoint { id: string; text: string; sourceUrl: string; hidden?: boolean }
+export interface CompanyResearch {
+  state: ResearchState;
+  startedAt: string | null;
+  finishedAt: string | null;
+  provider: ProviderId | null;
+  language: Language | null;
+  /** The company website; '' = not found. */
+  website: string;
+  /** True when the person typed the website (then a new research starts from it). */
+  websiteByPerson: boolean;
+  about: string;
+  news: ResearchNews[];
+  /** The news feed could not be read (as opposed to: read, nothing found). */
+  newsFailed: boolean;
+  redFlags: ResearchPoint[];
+  facts: ResearchPoint[];
+  sources: ResearchSource[];
+  error: ErrorCode | null;
+}
 /**
  * `provider`: the AI helper that scored it (scores from before 0.8.0: 'claude').
  * `language`: the language `why`/`missing` are written in (scores from before 0.8.2: null = not known).
@@ -52,6 +82,10 @@ export interface Vacancy {
   hiddenAt: string | null;
   /** Only on cards added by hand: an unsolicited application (Initiativbewerbung). Absent = false (cards before 0.9.0). */
   initiative?: boolean;
+  /** Company research (0.13.0). Absent = not researched. */
+  research?: CompanyResearch;
+  /** Contact fields the app filled in by itself and the person has not confirmed yet (0.13.0). Absent = none. */
+  contactAuto?: ContactField[];
 }
 
 export type SearchRunState = 'idle' | 'running' | 'done' | 'stopped' | 'interrupted' | 'failed';

@@ -1,6 +1,6 @@
 import type { CvSectionId, EducationEntry, ExperienceEntry, LanguageItem, PersonalData, SkillItem } from './profile.js';
 import type { ErrorCode } from './errors.js';
-import type { RemoteKind, VacancyContact } from './vacancy.js';
+import type { ContactField, RemoteKind, VacancyContact } from './vacancy.js';
 import type { ProviderId } from './settings.js';
 
 export type DocLanguage = 'de' | 'en';
@@ -78,10 +78,14 @@ export interface PackageVacancy {
   partnerUrl?: string;
   /** An unsolicited application (Initiativbewerbung). Absent = false (packages before 0.9.0). */
   initiative?: boolean;
+  /** Company facts given to the AI for this letter (0.13.0; texts of the non-hidden facts). Absent = none. */
+  facts?: string[];
+  /** Contact fields the app filled in by itself, copied from the vacancy (0.13.0). Absent = none. */
+  contactAuto?: ContactField[];
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 6;
+  schemaVersion: 7;
   id: string;
   vacancyId: string;
   language: DocLanguage;

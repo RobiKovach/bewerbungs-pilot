@@ -259,7 +259,7 @@ describe('0.9.1: package v5 → v6 (contact phone/address, AA home link)', () =>
 
   it('the contact gets empty phone/address; the Arbeitsagentur home page as the link is dropped', () => {
     const doc = migrate(v5With({ contact: oldContact, url: 'http://www.arbeitsagentur.de' }), PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS) as unknown as ReturnType<typeof pkg>;
-    expect(doc.schemaVersion).toBe(6);
+    expect(doc.schemaVersion).toBe(PACKAGE_SCHEMA_VERSION);
     expect(doc.vacancy.contact).toEqual({ ...oldContact, phone: '', street: '', postcode: '', city: '' });
     expect(doc.vacancy.url).toBe('');
     expect(validatePackage(doc)).toBeNull();
@@ -279,5 +279,21 @@ describe('0.9.1: package v5 → v6 (contact phone/address, AA home link)', () =>
     expect(validatePackage({ ...base, vacancy: { ...base.vacancy, contact: oldContact } })).not.toBeNull();
     expect(validatePackage({ ...base, vacancy: { ...base.vacancy, partnerUrl: 'https://karriere.muster.example/1' } })).toBeNull();
     expect(validatePackage({ ...base, vacancy: { ...base.vacancy, partnerUrl: 'ftp://x' } })).not.toBeNull();
+  });
+});
+
+describe('0.13.0: package v6 → v7 (company facts, contactAuto)', () => {
+  it('package v6 migrates to v7 unchanged; v7 accepts vacancy.facts (≤3 strings) and contactAuto', () => {
+    const base = pkg();
+    const v6 = { ...base, schemaVersion: 6 };
+    const doc = migrate(v6, PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS) as unknown as ReturnType<typeof pkg>;
+    expect(PACKAGE_SCHEMA_VERSION).toBe(7);
+    expect(doc).toEqual({ ...base, schemaVersion: 7 });
+    expect(validatePackage(doc)).toBeNull();
+    const withFacts = { ...doc, vacancy: { ...doc.vacancy, facts: ['Produkt weasl für Werker', 'Neues Büro in Dresden'], contactAuto: ['email'] } };
+    expect(validatePackage(withFacts)).toBeNull();
+    expect(validatePackage({ ...doc, vacancy: { ...doc.vacancy, facts: ['a', 'b', 'c', 'd'] } })).not.toBeNull();
+    expect(validatePackage({ ...doc, vacancy: { ...doc.vacancy, facts: [1] } })).not.toBeNull();
+    expect(validatePackage({ ...doc, vacancy: { ...doc.vacancy, contactAuto: ['fax'] } })).not.toBeNull();
   });
 });
