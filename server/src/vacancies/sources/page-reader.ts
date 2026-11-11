@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { type Browser, type Page } from 'puppeteer-core';
+import { type Browser, type Page, type Target } from 'puppeteer-core';
 import { findBrowser, removeProfileDir, loadPuppeteer } from '../../applications/pdf.js';
 import { AppError } from '../../errors.js';
 import { checkPublicUrl, isPublicAddress } from './safe-address.js';
@@ -141,9 +141,10 @@ export class BrowserPageReader implements PageReader {
   }
 
   async read(url: string, signal: AbortSignal): Promise<string> {
-    const s = await this.session(signal, Date.now() + this.timeoutMs);
+    // The read's own time starts once the reader is free: queued behind a research session it keeps its full limit.
+    const s = await this.acquire(signal, () => Date.now() + this.timeoutMs);
     try {
-      return (await (s as BrowserSession).openWith(url, this.opts.minChars ?? 0)).text;
+      return (await s.openWith(url, this.opts.minChars ?? 0)).text;
     } finally {
       await s.close();
     }
@@ -151,6 +152,10 @@ export class BrowserPageReader implements PageReader {
 
   /** Waits for the reader to be free; holds it until `close` (a session and a plain read never overlap). */
   session(signal: AbortSignal, deadlineMs: number): Promise<ReadSession> {
+    return this.acquire(signal, () => deadlineMs);
+  }
+
+  private acquire(signal: AbortSignal, deadline: () => number): Promise<BrowserSession> {
     let release!: () => void;
     const held = new Promise<void>((resolve) => { release = resolve; });
     const start = this.chain.then(() => {
@@ -158,13 +163,29 @@ export class BrowserPageReader implements PageReader {
       if (!executablePath) throw new AppError('BROWSER_MISSING', 'no Edge or Chrome found');
       if (signal.aborted) throw cancelled();
       return new BrowserSession({
-        executablePath, signal, deadlineMs, release, check: this.check, maxChars: this.maxChars,
+        executablePath, signal, deadlineMs: deadline(), release, check: this.check, maxChars: this.maxChars,
         tmpRoot: this.opts.tmpRoot, launch: this.opts.launch, warn: this.opts.warn, log: this.opts.log,
       });
     });
     this.chain = start.then(() => held, () => undefined);
     return start;
   }
+}
+
+/** How long `close` waits for a browser that is still starting, and a tab for its own `close`. */
+const LAUNCH_SETTLE_MS = 30_000;
+const TAB_CLOSE_MS = 2_000;
+
+/** `p`, but never longer than `ms` (then undefined); never rejects. */
+function settle<T>(p: Promise<T>, ms: number): Promise<T | undefined> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<undefined>((resolve) => { timer = setTimeout(() => resolve(undefined), ms); });
+  return Promise.race([p.catch(() => undefined), late]).finally(() => clearTimeout(timer));
+}
+
+/** Closes a page target that is not ours (never throws). */
+function closeTarget(t: Target): void {
+  void Promise.resolve().then(() => t.page()).then((p) => p?.close()).catch(() => undefined);
 }
 
 interface SessionOpts {
@@ -180,8 +201,13 @@ interface SessionOpts {
  */
 class BrowserSession implements ReadSession {
   private browser: Browser | null = null;
+  /** The start of the browser while it runs: `close` waits for it, so no browser outlives the session. */
+  private launching: Promise<Browser> | null = null;
   private profile: string | null = null;
-  private expectPage = false;
+  /** While our `newPage` runs: page targets created meanwhile; only the one `newPage` returns is kept. */
+  private creating: Target[] | null = null;
+  /** The target of our own current tab (0.8.3 identity rule: every other page is closed). */
+  private ours: Target | null = null;
   private queue: Promise<unknown> = Promise.resolve();
   private closed = false;
   private readonly stop = () => { void this.shutBrowser(); };
@@ -206,6 +232,10 @@ class BrowserSession implements ReadSession {
     this.closed = true;
     this.o.signal.removeEventListener('abort', this.stop);
     try {
+      // A browser still starting (an open gave up on it) is waited for and closed before the profile goes and the
+      // reader is free — otherwise a second browser could start while the first one still uses the profile.
+      if (this.launching) await settle(this.launching, LAUNCH_SETTLE_MS);
+      await this.queue;
       await this.shutBrowser();
     } finally {
       if (this.profile) removeProfileDir(this.profile, this.o.warn);
@@ -250,9 +280,7 @@ class BrowserSession implements ReadSession {
       }
       stage = 'browse';
       const browser = await race(this.ensureBrowser(remaining));
-      this.expectPage = true;
-      page = await race(browser.newPage());
-      this.expectPage = false;
+      page = await race(this.newTab(browser));
       const read = await race(this.browse(page, url));
       if (read.text.length < minChars) {
         log('too-short');
@@ -261,7 +289,6 @@ class BrowserSession implements ReadSession {
       log('ok');
       return read;
     } catch (err) {
-      this.expectPage = false;
       if (this.o.signal.aborted) throw cancelled();
       if (err instanceof AppError) {
         // Logged once per page: 'blocked' and 'too-short' were logged where they were decided.
@@ -276,12 +303,42 @@ class BrowserSession implements ReadSession {
     } finally {
       clearTimeout(timer);
       if (onAbort) this.o.signal.removeEventListener('abort', onAbort);
-      if (page) { const p = page; void Promise.resolve().then(() => p.close?.()).catch(() => undefined); }
+      // The tab is gone before the next page opens (a page stopped mid-load too): its popups cannot outlive it.
+      if (page) {
+        const p = page;
+        this.ours = null;
+        await settle(Promise.resolve().then(() => p.close?.()), TAB_CLOSE_MS);
+      }
     }
   }
 
-  private async ensureBrowser(timeoutMs: number): Promise<Browser> {
-    if (this.browser) return this.browser;
+  /**
+   * Our tab: page targets created while `newPage` runs are collected; once it returns, every one of them that is not
+   * its target is closed (a popup of an earlier page never takes the place of ours).
+   */
+  private async newTab(browser: Browser): Promise<Page> {
+    const created: Target[] = [];
+    this.creating = created;
+    let page: Page;
+    try {
+      page = await browser.newPage();
+    } finally {
+      this.creating = null;
+    }
+    const target = typeof page.target === 'function' ? page.target() : null;
+    this.ours = target;
+    for (const t of created) if (t !== target) closeTarget(t);
+    return page;
+  }
+
+  private ensureBrowser(timeoutMs: number): Promise<Browser> {
+    if (this.browser) return Promise.resolve(this.browser);
+    // Kept while it runs (close waits for it); a failed start can be tried again by the next page.
+    this.launching ??= this.launch(timeoutMs).finally(() => { this.launching = null; });
+    return this.launching;
+  }
+
+  private async launch(timeoutMs: number): Promise<Browser> {
     fs.mkdirSync(this.o.tmpRoot, { recursive: true });
     // `pdf-` prefix on purpose: BrowserPrinter's sweep removes such folders left behind by a crash.
     this.profile ??= fs.mkdtempSync(path.join(this.o.tmpRoot, 'pdf-read-'));
@@ -298,11 +355,12 @@ class BrowserSession implements ReadSession {
     this.browser = browser;
     const cdp = await browser.target().createCDPSession();
     await cdp.send('Browser.setDownloadBehavior', { behavior: 'deny' }).catch(() => undefined);
-    // Our own tab is the one page expected while `newPage` runs; any other page (a popup) is closed at once.
+    // Only our own tab may live. A page target with an opener is a popup: closed at once. While `newPage` runs the
+    // new targets are collected and sorted out when it returns (newTab); any other page is closed at once.
     browser.on('targetcreated', (t) => {
-      if (t.type() !== 'page') return;
-      if (this.expectPage) { this.expectPage = false; return; }
-      void t.page().then((p) => p?.close()).catch(() => undefined);
+      if (t.type() !== 'page' || t === this.ours) return;
+      if (this.creating && !t.opener()) { this.creating.push(t); return; }
+      closeTarget(t);
     });
     return browser;
   }

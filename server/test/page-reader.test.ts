@@ -186,44 +186,72 @@ describe.skipIf(!findBrowser())('lockdown in a real browser', () => {
   }, 30_000);
 });
 
-/** A browser for sessions: every URL in `pages` is a page; `ip` is where the page "answered" from. */
-function sessionLaunch(pages: Record<string, { text: string; links?: unknown; ip?: string }>) {
+/**
+ * A browser for sessions: every URL in `pages` is a page; `ip` is where the page "answered" from. Options: a popup
+ * created while `newPage` runs, a slow start, a `goto` that never ends.
+ */
+function sessionLaunch(
+  pages: Record<string, { text: string; links?: unknown; ip?: string }>,
+  opts: { popupDuringNewPage?: boolean; launchDelayMs?: number; hangGoto?: boolean } = {},
+) {
   const profiles: string[] = [];
+  const launchesSettled: number[] = [];
+  const launchesStarted: number[] = [];
+  const tabs: { own: boolean; closed: boolean }[] = [];
   let closes = 0;
   const launch = async (o: { userDataDir: string }) => {
     profiles.push(o.userDataDir);
+    launchesStarted.push(Date.now());
+    if (opts.launchDelayMs) await new Promise((r) => setTimeout(r, opts.launchDelayMs));
+    launchesSettled.push(Date.now());
+    const listeners: ((t: unknown) => void)[] = [];
+    const target = (tab: { own: boolean; closed: boolean }, opener?: object) => ({
+      type: () => 'page', opener: () => opener, page: async () => ({ close: async () => { tab.closed = true; } }),
+    });
     const browser = {
       target: () => ({ createCDPSession: async () => ({ send: async () => ({}) }) }),
       newPage: async () => {
+        const tab = { own: true, closed: false };
+        tabs.push(tab);
+        const own = target(tab);
+        if (opts.popupDuringNewPage) {
+          // An earlier page's popup without opener info arrives while our tab is being made, before our own target.
+          const popup = { own: false, closed: false };
+          tabs.push(popup);
+          for (const l of listeners) l(target(popup));
+        }
+        for (const l of listeners) l(own);
         let current = '';
         const handlers: Record<string, (x: unknown) => void> = {};
         return {
-          target: () => ({}), setBypassServiceWorker: async () => {}, evaluateOnNewDocument: async () => {}, setRequestInterception: async () => {},
+          target: () => own, setBypassServiceWorker: async () => {}, evaluateOnNewDocument: async () => {}, setRequestInterception: async () => {},
           on: (event: string, fn: (x: unknown) => void) => { handlers[event] = fn; },
           goto: async (url: string) => {
             current = url;
+            if (opts.hangGoto) return new Promise(() => {});
             const p = pages[url];
             if (!p) throw new Error('net::ERR_NAME_NOT_RESOLVED');
             handlers.response?.({ remoteAddress: () => ({ ip: p.ip ?? '93.184.216.34' }) });
             return okResponse;
           },
-          waitForNetworkIdle: async () => {}, url: () => current, close: async () => {},
+          waitForNetworkIdle: async () => {}, url: () => current, close: async () => { tab.closed = true; },
           evaluate: async (expr: string) => (expr.includes('a[href]') ? (pages[current]!.links ?? []) : pages[current]!.text),
         };
       },
-      on: () => {}, close: async () => { closes++; }, process: () => null,
+      on: (event: string, fn: (t: unknown) => void) => { if (event === 'targetcreated') listeners.push(fn); },
+      close: async () => { closes++; }, process: () => null,
     };
     return browser as unknown as import('puppeteer-core').Browser;
   };
-  return { launch: vi.fn(launch), profiles, closes: () => closes };
+  return { launch: vi.fn(launch), profiles, tabs, launchesStarted, launchesSettled, closes: () => closes };
 }
 
 describe('BrowserPageReader sessions (0.13.0)', () => {
   const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bp session-'));
-  const make = (pages: Parameters<typeof sessionLaunch>[0], check: Check = publicCheck) => {
-    const fake = sessionLaunch(pages);
+  const make = (pages: Parameters<typeof sessionLaunch>[0], check: Check = publicCheck, opts: Parameters<typeof sessionLaunch>[1] = {}, timeoutMs?: number) => {
+    const fake = sessionLaunch(pages, opts);
     const log = vi.fn();
-    return { fake, log, r: new BrowserPageReader({ tmpRoot, find: () => 'C:/edge.exe', check, log, launch: fake.launch }) };
+    return { fake, log, r: new BrowserPageReader({ tmpRoot, find: () => 'C:/edge.exe', check, log, launch: fake.launch, ...(timeoutMs ? { timeoutMs } : {}) }) };
   };
   const A = 'https://jobs.example.de/1';
   const B = 'https://www.firma.de/impressum';
@@ -309,5 +337,48 @@ describe('BrowserPageReader sessions (0.13.0)', () => {
     ctrl.abort();
     await expect(s.open(A)).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
     await s.close();
+  });
+
+  it('a popup created while our tab is made is closed; our tab is kept until the page is read', async () => {
+    const { r, fake } = make({ [A]: { text: 'Stelle' } }, publicCheck, { popupDuringNewPage: true });
+    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    expect((await s.open(A)).text).toBe('Stelle');
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const popup = fake.tabs.find((t) => !t.own)!;
+    const own = fake.tabs.find((t) => t.own)!;
+    expect(popup.closed).toBe(true);
+    expect(own.closed).toBe(true); // closed after the read, before the next open
+    await s.close();
+  });
+
+  it('a page stopped mid-load by the time limit is closed', async () => {
+    const { r, fake } = make({ [A]: { text: 'Stelle' } }, publicCheck, { hangGoto: true });
+    const s = await r.session(new AbortController().signal, Date.now() + 150);
+    await expect(s.open(A)).rejects.toMatchObject({ detailsForLog: 'page not readable: timeout' });
+    expect(fake.tabs[0]!.closed).toBe(true);
+    await s.close();
+  });
+
+  it('a read queued behind a session held longer than its own limit still gets its full time', async () => {
+    const { r } = make({ [A]: { text: 'Stelle '.repeat(10) }, [B]: { text: 'Impressum' } }, publicCheck, {}, 200);
+    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    const read = r.read(B, new AbortController().signal);
+    await s.open(A);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await s.close();
+    expect(await read).toBe('Impressum');
+  });
+
+  it('a browser still starting after the deadline is waited for: profile gone, next read starts after it', async () => {
+    const { r, fake } = make({ [A]: { text: 'Stelle' }, [B]: { text: 'Impressum' } }, publicCheck, { launchDelayMs: 200 });
+    const s = await r.session(new AbortController().signal, Date.now() + 50);
+    await expect(s.open(A)).rejects.toMatchObject({ detailsForLog: 'page not readable: timeout' });
+    const read = r.read(B, new AbortController().signal);
+    await s.close();
+    expect(fake.launchesSettled).toHaveLength(1);
+    expect(fake.closes()).toBe(1);
+    expect(fs.existsSync(fake.profiles[0]!)).toBe(false);
+    expect(await read).toBe('Impressum');
+    expect(fake.launchesStarted[1]!).toBeGreaterThanOrEqual(fake.launchesSettled[0]!);
   });
 });
