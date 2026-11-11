@@ -25,7 +25,7 @@ import type { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { registerMailRoutes } from './mail/routes.js';
 import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
-import type { PageReader } from './vacancies/sources/page-reader.js';
+import type { PageReader, ReadSession } from './vacancies/sources/page-reader.js';
 import type { PdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import type { ContactWindow } from './vacancies/sources/aa-contact-window.js';
 import type { SearchJob } from './vacancies/search-job.js';
@@ -106,15 +106,36 @@ export interface AppDeps {
  */
 /**
  * Reading a link or the Arbeitsagentur contact window can take minutes (a person solves a captcha): while one is open
- * it counts as work in flight, so an update does not start in the middle of it.
+ * it counts as work in flight, so an update does not start in the middle of it. A page-reader session (0.13.0) counts
+ * from its start until its `close`.
  */
-function browserWork<T extends { read?: (...a: never[]) => Promise<unknown>; readContact?: (...a: never[]) => Promise<unknown> }>(activity: Activity, inner: T): T {
+export function browserWork<T extends {
+  read?: (...a: never[]) => Promise<unknown>; readContact?: (...a: never[]) => Promise<unknown>;
+  session?: (signal: AbortSignal, deadlineMs: number) => Promise<ReadSession>;
+}>(activity: Activity, inner: T): T {
   const wrap = <F extends (...a: never[]) => Promise<unknown>>(fn: F, self: unknown) => (async (...a: never[]) => {
     activity.refuseDuringUpdate();
     const end = activity.begin('browser');
     try { return await fn.apply(self, a); } finally { end(); }
   }) as F;
-  return { ...inner, ...(inner.read ? { read: wrap(inner.read, inner) } : {}), ...(inner.readContact ? { readContact: wrap(inner.readContact, inner) } : {}) };
+  const session = inner.session;
+  const wrapSession = session ? {
+    session: async (signal: AbortSignal, deadlineMs: number): Promise<ReadSession> => {
+      activity.refuseDuringUpdate();
+      const end = activity.begin('browser');
+      let s: ReadSession;
+      try { s = await session.call(inner, signal, deadlineMs); } catch (err) { end(); throw err; }
+      let ended = false;
+      return {
+        open: (url) => s.open(url),
+        close: async () => { try { await s.close(); } finally { if (!ended) { ended = true; end(); } } },
+      };
+    },
+  } : {};
+  return {
+    ...inner, ...(inner.read ? { read: wrap(inner.read, inner) } : {}), ...(inner.readContact ? { readContact: wrap(inner.readContact, inner) } : {}),
+    ...wrapSession,
+  };
 }
 
 const PUBLIC_ROUTES = new Set(['/open', '/launch/:part', '/launch/:part/ready.svg', '/api/health', '/oauth/google/callback', '/', '/*']);

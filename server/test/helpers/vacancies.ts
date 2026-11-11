@@ -4,7 +4,7 @@ import { AppError } from '../../src/errors.js';
 import { FakeProvider } from '../../src/llm/fake.js';
 import type { LlmTask } from '../../src/llm/types.js';
 import type { ContactWindow, ContactWindowResult } from '../../src/vacancies/sources/aa-contact-window.js';
-import type { PageReader } from '../../src/vacancies/sources/page-reader.js';
+import type { PageLink, PageRead, PageReader, ReadSession } from '../../src/vacancies/sources/page-reader.js';
 import type { PdfFetcher, PdfResult } from '../../src/vacancies/sources/pdf-fetch.js';
 import type { SearchQuery, SourceDetails, SourceHit, VacancySource } from '../../src/vacancies/sources/types.js';
 
@@ -104,14 +104,40 @@ export function scoringClaude(opts: {
   }, opts.id);
 }
 
-/** Stands in for the real browser: `read` decides what a pasted link "contains"; by default every page is unreadable. */
+/**
+ * Stands in for the real browser: `read` decides what a pasted link "contains"; by default every page is unreadable.
+ * Sessions open pages through the same `read_`, with links from `links_`; `sessions` counts started sessions and
+ * `closed` the closed ones.
+ */
 export class FakePageReader implements PageReader {
   calls: string[] = [];
-  constructor(private readonly read_: (url: string) => string | Promise<string> = () => { throw new AppError('BAD_REQUEST', 'fake: unreadable', 'pageUnreadable'); }) {}
+  sessions = 0;
+  closed = 0;
+  /** The `deadlineMs` each session was started with. */
+  deadlines: Array<number | undefined> = [];
+  constructor(
+    private readonly read_: (url: string) => string | Promise<string> = () => { throw new AppError('BAD_REQUEST', 'fake: unreadable', 'pageUnreadable'); },
+    private readonly links_: (url: string) => PageLink[] = () => [],
+  ) {}
   async read(url: string, signal: AbortSignal): Promise<string> {
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
     this.calls.push(url);
     return this.read_(url);
+  }
+  async session(signal: AbortSignal, deadlineMs?: number): Promise<ReadSession> {
+    if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
+    this.sessions++;
+    this.deadlines.push(deadlineMs);
+    let open = true;
+    return {
+      open: async (url: string): Promise<PageRead> => {
+        if (!open) throw new AppError('BAD_REQUEST', 'fake: session closed', 'pageUnreadable');
+        if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
+        this.calls.push(url);
+        return { url, text: await this.read_(url), links: this.links_(url) };
+      },
+      close: async () => { if (open) { open = false; this.closed++; } },
+    };
   }
 }
 

@@ -185,3 +185,129 @@ describe.skipIf(!findBrowser())('lockdown in a real browser', () => {
     }
   }, 30_000);
 });
+
+/** A browser for sessions: every URL in `pages` is a page; `ip` is where the page "answered" from. */
+function sessionLaunch(pages: Record<string, { text: string; links?: unknown; ip?: string }>) {
+  const profiles: string[] = [];
+  let closes = 0;
+  const launch = async (o: { userDataDir: string }) => {
+    profiles.push(o.userDataDir);
+    const browser = {
+      target: () => ({ createCDPSession: async () => ({ send: async () => ({}) }) }),
+      newPage: async () => {
+        let current = '';
+        const handlers: Record<string, (x: unknown) => void> = {};
+        return {
+          target: () => ({}), setBypassServiceWorker: async () => {}, evaluateOnNewDocument: async () => {}, setRequestInterception: async () => {},
+          on: (event: string, fn: (x: unknown) => void) => { handlers[event] = fn; },
+          goto: async (url: string) => {
+            current = url;
+            const p = pages[url];
+            if (!p) throw new Error('net::ERR_NAME_NOT_RESOLVED');
+            handlers.response?.({ remoteAddress: () => ({ ip: p.ip ?? '93.184.216.34' }) });
+            return okResponse;
+          },
+          waitForNetworkIdle: async () => {}, url: () => current, close: async () => {},
+          evaluate: async (expr: string) => (expr.includes('a[href]') ? (pages[current]!.links ?? []) : pages[current]!.text),
+        };
+      },
+      on: () => {}, close: async () => { closes++; }, process: () => null,
+    };
+    return browser as unknown as import('puppeteer-core').Browser;
+  };
+  return { launch: vi.fn(launch), profiles, closes: () => closes };
+}
+
+describe('BrowserPageReader sessions (0.13.0)', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'bp session-'));
+  const make = (pages: Parameters<typeof sessionLaunch>[0], check: Check = publicCheck) => {
+    const fake = sessionLaunch(pages);
+    const log = vi.fn();
+    return { fake, log, r: new BrowserPageReader({ tmpRoot, find: () => 'C:/edge.exe', check, log, launch: fake.launch }) };
+  };
+  const A = 'https://jobs.example.de/1';
+  const B = 'https://www.firma.de/impressum';
+
+  it('session reads two pages with one browser and deletes the profile once on close', async () => {
+    const { fake, r, log } = make({ [A]: { text: 'Stelle' }, [B]: { text: 'Impressum Firma GmbH' } });
+    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    expect((await s.open(A)).text).toBe('Stelle');
+    const b = await s.open(B);
+    expect(b).toMatchObject({ url: B, text: 'Impressum Firma GmbH', links: [] });
+    expect(fake.launch).toHaveBeenCalledTimes(1);
+    expect(fs.existsSync(fake.profiles[0]!)).toBe(true);
+    await s.close();
+    await s.close();
+    expect(fs.existsSync(fake.profiles[0]!)).toBe(false);
+    expect(fake.closes()).toBe(1);
+    expect(log.mock.calls).toEqual([
+      ['vacancy.pageRead', { host: 'jobs.example.de', result: 'ok' }],
+      ['vacancy.pageRead', { host: 'www.firma.de', result: 'ok' }],
+    ]);
+  });
+
+  it('links include mailto and tel, are absolute, capped at 300', async () => {
+    const many = Array.from({ length: 400 }, (_, i) => ({ text: `Job ${i}`, href: `https://jobs.example.de/job/${i}` }));
+    const links = [
+      { text: 'Jetzt   bewerben', href: 'mailto:jobs@firma.de?subject=Bewerbung' },
+      { text: 'Anrufen', href: 'tel:+493517990350' },
+      { text: 'Impressum', href: '/impressum' },
+      { text: 'Boese', href: 'javascript:alert(1)' },
+      { text: 'x'.repeat(200), href: 'https://www.firma.de/' },
+      'not a link', { href: 42 },
+      ...many,
+    ];
+    const { r } = make({ [A]: { text: 'Stelle', links } });
+    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    const read = await s.open(A);
+    await s.close();
+    expect(read.links).toHaveLength(300);
+    expect(read.links.slice(0, 4)).toEqual([
+      { text: 'Jetzt bewerben', href: 'mailto:jobs@firma.de?subject=Bewerbung' },
+      { text: 'Anrufen', href: 'tel:+493517990350' },
+      { text: 'Impressum', href: 'https://jobs.example.de/impressum' },
+      { text: 'x'.repeat(80), href: 'https://www.firma.de/' },
+    ]);
+    expect(read.links.some((l) => l.href.startsWith('javascript:'))).toBe(false);
+  });
+
+  it('a page answered from an internal address throws blocked and the session stays usable', async () => {
+    const { r, log } = make({ [A]: { text: 'Intern', ip: '10.0.0.5' }, [B]: { text: 'Impressum' } });
+    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    await expect(s.open(A)).rejects.toMatchObject({ reason: 'pageUnreadable', detailsForLog: 'page not readable: blocked: answered from an internal address' });
+    expect((await s.open(B)).text).toBe('Impressum');
+    await s.close();
+    expect(log.mock.calls[0]).toEqual(['vacancy.pageRead', { host: 'jobs.example.de', result: 'blocked' }]);
+  });
+
+  it('open after the deadline throws pageUnreadable timeout', async () => {
+    const { r, fake } = make({ [A]: { text: 'Stelle' } });
+    const s = await r.session(new AbortController().signal, Date.now() - 1);
+    await expect(s.open(A)).rejects.toMatchObject({ reason: 'pageUnreadable', detailsForLog: 'page not readable: timeout' });
+    await s.close();
+    expect(fake.launch).not.toHaveBeenCalled();
+  });
+
+  it('a plain read waits until an open session is closed', async () => {
+    const { r } = make({ [A]: { text: 'Stelle '.repeat(10) }, [B]: { text: 'Impressum' } });
+    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    let readDone = false;
+    const read = r.read(B, new AbortController().signal).then((t) => { readDone = true; return t; });
+    await s.open(A);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readDone).toBe(false);
+    await s.close();
+    expect(await read).toBe('Impressum');
+  });
+
+  it('a blocked first address never starts the browser; Stop ends the session', async () => {
+    const { r, fake } = make({ [A]: { text: 'Stelle' } }, privateCheck);
+    const ctrl = new AbortController();
+    const s = await r.session(ctrl.signal, Date.now() + 5000);
+    await expect(s.open('http://192.168.1.1/')).rejects.toMatchObject({ detailsForLog: 'page not readable: blocked address' });
+    expect(fake.launch).not.toHaveBeenCalled();
+    ctrl.abort();
+    await expect(s.open(A)).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+    await s.close();
+  });
+});
