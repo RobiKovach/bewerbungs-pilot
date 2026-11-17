@@ -17,6 +17,7 @@ import { helloTask } from '../src/prompts/hello.js';
 import { extractManualTask, toManualFields, type ManualOutput } from '../src/vacancies/tasks/extract-manual.js';
 import { contactNameTask, withContactName, type ContactNameOutput } from '../src/vacancies/tasks/contact-name.js';
 import { scoreTask, type ScoreOutput } from '../src/vacancies/tasks/score.js';
+import { companyResearchTask } from '../src/research/task.js';
 import { emptyContact } from '../src/vacancies/contact-parse.js';
 import { pkg, readyPackageProfile } from './helpers/applications.js';
 
@@ -56,6 +57,7 @@ const TASKS: Record<LlmTaskId, () => LlmTask> = {
   'interview-questions': () => questionsTask(PREP_CTX()),
   'interview-feedback': () => feedbackTask(PREP_CTX(), PREP_QUESTION, { text: 'Eine ausreichend lange Antwort auf die Frage.', dontKnow: false }),
   'interview-summary': () => summaryTask(PREP_CTX(), prepWith([false, true]), null),
+  'company-research': () => companyResearchTask('Muster GmbH', { website: 'https://muster.example', pages: [{ url: 'https://muster.example/impressum', kind: 'impressum', text: 'Muster GmbH, Dresden.', links: [] }], contact: emptyContact(), news: [], sources: [{ url: 'https://muster.example/impressum', kind: 'impressum' }] }, 'de'),
 };
 
 describe('scriptedResponse (fake AI for end-to-end runs)', () => {

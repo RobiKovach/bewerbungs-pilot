@@ -15,6 +15,8 @@ import { structureStoriesTask } from '../src/profile/tasks/structure-stories.js'
 import { helloTask } from '../src/prompts/hello.js';
 import { extractManualTask } from '../src/vacancies/tasks/extract-manual.js';
 import { scoreTask } from '../src/vacancies/tasks/score.js';
+import { companyResearchTask } from '../src/research/task.js';
+import { emptyContact } from '../src/vacancies/contact-parse.js';
 import { pkg, readyPackageProfile } from './helpers/applications.js';
 
 const VAC: PackageVacancy = { id: 'v1', title: 'Webentwickler (m/w/d)', company: 'Muster GmbH', locations: ['Hamburg'], remote: 'partial', contact: null, url: '' };
@@ -35,6 +37,7 @@ const TASKS: Record<string, () => LlmTask> = {
   'offer reply': () => offerReplyTask(ctx(), pkg({ status: 'offer' }), '48.000 €', '55.000 €'),
   'interview questions': () => questionsTask({ ctx: ctx(), pkg: pkg(), vacancyText: 'Text', language: 'de', uiLanguage: 'uk' }),
   'interview feedback': () => feedbackTask({ ctx: ctx(), pkg: pkg(), vacancyText: 'Text', language: 'de', uiLanguage: 'uk' }, { id: 'q1', kind: 'theory', text: 'Frage', code: null, answer: null }, { text: 'Antwort', dontKnow: false }),
+  'company research': () => companyResearchTask('Muster GmbH', { website: '', pages: [], contact: emptyContact(), news: null, sources: [] }, 'de'),
 };
 
 describe('strictProblems', () => {
