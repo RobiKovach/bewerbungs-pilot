@@ -101,7 +101,7 @@ export interface AppDeps {
    * Company research (0.13.0): where news come from — Google News in production, a fixed list in test mode
    * (Ruling R3); tests always pass a fake, so no test reaches the network.
    */
-  research: { fetchNews: typeof FetchNews };
+  research: { fetchNews: typeof FetchNews; /** Tests: the job, to wait until it is idle. */ onJob?: (job: ResearchJob) => void };
   /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
   demo?: { active: boolean; start?: (language: Language) => Promise<{ url: string }> };
 }
@@ -378,6 +378,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     store: deps.vacancyStore, reader: pageReader, fetchNews: deps.research.fetchNews, queue: deps.queue, logger: deps.logger,
     activity: deps.activity, language,
   });
+  deps.research.onJob?.(research);
   await registerVacancyRoutes(app, {
     research,
     store: deps.vacancyStore, source: deps.vacancySource, pageReader, pdfFetcher: deps.pdfFetcher, contactWindow: browserWork(deps.activity, deps.contactWindow), queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,

@@ -116,6 +116,20 @@ describe('ResearchJob', () => {
     expect(again.require('d').research).toMatchObject({ state: 'done', about: 'Software.', error: null });
   });
 
+  it('hidden while the pages are read → no AI call at all', async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => { release = r; });
+    const s = setup(async () => { await gate; return PAGE; });
+    s.add('a');
+    s.job.enqueue('a');
+    await vi.waitFor(() => expect(s.store.require('a').research?.state).toBe('running'));
+    s.store.update('a', (x) => { x.status = 'hidden'; });
+    release();
+    await s.job.whenIdle();
+    expect(s.provider.calls).toEqual([]);
+    expect(s.store.require('a').research).toMatchObject({ state: 'failed', error: 'LLM_CANCELLED' });
+  });
+
   it('cancel of a waiting card: failed, never started', async () => {
     let release: () => void = () => {};
     const gate = new Promise<void>((r) => { release = r; });
@@ -134,7 +148,7 @@ describe('ResearchJob', () => {
     const s = setup();
     let first = true;
     s.provider.respond = (task) => {
-      if (first) { first = false; throw new Error('boom'); }
+      if (first && task.id === 'company-research') { first = false; throw new Error('boom'); }
       return scriptedResponse(task);
     };
     s.add('a'); s.add('b');

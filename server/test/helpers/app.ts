@@ -7,7 +7,9 @@ import { ApplicationJob } from '../../src/applications/job.js';
 import { ApplicationStore } from '../../src/applications/store.js';
 import { SentUnsavedLog } from '../../src/applications/sent-unsaved.js';
 import { profilePhoto } from '../../src/applications/views.js';
+import { onTestFinished } from 'vitest';
 import { buildApp, type AppDeps } from '../../src/app.js';
+import type { ResearchJob } from '../../src/research/job.js';
 import { resolveBackupFolder } from '../../src/backup/folder.js';
 import { dataPaths } from '../../src/data/paths.js';
 import { SettingsStore } from '../../src/data/settings.js';
@@ -97,6 +99,7 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
   const fakeInstall = fileURLToPath(new URL('../fixtures/fake-install.mjs', import.meta.url));
   const fakeCmd = () => ({ file: process.execPath, args: [fakeInstall, opts.installMode ?? 'ok'] });
   const install = new InstallJob({ commands: { claude: fakeCmd, chatgpt: fakeCmd }, timeoutMs: 1500 });
+  let research: ResearchJob | null = null;
   const app = await buildApp({
     settings, providers, install, queue, logger, version: '0.1.0',
     webDist: opts.webDist ?? null,
@@ -120,9 +123,11 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
     updates: { available: opts.updateSource ?? (() => opts.update ?? null), apply: opts.updateApply, demoRunning: opts.demoRunning },
     demo: opts.demo,
     // Never the real Google News in tests.
-    research: { fetchNews: opts.fetchNews ?? (async () => []) },
+    research: { fetchNews: opts.fetchNews ?? (async () => []), onJob: (j) => { research = j; } },
     cloud: opts.cloud ?? { url: 'https://cloud.invalid', fetch: (() => { throw new Error('a test must not call the real cloud service'); }) as unknown as typeof fetch },
   });
+  // A research started by a test (e.g. after a manual add) ends before the next test.
+  try { onTestFinished(() => research?.whenIdle()); } catch { /* called outside a test: nothing to wait for */ }
   if (opts.autoKey !== false) {
     const inject = app.inject.bind(app) as (o: InjectOptions | string) => Promise<LightMyRequestResponse>;
     app.inject = ((o: InjectOptions | string) => {
@@ -133,5 +138,5 @@ export async function makeApp(opts: { provider?: FakeProvider; chatgpt?: FakePro
       return inject({ ...o, headers } as InjectOptions);
     }) as unknown as typeof app.inject;
   }
-  return { app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, pdfFetcher, contactWindow, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved, activity, backupDir, documents, openedFolders };
+  return { research: research as unknown as ResearchJob, app, googleAuth, provider, chatgpt, providers, settings, profileStore, profileFiles, profileFile, filesDir, shutdownCalls: () => shutdownCalls, vacancyStore, searchJob, source, pageReader, pdfFetcher, contactWindow, dir, applicationStore, applicationJob, printer, mailer, secrets, sentUnsaved, activity, backupDir, documents, openedFolders };
 }

@@ -6,6 +6,7 @@ import { isAaHost } from './aa-links.js';
 import { emptyContact, nameWindow, needsName, parseContact } from './contact-parse.js';
 import type { ContactFindResult } from './sources/aa-contact-window.js';
 import type { PageReader } from './sources/page-reader.js';
+import type { FoundPage } from '../research/contact-merge.js';
 import { checkPublicUrl } from './sources/safe-address.js';
 import { contactNameTask, withContactName, type ContactNameOutput } from './tasks/contact-name.js';
 
@@ -35,15 +36,39 @@ export function emptyProposal(): ContactProposal {
 export async function proposalFromText(text: string, d: ContactFindDeps, signal: AbortSignal): Promise<ContactProposal> {
   const parsed = parseContact(text);
   if (!needsName(parsed)) return proposalOf(parsed.contact);
-  const window = nameWindow(text, parsed.contact);
+  return proposalOf(await aiName(parsed.contact, text, d, signal));
+}
+
+type NameDeps = Pick<ContactFindDeps, 'queue' | 'logger' | 'language'>;
+
+/** The AI name step on `text` around the contact; any failure but the person's stop → the contact unchanged. */
+async function aiName(contact: VacancyContact, text: string, d: NameDeps, signal: AbortSignal): Promise<VacancyContact> {
+  const window = nameWindow(text, contact);
   try {
     const { value } = await d.queue.runTagged<ContactNameOutput>(contactNameTask(window, d.language()), signal);
-    return proposalOf(withContactName(parsed.contact, value, window));
+    return withContactName(contact, value, window);
   } catch (err) {
     if (signal.aborted) throw err;
     d.logger.warn('vacancy.contactName_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
-    return proposalOf(parsed.contact);
+    return contact;
   }
+}
+
+/** Pages that may name the person to write to (Ruling R10): never an Impressum, news, home or about page. */
+const NAME_PAGES = new Set<FoundPage['kind']>(['vacancy', 'apply', 'contact']);
+
+/**
+ * The contact a research or "find contact" collected, with the AI name step (as 0.9.1, spec 4.2 step 5): only when an
+ * e-mail or phone was found without a name, only on a vacancy / apply / contact page — the one showing that e-mail
+ * or phone first. The page texts stay in memory. Never fails: only the person's stop is passed on.
+ */
+export async function withNameFromPages(contact: VacancyContact, pages: FoundPage[], d: NameDeps, signal: AbortSignal): Promise<VacancyContact> {
+  if (!hasReach(contact) || contact.name !== '') return contact;
+  const eligible = pages.filter((p) => NAME_PAGES.has(p.kind));
+  const shows = (p: FoundPage) => [contact.email, contact.phone].some((x) => x !== '' && p.text.includes(x));
+  const page = eligible.find(shows) ?? eligible[0];
+  if (!page) return contact;
+  return aiName(contact, page.text, d, signal);
 }
 
 /** The log result for a finished proposal. */

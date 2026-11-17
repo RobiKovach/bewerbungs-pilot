@@ -7,6 +7,7 @@ import type { PageReader } from '../vacancies/sources/page-reader.js';
 import type { VacancyStore } from '../vacancies/store.js';
 import { collect, type CollectInput } from './collect.js';
 import { mergeContact } from './contact-merge.js';
+import { withNameFromPages } from '../vacancies/contact-find.js';
 import type { fetchNews as FetchNews } from './news.js';
 import { companyResearchTask, toResearch, type ResearchOutput } from './task.js';
 
@@ -130,12 +131,16 @@ export class ResearchJob {
       this.write(id, g, (x) => { if (x.research) { x.research.state = 'running'; x.research.startedAt = startedAt; x.research.error = null; } });
       const input = collectInputOf(v);
       const c = await collect(input, 'full', { reader: this.d.reader, fetchNews: this.d.fetchNews, now: this.now }, signal);
+      // Hidden, gone or restarted while the pages were read: no AI calls for it.
+      if (!this.stillWanted(id, g)) return;
+      const contact = await withNameFromPages(c.contact, c.pages, this.d, signal);
+      if (!this.stillWanted(id, g)) return;
       const language = this.d.language();
       const { value, provider } = await this.d.queue.runTagged<ResearchOutput>(companyResearchTask(v.company, c, language), signal);
       const research = toResearch(value, c, { provider, language, startedAt, now: this.now().toISOString(), websiteByPerson: input.websiteHint !== '' });
       const written = this.write(id, g, (x) => {
         x.research = research;
-        const merged = mergeContact(x.contact, c.contact, x.contactAuto);
+        const merged = mergeContact(x.contact, contact, x.contactAuto);
         x.contact = merged.contact;
         if (merged.auto.length) x.contactAuto = merged.auto;
         else delete x.contactAuto;
@@ -150,6 +155,18 @@ export class ResearchJob {
     } finally {
       end();
     }
+  }
+
+  /**
+   * The run may go on: it is still the card's latest and the card exists and is shown. A hidden card ends as stopped
+   * (state only) so it is not "researching" when it comes back; a stale run or a gone card just ends.
+   */
+  private stillWanted(id: string, g: number): boolean {
+    if (this.gen.get(id) !== g) return false;
+    const v = this.d.store.get(id);
+    if (!v) return false;
+    if (v.status === 'hidden') { this.fail(id, g, 'LLM_CANCELLED', { evenHidden: true }); return false; }
+    return true;
   }
 
   private fail(id: string, g: number, code: ErrorCode, o: { evenHidden: boolean }): void {

@@ -10,7 +10,7 @@ import { collect, type CollectInput } from '../research/collect.js';
 import { mergeContact } from '../research/contact-merge.js';
 import { collectInputOf, type ResearchJob } from '../research/job.js';
 import { isAaHost } from './aa-links.js';
-import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, proposalOf, resultOf, type ContactFindDeps } from './contact-find.js';
+import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, proposalOf, resultOf, withNameFromPages, type ContactFindDeps } from './contact-find.js';
 import { findDuplicate } from './dedup.js';
 import { CONTACT_BODY, VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
@@ -238,8 +238,9 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
   async function collectProposal(v: Vacancy, input: CollectInput, signal: AbortSignal): Promise<ContactProposal> {
     try {
       const c = await collect(input, 'contact', { reader: d.pageReader, fetchNews: NO_NEWS, now: () => new Date() }, signal);
-      const found = proposalOf(c.contact);
-      const { differing } = mergeContact(v.contact, c.contact, v.contactAuto);
+      const contact = await withNameFromPages(c.contact, c.pages, contactDeps, signal);
+      const found = proposalOf(contact);
+      const { differing } = mergeContact(v.contact, contact, v.contactAuto);
       const result = Object.keys(differing).length ? { ...found, differing } : found;
       logFind(d.logger, 'partner', resultOf(result));
       return result;

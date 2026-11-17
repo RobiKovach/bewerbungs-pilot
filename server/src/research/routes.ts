@@ -63,7 +63,7 @@ export async function registerResearchRoutes(app: FastifyInstance, d: ResearchRo
   app.put('/api/vacancies/:id/research/website', { schema: { params: idParams, body: websiteBody } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const url = (req.body as { url: string }).url.trim();
-    d.store.require(id);
+    if (d.store.require(id).status === 'hidden') throw new AppError('CONFLICT', 'a hidden card is not researched');
     if (!URL.canParse(url)) throw new AppError('BAD_REQUEST', 'not a link');
     const pre = await checkPublicUrl(url, RESOLVED_BY_READER);
     if (!pre.ok && pre.why !== 'dns') throw new AppError('BAD_REQUEST', `blocked: ${pre.why}`);

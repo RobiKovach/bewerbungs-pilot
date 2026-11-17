@@ -25,14 +25,25 @@ type Ctx = Awaited<ReturnType<typeof makeApp>>;
 const call = (ctx: Ctx, method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>
   ctx.app.inject({ method, url, headers: { ...H, ...(payload === undefined ? {} : { 'content-type': 'application/json' }) }, ...(payload === undefined ? {} : { payload: JSON.stringify(payload) }) });
 
-/** The pasted-text task answers MANUAL; the company research gets the fake AI's scripted answer (1 fact, 1 red flag). */
-function researchAi(): FakeProvider {
+/**
+ * The pasted-text task answers MANUAL; the company research gets the fake AI's scripted answer (1 fact, 1 red flag);
+ * `name` answers the contact-name step (a throw = that AI call fails).
+ */
+function researchAi(name: () => { salutation: string; name: string } = () => ({ salutation: '', name: '' })): FakeProvider {
   return new FakeProvider({ ok: true }, (task: LlmTask) => {
     const required = (task.schema as { required?: string[] }).required ?? [];
     if (required.includes('isVacancy')) return MANUAL;
+    if (task.id === 'contact-name') return name();
     return scriptedResponse(task);
   });
 }
+
+/** E-mail and phone, the person only in prose: the parser finds no name, the AI does. */
+const PROSE_NAME = `Frontend Developer bei Muster Digital GmbH
+Bewerbungen bitte an die Personalabteilung
+E-Mail: jobs@muster-digital.example
+Tel.: +49 351 7654321
+Ansprechpartnerin ist Jana Beispiel aus dem Recruiting.`;
 
 const card = (ctx: Ctx, id: string): Vacancy => ctx.vacancyStore.require(id);
 const finished = async (ctx: Ctx, id: string) => {
@@ -63,9 +74,11 @@ describe('company research — automatic start', () => {
 
   it('pasted text without a company name starts no research; with one it does', async () => {
     const ctx = await makeApp({ provider: researchAi() });
-    const nameless = await call(ctx, 'POST', '/api/vacancies/manual', { text: OFFER });
+    const named = await call(ctx, 'POST', '/api/vacancies/manual', { text: OFFER });
     // MANUAL names the company: a research starts (the pasted text has no link, so only the name is used).
-    expect(card(ctx, nameless.json().vacancy.id).research?.state).toBeDefined();
+    const namedId = named.json().vacancy.id as string;
+    expect(card(ctx, namedId).research).toBeDefined();
+    expect((await finished(ctx, namedId)).research?.state).toBe('done');
 
     const noName = await makeApp({ provider: new FakeProvider({ ok: true }, () => ({ ...MANUAL, company: '' })) });
     const res = await call(noName, 'POST', '/api/vacancies/manual', { text: OFFER });
@@ -114,6 +127,38 @@ describe('company research — contact', () => {
     expect(provider.calls.filter((c) => c.id === 'company-research')).toEqual([]);
   });
 
+  it('find contact: a name found only by the AI comes with the proposal; the research marks it auto', async () => {
+    const provider = researchAi(() => ({ salutation: 'Frau', name: 'Jana Beispiel' }));
+    const ctx = await makeApp({ provider, pageReader: new FakePageReader(() => PROSE_NAME) });
+    ctx.vacancyStore.add(vacancy({ id: 'm1', source: 'manual', sourceId: null, company: 'Muster Digital GmbH', url: LINK }), OFFER);
+    const res = await call(ctx, 'POST', '/api/vacancies/m1/contact/find', { from: 'partner' });
+    expect(res.statusCode).toBe(200);
+    expect((res.json() as ContactProposal).proposal).toMatchObject({ email: 'jobs@muster-digital.example', salutation: 'Frau', name: 'Jana Beispiel' });
+    const nameCalls = provider.calls.filter((c) => c.id === 'contact-name');
+    expect(nameCalls).toHaveLength(1);
+    expect(nameCalls[0].prompt).toContain('Jana Beispiel');
+    expect(card(ctx, 'm1').contact).toBeNull();
+
+    await call(ctx, 'POST', '/api/vacancies/m1/research');
+    const v = await finished(ctx, 'm1');
+    expect(v.contact).toMatchObject({ email: 'jobs@muster-digital.example', salutation: 'Frau', name: 'Jana Beispiel' });
+    expect(v.contactAuto).toEqual(expect.arrayContaining(['email', 'name', 'salutation', 'phone']));
+  });
+
+  it('find contact / research: a failing name step never fails them — the contact comes without a name', async () => {
+    const provider = researchAi(() => { throw new Error('AI down'); });
+    const ctx = await makeApp({ provider, pageReader: new FakePageReader(() => PROSE_NAME) });
+    ctx.vacancyStore.add(vacancy({ id: 'm1', source: 'manual', sourceId: null, company: 'Muster Digital GmbH', url: LINK }), OFFER);
+    const res = await call(ctx, 'POST', '/api/vacancies/m1/contact/find', { from: 'partner' });
+    expect(res.statusCode).toBe(200);
+    expect((res.json() as ContactProposal).proposal).toMatchObject({ email: 'jobs@muster-digital.example', name: '', salutation: '' });
+
+    await call(ctx, 'POST', '/api/vacancies/m1/research');
+    const v = await finished(ctx, 'm1');
+    expect(v.research?.state).toBe('done');
+    expect(v.contact).toMatchObject({ email: 'jobs@muster-digital.example', name: '' });
+  });
+
   it('find contact: the AA window is only for Arbeitsagentur offers', async () => {
     const ctx = await makeApp();
     ctx.vacancyStore.add(vacancy({ id: 'm1', source: 'manual', sourceId: null, url: LINK }), OFFER);
@@ -152,6 +197,12 @@ describe('company research — facts, website, stop', () => {
       expect([url, res.statusCode]).toEqual([url, 400]);
     }
     expect(card(ctx, 'm1').research).toBeUndefined();
+
+    // A hidden card: refused before anything is saved.
+    ctx.vacancyStore.add(vacancy({ id: 'h1', source: 'manual', sourceId: null, status: 'hidden', url: '' }), OFFER);
+    const hidden = await call(ctx, 'PUT', '/api/vacancies/h1/research/website', { url: 'https://www.muster-digital.example/' });
+    expect(hidden.statusCode).toBe(409);
+    expect(card(ctx, 'h1').research).toBeUndefined();
 
     const ok = await call(ctx, 'PUT', '/api/vacancies/m1/research/website', { url: 'https://www.muster-digital.example/ueber-uns' });
     expect(ok.statusCode).toBe(202);
