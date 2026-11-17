@@ -43,6 +43,8 @@ export interface BackupRouteDeps {
   revokeTimeoutMs?: number;
   /** Largest accepted upload (tests); 1 GB like the unpacked limit. */
   maxUploadBytes?: number;
+  /** A company research is running or waiting (0.13.0): it writes into cards, so a restore waits for it. */
+  researchBusy?: () => boolean;
 }
 
 /**
@@ -86,7 +88,7 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     if (d.searchJob.state().state === 'running') return 'restoreBusySearch';
     if (d.applicationJob.state().state === 'running') return 'restoreBusyPackage';
     const q = d.queue.status();
-    if (q.running || q.queued > 0 || d.activity.active().includes('interview')) return 'restoreBusyAi';
+    if (q.running || q.queued > 0 || d.activity.active().includes('interview') || d.researchBusy?.()) return 'restoreBusyAi';
     if (d.activity.active().includes('send')) return 'restoreBusySend';
     if (d.activity.active().includes('export')) return 'restoreBusyExport';
     return null;

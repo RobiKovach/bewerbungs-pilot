@@ -42,7 +42,12 @@ export class VacancyStore {
       const doc = migrate(raw, VACANCIES_SCHEMA_VERSION, VACANCY_MIGRATIONS);
       const problem = validateVacancies(doc);
       if (problem) throw new MigrationError(problem);
-      this.items = (doc as unknown as { vacancies: Vacancy[] }).vacancies;
+      // A research that was queued or running when the program stopped never finishes: it becomes failed (the card
+      // offers "research again"), never an endless "researching" (0.13.0).
+      this.items = (doc as unknown as { vacancies: Vacancy[] }).vacancies.map((v) =>
+        v.research && (v.research.state === 'running' || v.research.state === 'queued')
+          ? { ...v, research: { ...v.research, state: 'failed', error: 'UNKNOWN' } }
+          : v);
     } catch (err) {
       if (!(err instanceof MigrationError)) throw err;
       this.setAside('invalid', forLog(err.message));

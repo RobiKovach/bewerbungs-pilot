@@ -6,8 +6,11 @@ import { abortOnClose } from '../http.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import type { Activity } from '../runtime/activity.js';
+import { collect, type CollectInput } from '../research/collect.js';
+import { mergeContact } from '../research/contact-merge.js';
+import { collectInputOf, type ResearchJob } from '../research/job.js';
 import { isAaHost } from './aa-links.js';
-import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, resultOf, type ContactFindDeps } from './contact-find.js';
+import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, proposalOf, resultOf, type ContactFindDeps } from './contact-find.js';
 import { findDuplicate } from './dedup.js';
 import { CONTACT_BODY, VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
@@ -24,6 +27,8 @@ import { NOTE_LABEL, scoreTask, toScore, toScores, type ScoreOutput } from './ta
 export interface VacancyRouteDeps {
   store: VacancyStore; source: VacancySource; pageReader: PageReader; pdfFetcher: PdfFetcher; contactWindow: ContactWindow; queue: LlmQueue; job: SearchJob; logger: Logger; activity: Activity;
   profile: () => Profile; language: () => Language;
+  /** Company research (0.13.0): started after a pasted link/text, stopped when the card is hidden. */
+  research: ResearchJob;
 }
 
 const L = VACANCY_LIMITS;
@@ -52,6 +57,9 @@ const editBody = {
     },
   },
 };
+
+/** "Find contact" never asks for news (collect's contact mode does not call it). */
+const NO_NEWS = async (): Promise<null> => null;
 
 /** Pasted text for "find contact" (the fallback when the page could not be read). */
 export const CONTACT_PASTE_MAX = 20_000;
@@ -127,7 +135,10 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     const v = d.store.require(id);
     if (!ALLOWED[v.status].includes(status)) throw new AppError('CONFLICT', `${v.status} → ${status} not allowed`);
     if (status === 'hidden') {
-      return view(d.store.update(id, (x) => { x.status = 'hidden'; x.hiddenAt = new Date().toISOString(); }));
+      d.store.update(id, (x) => { x.status = 'hidden'; x.hiddenAt = new Date().toISOString(); });
+      // A hidden card is not researched further (nothing is written into it but the stopped state).
+      d.research.cancel(id);
+      return view(d.store.require(id));
     }
     if (v.status === 'hidden' && v.source === 'arbeitsagentur' && v.sourceId && !v.hasText) {
       // Compacted while hidden: the offer's text and fields have to come from the source again.
@@ -164,6 +175,8 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     return view(d.store.update(id, (x) => {
       x.title = body.title.trim(); x.company = body.company.trim(); x.locations = body.locations.map((l) => l.trim());
       x.url = body.url.trim(); x.contact = body.contact;
+      // The person saved the contact: nothing in it counts as found by the app any more.
+      delete x.contactAuto;
     }));
   });
 
@@ -175,6 +188,11 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     const { from } = req.body as { from: ContactSource };
     const v = d.store.require(id);
     const signal = abortOnClose(reply);
+    // Not an Arbeitsagentur offer (0.13.0, spec 3.2): the contact part of the company research, as a proposal only.
+    if (v.source !== 'arbeitsagentur') {
+      if (from === 'aa') throw new AppError('BAD_REQUEST', 'only Arbeitsagentur offers open the AA window');
+      return collectProposal(v, collectInputOf(v), signal);
+    }
     if (from === 'partner') {
       if (!v.partnerUrl) throw new AppError('BAD_REQUEST', 'this offer has no partner page');
       return readPage(v.partnerUrl, signal);
@@ -185,11 +203,12 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     if ('cancelled' in seen) return { cancelled: true };
     const found = await proposalFromText(seen.text, contactDeps, signal);
     if (resultOf(found) === 'ok') return found;
-    // Only a link to the employer's site after the captcha: read that page (the first link off the AA site).
+    // Only a link to the employer's site after the captcha: the contact part of the research from that link (Ruling R6).
     const link = seen.links.find((l) => !isAaHost(l));
     if (!link) return found;
     try {
-      return await readPage(link, signal);
+      const fromLink = await collectProposal(v, { ...collectInputOf(v), partnerUrl: link, skipVacancyPage: true }, signal);
+      return resultOf(fromLink) === 'ok' || !found.found.length ? fromLink : found;
     } catch (err) {
       if (signal.aborted) throw err;
       return found.found.length ? found : emptyProposal();
@@ -208,8 +227,27 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     const { id } = req.params as { id: string };
     d.store.require(id);
     const contact = normaliseContact(req.body as VacancyContact | null);
-    return view(d.store.update(id, (x) => { x.contact = contact; }));
+    // Saved by the person: the "found automatically — check" marks go (spec 3.2).
+    return view(d.store.update(id, (x) => { x.contact = contact; delete x.contactAuto; }));
   });
+
+  /**
+   * The contact part of the company research (no news, no AI summary): what the pages say, plus the values that
+   * differ from fields the card already has. Nothing is written — the person checks and saves.
+   */
+  async function collectProposal(v: Vacancy, input: CollectInput, signal: AbortSignal): Promise<ContactProposal> {
+    try {
+      const c = await collect(input, 'contact', { reader: d.pageReader, fetchNews: NO_NEWS, now: () => new Date() }, signal);
+      const found = proposalOf(c.contact);
+      const { differing } = mergeContact(v.contact, c.contact, v.contactAuto);
+      const result = Object.keys(differing).length ? { ...found, differing } : found;
+      logFind(d.logger, 'partner', resultOf(result));
+      return result;
+    } catch (err) {
+      logFind(d.logger, 'partner', errorResult(err, signal));
+      throw err;
+    }
+  }
 
   /** A page off the AA site with the headless reader; logged as 'partner' with its result. */
   async function readPage(url: string, signal: AbortSignal): Promise<ContactProposal> {
@@ -258,7 +296,9 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       // in the meantime. Without this, both cards would land in the store with the same sourceId.
       const raceTwin = findDuplicate(d.store.list(), found);
       if (raceTwin) throw duplicateError(raceTwin);
-      return view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, offerText));
+      const addedAa = view(d.store.add({ ...card, score: score ?? null, scoreState: score ? 'scored' : 'failed' }, offerText));
+      startResearch(addedAa.vacancy);
+      return addedAa;
     }
 
     // A link without (enough) pasted text: the app opens the page itself; pasted text always wins (spec, section 6a).
@@ -295,8 +335,19 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
       ...base, ...fields, ...(initiative ? { initiative: true } : {}), source: 'manual', sourceId: null, publishedAt: '', url, scoreState: 'scored',
       score: toScore(out, new Date().toISOString(), provider, language),
     }, stored));
+    // A pasted text without a link is researched only when it names the company (spec 3.3).
+    if (url || added.vacancy.company.trim()) startResearch(added.vacancy);
     return notices.length ? { ...added, notices } : added;
   });
+
+  /** Adding a card never waits for, nor fails because of, its research. */
+  function startResearch(v: Vacancy): void {
+    try {
+      d.research.enqueue(v.id);
+    } catch (err) {
+      d.logger.warn('research.not_started', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+    }
+  }
 
   /**
    * The text behind the link field: a link ending in .pdf is downloaded as a PDF; any other link is opened in the

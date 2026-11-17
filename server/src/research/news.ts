@@ -81,3 +81,17 @@ export async function fetchNews(
   if (!/<rss[\s>]/.test(xml) || !/<channel[\s>][\s\S]*<\/channel>/.test(xml)) return null;
   return parseNewsRss(xml, new Date());
 }
+
+/**
+ * Test mode (Ruling R3, same gate as a development update source: a throw-away data folder and fake mail): a fixed
+ * list instead of Google News, so an end-to-end run never reaches the network. Two items, dated 10 and 40 days back.
+ */
+export async function fakeNews(company: string, signal: AbortSignal): Promise<ResearchNews[] | null> {
+  if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
+  if (!newsQueryUrl(company)) return null;
+  const day = (back: number) => new Date(Date.now() - back * DAY_MS).toISOString().slice(0, 10);
+  return [
+    { title: `${coreName(company)} eröffnet neuen Standort (Testmeldung)`, date: day(10), source: 'Testquelle', url: 'https://news.example.invalid/1' },
+    { title: `${coreName(company)} stellt neues Produkt vor (Testmeldung)`, date: day(40), source: 'Testquelle', url: 'https://news.example.invalid/2' },
+  ];
+}

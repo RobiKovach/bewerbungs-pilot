@@ -133,6 +133,10 @@ export interface ContactFindInput { from: ContactSource }
 /** POST /api/vacancies/:id/contact/parse — text the person copied from a page. */
 export interface ContactParseInput { text: string }
 /** A contact read from a page: only a proposal, nothing is saved. `found` = the fields that are not ''. */
-export interface ContactProposal { proposal: VacancyContact; found: Array<keyof VacancyContact> }
+/**
+ * `differing` (0.13.0, Ruling R5): values found that differ from fields the card already has filled — never written
+ * by itself; the person can take them in the contact window. Absent = none.
+ */
+export interface ContactProposal { proposal: VacancyContact; found: Array<keyof VacancyContact>; differing?: Partial<VacancyContact> }
 /** Answer of …/contact/find: the proposal, or the person closed the window. */
 export type ContactFindView = ContactProposal | { cancelled: true };

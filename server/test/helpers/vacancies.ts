@@ -110,7 +110,10 @@ export function scoringClaude(opts: {
  * `closed` the closed ones.
  */
 export class FakePageReader implements PageReader {
+  /** Every page opened: by `read` and in sessions. */
   calls: string[] = [];
+  /** Only pages read one at a time by `read` (adding a pasted link) — not the company research's session pages. */
+  reads: string[] = [];
   sessions = 0;
   closed = 0;
   /** The `deadlineMs` each session was started with. */
@@ -122,6 +125,7 @@ export class FakePageReader implements PageReader {
   async read(url: string, signal: AbortSignal): Promise<string> {
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
     this.calls.push(url);
+    this.reads.push(url);
     return this.read_(url);
   }
   async session(signal: AbortSignal, deadlineMs?: number): Promise<ReadSession> {

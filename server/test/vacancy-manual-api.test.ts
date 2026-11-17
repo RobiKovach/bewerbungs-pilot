@@ -10,6 +10,8 @@ const MANUAL = {
   salaryText: '', contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' }, score: 82, why: ['React'], missing: ['Deutsch C1'],
 };
 type Ctx = Awaited<ReturnType<typeof makeApp>>;
+/** The AI calls of the add itself: the company research it starts afterwards (0.13.0) has its own task. */
+const addCalls = (ctx: Ctx) => ctx.provider.calls.filter((c) => c.id !== 'company-research');
 const paste = (ctx: Ctx, body: unknown) => ctx.app.inject({ method: 'POST', url: '/api/vacancies/manual', headers: H, payload: body as Record<string, unknown> });
 
 describe('POST /api/vacancies/manual — pasted text', () => {
@@ -25,7 +27,7 @@ describe('POST /api/vacancies/manual — pasted text', () => {
       contact: { email: 'bewerbung@muster.example', salutation: 'Frau', name: 'Erika Beispiel' },
     });
     expect(ctx.vacancyStore.readText(v.id)).toBe(TEXT);
-    expect(ctx.provider.calls).toHaveLength(1);
+    expect(addCalls(ctx)).toHaveLength(1);
     expect(ctx.provider.calls[0].prompt).toMatch(/<<<UNTRUSTED_PASTED_VACANCY_[0-9a-f]{16}>>>/);
     expect(ctx.source.detailCalls).toEqual([]);
   });
@@ -110,7 +112,7 @@ describe('POST /api/vacancies/manual — Arbeitsagentur link', () => {
     const ctx = await makeApp({ source: fakeSource({ details: () => details(h) }) });
     const res = await paste(ctx, { url: 'https://www.arbeitsagentur.de.evil.example/jobsuche/jobdetail/10000-1111111111-S' });
     expect(res.json().error.reason).toBe('pageUnreadable');
-    expect(ctx.pageReader.calls).toEqual(['https://www.arbeitsagentur.de.evil.example/jobsuche/jobdetail/10000-1111111111-S']);
+    expect(ctx.pageReader.reads).toEqual(['https://www.arbeitsagentur.de.evil.example/jobsuche/jobdetail/10000-1111111111-S']);
     expect(ctx.source.detailCalls).toEqual([]);
   });
 
@@ -160,9 +162,9 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     expect(res.statusCode).toBe(200);
     const v = res.json().vacancy as Vacancy;
     expect(v).toMatchObject({ source: 'manual', url: LINK, title: 'Frontend Developer (m/w/d)' });
-    expect(reader.calls).toEqual([LINK]);
+    expect(reader.reads).toEqual([LINK]);
     expect(ctx.vacancyStore.readText(v.id)).toBe(TEXT);
-    expect(ctx.provider.calls).toHaveLength(1);
+    expect(addCalls(ctx)).toHaveLength(1);
   });
 
   it('text that is too short is the person\'s note: the page is read, the AI gets both, the card keeps both', async () => {
@@ -170,7 +172,7 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader });
     const res = await paste(ctx, { url: LINK, text: '  Frontend, bitte die Stelle in Dresden  ' });
     expect(res.statusCode).toBe(200);
-    expect(reader.calls).toEqual([LINK]);
+    expect(reader.reads).toEqual([LINK]);
     const prompt = ctx.provider.calls[0].prompt;
     expect(prompt).toMatch(/<<<UNTRUSTED_PERSON_NOTE_[0-9a-f]{16}>>>\nFrontend, bitte die Stelle in Dresden\n/);
     expect(prompt).toMatch(/<<<UNTRUSTED_PASTED_VACANCY_[0-9a-f]{16}>>>\nFrontend Developer \(m\/w\/d\) bei der Muster GmbH/);
@@ -209,7 +211,7 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     const reader = new FakePageReader(() => 'never');
     const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader });
     expect((await paste(ctx, { url: LINK, text: TEXT })).statusCode).toBe(200);
-    expect(reader.calls).toEqual([]);
+    expect(reader.reads).toEqual([]);
   });
 
   it('page unreadable → 400 pageUnreadable, no card, no AI run', async () => {
@@ -237,7 +239,7 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     const h = hit({ sourceId: '10000-3333333333-S' });
     const ctx = await makeApp({ provider: scoringClaude({ score: () => 50 }), source: fakeSource({ details: () => details(h, 'API-Text') }) });
     expect((await paste(ctx, { url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10000-3333333333-S' })).statusCode).toBe(200);
-    expect(ctx.pageReader.calls).toEqual([]);
+    expect(ctx.pageReader.reads).toEqual([]);
   });
 });
 
@@ -247,7 +249,7 @@ describe('link without text and no AI helper chosen', () => {
     const ctx = await makeApp({ chosen: null, pageReader: reader });
     const res = await ctx.app.inject({ method: 'POST', url: '/api/vacancies/manual', headers: H, payload: { text: '', url: 'https://jobs.example.de/stelle/1' } });
     expect([res.statusCode, res.json().error.code]).toEqual([409, 'LLM_NOT_CHOSEN']);
-    expect(reader.calls).toEqual([]);
+    expect(reader.reads).toEqual([]);
   });
 });
 
@@ -333,7 +335,7 @@ describe('0.9.1: PDF links in the link field and in the note', () => {
     const ctx = await makeApp({ provider: scoringClaude({ manual: MANUAL }), pageReader: reader, pdfFetcher: fetcher });
     const res = await paste(ctx, { url: PDF });
     expect(res.statusCode).toBe(200);
-    expect(reader.calls).toEqual([]);
+    expect(reader.reads).toEqual([]);
     expect(ctx.vacancyStore.readText(res.json().vacancy.id)).toBe(PDF_TEXT);
   });
 

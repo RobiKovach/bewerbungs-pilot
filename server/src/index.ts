@@ -47,7 +47,8 @@ import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
 import { SearchJob } from './vacancies/search-job.js';
 import { cleanOldUpdateFolders, readUpdateOutcome } from './updates/apply.js';
 import { UpdateChecker } from './updates/checker.js';
-import { devUpdateSource, Updater, zipUrlFor } from './updates/updater.js';
+import { devUpdateSource, devUpdateSourceAllowed, Updater, zipUrlFor } from './updates/updater.js';
+import { fakeNews, fetchNews } from './research/news.js';
 import { UPDATE_URL } from './updates/version-file.js';
 import { cloudUrl, versionJsonUrl } from './usage/cloud.js';
 import { shouldPing, UsagePinger } from './usage/pinger.js';
@@ -223,6 +224,8 @@ async function main(): Promise<void> {
     session: { key, cookieName: cookieName(port) },
     launchCodes,
     activity: new Activity(),
+    // Test mode (throw-away data folder + fake mail) never asks Google News (Ruling R3).
+    research: { fetchNews: devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : fetchNews },
     backup: {
       paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
       // After a restore every store reads its files again (synchronous: nothing can start in between).

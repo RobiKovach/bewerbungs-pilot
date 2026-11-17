@@ -25,6 +25,9 @@ import type { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { registerMailRoutes } from './mail/routes.js';
 import type { SecretStore } from './mail/secret.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
+import { ResearchJob } from './research/job.js';
+import type { fetchNews as FetchNews } from './research/news.js';
+import { registerResearchRoutes } from './research/routes.js';
 import type { PageReader, ReadSession } from './vacancies/sources/page-reader.js';
 import type { PdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import type { ContactWindow } from './vacancies/sources/aa-contact-window.js';
@@ -94,6 +97,11 @@ export interface AppDeps {
   };
   /** Our cloud service for feedback (spec 0.11.0); tests inject `fetch` and a URL. Default: the real one. */
   cloud?: { url: string; fetch?: typeof fetch };
+  /**
+   * Company research (0.13.0): where news come from — Google News in production, a fixed list in test mode
+   * (Ruling R3); tests always pass a fake, so no test reaches the network.
+   */
+  research: { fetchNews: typeof FetchNews };
   /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
   demo?: { active: boolean; start?: (language: Language) => Promise<{ url: string }> };
 }
@@ -363,10 +371,19 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     language: () => deps.settings.get().language ?? 'en',
   });
 
-  await registerVacancyRoutes(app, {
-    store: deps.vacancyStore, source: deps.vacancySource, pageReader: browserWork(deps.activity, deps.pageReader), pdfFetcher: deps.pdfFetcher, contactWindow: browserWork(deps.activity, deps.contactWindow), queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
-    profile: () => deps.profileStore.get(), language: () => deps.settings.get().language ?? 'en',
+  // One wrapped reader for "find contact", pasted links and the research: every session counts as browser work.
+  const pageReader = browserWork(deps.activity, deps.pageReader);
+  const language = () => deps.settings.get().language ?? 'en';
+  const research = new ResearchJob({
+    store: deps.vacancyStore, reader: pageReader, fetchNews: deps.research.fetchNews, queue: deps.queue, logger: deps.logger,
+    activity: deps.activity, language,
   });
+  await registerVacancyRoutes(app, {
+    research,
+    store: deps.vacancyStore, source: deps.vacancySource, pageReader, pdfFetcher: deps.pdfFetcher, contactWindow: browserWork(deps.activity, deps.contactWindow), queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
+    profile: () => deps.profileStore.get(), language,
+  });
+  await registerResearchRoutes(app, { store: deps.vacancyStore, job: research, activity: deps.activity });
 
   await registerApplicationRoutes(app, {
     store: deps.applicationStore, job: deps.applicationJob, printer: deps.printer, vacancies: deps.vacancyStore,
@@ -387,7 +404,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await registerBackupRoutes(app, {
     ...deps.backup, version: deps.version, searchJob: deps.searchJob, applicationJob: deps.applicationJob, queue: deps.queue,
     activity: deps.activity, settings: deps.settings, secrets: deps.secrets, googleAuth: deps.googleAuth, logger: deps.logger,
-    revokeTimeoutMs: deps.revokeTimeoutMs,
+    revokeTimeoutMs: deps.revokeTimeoutMs, researchBusy: () => research.busy(),
   });
 
   await removeTransferLeftovers(deps.backup.paths.tmp, (event, data) => deps.logger.warn(event, data));
@@ -414,7 +431,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       if (q.running || q.queued > 0 || active.includes('interview')) return 'ai';
       if (active.includes('send')) return 'send';
       if (deps.install.status().state === 'running') return 'install';
-      if (active.includes('browser')) return 'browser';
+      // A research between its page reading and its AI summary still holds the card: it counts as browser work.
+      if (active.includes('browser') || research.busy()) return 'browser';
       return null;
     },
   }) : undefined;

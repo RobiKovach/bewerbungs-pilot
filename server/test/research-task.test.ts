@@ -50,6 +50,18 @@ describe('companyResearchTask / toResearch (company research, 0.13.0)', () => {
     expect(toResearch(out({}), collected([], null), META).newsFailed).toBe(true);
   });
 
+  it('a source link longer than the card allows (2000) is no source: its points, news and source entry are dropped', () => {
+    const long = `https://muster.example/${'x'.repeat(2000)}`;
+    const longNews = { ...news(3), url: `https://news.google.com/${'n'.repeat(2000)}` };
+    const c = collected([page('vacancy', long, 'Wir suchen einen Webentwickler.'), page('impressum', 'https://muster.example/impressum', 'Muster GmbH.')], [longNews, news(4)]);
+    const r = toResearch(out({ facts: [{ text: 'Lang.', source: 0 }, { text: 'Kurz.', source: 1 }], redFlags: [{ text: 'Flag.', source: 2 }], news: [2, 3] }), c, META);
+    expect(r.facts.map((f) => f.text)).toEqual(['Kurz.']);
+    expect(r.redFlags).toEqual([]);
+    expect(r.news).toEqual([news(4)]);
+    expect(r.sources.map((x) => x.url)).toEqual(['https://muster.example/impressum', news(4).url]);
+    expect(toResearch(out({}), { ...c, website: long }, META).website).toBe('');
+  });
+
   it('a red flag needs a source too; at most 3 points, texts cut to the limit', () => {
     const many = Array.from({ length: 5 }, (_, i) => ({ text: `Fakt ${i} ${'a'.repeat(400)}`, source: 0 }));
     const r = toResearch(out({ facts: many, redFlags: [{ text: 'Insolvenz angemeldet.', source: 2 }, { text: 'Gerücht', source: 5 }] }), C, META);

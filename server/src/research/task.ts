@@ -96,12 +96,14 @@ export interface ResearchMeta { provider: ProviderId; language: Language; starte
 /** The AI's answer checked against the given sources and cut to the card's limits (Rulings R1). */
 export function toResearch(out: ResearchOutput, c: Collected, meta: ResearchMeta): CompanyResearch {
   const g = given(c);
-  const ok = new Set<number>([...g.pages.map((p) => p.n), ...g.news.map((x) => x.n)]);
+  // A link longer than the card allows would make the whole card invalid on save: such a source is no source.
+  const fits = (url: string) => url.length <= L.researchUrl;
+  const ok = new Set<number>([...g.pages.map((p) => p.n), ...g.news.map((x) => x.n)].filter((n) => fits(c.sources[n].url)));
   const points = (list: { text: string; source: number }[]): ResearchPoint[] => list
     .filter((p) => Number.isInteger(p.source) && ok.has(p.source) && typeof p.text === 'string' && p.text.trim() !== '')
     .slice(0, L.researchPoints)
     .map((p) => ({ id: crypto.randomUUID(), text: p.text.trim().slice(0, L.researchPoint), sourceUrl: c.sources[p.source].url }));
-  const byN = new Map(g.news.map((x) => [x.n, x.item]));
+  const byN = new Map(g.news.filter((x) => ok.has(x.n)).map((x) => [x.n, x.item]));
   const news = [...new Set(out.news)].flatMap((n) => byN.get(n) ?? []).slice(0, L.researchNews)
     .map((x) => ({ ...x, title: x.title.slice(0, L.researchNewsTitle), source: x.source.slice(0, L.researchNewsSource) }));
   return {
@@ -110,14 +112,14 @@ export function toResearch(out: ResearchOutput, c: Collected, meta: ResearchMeta
     finishedAt: meta.now,
     provider: meta.provider,
     language: meta.language,
-    website: c.website,
+    website: fits(c.website) ? c.website : '',
     websiteByPerson: meta.websiteByPerson,
     about: out.about.trim().slice(0, L.researchAbout),
     news,
     newsFailed: c.news === null,
     redFlags: points(out.redFlags),
     facts: points(out.facts),
-    sources: c.sources.slice(0, L.researchSources),
+    sources: c.sources.filter((x) => fits(x.url)).slice(0, L.researchSources),
     error: null,
   };
 }

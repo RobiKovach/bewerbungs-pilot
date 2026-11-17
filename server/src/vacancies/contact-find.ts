@@ -21,7 +21,7 @@ export interface ContactFindDeps { queue: LlmQueue; pageReader: PageReader; logg
 /** No lookup in the pre-check: a name always ends as 'dns' there, which the reader's own check then decides. */
 const RESOLVED_BY_READER = async (): Promise<string[]> => { throw new Error('resolved by the page reader'); };
 
-const proposalOf = (contact: VacancyContact): ContactProposal => ({ proposal: contact, found: FIELDS.filter((f) => contact[f] !== '') });
+export const proposalOf = (contact: VacancyContact): ContactProposal => ({ proposal: contact, found: FIELDS.filter((f) => contact[f] !== '') });
 const hasReach = (c: VacancyContact) => c.email !== '' || c.phone !== '';
 
 export function emptyProposal(): ContactProposal {
