@@ -1,13 +1,33 @@
 import fs from 'node:fs';
-import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile, SubmittedInfo } from '@bp/shared';
+import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile, SubmittedInfo, Vacancy } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
 import { followUpDue } from './follow-up.js';
 import { allowedFor, findPersonalData, packageTexts } from './personal-data.js';
-import { profileFingerprint } from './snapshot.js';
+import { currentFacts, profileFingerprint } from './snapshot.js';
 import { canUndo, isFrozen } from './status.js';
 import type { ApplicationStore, PhotoFile } from './store.js';
 
-export function toView(p: ApplicationPackage, profile: Profile, now: Date, vacancyText: string | null): ApplicationView {
+/**
+ * "Company facts appeared — Create again" (spec 3.4): the card's non-hidden facts differ from the package's snapshot.
+ * Never for a sent package (it cannot be created again) or when the card is gone.
+ */
+export function factsChanged(p: ApplicationPackage, vacancy: Vacancy | undefined): boolean {
+  if (!vacancy || isFrozen(p)) return false;
+  const now = currentFacts(vacancy);
+  const then = p.vacancy.facts ?? [];
+  return now.length !== then.length || now.some((x, i) => x !== then[i]);
+}
+
+/** The recipient e-mail the app found by itself and the person has not confirmed yet → its domain (spec, section 7). */
+export function recipientAuto(p: ApplicationPackage): { domain: string } | null {
+  const email = p.vacancy.contact?.email.trim() ?? '';
+  const at = email.lastIndexOf('@');
+  if (!(p.vacancy.contactAuto ?? []).includes('email') || at < 0) return null;
+  return { domain: email.slice(at + 1).toLowerCase() };
+}
+
+/** `vacancy`: the live card (undefined = gone), only for `factsChanged`. */
+export function toView(p: ApplicationPackage, profile: Profile, now: Date, vacancyText: string | null, vacancy: Vacancy | undefined): ApplicationView {
   const known = new Set(profile.documents.map((d) => d.id));
   const attachments: AttachmentInfo[] = [
     ...profile.documents.map((d) => ({ id: d.id, label: d.label || d.originalName, size: d.size, selected: p.attachments.includes(d.id), missing: false })),
@@ -15,7 +35,7 @@ export function toView(p: ApplicationPackage, profile: Profile, now: Date, vacan
   ];
   return {
     application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p), followUpDue: followUpDue(p, now),
-    warnings: warningsFor(p, profile, vacancyText),
+    warnings: warningsFor(p, profile, vacancyText), factsChanged: factsChanged(p, vacancy), recipientAuto: recipientAuto(p),
   };
 }
 

@@ -1,5 +1,10 @@
 import crypto from 'node:crypto';
-import type { PackageSnapshot, Profile } from '@bp/shared';
+import type { PackageSnapshot, Profile, Vacancy } from '@bp/shared';
+
+/** The texts of the card's company facts the person did not hide (0.13.0) — what a new letter gets; red flags and news never. */
+export function currentFacts(v: Vacancy): string[] {
+  return (v.research?.facts ?? []).filter((f) => f.hidden !== true).map((f) => f.text);
+}
 
 /** JSON with sorted keys, so the same data always gives the same text. */
 function stable(value: unknown): string {

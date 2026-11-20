@@ -22,6 +22,9 @@ export const objectOf = (fields: Record<string, JsonSchema>): JsonSchema => ({ t
 
 const LANGUAGE_NAME = { de: 'German', en: 'English' } as const;
 
+/** The letter rule for the company facts (0.13.0, spec 3.4) — only in prompts of packages that have facts. */
+export const FACTS_RULE = 'Facts about the company (optional): you may use one or two of them for a concrete "why this company" sentence. Use only these facts, never invent others, never mention anything negative about the company.';
+
 /** Letter rules shared by create and revise (spec, section 3 and the product spec's "Anschreiben ≠ copy of the CV"). */
 export function letterRules(ctx: PackageContext, vacancy: PackageVacancy): string {
   const lang = LANGUAGE_NAME[ctx.language];
@@ -45,7 +48,8 @@ export function letterRules(ctx: PackageContext, vacancy: PackageVacancy): strin
 - Never mention language skills or language levels (German, English or any other) — they are in the CV.
 - Never mention anything from "neverMention", not even paraphrased.${ctx.mentionHomeOffice ? `
 - The job is not in the person's city. Say in one natural sentence that the person lives in ${ctx.city} and would work from Home Office. Never offer to relocate or to be on site regularly.` : ''}
-- "hint": if no story fits a main requirement of the offer well, one short sentence saying which kind of story would make this letter stronger; otherwise null.`;
+- "hint": if no story fits a main requirement of the offer well, one short sentence saying which kind of story would make this letter stronger; otherwise null.${(vacancy.facts ?? []).length > 0 ? `
+- ${FACTS_RULE}` : ''}`;
 }
 
 export function cvRules(ctx: PackageContext): string {
@@ -66,9 +70,16 @@ export function contextBlock(ctx: PackageContext): string {
   return `The person's profile and stories:\n${fenceUntrusted('profile', JSON.stringify(data, null, 1))}`;
 }
 
-export function offerBlock(vacancy: PackageVacancy, offerText: string): string {
+/**
+ * The offer and — for the letter — the company facts the package was given (0.13.0). The facts were read from company
+ * pages, so they are fenced like the offer. Red flags and news are never copied into a package, so never reach a letter.
+ */
+export function offerBlock(vacancy: PackageVacancy, offerText: string, opts: { facts: boolean } = { facts: true }): string {
   const meta = { title: vacancy.title, company: vacancy.company, locations: vacancy.locations, remote: vacancy.remote };
-  return `The job offer:\n${fenceUntrusted('vacancy', `${JSON.stringify(meta)}\n\n${offerText.slice(0, OFFER_FOR_CLAUDE)}`)}`;
+  const offer = `The job offer:\n${fenceUntrusted('vacancy', `${JSON.stringify(meta)}\n\n${offerText.slice(0, OFFER_FOR_CLAUDE)}`)}`;
+  const facts = vacancy.facts ?? [];
+  if (!opts.facts || facts.length === 0) return offer;
+  return `${offer}\n\nFacts about the company:\n${fenceUntrusted('company facts', facts.map((x) => `- ${x}`).join('\n'))}`;
 }
 
 export function createPackageTask(ctx: PackageContext, vacancy: PackageVacancy, offerText: string): LlmTask {

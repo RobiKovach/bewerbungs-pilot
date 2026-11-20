@@ -207,24 +207,27 @@ export function packageTexts(p: ApplicationPackage): PlacedText[] {
  * What may appear: the person's own data and own free profile texts (live profile and the package snapshot), the vacancy's contact (email,
  * phone, postal code) and its links,
  * and the company's phones and postal codes (vacancy text, recipient lines). Emails and links from the free vacancy
- * text are NOT allowed — that is how a poisoned offer would look.
+ * text are NOT allowed — that is how a poisoned offer would look. Contact fields the app found by itself (0.13.0,
+ * `contactAuto`) count only once the person saved the contact: until then they are as foreign as the vacancy text.
  */
 export function allowedFor(p: ApplicationPackage, profile: Profile, vacancyText: string | null): AllowedData {
   const people: PersonalData[] = [profile.sections.personal.data, p.snapshot.personal];
+  const auto = new Set(p.vacancy.contactAuto ?? []);
+  const contact = (field: 'email' | 'phone' | 'postcode'): string => (auto.has(field) ? '' : p.vacancy.contact?.[field] ?? '');
   const companyText = [vacancyText ?? '', ...p.letter.recipient].join('\n');
   const ownText = ownProfileText(p, profile);
   const fiveDigits = (text: string) => matches(/(?<!\d)\d{5}(?!\d)/g, text).map((m) => m.value);
   const nonEmpty = (xs: string[]) => [...new Set(xs.filter((x) => x !== ''))];
   return {
     emails: nonEmpty([
-      ...people.map((x) => normEmail(x.email)), normEmail(p.vacancy.contact?.email ?? ''),
+      ...people.map((x) => normEmail(x.email)), normEmail(contact('email')),
       ...matches(EMAIL, ownText).map((m) => normEmail(m.value)),
     ]),
     phones: nonEmpty([
-      ...people.map((x) => normPhone(x.phone)), normPhone(p.vacancy.contact?.phone ?? ''),
+      ...people.map((x) => normPhone(x.phone)), normPhone(contact('phone')),
       ...matches(PHONE, `${companyText}\n${ownText}`).map((m) => normPhone(m.value)),
     ]),
-    postalCodes: nonEmpty([...people.map((x) => x.postalCode.trim()), p.vacancy.contact?.postcode.trim() ?? '', ...fiveDigits(companyText), ...fiveDigits(ownText)]),
+    postalCodes: nonEmpty([...people.map((x) => x.postalCode.trim()), contact('postcode').trim(), ...fiveDigits(companyText), ...fiveDigits(ownText)]),
     birthDates: nonEmpty(people.map((x) => normDate(x.birthDate))),
     links: nonEmpty([
       ...people.flatMap((x) => x.links.map((l) => normLink(l.url))), normLink(p.vacancy.url), normLink(p.vacancy.partnerUrl ?? ''), ...TECH_NAMES,

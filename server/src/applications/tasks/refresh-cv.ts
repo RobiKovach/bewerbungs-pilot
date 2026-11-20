@@ -8,7 +8,7 @@ export function refreshCvTask(ctx: PackageContext, vacancy: PackageVacancy, offe
     id: 'refresh-cv',
     prompt: [
       'You prepare the tailored parts of a CV (Lebenslauf) for one job application in Germany. The profile changed; build the parts again from it.',
-      cvRules(ctx), contextBlock(ctx), offerBlock(vacancy, offerText),
+      cvRules(ctx), contextBlock(ctx), offerBlock(vacancy, offerText, { facts: false }),
     ].join('\n\n'),
     schema: objectOf(CV_FIELDS),
     replyLanguage: ctx.language,

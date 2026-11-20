@@ -135,7 +135,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   };
   const view = (id: string) => {
     const p = d.store.require(id);
-    return toView(p, d.profile(), now(), vacancyTextOf(p));
+    return toView(p, d.profile(), now(), vacancyTextOf(p), d.vacancies.get(p.vacancyId));
   };
   const editable = (id: string) => assertEditable(d.store.require(id));
   /** Packages with an email in flight: nothing may change them until SMTP answers. */
@@ -249,12 +249,14 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
       // Same as a hand edit of the letter: never lost for want of a browser; approve recounts.
     }
     notBusy(id);
+    // Saved by the person: nothing in the contact counts as found by the app any more (spec 3.2, section 7).
     d.store.update(id, (p) => {
       p.vacancy = { ...p.vacancy, contact };
+      delete p.vacancy.contactAuto;
       p.letter = { ...p.letter, ...letter, pages: counted };
       touchDraft(p, now());
     });
-    if (d.vacancies.get(draft.vacancyId)) d.vacancies.update(draft.vacancyId, (v) => { v.contact = contact; });
+    if (d.vacancies.get(draft.vacancyId)) d.vacancies.update(draft.vacancyId, (v) => { v.contact = contact; delete v.contactAuto; });
     return view(id);
   });
 

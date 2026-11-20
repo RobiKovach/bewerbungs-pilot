@@ -142,6 +142,10 @@ export interface ApplicationView {
   application: ApplicationPackage; profileChanged: boolean; attachments: AttachmentInfo[]; canUndo: boolean; followUpDue: boolean;
   /** Personal data in the package that the profile does not have; recomputed on every read, never stored. */
   warnings: PersonalFinding[];
+  /** The card's non-hidden company facts differ from the ones this letter was written with (0.13.0; never for a sent package). */
+  factsChanged: boolean;
+  /** The recipient e-mail was found by the app and not confirmed yet: its domain, for the "check it is the company" warning (0.13.0). */
+  recipientAuto: { domain: string } | null;
 }
 
 export interface ApplicationStats {

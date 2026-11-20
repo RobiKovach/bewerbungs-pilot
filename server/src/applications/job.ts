@@ -12,7 +12,7 @@ import { countPages, type PdfPrinter } from './pdf.js';
 import { assertPackageReady } from './readiness.js';
 import { letterHtml } from './render/letter.js';
 import { PACKAGE_SCHEMA_VERSION } from './schema.js';
-import { profileFingerprint, sameCvInputs, takeSnapshot, translatableValues } from './snapshot.js';
+import { currentFacts, profileFingerprint, sameCvInputs, takeSnapshot, translatableValues } from './snapshot.js';
 import type { ApplicationStore, PhotoFile } from './store.js';
 import { packageContext, type CreateOutput, type CvOutput, type LetterOutput, type PackageContext } from './tasks/context.js';
 import { createPackageTask } from './tasks/create-package.js';
@@ -47,8 +47,21 @@ export function touchDraft(p: ApplicationPackage, now: Date): void {
   p.updatedAt = at;
 }
 
+/** `facts` replaced by the given ones (absent when there are none, like packages from before 0.13.0). */
+export function withFacts(v: PackageVacancy, facts: string[]): PackageVacancy {
+  const rest = { ...v };
+  delete rest.facts;
+  return facts.length > 0 ? { ...rest, facts: [...facts] } : rest;
+}
+
 export function toPackageVacancy(v: Vacancy): PackageVacancy {
-  return { id: v.id, title: v.title, company: v.company, locations: [...v.locations], remote: v.remote, contact: v.contact ? { ...v.contact } : null, url: v.url, ...(v.partnerUrl ? { partnerUrl: v.partnerUrl } : {}), ...(v.initiative ? { initiative: true } : {}) };
+  const base: PackageVacancy = {
+    id: v.id, title: v.title, company: v.company, locations: [...v.locations], remote: v.remote, contact: v.contact ? { ...v.contact } : null, url: v.url,
+    ...(v.partnerUrl ? { partnerUrl: v.partnerUrl } : {}), ...(v.initiative ? { initiative: true } : {}),
+    // Which contact fields the app found by itself: the send window warns until the person saves the contact.
+    ...(v.contact && v.contactAuto && v.contactAuto.length > 0 ? { contactAuto: [...v.contactAuto] } : {}),
+  };
+  return withFacts(base, currentFacts(v));
 }
 
 /** The Claude-written letter fields, trimmed; the server-built parts of `base` stay as they are. */
@@ -154,7 +167,11 @@ export class ApplicationJob {
 
   private async create(vacancyId: string, language: DocLanguage, profile: Profile, signal: AbortSignal, previous: ApplicationPackage | null): Promise<string> {
     // Recreate works from the package's own copy (the vacancy may be hidden or compacted by now).
-    const vacancy = previous ? previous.vacancy : toPackageVacancy(this.d.vacancies.require(vacancyId));
+    // "Create again" takes the card's current company facts while the card exists (spec 3.4); its contact stays as it is.
+    const card = previous ? this.d.vacancies.get(vacancyId) : undefined;
+    const vacancy = previous
+      ? (card ? withFacts(previous.vacancy, currentFacts(card)) : previous.vacancy)
+      : toPackageVacancy(this.d.vacancies.require(vacancyId));
     const text = previous ? this.d.store.readVacancyText(previous.id) : (this.d.vacancies.readText(vacancyId) ?? '');
     const ctx = packageContext(profile, language, mentionHomeOffice(profile, vacancy), vacancy.initiative === true);
     const out = await this.ask<CreateOutput>(createPackageTask(ctx, vacancy, text), (o) => mergeChecks(checkLetter(o, ctx), checkCv(o, ctx)), signal);
