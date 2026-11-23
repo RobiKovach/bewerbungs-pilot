@@ -3,7 +3,7 @@ import { ApiError } from '../api';
 import { saveFile } from './save';
 
 /** A fake "Save as" handle: records what was written; `failWrite` makes the write fail (USB stick pulled). */
-function fakeHandle(opts: { failWrite?: boolean } = {}) {
+function fakeHandle(opts: { failWrite?: boolean; size?: number } = {}) {
   const written: unknown[] = [];
   const calls: string[] = [];
   const writable = {
@@ -11,7 +11,7 @@ function fakeHandle(opts: { failWrite?: boolean } = {}) {
     close: vi.fn(async () => { calls.push('close'); }),
     abort: vi.fn(async () => { calls.push('abort'); }),
   };
-  const handle = { createWritable: vi.fn(async () => { calls.push('createWritable'); return writable; }), remove: vi.fn(async () => { calls.push('remove'); }) };
+  const handle = { getFile: vi.fn(async () => ({ size: opts.size ?? 0 })), createWritable: vi.fn(async () => { calls.push('createWritable'); return writable; }), remove: vi.fn(async () => { calls.push('remove'); }) };
   return { handle, writable, written, calls };
 }
 
@@ -52,6 +52,15 @@ describe('saveFile with the "Save as" window', () => {
     await expect(saveFile({ suggestedName: 'x.pdf', kind: 'pdf', make })).rejects.toMatchObject({ code: 'BROWSER_MISSING' });
     expect(h.handle.createWritable).not.toHaveBeenCalled();
     expect(h.handle.remove).toHaveBeenCalledOnce();
+  });
+
+  it('an existing file the person chose to replace is never deleted when the file cannot be made', async () => {
+    const h = fakeHandle({ size: 1234 });
+    (window as { showSaveFilePicker?: unknown }).showSaveFilePicker = vi.fn(async () => h.handle);
+    const make = vi.fn(async () => new Response(JSON.stringify({ error: { code: 'BROWSER_MISSING', detailsForLog: 'x' } }), { status: 500 }));
+    await expect(saveFile({ suggestedName: 'x.pdf', kind: 'pdf', make })).rejects.toMatchObject({ code: 'BROWSER_MISSING' });
+    expect(h.handle.remove).not.toHaveBeenCalled();
+    expect(h.handle.createWritable).not.toHaveBeenCalled();
   });
 
   it('the program is not reachable after the window: SERVER_UNREACHABLE, empty file removed', async () => {

@@ -165,7 +165,7 @@ test('a pasted job offer becomes an approved application package', async () => {
   await downloads.getByRole('button', { name: 'CV (PDF)' }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { savedAs: unknown }).savedAs), { timeout: 30_000 }).not.toBeNull();
   const savedAs = await page.evaluate(() => (window as unknown as { savedAs: { name: string; bytes: number[] } }).savedAs);
-  expect(savedAs.name).toMatch(/^CV_.+.pdf$/);
+  expect(savedAs.name).toMatch(/^CV_.+\.pdf$/);
   expect(String.fromCharCode(...savedAs.bytes)).toBe('%PDF-');
   await page.evaluate(() => { (window as unknown as { showSaveFilePicker: unknown }).showSaveFilePicker = undefined; });
 });

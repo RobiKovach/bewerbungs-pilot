@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { attachmentFileName } from '../src/applications/render/html.js';
 import { toView } from '../src/applications/views.js';
 import { pkg, readyPackageProfile } from './helpers/applications.js';
 
@@ -23,6 +24,11 @@ describe('download names in the package view', () => {
         '22222222-2222-4222-8222-222222222222': 'Fuehrerschein.pdf',
       },
     });
+  });
+
+  it('the file name ending is cut only as ".pdf": "Scan-pdf" stays "Scan-pdf"', () => {
+    expect(attachmentFileName({ label: '', originalName: 'Scan-pdf' })).toBe('Scan-pdf.pdf');
+    expect(attachmentFileName({ label: '', originalName: 'Zeugnis.PDF' })).toBe('Zeugnis.pdf');
   });
 
   it('English package uses the English names', () => {

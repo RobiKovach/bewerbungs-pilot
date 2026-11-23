@@ -42,7 +42,7 @@ export function fileNames(fullName: string, company: string, language: DocLangua
 
 /** Download name of a profile document attached to a package: its label (or file name) in Latin letters, `.pdf`. */
 export function attachmentFileName(doc: { label: string; originalName: string }): string {
-  return `${asciiName(doc.label || doc.originalName.replace(/.pdf$/i, '')) || 'Anlage'}.pdf`;
+  return `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`;
 }
 
 /** The page frame every template shares: A4, no margins from the browser, one inline stylesheet, no scripts. */

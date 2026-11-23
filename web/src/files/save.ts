@@ -14,7 +14,7 @@ export interface SaveRequest {
 
 /** The parts of the File System Access API used here (not in TypeScript's DOM types yet). */
 interface Writable { write(data: Blob): Promise<void>; close(): Promise<void>; abort?(): Promise<void> }
-interface SaveHandle { createWritable(): Promise<Writable>; remove?(): Promise<void> }
+interface SaveHandle { createWritable(): Promise<Writable>; getFile?(): Promise<{ size: number }>; remove?(): Promise<void> }
 type SavePicker = (options: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<SaveHandle>;
 
 const TYPES: Record<SaveRequest['kind'], { description: string; accept: Record<string, string[]> }> = {
@@ -52,7 +52,12 @@ export async function saveFile(req: SaveRequest): Promise<SaveResult> {
     await downloadResponse(await made(req.make), req.suggestedName);
     return 'downloaded';
   }
-  const removeEmpty = async () => { try { await handle.remove?.(); } catch { /* nothing more to do */ } };
+  // Removes only the empty file the window created: a file the person chose to replace keeps its old content.
+  const removeEmpty = async () => {
+    try {
+      if ((await handle.getFile?.())?.size === 0) await handle.remove?.();
+    } catch { /* nothing more to do */ }
+  };
   let blob: Blob;
   try {
     ({ blob } = await readFile(await made(req.make), req.suggestedName));
