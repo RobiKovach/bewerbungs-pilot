@@ -227,8 +227,9 @@ async function main(): Promise<void> {
     session: { key, cookieName: cookieName(port) },
     launchCodes,
     activity: new Activity(),
-    // Test mode (throw-away data folder + fake mail) never asks Google News (Ruling R3).
-    research: { fetchNews: devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : newsSource() },
+    // News are off (Robert 2026-11-23): nothing is asked and the card has no news section. Test mode follows the same
+    // switch and never asks Google News (Ruling R3): while news are on it gets a fixed fake list.
+    research: { fetchNews: newsSource() && devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : newsSource() },
     backup: {
       paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
       // After a restore every store reads its files again (synchronous: nothing can start in between).

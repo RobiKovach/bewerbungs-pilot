@@ -186,10 +186,11 @@ function interviewSummary(task: LlmTask) {
  * Company research (0.13.0): 1 fact and 1 red flag, both from source 0 (Ruling R4 — end-to-end runs prove a red flag
  * never reaches the letter). When no source was given, toResearch drops both.
  */
-function companyResearch() {
+function companyResearch(task: LlmTask) {
   return {
     about: 'The company builds software for medium-sized businesses (fake AI answer).',
-    news: [],
+    // News off (0.13.0): the schema has no news field, so neither has the answer.
+    ...('news' in ((task.schema as { properties?: object }).properties ?? {}) ? { news: [] } : {}),
     facts: [{ text: 'Develops its own web platform for customers in Saxony (fake AI answer).', source: 0 }],
     redFlags: [{ text: 'Announced job cuts in its sales department (fake AI answer).', source: 0 }],
   };
@@ -225,7 +226,7 @@ export function scriptedResponse(task: LlmTask): unknown {
     case 'interview-questions': return interviewQuestions(task);
     case 'interview-feedback': return interviewFeedback(task);
     case 'interview-summary': return interviewSummary(task);
-    case 'company-research': return companyResearch();
+    case 'company-research': return companyResearch(task);
     default: {
       const unknown: never = task.id;
       throw new Error(`fake AI: no scripted answer for task "${String(unknown)}"`);

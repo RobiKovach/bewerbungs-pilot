@@ -122,6 +122,14 @@ describe('research collect', () => {
     expect(out.sources.at(-1)).toEqual({ url: item.url, kind: 'news' });
   });
 
+  it('news off (fetchNews null): full mode asks no news and says newsOff', async () => {
+    const f = fakeReader(ITSAX);
+    const out = await collect(input(), 'full', { reader: f.reader, fetchNews: null, now: f.clock }, new AbortController().signal);
+    expect(out.newsOff).toBe(true);
+    expect(out.news).toBeNull();
+    expect(out.sources.some((s) => s.kind === 'news')).toBe(false);
+  });
+
   it('an unreadable vacancy page still searches the website by name', async () => {
     const f = fakeReader({ ...ITSAX, 'https://www.itsax.de/stellen/123': 'fail',
       'https://www.symate.de': page('https://www.symate.de', 'Impressum: Symate GmbH, Geschäftsführer …', [['Impressum', 'https://www.symate.de/impressum']]) });

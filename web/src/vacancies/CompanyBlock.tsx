@@ -140,6 +140,8 @@ export function CompanyBlock({ vacancy: v, onChange, pollMs = RESEARCH_POLL_MS }
               )}
             </Section>
             <Section title={t('vacancies.company.about')}>{r.about ? <p>{r.about}</p> : nothing}</Section>
+            {/* News off (0.13.0): nothing was looked up, so there is no news section at all. */}
+            {r.newsOff ? null : (
             <Section title={t('vacancies.company.news')}>
               {r.news.length ? (
                 <ul className="company__points">
@@ -153,6 +155,7 @@ export function CompanyBlock({ vacancy: v, onChange, pollMs = RESEARCH_POLL_MS }
                 </ul>
               ) : r.newsFailed ? <p className="muted">{t('vacancies.company.newsFailed')}</p> : nothing}
             </Section>
+            )}
             <Section title={<>{t('vacancies.company.flags')} <span className="badge">{t('vacancies.company.flagsNote')}</span></>}>
               {points(r.redFlags, false)}
               {v.company.trim() ? (

@@ -83,7 +83,7 @@ older, install 0.12.1 by hand once (download it from the banner or the Releases 
   Kununu) and up to three facts the letter can use. For a pasted link it starts by itself; for offers from the job
   search press **Research the company**. The app itself reads a few public pages (the job page, the company site and its
   Impressum, contact, career or "about us" pages, at most six pages and one minute); the AI helper only summarises
-  them. Hide a fact with ✕ and the letter will not use it.
+  them. No news service is asked. Hide a fact with ✕ and the letter will not use it.
 - **Contact found for you.** Empty contact fields (email, person, phone, address) are filled from those pages and marked
   "found automatically — please check". A field you filled yourself is never changed; a different value is offered in
   **Find contact** as "Found something different — Take". Sending to an address found automatically works, with a yellow

@@ -41,6 +41,8 @@ export interface CompanyResearch {
   news: ResearchNews[];
   /** The news feed could not be read (as opposed to: read, nothing found). */
   newsFailed: boolean;
+  /** News were not looked up at all (news off, 0.13.0): no news section is shown. Absent on older research. */
+  newsOff?: boolean;
   redFlags: ResearchPoint[];
   facts: ResearchPoint[];
   sources: ResearchSource[];

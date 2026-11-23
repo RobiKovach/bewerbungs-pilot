@@ -58,9 +58,6 @@ const editBody = {
   },
 };
 
-/** "Find contact" never asks for news (collect's contact mode does not call it). */
-const NO_NEWS = async (): Promise<null> => null;
-
 /** Pasted text for "find contact" (the fallback when the page could not be read). */
 export const CONTACT_PASTE_MAX = 20_000;
 const findBody = { type: 'object', additionalProperties: false, required: ['from'], properties: { from: { enum: ['aa', 'partner'] } } };
@@ -237,7 +234,7 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
    */
   async function collectProposal(v: Vacancy, input: CollectInput, signal: AbortSignal): Promise<ContactProposal> {
     try {
-      const c = await collect(input, 'contact', { reader: d.pageReader, fetchNews: NO_NEWS, now: () => new Date() }, signal);
+      const c = await collect(input, 'contact', { reader: d.pageReader, fetchNews: null, now: () => new Date() }, signal);
       const contact = await withNameFromPages(c.contact, c.pages, contactDeps, signal);
       const found = proposalOf(contact);
       const { differing } = mergeContact(v.contact, contact, v.contactAuto);

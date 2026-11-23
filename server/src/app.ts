@@ -101,7 +101,7 @@ export interface AppDeps {
    * Company research (0.13.0): where news come from — Google News in production, a fixed list in test mode
    * (Ruling R3); tests always pass a fake, so no test reaches the network.
    */
-  research: { fetchNews: typeof FetchNews; /** Tests: the job, to wait until it is idle. */ onJob?: (job: ResearchJob) => void };
+  research: { /** null: news off. */ fetchNews: typeof FetchNews | null; /** Tests: the job, to wait until it is idle. */ onJob?: (job: ResearchJob) => void };
   /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
   demo?: { active: boolean; start?: (language: Language) => Promise<{ url: string }> };
 }

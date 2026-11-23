@@ -394,7 +394,7 @@ function packageOf(company: string): { letter: { paragraphs: string[] }; vacancy
   return file ? JSON.parse(fs.readFileSync(file, 'utf8')) as ReturnType<typeof packageOf> : null;
 }
 
-test('a pasted link from a board: company site and Impressum give the contact, the card shows facts, the letter uses a fact, a red flag never reaches the letter', async () => {
+test('a pasted link to a vacancy on the company site: the page and its Impressum give the contact, the card shows facts, the letter uses a fact, a red flag never reaches the letter', async () => {
   // The scripted research answer (Ruling R4): one fact and one red flag, both from the first page read.
   const fact = 'Develops its own web platform for customers in Saxony';
   const flag = 'Announced job cuts in its sales department';
@@ -414,6 +414,8 @@ test('a pasted link from a board: company site and Impressum give the contact, t
 
   await card.getByText('About the company', { exact: true }).click();
   await expect(card.getByText(/^Researched /)).toBeVisible();
+  // News are off (Robert 2026-11-23): no news section, not even 'could not be loaded'.
+  await expect(card.getByText(/What's new|news could not be loaded/)).toHaveCount(0);
   await expect(card.getByText(fact)).toBeVisible();
   await expect(card.getByText(flag)).toBeVisible();
   await expect(card.getByText('only for you, not used in the letter')).toBeVisible();

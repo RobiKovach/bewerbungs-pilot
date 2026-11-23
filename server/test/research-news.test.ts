@@ -112,12 +112,9 @@ describe('research news', () => {
   });
 });
 
-describe('newsSource (Ruling R38: Google News off until decided)', () => {
-  it('while news are off nothing is asked and the answer is "could not be loaded"', async () => {
+describe('newsSource (Ruling R38; Robert 2026-11-23: no news)', () => {
+  it('while news are off there is no news source at all (Robert 2026-11-23: no news)', () => {
     expect(NEWS_ENABLED).toBe(false);
-    expect(await newsSource()('Symate GmbH', new AbortController().signal)).toBeNull();
-    const stopped = new AbortController();
-    stopped.abort();
-    await expect(newsSource()('Symate GmbH', stopped.signal)).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+    expect(newsSource()).toBeNull();
   });
 });

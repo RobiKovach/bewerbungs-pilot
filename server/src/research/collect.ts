@@ -28,10 +28,14 @@ export interface Collected {
   website: string;
   pages: FoundPage[];
   contact: VacancyContact;
+  /** null: news were asked but could not be read. */
   news: ResearchNews[] | null;
+  /** News are off (`fetchNews` null): nothing was asked, the card shows no news section at all. */
+  newsOff?: boolean;
   sources: ResearchSource[];
 }
-export interface CollectDeps { reader: PageReader; fetchNews: typeof FetchNews; now: () => Date }
+/** `fetchNews` null = news off (0.13.0, Robert 2026-11-23): no news service is ever asked. */
+export interface CollectDeps { reader: PageReader; fetchNews: typeof FetchNews | null; now: () => Date }
 
 export const MAX_PAGES = 6;
 export const COLLECT_BUDGET_MS = 60_000;
@@ -107,7 +111,7 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
   let website = '';
   try {
     session = await deps.reader.session(signal, deadline);
-    if (mode === 'full') {
+    if (mode === 'full' && deps.fetchNews) {
       newsTask = deps.fetchNews(input.company, newsStop.signal);
       newsTask.catch(() => undefined); // held until awaited below; never an unhandled rejection
     }
@@ -154,7 +158,7 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
       ...pages.map((p) => ({ url: p.url, kind: p.kind })),
       ...(news ?? []).map((n) => ({ url: n.url, kind: 'news' as const })),
     ];
-    return { website, pages, contact: contactFromPages(pages, siteOf(website)), news, sources };
+    return { website, pages, contact: contactFromPages(pages, siteOf(website)), news, ...(deps.fetchNews ? {} : { newsOff: true }), sources };
   } finally {
     signal.removeEventListener('abort', stopNews);
     newsStop.abort();

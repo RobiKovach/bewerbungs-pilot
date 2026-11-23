@@ -22,7 +22,8 @@ export interface ResearchJobDeps {
   store: VacancyStore;
   /** Wrapped with `browserWork` in production: a running session counts as browser work for an update. */
   reader: PageReader;
-  fetchNews: typeof FetchNews;
+  /** null: news off — nothing is asked (0.13.0). */
+  fetchNews: typeof FetchNews | null;
   queue: LlmQueue;
   logger: Logger;
   activity: Activity;

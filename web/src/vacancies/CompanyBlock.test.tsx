@@ -168,6 +168,14 @@ describe('CompanyBlock', () => {
     expect(screen.getByText('The news could not be loaded.')).toBeInTheDocument();
   });
 
+  it('news off (not looked up): no news section at all, no "could not be loaded"', async () => {
+    const { user } = setup(vac({ id: 'v1', research: research({ news: [], newsFailed: false, newsOff: true, redFlags: [], facts: [], about: '' }) }));
+    await open(user);
+    expect(screen.queryByText("What's new (about 6 months)")).not.toBeInTheDocument();
+    expect(screen.queryByText('The news could not be loaded.')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Nothing notable found.')).toHaveLength(3);
+  });
+
   it('failed research offers to research again', async () => {
     const v = vac({ id: 'v1', research: research({ state: 'failed', error: 'UNKNOWN' }) });
     const { f, user } = setup(v, {

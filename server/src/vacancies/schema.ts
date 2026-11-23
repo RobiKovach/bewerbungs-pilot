@@ -116,6 +116,9 @@ const RESEARCH: JsonSchema = obj({
     items: obj({ url: RESEARCH_URL, kind: { enum: ['vacancy', 'impressum', 'contact', 'apply', 'careers', 'about', 'home', 'news'] } }),
   },
   error: nullable({ type: 'string', pattern: '^[A-Z_]{1,40}$' }),
+}, {
+  // 0.13.0: news not looked up (off). Optional, so research stored without it stays valid.
+  newsOff: { type: 'boolean' },
 });
 /** Which contact fields the app filled in by itself (0.13.0); the package copies it with the same schema. */
 export const CONTACT_AUTO: JsonSchema = { type: 'array', maxItems: 7, uniqueItems: true, items: CONTACT_FIELD };

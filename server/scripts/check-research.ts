@@ -5,10 +5,10 @@
 //   --show      print the found contact values; by default only which fields were found (names of real people stay
 //               off the screen and out of copied logs) and the e-mail's domain.
 // The program reads the pages with the same safe reader as the app (public addresses only, no pictures, one browser);
-// in full mode it also asks Google News for the company name. The AI summary is not run here: only what the AI
+// news follow the app (newsSource: NEWS_ENABLED is false — no news service is asked). The AI summary is not run here: only what the AI
 // helper would be given is measured.
 import { collect, type CollectInput, type CollectMode } from '../src/research/collect.js';
-import { fetchNews } from '../src/research/news.js';
+import { newsSource } from '../src/research/news.js';
 import { companyResearchTask } from '../src/research/task.js';
 import { BrowserPageReader } from '../src/vacancies/sources/page-reader.js';
 import fs from 'node:fs';
@@ -50,7 +50,7 @@ const reader = new BrowserPageReader({
 
 const started = Date.now();
 try {
-  const c = await collect(input, mode, { reader, fetchNews, now: () => new Date() }, new AbortController().signal);
+  const c = await collect(input, mode, { reader, fetchNews: newsSource(), now: () => new Date() }, new AbortController().signal);
   console.log(`\nmode ${mode}, ${((Date.now() - started) / 1000).toFixed(1)} s`);
   console.log(`website: ${c.website || '(not found)'}`);
   console.log(`pages read (${c.pages.length}):`);
@@ -62,7 +62,8 @@ try {
     const shown = show ? v : k === 'email' ? `…@${v.split('@')[1]}` : '(found)';
     console.log(`  ${k}: ${shown}`);
   }
-  if (c.news === null) console.log(mode === 'full' ? 'news: could not be loaded' : 'news: not asked (contact mode)');
+  if (c.newsOff) console.log('news: off (no news service is asked)');
+  else if (c.news === null) console.log(mode === 'full' ? 'news: could not be loaded' : 'news: not asked (contact mode)');
   else {
     console.log(`news (${c.news.length}):`);
     for (const n of c.news) console.log(`  ${n.date} ${n.source}: ${n.title}`);

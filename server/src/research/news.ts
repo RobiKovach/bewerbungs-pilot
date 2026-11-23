@@ -86,17 +86,15 @@ export async function fetchNews(
  * Google News is OFF until Robert decides (0.13.0, task 12, Ruling R38): every feed says it "is made available
  * solely for the purpose of rendering Google News results within a personal feed reader for personal, non-commercial
  * use. Any other use of the feed is expressly prohibited." — a summary by an AI helper inside an app is not clearly
- * that. While off, nothing is asked (the company name never leaves the PC for news) and the block says the news
- * could not be loaded. Turning it on: set this to true and update privacy.html / README.
+ * that. Robert (2026-11-23): no news at all. While off, nothing is asked (the company name never leaves the PC for
+ * news), the AI is told nothing about news and the card has no news section. Turning it on: set this to true and
+ * update privacy.html / README / CHANGELOG.
  */
 export const NEWS_ENABLED = false;
 
-/** The news source the app uses outside test mode. */
-export function newsSource(): typeof fetchNews {
-  return NEWS_ENABLED ? fetchNews : async (_company, signal) => {
-    if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
-    return null;
-  };
+/** The news source the app uses outside test mode: null while news are off — then nothing is asked at all. */
+export function newsSource(): typeof fetchNews | null {
+  return NEWS_ENABLED ? fetchNews : null;
 }
 
 /**

@@ -125,4 +125,21 @@ describe('companyResearchTask / toResearch (company research, 0.13.0)', () => {
     expect(r.redFlags).toHaveLength(1);
     expect(r.about).not.toBe('');
   });
+
+  it('news off: the prompt and schema say nothing about news, the result is newsOff and not failed', () => {
+    const off: Collected = { ...collected(C.pages, null), newsOff: true };
+    const task = companyResearchTask('Muster GmbH', off, 'de');
+    expect(task.prompt.toLowerCase()).not.toContain('news');
+    expect(JSON.stringify(task.schema)).not.toContain('news');
+    expect(strictProblems(task.schema)).toEqual([]);
+    const answer = scriptedResponse(task) as ResearchOutput;
+    expect(validateOutput(task.schema, answer)).toEqual({ ok: true });
+    const r = toResearch(answer, off, META);
+    expect(r).toMatchObject({ newsOff: true, newsFailed: false, news: [] });
+    expect(r.facts).toHaveLength(1);
+  });
+
+  it('news looked up: no newsOff field (older stored research has none either)', () => {
+    expect(toResearch(out({}), C, META)).not.toHaveProperty('newsOff');
+  });
 });
