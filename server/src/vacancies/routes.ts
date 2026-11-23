@@ -7,7 +7,7 @@ import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
 import type { Activity } from '../runtime/activity.js';
 import { collect, type CollectInput } from '../research/collect.js';
-import { mergeContact } from '../research/contact-merge.js';
+import { mergeContact, remainingMarks } from '../research/contact-merge.js';
 import { collectInputOf, type ResearchJob } from '../research/job.js';
 import { isAaHost } from './aa-links.js';
 import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, proposalOf, resultOf, withNameFromPages, type ContactFindDeps } from './contact-find.js';
@@ -20,6 +20,7 @@ import type { ContactWindow } from './sources/aa-contact-window.js';
 import type { PageReader } from './sources/page-reader.js';
 import type { PdfFetcher } from './sources/pdf-fetch.js';
 import type { SourceDetails, VacancySource } from './sources/types.js';
+import type { ApplicationStore } from '../applications/store.js';
 import type { VacancyStore } from './store.js';
 import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, type ManualOutput } from './tasks/extract-manual.js';
 import { NOTE_LABEL, scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
@@ -29,6 +30,8 @@ export interface VacancyRouteDeps {
   profile: () => Profile; language: () => Language;
   /** Company research (0.13.0): started after a pasted link/text, stopped when the card is hidden. */
   research: ResearchJob;
+  /** The packages, so a contact confirmed on the card also confirms it in the vacancy's unsent package (final review M2). */
+  applications?: Pick<ApplicationStore, 'editableByVacancy' | 'get' | 'update'>;
 }
 
 const L = VACANCY_LIMITS;
@@ -169,12 +172,14 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     const { id } = req.params as { id: string };
     const body = req.body as ManualEdit;
     if (d.store.require(id).source !== 'manual') throw new AppError('CONFLICT', 'only pasted offers can be edited');
-    return view(d.store.update(id, (x) => {
+    const saved = d.store.update(id, (x) => {
       x.title = body.title.trim(); x.company = body.company.trim(); x.locations = body.locations.map((l) => l.trim());
       x.url = body.url.trim(); x.contact = body.contact;
       // The person saved the contact: nothing in it counts as found by the app any more.
       delete x.contactAuto;
-    }));
+    });
+    confirmInPackage(id, body.contact);
+    return view(saved);
   });
 
   // "Find contact" (0.9.1 B5): a proposal only — nothing is saved until the person presses "Зберегти" (PUT …/contact).
@@ -225,8 +230,27 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     d.store.require(id);
     const contact = normaliseContact(req.body as VacancyContact | null);
     // Saved by the person: the "found automatically — check" marks go (spec 3.2).
-    return view(d.store.update(id, (x) => { x.contact = contact; delete x.contactAuto; }));
+    const saved = d.store.update(id, (x) => { x.contact = contact; delete x.contactAuto; });
+    confirmInPackage(id, contact);
+    return view(saved);
   });
+
+  /**
+   * The person confirmed the card's contact: in the vacancy's unsent package the same values lose their "found
+   * automatically" marks too, so the send window stops warning (spec section 7). The package's own contact copy is
+   * not changed — a value the person changed on the card keeps its mark there.
+   */
+  function confirmInPackage(vacancyId: string, contact: VacancyContact | null): void {
+    const s = d.applications?.editableByVacancy(vacancyId);
+    const p = s ? d.applications?.get(s.id) : undefined;
+    if (!s || !p || !(p.vacancy.contactAuto ?? []).length) return;
+    const left = remainingMarks(p.vacancy.contactAuto, p.vacancy.contact, contact);
+    if (left.length === (p.vacancy.contactAuto ?? []).length) return;
+    d.applications?.update(s.id, (x) => {
+      if (left.length) x.vacancy.contactAuto = left;
+      else delete x.vacancy.contactAuto;
+    });
+  }
 
   /**
    * The contact part of the company research (no news, no AI summary): what the pages say, plus the values that

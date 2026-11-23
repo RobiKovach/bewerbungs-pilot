@@ -28,7 +28,7 @@ import { registerVacancyRoutes } from './vacancies/routes.js';
 import { ResearchJob } from './research/job.js';
 import type { fetchNews as FetchNews } from './research/news.js';
 import { registerResearchRoutes } from './research/routes.js';
-import type { PageReader, ReadSession } from './vacancies/sources/page-reader.js';
+import type { PageReader, ReaderLane, ReadSession } from './vacancies/sources/page-reader.js';
 import type { PdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import type { ContactWindow } from './vacancies/sources/aa-contact-window.js';
 import type { SearchJob } from './vacancies/search-job.js';
@@ -119,7 +119,7 @@ export interface AppDeps {
  */
 export function browserWork<T extends {
   read?: (...a: never[]) => Promise<unknown>; readContact?: (...a: never[]) => Promise<unknown>;
-  session?: (signal: AbortSignal, deadlineMs: number) => Promise<ReadSession>;
+  session?: (signal: AbortSignal, deadlineMs: number, lane?: ReaderLane) => Promise<ReadSession>;
 }>(activity: Activity, inner: T): T {
   const wrap = <F extends (...a: never[]) => Promise<unknown>>(fn: F, self: unknown) => (async (...a: never[]) => {
     activity.refuseDuringUpdate();
@@ -128,11 +128,11 @@ export function browserWork<T extends {
   }) as F;
   const session = inner.session;
   const wrapSession = session ? {
-    session: async (signal: AbortSignal, deadlineMs: number): Promise<ReadSession> => {
+    session: async (signal: AbortSignal, deadlineMs: number, lane?: ReaderLane): Promise<ReadSession> => {
       activity.refuseDuringUpdate();
       const end = activity.begin('browser');
       let s: ReadSession;
-      try { s = await session.call(inner, signal, deadlineMs); } catch (err) { end(); throw err; }
+      try { s = await session.call(inner, signal, deadlineMs, lane); } catch (err) { end(); throw err; }
       let ended = false;
       return {
         open: (url) => s.open(url),
@@ -380,7 +380,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
   deps.research.onJob?.(research);
   await registerVacancyRoutes(app, {
-    research,
+    research, applications: deps.applicationStore,
     store: deps.vacancyStore, source: deps.vacancySource, pageReader, pdfFetcher: deps.pdfFetcher, contactWindow: browserWork(deps.activity, deps.contactWindow), queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
     profile: () => deps.profileStore.get(), language,
   });

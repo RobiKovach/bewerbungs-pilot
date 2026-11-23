@@ -156,4 +156,25 @@ describe('0.13.0: auto contact in packages', () => {
     expect(Object.hasOwn(after.application.vacancy, 'contactAuto')).toBe(false);
     expect(Object.hasOwn(ctx.vacancyStore.require('fav1'), 'contactAuto')).toBe(false);
   });
+
+  it('confirming the same e-mail on the card ends the warning in the unsent package (final review M2)', async () => {
+    const contact: VacancyContact = { email: 'jobs@muster-shop.example', salutation: '', name: '', phone: '0351 1234567', street: '', postcode: '', city: '' };
+    const { ctx, id } = await created({ contact, contactAuto: ['email', 'phone'] });
+    expect((await getView(ctx, id)).recipientAuto).toEqual({ domain: 'muster-shop.example' });
+    // The person keeps the e-mail but changes the phone: only the confirmed, unchanged e-mail loses its mark.
+    const res = await send(ctx, 'PUT', '/api/vacancies/fav1/contact', { ...contact, email: 'Jobs@muster-shop.example', phone: '0351 7654321' });
+    expect(res.statusCode).toBe(200);
+    const after = await getView(ctx, id);
+    expect(after.recipientAuto).toBeNull();
+    expect(after.application.vacancy.contactAuto).toEqual(['phone']);
+    // The package keeps its own contact (a snapshot); only the marks follow the confirmation.
+    expect(after.application.vacancy.contact?.phone).toBe('0351 1234567');
+  });
+
+  it('a different e-mail confirmed on the card keeps the warning in the package', async () => {
+    const contact: VacancyContact = { email: 'jobs@muster-shop.example', salutation: '', name: '', phone: '', street: '', postcode: '', city: '' };
+    const { ctx, id } = await created({ contact, contactAuto: ['email'] });
+    await send(ctx, 'PUT', '/api/vacancies/fav1/contact', { ...contact, email: 'personal@muster-shop.example' });
+    expect((await getView(ctx, id)).recipientAuto).toEqual({ domain: 'muster-shop.example' });
+  });
 });
