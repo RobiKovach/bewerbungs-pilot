@@ -85,7 +85,8 @@ const RULES = `
 
 export function companyResearchTask(company: string, c: Collected, language: Language): LlmTask {
   const g = given(c);
-  const pages = g.pages.map(({ n, page, text }) => `[${n}] ${page.kind} ${page.url}\n${fenceUntrusted('page', text)}`);
+  // The address comes from the site, so it sits inside the fence; number and kind are the program's (final review T7).
+  const pages = g.pages.map(({ n, page, text }) => `[${n}] ${page.kind}\n${fenceUntrusted('page', `${page.url}\n${text}`)}`);
   const newsList = g.news.map(({ n, item }) => `[${n}] ${item.date || '—'} · ${item.source} · ${item.title}`).join('\n');
   return {
     id: 'company-research',

@@ -146,8 +146,13 @@ export class ResearchJob {
         if (merged.auto.length) x.contactAuto = merged.auto;
         else delete x.contactAuto;
       });
-      // Hidden meanwhile: no results, but the card must not stay "researching" when it comes back.
-      if (!written) this.fail(id, g, 'LLM_CANCELLED', { evenHidden: true });
+      // Hidden meanwhile: no results, but the card must not stay "researching" when it comes back. Shown and still
+      // ours but not written: the write itself failed (logged) — that is no "stopped" (final review M4).
+      if (!written) {
+        const now = this.d.store.get(id);
+        const stopped = !now || now.status === 'hidden' || this.gen.get(id) !== g;
+        this.fail(id, g, stopped ? 'LLM_CANCELLED' : 'UNKNOWN', { evenHidden: true });
+      }
       this.d.logger.info('research.done', { result: written ? 'ok' : 'dropped', host: hostOf(c.website), pages: c.pages.length });
     } catch (err) {
       const code = codeOf(err);

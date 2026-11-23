@@ -4,6 +4,7 @@ import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import type { Vacancy } from '@bp/shared';
 import { writeJsonAtomic } from '../src/data/atomic.js';
+import { AppError } from '../src/errors.js';
 import { FakeProvider } from '../src/llm/fake.js';
 import { scriptedResponse } from '../src/llm/fake-scripted.js';
 import { LlmQueue } from '../src/llm/queue.js';
@@ -156,5 +157,20 @@ describe('ResearchJob', () => {
     await s.job.whenIdle();
     expect(s.store.require('a').research).toMatchObject({ state: 'failed', error: 'UNKNOWN' });
     expect(s.store.require('b').research?.state).toBe('done');
+  });
+
+  it('a final write that fails ends as failed UNKNOWN, not as stopped (final review M4)', async () => {
+    const s = setup();
+    s.add('a');
+    const real = s.store.update.bind(s.store);
+    vi.spyOn(s.store, 'update').mockImplementation((id: string, change: (v: Vacancy) => void) => {
+      const probe = structuredClone(s.store.require(id));
+      change(probe);
+      if (probe.research?.state === 'done') throw new AppError('DATA_WRITE_FAILED', 'disk full');
+      return real(id, change);
+    });
+    s.job.enqueue('a');
+    await s.job.whenIdle();
+    expect(s.store.require('a').research).toMatchObject({ state: 'failed', error: 'UNKNOWN' });
   });
 });

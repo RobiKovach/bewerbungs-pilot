@@ -70,12 +70,18 @@ describe('VacancyStore', () => {
 
   it('compactHidden shrinks hidden Arbeitsagentur cards, keeps hidden manual ones and every other card', () => {
     const { store } = setup();
-    store.add(vacancy({ id: 'h1', status: 'hidden', hiddenAt: '2026-09-28T10:00:00.000Z', locations: ['Dresden'], salaryText: '50k' }), 'text');
+    store.add(vacancy({
+      id: 'h1', status: 'hidden', hiddenAt: '2026-09-28T10:00:00.000Z', locations: ['Dresden'], salaryText: '50k',
+      contact: { email: 'jobs@muster.example', salutation: '', name: '', phone: '', street: '', postcode: '', city: '' }, contactAuto: ['email'],
+    }), 'text');
     store.add(vacancy({ id: 'm1', source: 'manual', sourceId: null, addedManually: true, status: 'hidden', hiddenAt: '2026-09-28T10:00:00.000Z' }), 'pasted');
     store.add(vacancy({ id: 'n1' }), 'text');
     expect(store.compactHidden()).toBe(1);
     const h1 = store.get('h1')!;
     expect(h1).toMatchObject({ status: 'hidden', title: expect.any(String) as string, company: expect.any(String) as string, sourceId: expect.any(String) as string, locations: [], salaryText: '', score: null, scoreState: 'notScored', hasText: false });
+    // The contact goes, and with it its "found automatically" marks (final review M3).
+    expect(h1.contact).toBeNull();
+    expect(Object.hasOwn(h1, 'contactAuto')).toBe(false);
     expect(store.readText('h1')).toBeNull();
     expect(store.readText('m1')).toBe('pasted');
     expect(store.readText('n1')).toBe('text');

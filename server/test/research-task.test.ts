@@ -75,7 +75,8 @@ describe('companyResearchTask / toResearch (company research, 0.13.0)', () => {
     expect(task.id).toBe('company-research');
     expect(task.replyLanguage).toBe('de');
     expect(task.prompt).toContain('Muster GmbH');
-    expect(task.prompt).toMatch(/\[1\] impressum https:\/\/muster\.example\/impressum\n[^\n]*\n<<<UNTRUSTED_PAGE_[0-9a-f]{16}>>>\nMuster GmbH, Musterstraße 1/);
+    // The address comes from the site: it sits inside the fence; the number and kind stay outside (final review T7).
+    expect(task.prompt).toMatch(/\[1\] impressum\n[^\n]*\n<<<UNTRUSTED_PAGE_[0-9a-f]{16}>>>\nhttps:\/\/muster\.example\/impressum\nMuster GmbH, Musterstraße 1/);
     expect(task.prompt).toMatch(/<<<UNTRUSTED_NEWS_[0-9a-f]{16}>>>/);
     expect(task.prompt).toContain('Muster GmbH Nachricht 2');
     // The task takes no person data at all; nothing from a profile can be in it.

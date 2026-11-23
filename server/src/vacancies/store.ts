@@ -128,6 +128,7 @@ export class VacancyStore {
     this.updateMany(ids, (v) => {
       v.locations = []; v.remote = 'unknown'; v.employment = []; v.salaryText = ''; v.publishedAt = '';
       v.contact = null; v.hasText = false; v.score = null; v.scoreState = 'notScored';
+      delete v.contactAuto; // no contact, no 'found automatically' marks (final review M3)
     });
     for (const id of ids) fs.rmSync(this.textFile(id), { force: true });
     return ids.length;
