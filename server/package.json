@@ -14,24 +14,24 @@
     "dev": "tsx watch src/index.ts --no-open"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "@types/nodemailer": "^8.0.2",
     "@types/yauzl": "3.4.0",
     "@types/yazl": "3.3.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   },
   "dependencies": {
-    "@fastify/multipart": "^10.1.4",
-    "@fastify/static": "^10.1.6",
+    "@fastify/multipart": "^10.1.8",
+    "@fastify/static": "^10.1.10",
     "ajv": "^8.20.0",
-    "fastify": "^5.12.7",
-    "google-auth-library": "11.3.1",
+    "fastify": "^5.12.8",
+    "google-auth-library": "11.3.3",
     "mammoth": "^1.13.0",
-    "nodemailer": "^10.1.7",
+    "nodemailer": "^10.4.0",
     "pdf-lib": "^1.17.1",
-    "puppeteer-core": "^25.15.0",
+    "puppeteer-core": "^25.16.0",
     "unpdf": "1.9.1",
     "yauzl": "3.4.0",
     "yazl": "3.3.1"
