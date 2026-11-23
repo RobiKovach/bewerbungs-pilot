@@ -1,4 +1,5 @@
-import { downloadResponse } from './applications/download';
+import { saveFile, type SaveResult } from './files/save';
+import { transferFileName } from './files/names';
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
@@ -124,15 +125,12 @@ export const api = {
   restoreBackup: (name: string) => request<{ restored: BackupMeta; beforeRestore: BackupInfo }>('POST', '/api/backups/restore', { name }),
   restoreBackupUpload: (file: File) => upload<{ restored: BackupMeta; beforeRestore: BackupInfo }>('/api/backups/restore-upload', file, fileName(file, 'backup.zip')),
   /** Saves the transfer file (with a password when given). The password only goes into this one request. */
-  exportTransfer: async (password: string | null): Promise<void> => {
-    let res: Response;
-    try {
-      res = await fetch('/api/transfer/export', { method: 'POST', headers: { ...CLIENT_HEADER, 'Content-Type': 'application/json' }, body: JSON.stringify(password ? { password } : {}) });
-    } catch (err) {
-      throw new ApiError('SERVER_UNREACHABLE', String(err));
-    }
-    await downloadResponse(res, 'BewerbungsPilot-transfer.zip');
-  },
+  /** The person chooses where the file goes ("Save as", 0.13.1); 'cancelled' when the window was closed. */
+  exportTransfer: (password: string | null): Promise<SaveResult> => saveFile({
+    suggestedName: transferFileName(new Date(), Boolean(password)),
+    kind: 'zip',
+    make: () => fetch('/api/transfer/export', { method: 'POST', headers: { ...CLIENT_HEADER, 'Content-Type': 'application/json' }, body: JSON.stringify(password ? { password } : {}) }),
+  }),
   /** Whether this PC already holds data an import would replace. */
   transferStatus: () => request<{ hasData: boolean }>('GET', '/api/transfer/status'),
   /** Opens a transfer file or a backup. The password only goes into this one request. */

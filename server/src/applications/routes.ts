@@ -27,7 +27,7 @@ import { packageContext } from './tasks/context.js';
 import { offerReplyTask, offerReplyViolationKinds, offerReplyViolations } from './tasks/offer-reply.js';
 import { withFeedback } from './tasks/revise-letter.js';
 import { cvHtml } from './render/cv.js';
-import { asciiName, fileNames } from './render/html.js';
+import { attachmentFileName, fileNames } from './render/html.js';
 import { letterHtml } from './render/letter.js';
 import { APPLICATION_ID, PACKAGE_LIMITS as L, validatePackage } from './schema.js';
 import type { ApplicationStore } from './store.js';
@@ -442,7 +442,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
     const { id, fileId } = req.params as { id: string; fileId: string };
     const doc = chosenDocs(id).find((x) => x.id === fileId);
     if (!doc) throw new AppError('NOT_FOUND', `attachment ${fileId}`);
-    return sendPdf(reply, fs.readFileSync(d.files.pathOf(doc)), `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`);
+    return sendPdf(reply, fs.readFileSync(d.files.pathOf(doc)), attachmentFileName(doc));
   });
 
   app.get('/api/applications/:id/pdf/bundle', { schema: { params: idParams } }, async (req, reply) => {
@@ -457,7 +457,7 @@ export async function registerApplicationRoutes(app: FastifyInstance, d: Applica
   });
 
   // ---- Sending by email ----
-  const docFileName = (doc: { label: string; originalName: string }) => `${asciiName(doc.label || doc.originalName.replace(/\.pdf$/i, '')) || 'Anlage'}.pdf`;
+  const docFileName = attachmentFileName;
   /**
    * Makes names unique within one email (a repeat gets _2, _3 … before the extension, case-insensitive) and keeps every
    * name within the stored limit: the base is shortened, the extension and the _n suffix stay.

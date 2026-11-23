@@ -22,7 +22,8 @@ export function appPackage(over: Partial<ApplicationPackage> = {}): ApplicationP
   };
 }
 export function appView(over: Partial<ApplicationView> = {}, pkg: Partial<ApplicationPackage> = {}): ApplicationView {
-  return { application: appPackage(pkg), profileChanged: false, attachments: [], canUndo: false, followUpDue: false, warnings: [], factsChanged: false, recipientAuto: null, ...over };
+  return { application: appPackage(pkg), profileChanged: false, attachments: [], canUndo: false, followUpDue: false, warnings: [], factsChanged: false, recipientAuto: null,
+    downloadNames: { letter: 'Anschreiben_Max_Mustermann_Muster_GmbH.pdf', cv: 'Lebenslauf_Max_Mustermann.pdf', bundle: 'Bewerbung_Max_Mustermann_Muster_GmbH.pdf', attachments: { 'doc-1': 'Zeugnis.pdf' } }, ...over };
 }
 type ListItem = ApplicationListView['applications'][number];
 export function appSummary(over: Partial<ListItem> = {}): ListItem {

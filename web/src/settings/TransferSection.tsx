@@ -24,7 +24,8 @@ export function TransferSection({ onImported }: { onImported?: () => void }) {
   const [repeat, setRepeat] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const [saved, setSaved] = useState(false);
+  // 'saved' = written where the person chose; 'downloaded' = handed to the browser's downloads (no "Save as" window).
+  const [saved, setSaved] = useState<'saved' | 'downloaded' | null>(null);
 
   const chars = [...password].length;
   const typed = password !== '';
@@ -39,12 +40,14 @@ export function TransferSection({ onImported }: { onImported?: () => void }) {
     if (problem || busy) return;
     setBusy(true);
     setError(null);
-    setSaved(false);
+    setSaved(null);
     try {
-      await api.exportTransfer(typed ? password : null);
+      const result = await api.exportTransfer(typed ? password : null);
+      // The person closed the window: nothing was made, the password stays for another try.
+      if (result === 'cancelled') return;
       setPassword('');
       setRepeat('');
-      setSaved(true);
+      setSaved(result);
     } catch (err) {
       setError(err);
     } finally {
@@ -54,7 +57,7 @@ export function TransferSection({ onImported }: { onImported?: () => void }) {
 
   const ownReason = error instanceof ApiError && error.reason && OWN_REASONS.has(error.reason) ? error.reason : null;
   // The password change is a new try: the old result no longer describes the fields.
-  const edit = (set: (v: string) => void) => (e: { target: { value: string } }) => { set(e.target.value); setSaved(false); };
+  const edit = (set: (v: string) => void) => (e: { target: { value: string } }) => { set(e.target.value); setSaved(null); };
 
   return (
     <>
@@ -82,7 +85,7 @@ export function TransferSection({ onImported }: { onImported?: () => void }) {
             {busy ? t('settings.transfer.saving') : t('settings.transfer.save')}
           </button>
         </div>
-        {saved ? <p className="ok" role="status">{t('settings.transfer.saved')}</p> : null}
+        {saved ? <p className="ok" role="status">{t(saved === 'saved' ? 'settings.transfer.savedThere' : 'settings.transfer.saved')}</p> : null}
         {ownReason ? (
           <div className="error-banner" role="alert"><strong>{t(`errors.reasons.${ownReason}`)}</strong></div>
         ) : error ? <ErrorBanner error={error} /> : null}

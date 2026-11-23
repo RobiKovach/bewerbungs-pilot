@@ -144,6 +144,48 @@ describe('TransferSection', () => {
     expect(screen.queryByText(/The browser received the file/)).toBeNull();
   });
 
+  it('"Save as" window: the file goes where the person chose, and the card says it is saved there', async () => {
+    const written: Blob[] = [];
+    const handle = { createWritable: async () => ({ write: async (b: Blob) => { written.push(b); }, close: async () => {}, abort: async () => {} }), remove: async () => {} };
+    const picker = vi.fn<(o: { suggestedName: string }) => Promise<typeof handle>>(async () => handle);
+    (window as { showSaveFilePicker?: unknown }).showSaveFilePicker = picker;
+    const { click } = await setup();
+    await userEvent.click(saveButton());
+    expect(await screen.findByText('The file is saved in the place you chose.')).toBeInTheDocument();
+    expect(picker.mock.calls[0]![0].suggestedName).toMatch(/^BewerbungsPilot-transfer-\d{4}-\d{2}-\d{2}-\d{4}\.zip$/);
+    expect(written).toHaveLength(1);
+    expect(click).not.toHaveBeenCalled();
+    delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker;
+  });
+
+  it('"Save as" window with a password suggests the -encrypted name', async () => {
+    const picker = vi.fn<(o: { suggestedName: string }) => Promise<never>>(async () => { throw new DOMException('aborted', 'AbortError'); });
+    (window as { showSaveFilePicker?: unknown }).showSaveFilePicker = picker;
+    await setup();
+    await userEvent.type(fields().pw, PW);
+    await userEvent.type(fields().again, PW);
+    await userEvent.click(saveButton());
+    await waitFor(() => expect(picker).toHaveBeenCalledOnce());
+    expect(picker.mock.calls[0]![0].suggestedName).toMatch(/-encrypted\.zip$/);
+    delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker;
+  });
+
+  it('cancelling the "Save as" window: nothing is made, no "saved" line, the password stays', async () => {
+    (window as { showSaveFilePicker?: unknown }).showSaveFilePicker = vi.fn(async () => { throw new DOMException('aborted', 'AbortError'); });
+    const { sent } = await setup();
+    const { pw, again } = fields();
+    await userEvent.type(pw, PW);
+    await userEvent.type(again, PW);
+    await userEvent.click(saveButton());
+    await waitFor(() => expect(saveButton()).toBeEnabled());
+    expect(sent).toHaveLength(0);
+    expect(screen.queryByText(/The browser received the file/)).toBeNull();
+    expect(screen.queryByText(/saved in the place you chose/)).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(pw).toHaveValue(PW);
+    delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker;
+  });
+
   it('fields are type=password with autoComplete="new-password"', async () => {
     await setup();
     for (const el of Object.values(fields())) {

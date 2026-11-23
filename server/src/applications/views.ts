@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile, SubmittedInfo, Vacancy } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
 import { followUpDue } from './follow-up.js';
+import { attachmentFileName, fileNames } from './render/html.js';
 import { allowedFor, findPersonalData, packageTexts } from './personal-data.js';
 import { currentFacts, profileFingerprint } from './snapshot.js';
 import { canUndo, isFrozen } from './status.js';
@@ -36,6 +37,10 @@ export function toView(p: ApplicationPackage, profile: Profile, now: Date, vacan
   return {
     application: p, profileChanged: !isFrozen(p) && profileFingerprint(profile) !== p.profileFingerprint, attachments, canUndo: canUndo(p), followUpDue: followUpDue(p, now),
     warnings: warningsFor(p, profile, vacancyText), factsChanged: factsChanged(p, vacancy), recipientAuto: recipientAuto(p),
+    downloadNames: {
+      ...fileNames(p.snapshot.personal.fullName, p.vacancy.company, p.language),
+      attachments: Object.fromEntries(profile.documents.map((d) => [d.id, attachmentFileName(d)])),
+    },
   };
 }
 

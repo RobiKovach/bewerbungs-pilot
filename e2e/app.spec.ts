@@ -38,6 +38,9 @@ const seenResponses: string[] = [];
 
 test.beforeAll(async ({ browser }: { browser: Browser }) => {
   context = await browser.newContext({ locale: 'en-US' });
+  // No native "Save as" window in the tests (it would wait for a person): files go to the downloads, as in Firefox.
+  // One test below puts a fake window in its place to check the "Save as" way (0.13.1).
+  await context.addInitScript(() => { Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true, writable: true }); });
   page = await context.newPage();
   page.on('response', (res) => {
     if (!res.url().startsWith(`${env.url}/api/`)) return;
@@ -141,6 +144,30 @@ test('a pasted job offer becomes an approved application package', async () => {
   }
   await page.keyboard.press('Escape');
   await expect(downloads).toBeHidden();
+
+  // "Save as" (0.13.1): the window gets the server's name, and the whole PDF is written to the chosen file.
+  await page.evaluate(() => {
+    const w = window as unknown as { showSaveFilePicker: unknown; savedAs: { name: string; bytes: number[] } | null };
+    w.savedAs = null;
+    w.showSaveFilePicker = async (o: { suggestedName: string }) => ({
+      createWritable: async () => {
+        const parts: Blob[] = [];
+        return {
+          write: async (b: Blob) => { parts.push(b); },
+          close: async () => { w.savedAs = { name: o.suggestedName, bytes: [...new Uint8Array(await new Blob(parts).arrayBuffer())].slice(0, 5) }; },
+          abort: async () => {},
+        };
+      },
+      remove: async () => {},
+    });
+  });
+  await page.getByRole('button', { name: /^Download/ }).click();
+  await downloads.getByRole('button', { name: 'CV (PDF)' }).click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { savedAs: unknown }).savedAs), { timeout: 30_000 }).not.toBeNull();
+  const savedAs = await page.evaluate(() => (window as unknown as { savedAs: { name: string; bytes: number[] } }).savedAs);
+  expect(savedAs.name).toMatch(/^CV_.+.pdf$/);
+  expect(String.fromCharCode(...savedAs.bytes)).toBe('%PDF-');
+  await page.evaluate(() => { (window as unknown as { showSaveFilePicker: unknown }).showSaveFilePicker = undefined; });
 });
 
 test('the package is sent by mail and marked as sent', async () => {

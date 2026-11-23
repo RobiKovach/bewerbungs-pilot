@@ -146,6 +146,11 @@ export interface ApplicationView {
   factsChanged: boolean;
   /** The recipient e-mail was found by the app and not confirmed yet: its domain, for the "check it is the company" warning (0.13.0). */
   recipientAuto: { domain: string } | null;
+  /**
+   * The names the server gives the downloaded files (Content-Disposition), so the "Save as" window, which opens before
+   * the file is made, can suggest them (0.13.1). `attachments`: by profile document id.
+   */
+  downloadNames: { letter: string; cv: string; bundle: string; attachments: Record<string, string> };
 }
 
 export interface ApplicationStats {

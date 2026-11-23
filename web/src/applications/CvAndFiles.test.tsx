@@ -123,7 +123,8 @@ describe('Attachments tab and downloads', () => {
     expect(names[0]).toMatch(/^Everything as one PDF/);
     expect(names.slice(1)).toEqual(['Cover letter (PDF)', 'CV (PDF)', 'Zeugnis (PDF)']);
     await user.click(within(menu).getByRole('button', { name: 'Cover letter (PDF)' }));
-    expect(spy).toHaveBeenLastCalledWith('/api/applications/app1/pdf/letter', 'Anschreiben.pdf');
+    // The names the server gives the files (view.downloadNames), so "Save as" suggests them (0.13.1).
+    expect(spy).toHaveBeenLastCalledWith('/api/applications/app1/pdf/letter', 'Anschreiben_Max_Mustermann_Muster_GmbH.pdf');
     // A choice closes the menu.
     expect(screen.queryByRole('group', { name: 'Download' })).not.toBeInTheDocument();
     await user.click(toggle);
@@ -133,7 +134,7 @@ describe('Attachments tab and downloads', () => {
     await user.click(toggle);
     menu = screen.getByRole('group', { name: 'Download' });
     await user.click(within(menu).getByRole('button', { name: /^Everything as one PDF/ }));
-    expect(spy).toHaveBeenLastCalledWith('/api/applications/app1/pdf/bundle', 'Bewerbung.pdf');
+    expect(spy).toHaveBeenLastCalledWith('/api/applications/app1/pdf/bundle', 'Bewerbung_Max_Mustermann_Muster_GmbH.pdf');
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
   it('the Download menu closes on Escape (focus back on the button) and on a click outside', async () => {

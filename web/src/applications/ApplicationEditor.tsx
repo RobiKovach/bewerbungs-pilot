@@ -204,13 +204,13 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
         <DownloadMenu
           disabled={dirty}
           busy={downloading}
-          bundle={() => void save(api.pdfUrl(id, 'bundle'), 'Bewerbung.pdf')}
+          bundle={() => void save(api.pdfUrl(id, 'bundle'), view.downloadNames.bundle)}
           separate={[
-            { key: 'letter', label: t('applications.download.letter'), onPick: () => void save(api.pdfUrl(id, 'letter'), 'Anschreiben.pdf') },
-            { key: 'cv', label: t('applications.download.cv'), onPick: () => void save(api.pdfUrl(id, 'cv'), 'Lebenslauf.pdf') },
+            { key: 'letter', label: t('applications.download.letter'), onPick: () => void save(api.pdfUrl(id, 'letter'), view.downloadNames.letter) },
+            { key: 'cv', label: t('applications.download.cv'), onPick: () => void save(api.pdfUrl(id, 'cv'), view.downloadNames.cv) },
             ...view.attachments.filter((x) => x.selected && !x.missing).map((x) => ({
               key: `att-${x.id}`, label: t('applications.download.attachment', { name: x.label }),
-              onPick: () => void save(api.attachmentUrl(id, x.id), `${x.label || 'Anlage'}.pdf`),
+              onPick: () => void save(api.attachmentUrl(id, x.id), view.downloadNames.attachments[x.id] ?? `${x.label || 'Anlage'}.pdf`),
             })),
           ]}
         />

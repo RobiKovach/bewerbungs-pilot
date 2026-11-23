@@ -724,3 +724,22 @@ describe('ApplicationEditor — company facts (0.13.0)', () => {
     expect(await screen.findByText('The address was found automatically on muster.example — check that it belongs to the company.')).toBeInTheDocument();
   });
 });
+
+describe('ApplicationEditor — downloads (0.13.1 "Save as")', () => {
+  it('the "Save as" window suggests the same names the server gives the files', async () => {
+    const picker = vi.fn<(o: { suggestedName: string }) => Promise<never>>(async () => { throw new DOMException('aborted', 'AbortError'); });
+    (window as { showSaveFilePicker?: unknown }).showSaveFilePicker = picker;
+    const view = appView({ attachments: [{ id: 'doc-1', label: 'Zeugnis', size: 10, selected: true, missing: false }] });
+    const { user } = setup({}, view);
+    await user.click(await screen.findByRole('button', { name: /^Download/ }));
+    await user.click(screen.getByRole('button', { name: 'Cover letter (PDF)' }));
+    await waitFor(() => expect(picker).toHaveBeenCalledTimes(1));
+    expect(picker.mock.calls[0]![0].suggestedName).toBe('Anschreiben_Max_Mustermann_Muster_GmbH.pdf');
+    await user.click(screen.getByRole('button', { name: /^Download/ }));
+    await user.click(screen.getByRole('button', { name: /Zeugnis/ }));
+    await waitFor(() => expect(picker).toHaveBeenCalledTimes(2));
+    expect(picker.mock.calls[1]![0].suggestedName).toBe('Zeugnis.pdf');
+    expect(screen.queryByRole('alert')).toBeNull();
+    delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker;
+  });
+});

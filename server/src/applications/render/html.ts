@@ -40,6 +40,11 @@ export function fileNames(fullName: string, company: string, language: DocLangua
   return { letter: join('Anschreiben', name, firm), cv: join('Lebenslauf', name), bundle: join('Bewerbung', name, firm) };
 }
 
+/** Download name of a profile document attached to a package: its label (or file name) in Latin letters, `.pdf`. */
+export function attachmentFileName(doc: { label: string; originalName: string }): string {
+  return `${asciiName(doc.label || doc.originalName.replace(/.pdf$/i, '')) || 'Anlage'}.pdf`;
+}
+
 /** The page frame every template shares: A4, no margins from the browser, one inline stylesheet, no scripts. */
 export function page(lang: DocLanguage, title: string, css: string, body: string): string {
   return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>@page{size:A4;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Calibri,Arial,sans-serif;color:#1d1d1f;-webkit-print-color-adjust:exact;print-color-adjust:exact}${css}</style></head><body>${body}</body></html>`;
