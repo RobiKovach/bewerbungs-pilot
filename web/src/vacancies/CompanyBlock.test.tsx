@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { useState } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch } from '../test/fetchMock';
 import { vac } from '../test/vacancyFixtures';
@@ -24,7 +24,7 @@ function research(over: Partial<CompanyResearch> = {}): CompanyResearch {
 
 function Harness({ initial }: { initial: Vacancy }) {
   const [v, setV] = useState(initial);
-  return <CompanyBlock vacancy={v} onChange={setV} />;
+  return <CompanyBlock vacancy={v} onChange={setV} pollMs={20} />;
 }
 
 const setup = (v: Vacancy, routes: Parameters<typeof mockFetch>[0] = {}) => {
@@ -49,24 +49,43 @@ describe('CompanyBlock', () => {
   it('running shows progress and Stop', async () => {
     const v = vac({ id: 'v1', company: 'Muster GmbH', research: research({ state: 'running', finishedAt: null }) });
     let polled = 0;
+    let now = v;
     const { f, user } = setup(v, {
-      'GET /api/vacancies': () => { polled++; return { body: { vacancies: [v] } }; },
-      'DELETE /api/vacancies/v1/research': () => ({ body: { vacancy: { ...v, research: research({ state: 'failed', error: 'UNKNOWN' }) } } }),
+      'GET /api/vacancies': () => { polled++; return { body: { vacancies: [now] } }; },
+      'DELETE /api/vacancies/v1/research': () => { now = { ...v, research: research({ state: 'failed', error: 'UNKNOWN' }) }; return { body: { vacancy: now } }; },
     });
     expect(screen.getByText('Researching the company…')).toBeInTheDocument();
-    // The state is asked again every 2 s while the research runs.
-    await screen.findByText('Researching the company…');
-    await new Promise((r) => setTimeout(r, 2200));
-    expect(polled).toBeGreaterThan(0);
+    // The state is asked again while the research runs (every 2 s in the app, 20 ms here).
+    await waitFor(() => expect(polled).toBeGreaterThan(0));
     await user.click(screen.getByRole('button', { name: 'Stop' }));
     expect(f).toHaveBeenCalledWith('/api/vacancies/v1/research', expect.objectContaining({ method: 'DELETE' }));
     expect(await screen.findByRole('button', { name: 'Research again' })).toBeInTheDocument();
   });
 
+  it('a poll that answers after Stop does not bring "running" back', async () => {
+    const v = vac({ id: 'v1', research: research({ state: 'running', finishedAt: null }) });
+    const held: Array<() => void> = [];
+    const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+      if ((init?.method ?? 'GET') === 'DELETE') return json({ vacancy: { ...v, research: research({ state: 'failed', error: 'UNKNOWN' }) } });
+      // Every poll waits; they all answer "running" only after Stop has finished.
+      return new Promise<Response>((resolve) => held.push(() => resolve(json({ vacancies: [v] }))));
+    }));
+    render(<Harness initial={v} />);
+    const user = userEvent.setup();
+    await waitFor(() => expect(held.length).toBeGreaterThan(0));
+    await user.click(screen.getByRole('button', { name: 'Stop' }));
+    expect(await screen.findByRole('button', { name: 'Research again' })).toBeInTheDocument();
+    held.forEach((answer) => answer());
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByText('Researching the company…')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Research again' })).toBeInTheDocument();
+  });
+
   it('running → done by polling shows the result', async () => {
     const v = vac({ id: 'v1', company: 'Muster GmbH', research: research({ state: 'running', finishedAt: null }) });
     setup(v, { 'GET /api/vacancies': () => ({ body: { vacancies: [{ ...v, research: research() }] } }) });
-    expect(await screen.findByText('About the company', {}, { timeout: 3500 })).toBeInTheDocument();
+    expect(await screen.findByText('About the company')).toBeInTheDocument();
     expect(screen.queryByText('Researching the company…')).toBeNull();
   });
 
@@ -123,6 +142,18 @@ describe('CompanyBlock', () => {
     await user.click(screen.getByRole('button', { name: 'Research from this website' }));
     expect(f).toHaveBeenCalledWith('/api/vacancies/v1/research/website', expect.objectContaining({ method: 'PUT', body: JSON.stringify({ url: 'https://muster.example' }) }));
     expect(await screen.findByText('Queued for research')).toBeInTheDocument();
+  });
+
+  it('a refused website keeps the typed address', async () => {
+    const v = vac({ id: 'v1', research: research({ website: '' }) });
+    const { user } = setup(v, {
+      'PUT /api/vacancies/v1/research/website': () => ({ status: 400, body: { error: { code: 'BAD_REQUEST', detailsForLog: 'x' } } }),
+    });
+    await open(user);
+    await user.type(screen.getByLabelText('Company website'), 'http://localhost');
+    await user.click(screen.getByRole('button', { name: 'Research from this website' }));
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByLabelText('Company website')).toHaveValue('http://localhost');
   });
 
   it('empty news → nothing notable found', async () => {

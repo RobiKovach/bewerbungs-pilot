@@ -74,8 +74,8 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, 
           {v.contact ? (
             <p className="muted">
               {t('vacancies.card.contact', { who: [v.contact.salutation, v.contact.name].filter(Boolean).join(' ') || '—', email: v.contact.email || '—' })}
-              {/* Filled in by the company research (0.13.0); the mark goes once the person saves the contact. */}
-              {v.contactAuto?.length ? <> <span className="badge warn-badge">{t('vacancies.card.autoContact')}</span></> : null}
+              {/* Filled in by the company research (0.13.0) — only for a field this line shows; the mark goes once the person saves the contact. */}
+              {v.contactAuto?.some((k) => k === 'name' || k === 'salutation' || k === 'email') ? <> <span className="badge warn-badge">{t('vacancies.card.autoContact')}</span></> : null}
             </p>
           ) : null}
         </div>

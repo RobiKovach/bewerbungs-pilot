@@ -189,7 +189,7 @@ label.btn { cursor: pointer; }
 .company__points { list-style: none; padding: 0; margin: 0.2rem 0; }
 .company__points li { margin: 0.25rem 0; overflow-wrap: anywhere; }
 .company__point--hidden > span:first-child { color: var(--muted); text-decoration: line-through; }
-.company__source { font-size: 0.85rem; white-space: nowrap; }
+.company__source { font-size: 0.85rem; overflow-wrap: anywhere; }
 .company__hide { padding: 0 0.5rem; line-height: 1.4; }
 .company__website { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-end; }
 .company__website .field { flex: 1 1 14rem; min-width: 0; margin: 0; }

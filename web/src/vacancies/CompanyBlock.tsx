@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -27,34 +27,48 @@ function Section({ title, children }: { title: ReactNode; children: ReactNode })
  * "About the company" on a vacancy card (0.13.0, spec 3.1): what the app found on the company's own pages and in the
  * news. Red flags are only for the person; facts can be taken out of the letter.
  */
-export function CompanyBlock({ vacancy: v, onChange }: { vacancy: Vacancy; onChange: (v: Vacancy) => void }) {
+export function CompanyBlock({ vacancy: v, onChange, pollMs = RESEARCH_POLL_MS }: {
+  vacancy: Vacancy; onChange: (v: Vacancy) => void;
+  /** Tests ask more often; the app uses RESEARCH_POLL_MS. */
+  pollMs?: number;
+}) {
   const { t, i18n } = useTranslation();
   const r = v.research;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [website, setWebsite] = useState('');
   const polling = busyState(r);
+  // Bumped when an action starts and when it ends: a poll asked before that may answer after the action and must not
+  // put a stale "running" back (e.g. right after Stop).
+  const generation = useRef(0);
 
   useEffect(() => {
     if (!polling) return undefined;
     let stopped = false;
     const timer = window.setInterval(() => {
       // A failed poll is quiet: the next one tries again.
+      const asked = generation.current;
       void api.listVacancies().then((list) => {
         const fresh = list.vacancies.find((x) => x.id === v.id);
-        if (!stopped && fresh) onChange(fresh);
+        if (!stopped && fresh && asked === generation.current) onChange(fresh);
       }).catch(() => undefined);
-    }, RESEARCH_POLL_MS);
+    }, pollMs);
     return () => { stopped = true; window.clearInterval(timer); };
-  }, [polling, v.id, onChange]);
+  }, [polling, v.id, onChange, pollMs]);
 
-  const act = async (fn: () => Promise<{ vacancy: Vacancy }>) => {
+  /** Runs one action; true when it worked (a refused one shows its error and changes nothing). */
+  const act = async (fn: () => Promise<{ vacancy: Vacancy }>): Promise<boolean> => {
     setBusy(true);
     setError(null);
+    generation.current++;
     try {
-      onChange((await fn()).vacancy);
+      const { vacancy } = await fn();
+      generation.current++;
+      onChange(vacancy);
+      return true;
     } catch (err) {
       setError(err);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -64,7 +78,8 @@ export function CompanyBlock({ vacancy: v, onChange }: { vacancy: Vacancy; onCha
     e.preventDefault();
     const url = website.trim();
     if (!url) return;
-    void act(() => api.setResearchWebsite(v.id, url)).then(() => setWebsite(''));
+    // A refused address (blocked, invalid) stays in the field so the person can correct it.
+    void act(() => api.setResearchWebsite(v.id, url)).then((ok) => { if (ok) setWebsite(''); });
   };
 
   const againButton = (

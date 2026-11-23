@@ -41,10 +41,13 @@ describe('VacancyList', () => {
     setup([
       vac({ title: 'Auto', contact, contactAuto: ['email'] }),
       vac({ title: 'Bestaetigt', contact }),
+      vac({ title: 'NurTelefon', contact: { ...contact, phone: '+49 351 123' }, contactAuto: ['phone'] }),
     ]);
     expect(within(await findCard('Auto')).getByText('found automatically — please check')).toBeInTheDocument();
     expect(within(card('Auto')).getByRole('button', { name: 'Research the company' })).toBeInTheDocument();
     expect(within(card('Bestaetigt')).queryByText(/found automatically/)).toBeNull();
+    // Only the phone was found: the line shows name and e-mail the person entered, so no mark next to them.
+    expect(within(card('NurTelefon')).queryByText(/found automatically/)).toBeNull();
   });
 
   it('shows score, why/missing, facts; weak matches folded away', async () => {
