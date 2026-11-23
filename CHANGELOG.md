@@ -2,6 +2,22 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.13.0
+
+- **About the company.** A job offer card now has an **About the company** block: the company website, what the
+  company does, things worth knowing before you apply (only for you, never used in the letter, with a link to reviews on
+  Kununu) and up to three facts the letter can use. For a pasted link it starts by itself; for offers from the job
+  search press **Research the company**. The app itself reads a few public pages (the job page, the company site and its
+  Impressum, contact, career or "about us" pages, at most six pages and one minute); the AI helper only summarises
+  them. Hide a fact with ✕ and the letter will not use it.
+- **Contact found for you.** Empty contact fields (email, person, phone, address) are filled from those pages and marked
+  "found automatically — please check". A field you filled yourself is never changed; a different value is offered in
+  **Find contact** as "Found something different — Take". Sending to an address found automatically works, with a yellow
+  note naming its domain until you confirm the contact.
+- The package editor shows the company facts the letter was written with, and tells you when the card has new ones.
+- The end-to-end test now covers the whole research on a local test site (company site, Impressum, a fact in the letter,
+  a red flag that never reaches it) and no longer reaches the internet.
+
 ## What's new in 0.12.3
 
 - **Works behind antivirus HTTPS scanning and company proxies.** The installation stopped with

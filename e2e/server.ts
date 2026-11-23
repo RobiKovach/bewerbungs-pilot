@@ -10,7 +10,7 @@ const FIXTURES = fileURLToPath(new URL('./fixtures/', import.meta.url));
 const START_TIMEOUT_MS = 30_000;
 
 /** Everything the spec needs to reach the copy of the app started for the run. */
-export interface E2eEnv { url: string; port: number; key: string; dataDir: string; backupDir: string; cloudLog: string }
+export interface E2eEnv { url: string; port: number; key: string; dataDir: string; backupDir: string; cloudLog: string; testPages: string }
 
 export interface Running extends E2eEnv { stop(): Promise<void> }
 
@@ -36,10 +36,13 @@ export async function startApp(): Promise<Running> {
   const cloudUrl = `http://127.0.0.1:${(cloudServer.address() as { port: number }).port}`;
   const releaseServer = await serveBytes(Buffer.from('this is not a release zip'));
   const releaseUrl = `http://127.0.0.1:${(releaseServer.address() as { port: number }).port}/BewerbungsPilot-v99.0.0.zip`;
+  // A company site for the research (0.13.0): in test mode the app reads links only from this server (test-pages.ts).
+  const pagesServer = await servePages(path.join(FIXTURES, 'company-board'));
+  const pagesPort = (pagesServer.address() as { port: number }).port;
 
   const child = spawn(process.execPath, [path.join(ROOT, 'server', 'dist', 'index.js'), '--fake-llm', '--fake-mail', '--no-open'], {
     cwd: ROOT,
-    env: { ...process.env, BP_DATA_DIR: dataDir, BP_BACKUP_DIR: backupDir, BP_UPDATE_URL: versionUrl, BP_CLOUD_URL: cloudUrl, BP_DEV_UPDATE_SOURCE: releaseUrl },
+    env: { ...process.env, BP_DATA_DIR: dataDir, BP_BACKUP_DIR: backupDir, BP_UPDATE_URL: versionUrl, BP_CLOUD_URL: cloudUrl, BP_DEV_UPDATE_SOURCE: releaseUrl, BP_TEST_PAGES_PORT: String(pagesPort) },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   });
@@ -48,13 +51,13 @@ export async function startApp(): Promise<Running> {
   child.stderr?.on('data', (b: Buffer) => output.push(b.toString()));
 
   const info = await waitForServerFile(path.join(dataDir, 'server.json'), child, output);
-  const env: E2eEnv = { url: `http://127.0.0.1:${info.port}`, port: info.port, key: info.key, dataDir, backupDir, cloudLog };
+  const env: E2eEnv = { url: `http://127.0.0.1:${info.port}`, port: info.port, key: info.key, dataDir, backupDir, cloudLog, testPages: `http://127.0.0.1:${pagesPort}` };
 
   return {
     ...env,
     async stop() {
       await shutdown(env, child);
-      for (const srv of [versionServer, cloudServer, releaseServer]) await new Promise<void>((resolve) => srv.close(() => resolve()));
+      for (const srv of [versionServer, cloudServer, releaseServer, pagesServer]) await new Promise<void>((resolve) => srv.close(() => resolve()));
       fs.rmSync(base, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     },
   };
@@ -65,6 +68,18 @@ function serveFile(file: string): Promise<http.Server> {
   const server = http.createServer((_req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(body);
+  });
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+/** The fixture company site: a vacancy page and its Impressum; anything else is 404. */
+function servePages(dir: string): Promise<http.Server> {
+  const routes: Record<string, string> = { '/jobs/webentwickler': 'job.html', '/impressum': 'impressum.html' };
+  const server = http.createServer((req, res) => {
+    const file = routes[(req.url ?? '').split('?')[0]];
+    if (!file) { res.writeHead(404, { 'content-type': 'text/plain' }); res.end('not found'); return; }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(path.join(dir, file)));
   });
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }

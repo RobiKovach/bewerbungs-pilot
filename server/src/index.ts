@@ -41,6 +41,7 @@ import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
 import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
 import { BrowserPageReader } from './vacancies/sources/page-reader.js';
+import { addressRules, testPagesPort } from './vacancies/sources/test-pages.js';
 import { AaContactWindow } from './vacancies/sources/aa-contact-window.js';
 import { HttpPdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
@@ -48,7 +49,7 @@ import { SearchJob } from './vacancies/search-job.js';
 import { cleanOldUpdateFolders, readUpdateOutcome } from './updates/apply.js';
 import { UpdateChecker } from './updates/checker.js';
 import { devUpdateSource, devUpdateSourceAllowed, Updater, zipUrlFor } from './updates/updater.js';
-import { fakeNews, fetchNews } from './research/news.js';
+import { fakeNews, newsSource } from './research/news.js';
 import { UPDATE_URL } from './updates/version-file.js';
 import { cloudUrl, versionJsonUrl } from './usage/cloud.js';
 import { shouldPing, UsagePinger } from './usage/pinger.js';
@@ -176,7 +177,9 @@ async function main(): Promise<void> {
   const sentUnsaved = new SentUnsavedLog(path.join(paths.applications, 'sent-unsaved.json'), (event, data) => logger.warn(event, data));
   sentUnsaved.load();
   const printer = new BrowserPrinter({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data) });
-  const pageReader = new BrowserPageReader({ tmpRoot: paths.tmp, minChars: MANUAL_TEXT_MIN, warn: (event, data) => logger.warn(event, data), log: (event, data) => logger.info(event, data) });
+  // End-to-end runs only: the reader reads the local fixture pages and nothing else (test-pages.ts).
+  const testPages = testPagesPort(process.env, process.argv);
+  const pageReader = new BrowserPageReader({ tmpRoot: paths.tmp, minChars: MANUAL_TEXT_MIN, ...addressRules(testPages), warn: (event, data) => logger.warn(event, data), log: (event, data) => logger.info(event, data) });
   const pdfFetcher = new HttpPdfFetcher({ log: (event, data) => logger.info(event, data) });
   const contactWindow = new AaContactWindow({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data), log: (event, data) => logger.info(event, data) });
   const applicationJob = new ApplicationJob({
@@ -225,7 +228,7 @@ async function main(): Promise<void> {
     launchCodes,
     activity: new Activity(),
     // Test mode (throw-away data folder + fake mail) never asks Google News (Ruling R3).
-    research: { fetchNews: devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : fetchNews },
+    research: { fetchNews: devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : newsSource() },
     backup: {
       paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
       // After a restore every store reads its files again (synchronous: nothing can start in between).
@@ -285,6 +288,10 @@ async function main(): Promise<void> {
     logger.warn('fake_mode', { fakeLlm, fakeMail });
     const what = [fakeLlm && 'AI answers are scripted (--fake-llm)', fakeMail && `mail is written to ${fakeMailDir}, nothing is sent (--fake-mail)`];
     console.warn(`FAKE MODE — ${what.filter(Boolean).join('; ')}`);
+  }
+  if (testPages !== null) {
+    logger.warn('test_pages', { port: testPages });
+    console.warn(`TEST PAGES — links are read only from http://127.0.0.1:${testPages}, nothing else`);
   }
   updates.start();
   usage?.start();

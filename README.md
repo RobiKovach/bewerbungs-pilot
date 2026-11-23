@@ -76,6 +76,20 @@ project's GitHub Releases, checks its checksum (published in `version.json`), sa
 version and restarts. If anything fails, the old version keeps working and you are told why. If you have 0.12.0 or
 older, install 0.12.1 by hand once (download it from the banner or the Releases page); after that updates are one click.
 
+### What's new in 0.13.0
+
+- **About the company.** A job offer card now has an **About the company** block: the company website, what the
+  company does, things worth knowing before you apply (only for you, never used in the letter, with a link to reviews on
+  Kununu) and up to three facts the letter can use. For a pasted link it starts by itself; for offers from the job
+  search press **Research the company**. The app itself reads a few public pages (the job page, the company site and its
+  Impressum, contact, career or "about us" pages, at most six pages and one minute); the AI helper only summarises
+  them. Hide a fact with ✕ and the letter will not use it.
+- **Contact found for you.** Empty contact fields (email, person, phone, address) are filled from those pages and marked
+  "found automatically — please check". A field you filled yourself is never changed; a different value is offered in
+  **Find contact** as "Found something different — Take". Sending to an address found automatically works, with a yellow
+  note naming its domain until you confirm the contact.
+- The package editor shows the company facts the letter was written with, and tells you when the card has new ones.
+
 ### What's new in 0.12.3
 
 - Installing and using the app now also works behind antivirus HTTPS scanning or a company proxy
@@ -143,7 +157,8 @@ walks you through signing in; you can switch at any time in Settings. Only one h
 
 The developer receives none of your data, except a message you write yourself with the **Feedback** button and send by
 clicking "Send" (your text, the email address you typed, the version; kept 12 months). Apart from the daily version check
-and the daily "in use" signal below, the app talks only to the services you use through it (job board, AI helper, email provider) — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
+and the daily "in use" signal below, the app talks only to the services you use through it (job board, AI helper, email provider) and to the public
+websites of employers it reads for "About the company" — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
 
 Once a day the app asks the BewerbungsPilot website (GitHub Pages) whether a newer version exists. GitHub sees your IP
 address, as with any website; nothing about you or your data is sent. You can switch it off in **Settings → Updates**.
@@ -193,6 +208,9 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. The job search only talks to
   `rest.arbeitsagentur.de`. A pasted link (not Arbeitsagentur) is opened only when you give no text, in a separate
   browser profile, and never to an internal address such as your router or this PC.
+- **About the company** on each card: see "What's new in 0.13.0". The app reads only public pages of the employer (no
+  review sites, LinkedIn or Xing) and keeps a short summary plus the page addresses, not the texts. It does not ask
+  any news service.
 
 ## Application packages
 
@@ -232,6 +250,7 @@ npm run dev -w server     # API on http://127.0.0.1:4280 (add -- --fake-llm to a
 npm run dev -w web        # dashboard on http://localhost:5173
 npm test && npm run i18n:check
 npm run release           # builds release/BewerbungsPilot-v<version>.zip
+npm run check:research -- <job url> --company "<Firma GmbH>"   # live company research, printed only (nothing saved)
 node scripts/screenshots.mjs en docs/images   # after npm run build: the README screenshots, taken from the demo
 ```
 

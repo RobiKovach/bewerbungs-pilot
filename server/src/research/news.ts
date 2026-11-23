@@ -83,6 +83,23 @@ export async function fetchNews(
 }
 
 /**
+ * Google News is OFF until Robert decides (0.13.0, task 12, Ruling R38): every feed says it "is made available
+ * solely for the purpose of rendering Google News results within a personal feed reader for personal, non-commercial
+ * use. Any other use of the feed is expressly prohibited." — a summary by an AI helper inside an app is not clearly
+ * that. While off, nothing is asked (the company name never leaves the PC for news) and the block says the news
+ * could not be loaded. Turning it on: set this to true and update privacy.html / README.
+ */
+export const NEWS_ENABLED = false;
+
+/** The news source the app uses outside test mode. */
+export function newsSource(): typeof fetchNews {
+  return NEWS_ENABLED ? fetchNews : async (_company, signal) => {
+    if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
+    return null;
+  };
+}
+
+/**
  * Test mode (Ruling R3, same gate as a development update source: a throw-away data folder and fake mail): a fixed
  * list instead of Google News, so an end-to-end run never reaches the network. Two items, dated 10 and 40 days back.
  */

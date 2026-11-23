@@ -377,6 +377,83 @@ test('the update banner shows a newer version and stays hidden once dismissed', 
   await expect(banner).toBeHidden();
 });
 
+/** The package of the vacancy from `company`, read from the data folder (the letter as stored, not as rendered). */
+function packageOf(company: string): { letter: { paragraphs: string[] }; vacancy: { facts?: string[] } } | null {
+  const walk = (dir: string): string | null => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'tmp') continue;
+        const found = walk(full);
+        if (found) return found;
+      } else if (entry.name === 'package.json' && fs.readFileSync(full, 'utf8').includes(company)) return full;
+    }
+    return null;
+  };
+  const file = walk(env.dataDir);
+  return file ? JSON.parse(fs.readFileSync(file, 'utf8')) as ReturnType<typeof packageOf> : null;
+}
+
+test('a pasted link from a board: company site and Impressum give the contact, the card shows facts, the letter uses a fact, a red flag never reaches the letter', async () => {
+  // The scripted research answer (Ruling R4): one fact and one red flag, both from the first page read.
+  const fact = 'Develops its own web platform for customers in Saxony';
+  const flag = 'Announced job cuts in its sales department';
+
+  await page.getByRole('link', { name: 'Job offers' }).first().click();
+  await page.getByRole('button', { name: '+ Add' }).click();
+  await page.getByRole('textbox', { name: 'Link (optional)' }).fill(`${env.testPages}/jobs/webentwickler`);
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+
+  const card = page.getByRole('article').filter({ hasText: 'Beispielwerk Software GmbH' });
+  await expect(card).toBeVisible({ timeout: 60_000 });
+  await card.getByRole('button', { name: 'Save' }).click();
+  // Adding never waits for the research; it runs in the background. The Impressum gives the e-mail, the vacancy page
+  // the person to write to; nobody confirmed them yet.
+  await expect(card.getByText(/bewerbung@beispielwerk\.example.*found automatically/)).toBeVisible({ timeout: 90_000 });
+  await expect(card.getByText(/Frau Lena Beispiel/)).toBeVisible();
+
+  await card.getByText('About the company', { exact: true }).click();
+  await expect(card.getByText(/^Researched /)).toBeVisible();
+  await expect(card.getByText(fact)).toBeVisible();
+  await expect(card.getByText(flag)).toBeVisible();
+  await expect(card.getByText('only for you, not used in the letter')).toBeVisible();
+  const kununu = card.getByRole('link', { name: 'Reviews on Kununu ↗' });
+  await expect(kununu).toHaveAttribute('href', /^https:\/\/www\.kununu\.com\/de\/search\?q=Beispielwerk/);
+  await expect(kununu).toHaveAttribute('rel', 'noopener noreferrer');
+
+  // The package: the letter weaves in the fact, never the red flag.
+  await card.getByRole('button', { name: '★ Interesting' }).click();
+  await page.getByRole('tab', { name: /Favourites/ }).click();
+  await card.getByRole('button', { name: 'Create package' }).click();
+  await card.getByRole('radio', { name: 'English' }).check();
+  await card.getByRole('button', { name: 'Create' }).click();
+  const approve = page.getByRole('button', { name: 'Approve' });
+  await expect(approve).toBeEnabled({ timeout: 60_000 });
+  // The editor's read-only copy: the facts of this package, never the red flag.
+  const facts = page.locator('details.package-facts');
+  await facts.getByText('About the company', { exact: true }).click();
+  await expect(facts.getByText('Company facts this letter was written with')).toBeVisible();
+  await expect(facts.getByText(fact)).toBeVisible();
+  await expect(facts.getByText(flag)).toHaveCount(0);
+
+  const stored = packageOf('Beispielwerk Software GmbH');
+  expect(stored).not.toBeNull();
+  const letterText = (stored?.letter.paragraphs ?? []).join('\n');
+  expect(letterText).toContain(fact);
+  expect(letterText).not.toContain(flag);
+  expect(JSON.stringify(stored)).not.toContain(flag);
+
+  // Sending to the address found automatically is allowed, with the yellow warning naming its domain.
+  await approve.click();
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Send application' });
+  await expect(dialog.getByRole('textbox', { name: "To (the employer's email address)" })).toHaveValue('bewerbung@beispielwerk.example');
+  await expect(dialog.getByText(/found automatically on beispielwerk\.example/)).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Send', exact: true })).toBeEnabled({ timeout: 60_000 });
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+});
+
 test('without the launch key the app shows only the shortcut page', async ({ browser }: { browser: Browser }) => {
   const stranger = await browser.newContext({ locale: 'en-US' });
   try {

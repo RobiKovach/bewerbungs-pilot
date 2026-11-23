@@ -39,16 +39,22 @@ function letter(task: LlmTask): { subject: string; paragraphs: string[]; storyId
   const data = fencedJson<ProfileBlock>(task.prompt, 'profile');
   const title = offerTitle(task.prompt);
   const de = isGerman(task);
+  // 0.13.0: every company fact the prompt carries goes into one sentence, so an end-to-end run sees exactly what the
+  // letter was given (a red flag in this block would show up in the letter).
+  const facts = (fenced(task.prompt, 'company facts')[0] ?? '').split('\n').map((l) => l.replace(/^-\s*/, '').trim()).filter(Boolean);
+  const factLine = facts.length ? [de ? `Besonders spricht mich an: ${facts.join(' ')}` : `What appeals to me in particular: ${facts.join(' ')}`] : [];
   return {
     subject: de ? `Bewerbung als ${title}` : `Application for ${title}`,
     paragraphs: de
       ? [
         `Ihre Stelle als ${title} spricht mich an, weil ich gern an Projekten arbeite, die Menschen im Alltag helfen.`,
+        ...factLine,
         'In einem meiner Projekte habe ich eine Aufgabe von der ersten Idee bis zur fertigen Lösung begleitet und dabei viel gelernt.',
         'Ich freue mich darauf, Sie in einem persönlichen Gespräch kennenzulernen.',
       ]
       : [
         `Your opening as ${title} appeals to me because I like working on projects that help people every day.`,
+        ...factLine,
         'In one of my projects I took a task from the first idea to the finished solution and learned a lot on the way.',
         'I look forward to meeting you in person.',
       ],

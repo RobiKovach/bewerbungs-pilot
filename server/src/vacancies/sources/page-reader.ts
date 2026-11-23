@@ -123,11 +123,14 @@ export class BrowserPageReader implements PageReader {
   private chain: Promise<unknown> = Promise.resolve();
   private readonly find: () => string | null;
   private readonly check: Check;
+  private readonly addressOk: (ip: string) => boolean;
   private readonly timeoutMs: number;
   private readonly maxChars: number;
 
   constructor(private readonly opts: {
     tmpRoot: string; find?: () => string | null; check?: Check; timeoutMs?: number; maxChars?: number;
+    /** Which answering address may serve a page (default: only public ones). Only end-to-end runs change it (test-pages.ts). */
+    addressOk?: (ip: string) => boolean;
     /** Shorter page text is refused by `read` as unreadable (and logged as 'too-short'); sessions take any length. */
     minChars?: number;
     /** Tests: a fake browser instead of puppeteer.launch. */
@@ -136,6 +139,7 @@ export class BrowserPageReader implements PageReader {
   }) {
     this.find = opts.find ?? (() => findBrowser());
     this.check = opts.check ?? checkPublicUrl;
+    this.addressOk = opts.addressOk ?? isPublicAddress;
     this.timeoutMs = opts.timeoutMs ?? 25_000;
     this.maxChars = opts.maxChars ?? 60_000;
   }
@@ -163,7 +167,7 @@ export class BrowserPageReader implements PageReader {
       if (!executablePath) throw new AppError('BROWSER_MISSING', 'no Edge or Chrome found');
       if (signal.aborted) throw cancelled();
       return new BrowserSession({
-        executablePath, signal, deadlineMs: deadline(), release, check: this.check, maxChars: this.maxChars,
+        executablePath, signal, deadlineMs: deadline(), release, check: this.check, addressOk: this.addressOk, maxChars: this.maxChars,
         tmpRoot: this.opts.tmpRoot, launch: this.opts.launch, warn: this.opts.warn, log: this.opts.log,
       });
     });
@@ -189,7 +193,7 @@ function closeTarget(t: Target): void {
 }
 
 interface SessionOpts {
-  executablePath: string; signal: AbortSignal; deadlineMs: number; release: () => void; check: Check; maxChars: number;
+  executablePath: string; signal: AbortSignal; deadlineMs: number; release: () => void; check: Check; addressOk: (ip: string) => boolean; maxChars: number;
   tmpRoot: string; launch?: (options: ReturnType<typeof launchOptions>) => Promise<Browser>;
   warn?: (event: string, data: Record<string, unknown>) => void; log?: Log;
 }
@@ -379,7 +383,7 @@ class BrowserSession implements ReadSession {
     // still came from an internal address, nothing of this page is used.
     page.on('response', (res) => {
       const ip = res.remoteAddress().ip?.replace(/^\[|\]$/g, '');
-      if (ip && !isPublicAddress(ip)) reachedPrivate = true;
+      if (ip && !this.o.addressOk(ip)) reachedPrivate = true;
     });
     const remaining = Math.max(1, this.o.deadlineMs - Date.now());
     const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: remaining });

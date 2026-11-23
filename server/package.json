@@ -1,6 +1,6 @@
 {
   "name": "@bp/server",
-  "version": "0.12.3",
+  "version": "0.13.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -10,6 +10,7 @@
     "test": "vitest run",
     "check:pdf": "tsx scripts/check-pdf.ts",
     "check:aa-contact": "tsx scripts/check-aa-contact.ts",
+    "check:research": "tsx scripts/check-research.ts",
     "dev": "tsx watch src/index.ts --no-open"
   },
   "devDependencies": {

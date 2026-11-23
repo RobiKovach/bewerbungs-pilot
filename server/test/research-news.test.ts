@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fetchNews, newsQueryUrl, parseNewsRss } from '../src/research/news.js';
+import { NEWS_ENABLED, fetchNews, newsQueryUrl, newsSource, parseNewsRss } from '../src/research/news.js';
 import { SafeGetError, type safeGetBytes } from '../src/vacancies/sources/safe-get.js';
 
 const NOW = new Date('2026-11-11T10:00:00Z');
@@ -109,5 +109,15 @@ describe('research news', () => {
     const already = new AbortController();
     already.abort();
     await expect(fetchNews('Symate GmbH', already.signal, failing)).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
+  });
+});
+
+describe('newsSource (Ruling R38: Google News off until decided)', () => {
+  it('while news are off nothing is asked and the answer is "could not be loaded"', async () => {
+    expect(NEWS_ENABLED).toBe(false);
+    expect(await newsSource()('Symate GmbH', new AbortController().signal)).toBeNull();
+    const stopped = new AbortController();
+    stopped.abort();
+    await expect(newsSource()('Symate GmbH', stopped.signal)).rejects.toMatchObject({ code: 'LLM_CANCELLED' });
   });
 });

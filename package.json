@@ -1,6 +1,6 @@
 {
   "name": "bewerbungs-pilot",
-  "version": "0.12.3",
+  "version": "0.13.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,6 +20,7 @@
     "check:arbeitsagentur": "node scripts/check-arbeitsagentur.mjs",
     "check:pdf": "npm run check:pdf -w server",
     "check:aa-contact": "npm run check:aa-contact -w server --",
+    "check:research": "npm run check:research -w server --",
     "check:voice": "node scripts/check-voice.mjs",
     "check:codex": "node scripts/check-codex.mjs",
     "check:version-json": "node scripts/check-version-json.mjs docs/version.json",
