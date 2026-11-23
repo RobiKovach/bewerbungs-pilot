@@ -186,4 +186,12 @@ describe('CompanyBlock', () => {
     await user.click(screen.getByRole('button', { name: 'Research again' }));
     expect(f).toHaveBeenCalledWith('/api/vacancies/v1/research', expect.objectContaining({ method: 'POST' }));
   });
+
+  it('stopped research says so — no "did not finish" (final review M5)', () => {
+    const v = vac({ id: 'v1', research: research({ state: 'failed', error: 'LLM_CANCELLED' }) });
+    setup(v, { 'GET /api/vacancies': () => ({ body: { vacancies: [v] } }) });
+    expect(screen.getByText('The company research was stopped. You can start it again at any time.')).toBeInTheDocument();
+    expect(screen.queryByText('The company research did not finish.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Research again' })).toBeInTheDocument();
+  });
 });

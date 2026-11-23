@@ -660,6 +660,7 @@
       "queued": "In der Warteschlange",
       "stop": "Stoppen",
       "failed": "Die Recherche zur Firma wurde nicht abgeschlossen.",
+      "stopped": "Die Recherche zur Firma wurde gestoppt. Sie können sie jederzeit neu starten.",
       "website": "Website",
       "websiteNone": "Website nicht gefunden.",
       "websiteLabel": "Website der Firma",

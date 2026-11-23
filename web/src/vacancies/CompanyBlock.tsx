@@ -116,7 +116,8 @@ export function CompanyBlock({ vacancy: v, onChange, pollMs = RESEARCH_POLL_MS }
         <button type="button" className="btn small ghost" disabled={busy} onClick={() => void act(() => api.stopResearch(v.id))}>{t('vacancies.company.stop')}</button>
       </p>
     ) : r.state === 'failed' ? (
-      <p className="muted company__status">{t('vacancies.company.failed')} {againButton}</p>
+      // Stopped by the person (or the card was hidden) is no failure (final review M5).
+      <p className="muted company__status">{t(r.error === 'LLM_CANCELLED' ? 'vacancies.company.stopped' : 'vacancies.company.failed')} {againButton}</p>
     ) : null;
     const showDetails = r.state === 'done' || (!polling && hasContent(r));
     body = (

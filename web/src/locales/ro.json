@@ -660,6 +660,7 @@
       "queued": "În așteptare pentru cercetare",
       "stop": "Opriți",
       "failed": "Cercetarea firmei nu s-a încheiat.",
+      "stopped": "Cercetarea firmei a fost oprită. O puteți porni din nou oricând.",
       "website": "Site",
       "websiteNone": "Site-ul nu a fost găsit.",
       "websiteLabel": "Site-ul firmei",

@@ -660,6 +660,7 @@
       "queued": "W kolejce do zbadania",
       "stop": "Zatrzymaj",
       "failed": "Badanie firmy nie zostało ukończone.",
+      "stopped": "Badanie firmy zostało zatrzymane. Możesz uruchomić je ponownie w każdej chwili.",
       "website": "Strona",
       "websiteNone": "Nie znaleziono strony.",
       "websiteLabel": "Strona firmy",

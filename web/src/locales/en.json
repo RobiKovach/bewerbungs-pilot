@@ -660,6 +660,7 @@
       "queued": "Queued for research",
       "stop": "Stop",
       "failed": "The company research did not finish.",
+      "stopped": "The company research was stopped. You can start it again at any time.",
       "website": "Website",
       "websiteNone": "Website not found.",
       "websiteLabel": "Company website",
