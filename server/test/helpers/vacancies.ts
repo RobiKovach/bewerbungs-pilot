@@ -4,7 +4,7 @@ import { AppError } from '../../src/errors.js';
 import { FakeProvider } from '../../src/llm/fake.js';
 import type { LlmTask } from '../../src/llm/types.js';
 import type { ContactWindow, ContactWindowResult } from '../../src/vacancies/sources/aa-contact-window.js';
-import type { PageLink, PageRead, PageReader, ReadSession } from '../../src/vacancies/sources/page-reader.js';
+import type { PageLink, PageRead, PageReader, ReaderLane, ReadSession } from '../../src/vacancies/sources/page-reader.js';
 import type { PdfFetcher, PdfResult } from '../../src/vacancies/sources/pdf-fetch.js';
 import type { SearchQuery, SourceDetails, SourceHit, VacancySource } from '../../src/vacancies/sources/types.js';
 
@@ -118,6 +118,8 @@ export class FakePageReader implements PageReader {
   closed = 0;
   /** The `deadlineMs` each session was started with. */
   deadlines: Array<number | undefined> = [];
+  /** The lane each session asked for (final review I2). */
+  lanes: Array<ReaderLane | undefined> = [];
   constructor(
     private readonly read_: (url: string) => string | Promise<string> = () => { throw new AppError('BAD_REQUEST', 'fake: unreadable', 'pageUnreadable'); },
     private readonly links_: (url: string) => PageLink[] = () => [],
@@ -128,10 +130,11 @@ export class FakePageReader implements PageReader {
     this.reads.push(url);
     return this.read_(url);
   }
-  async session(signal: AbortSignal, deadlineMs?: number): Promise<ReadSession> {
+  async session(signal: AbortSignal, deadlineMs?: number, lane?: ReaderLane): Promise<ReadSession> {
     if (signal.aborted) throw new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUser');
     this.sessions++;
     this.deadlines.push(deadlineMs);
+    this.lanes.push(lane);
     let open = true;
     return {
       open: async (url: string): Promise<PageRead> => {

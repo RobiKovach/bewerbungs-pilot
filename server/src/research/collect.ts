@@ -3,7 +3,7 @@ import { AppError } from '../errors.js';
 import { isAaHost } from '../vacancies/aa-links.js';
 import type { PageLink, PageReader, ReadSession } from '../vacancies/sources/page-reader.js';
 import { contactFromPages, mailtoAddress, type FoundPage } from './contact-merge.js';
-import { nameOnPage, nextPages, oneWordNameShown, siteOf, websiteCandidates, type PageKind } from './links.js';
+import { nameOnPage, nextPages, oneWordNameShown, siteOf, unknownPage, websiteCandidates, type PageKind } from './links.js';
 import type { fetchNews as FetchNews } from './news.js';
 
 /**
@@ -110,7 +110,8 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
 
   let website = '';
   try {
-    session = await deps.reader.session(signal, deadline);
+    // The full research runs in the background; the contact part ("Find contact") is what the person waits for (I2).
+    session = await deps.reader.session(signal, deadline, mode === 'full' ? 'background' : 'interactive');
     if (mode === 'full' && deps.fetchNews) {
       newsTask = deps.fetchNews(input.company, newsStop.signal);
       newsTask.catch(() => undefined); // held until awaited below; never an unhandled rejection
@@ -118,8 +119,10 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
 
     // 1. The vacancy page — or, for Arbeitsagentur, the employer's partner page.
     let firstUrl = '';
+    // The employer's own link from the Arbeitsagentur record (not a page the person pasted) stays trusted (Ruling R48).
+    let fromEmployer = false;
     if (input.vacancyUrl && !input.skipVacancyPage) firstUrl = input.vacancyUrl;
-    else if (input.partnerUrl && !isAaHost(input.partnerUrl)) firstUrl = input.partnerUrl;
+    else if (input.partnerUrl && !isAaHost(input.partnerUrl)) { firstUrl = input.partnerUrl; fromEmployer = true; }
     const first = firstUrl ? await open(firstUrl, 'vacancy') : null;
 
     // 2. The company's own site.
@@ -129,12 +132,23 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
       if (siteOf(website) !== siteOf(firstUrl)) await open(website, 'home');
     } else {
       const candidates = websiteCandidates({
-        pageUrl: firstUrl, links: first?.links ?? [], emails: first ? emailsOf(first) : [], company: input.company,
+        pageUrl: first?.url ?? firstUrl, links: first?.links ?? [], emails: first ? emailsOf(first) : [], company: input.company,
+        pageFromEmployer: fromEmployer,
       });
       for (const c of candidates) {
         if (!canOpen()) break;
         // The vacancy page is on that site already: use its real address (`www.` or not) and do not open it twice.
-        if (first && siteOf(c.url) === siteOf(first.url)) { website = new URL(first.url).origin; break; }
+        if (first && siteOf(c.url) === siteOf(first.url)) {
+          const firstSite = new URL(first.url).origin;
+          if (!c.nameCheck) { website = firstSite; break; }
+          // A page on no list whose host does not name the company may be an unknown board (final review I1): only its
+          // own Impressum naming the company makes it the company's site. A board's Impressum is no source.
+          const imprint = nextPages(firstSite, first.links, opened).find((n) => n.kind === 'impressum');
+          const imp = imprint ? await open(imprint.url, 'impressum') : null;
+          if (imp && nameOnPage(input.company, imp.text)) { website = firstSite; break; }
+          if (imp) pages.splice(pages.indexOf(imp), 1);
+          continue;
+        }
         const home = await open(c.url, 'home');
         // The site is where the home page landed: a guess may redirect (www.isax.de → www.isax.com, Ruling R46).
         const landed = home ? new URL(home.url).origin : c.url;
@@ -148,6 +162,9 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
         for (const p of [imp, home]) if (p) pages.splice(pages.indexOf(p), 1);
       }
     }
+    // Not confirmed as the company's own: the pasted page counts as a listing — only its ad's contact block is used,
+    // never its footer, phone links, own e-mails or address (final review I1).
+    if (first && !fromEmployer && siteOf(first.url) !== siteOf(website) && unknownPage(first.url, input.company)) first.listing = true;
 
     // 3. Impressum → contact → apply → careers → about, one page of each kind.
     const seenKinds = new Set<PageKind>(pages.map((p) => p.kind));

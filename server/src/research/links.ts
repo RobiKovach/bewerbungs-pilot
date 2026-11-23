@@ -13,12 +13,22 @@ export type PageKind = ResearchSource['kind'];
 export const APPLY_SERVICES: string[] = [
   'jobs.personio.de', 'personio.de', 'softgarden.io', 'softgarden.de', 'myworkdayjobs.com', 'smartrecruiters.com',
   'greenhouse.io', 'lever.co', 'empfehlungsbund.de', 'dvinci-hr.com', 'onlyfy.jobs', 'join.com', 'recruitee.com',
+  // Final review I1: more applicant systems common in Germany.
+  'rexx-systems.com', 'concludis.de', 'workable.com', 'teamtailor.com', 'ashbyhq.com', 'successfactors.com', 'successfactors.eu',
+  'sapsf.com', 'sapsf.eu', 'taleo.net', 'jobbase.io', 'kenjo.io', 'jobs.b-ite.com', 'umantis.com', 'hr4you.org',
+  'prescreen.io', 'jobylon.com', 'factorialhr.de', 'factorial.co', 'heyrecruit.de', 'coveto.de',
 ];
 
 /** Job boards: the vacancy is listed there, but the company lives elsewhere. `name.*` = that name on any TLD. */
 export const JOB_BOARDS: string[] = [
   'stepstone.*', 'indeed.*', 'itsax.de', 'get-in-it.de', 'remotely.de', 'jobvector.de', 'jobijoba.de',
   'jooble.org', 'jobleads.com', 'wearedevelopers.com', 'xing.*', 'linkedin.*', 'arbeitsagentur.de', 'monster.de', 'kimeta.de',
+  // Final review I1: more boards common in Germany.
+  'stellenanzeigen.de', 'jobware.de', 'meinestadt.de', 'yourfirm.de', 'jobs.heise.de', 'absolventa.de', 'gulp.de',
+  'freelancermap.de', 'karriere.at', 'heyjobs.co', 'heyjobs.de', 'stellenwerk.de', 'jobboerse.de',
+  'kalaydo.de', 'experteer.de', 'careerjet.de', 'adzuna.de', 'jobscout24.de', 'jobsintown.de',
+  'stellenmarkt.de', 'jobmensa.de', 'staufenbiel.de', 'ingenieur.de', 'it-jobs.de', 'stellenonline.de', 'joblift.de',
+  'talent.com', 'jobrapido.com', 'neuvoo.de', 'arbeitnow.com', 'berlinstartupjobs.com', 'germantechjobs.de', 'workwise.io',
 ];
 
 /**
@@ -30,7 +40,7 @@ export const IGNORED_HOSTS: string[] = [
   'apple.com', 'play.google.com', 'cookiebot.com', 'usercentrics.eu', 'onetrust.com', 'consentmanager.net',
   'youtube.com', 'youtu.be', 'vimeo.com', 'facebook.com', 'instagram.com', 'twitter.com', 'x.com', 'tiktok.com',
   'pinterest.com', 'whatsapp.com', 't.me', 'openstreetmap.org', 'bing.com', 'hotjar.com', 'matomo.cloud', 'etracker.com',
-  'kununu.*', 'glassdoor.*', 'trustpilot.*', 'wikipedia.org', 'thestepstonegroup.com', 'stepstone.group',
+  'wa.me', 'jobboersencheck.de', 'kununu.*', 'glassdoor.*', 'trustpilot.*', 'wikipedia.org', 'thestepstonegroup.com', 'stepstone.group',
 ];
 
 /** Mail providers anyone can use: their domain says nothing about the company. */
@@ -213,7 +223,8 @@ export function nameOnPage(company: string, text: string): boolean {
   return false;
 }
 
-const wordPattern = (core: string) => String.raw`(?<![\p{L}\p{N}])${esc(core).replace(/ /g, '\\s')}(?![\p{L}\p{N}])`;
+// A hyphen binds too: "Data-Center" is no whole word "Data" (final review T3b).
+const wordPattern = (core: string) => String.raw`(?<![\p{L}\p{N}-])${esc(core).replace(/ /g, '\\s')}(?![\p{L}\p{N}-])`;
 
 /**
  * A one-word name stands on the page as a whole word (outside domains) but without the evidence `nameOnPage` needs:
@@ -227,29 +238,65 @@ export function oneWordNameShown(company: string, text: string): boolean {
   return new RegExp(wordPattern(core), 'u').test(hay);
 }
 
+/** A trusted slug is at least this long: a short one ("abc") says little about a host (final review T3a). */
+const MIN_TRUSTED_SLUG = 4;
+
+/**
+ * Does the host name the company? A slug must be a whole host label or a hyphen-separated part of one
+ * (`muster.de`, `karriere.muster.de`, `muster-shop.de` for "muster"; `muster-shop.de` for "muster-shop") — never just
+ * letters inside a label (`bigdata-agentur.de` is no evidence for "Data", final review T3a).
+ */
+export function hostHasSlug(host: string, slugs: string[]): boolean {
+  const labels = host.toLowerCase().replace(/\.$/, '').split('.');
+  return slugs.some((s) => s.length >= MIN_TRUSTED_SLUG && labels.some((l) =>
+    l === s || l.startsWith(`${s}-`) || l.endsWith(`-${s}`) || l.includes(`-${s}-`)));
+}
+
+/**
+ * A pasted page on no list whose host does not name the company (final review I1): possibly a board the lists do not
+ * know. Its own Impressum decides (collect); until then its footer, phone links and address are not the employer's.
+ */
+export function unknownPage(pageUrl: string, company: string): boolean {
+  const u = webUrl(pageUrl);
+  if (!u) return false;
+  const h = u.hostname;
+  return !isBoard(h) && !isApplyService(h) && !isIgnored(h) && !hostHasSlug(h, companySlugs(company));
+}
+
 /**
  * A possible company site (Ruling R7). `nameCheck: true` = not trusted yet: the caller (research collect, Task 6)
- * must open it and use it only when `nameOnPage(company, text)` holds. `false` only for the page itself (rule 2.3)
- * and for a linked or e-mail site whose host contains a slug of the company name.
+ * must open it and use it only when `nameOnPage(company, text)` holds — for the pasted page itself, on its own
+ * Impressum (final review I1). `false` for the pasted page when its host holds the name and for a linked or e-mail
+ * site whose host holds a slug of the company name.
  */
 export interface WebsiteCandidate { url: string; nameCheck: boolean }
 
 /**
  * Where the company's own site may be, best first (spec 4.2 step 2): linked or e-mail sites whose host contains a
- * slug of the name; then the page itself when it is neither a board nor an apply service; then other links from a
- * board or an apply service to a not ignored host and domains of non-free e-mails; then guesses from the name (`guessSlugs`)
+ * slug of the name; then the page itself when it is neither a board nor an apply service (checked when its host does
+ * not hold the name); then other links from a board, an apply service or such an unchecked page to a not ignored host
+ * and domains of non-free e-mails; then guesses from the name (`guessSlugs`)
  * (`https://www.<slug>.de` for every slug, then `.com`). No repeats (compared without `www.`), at most 6, with up to
  * 4 places kept for the guesses.
  */
-export function websiteCandidates(input: { pageUrl: string; links: PageLink[]; emails: string[]; company: string }): WebsiteCandidate[] {
+export function websiteCandidates(input: {
+  pageUrl: string; links: PageLink[]; emails: string[]; company: string;
+  /** The page is the employer's own link from the Arbeitsagentur (not pasted by the person): trusted (Ruling R48). */
+  pageFromEmployer?: boolean;
+}): WebsiteCandidate[] {
   const slugs = companySlugs(input.company);
-  const hasSlug = (host: string) => slugs.some((s) => host.toLowerCase().includes(s));
+  const hasSlug = (host: string) => hostHasSlug(host, slugs);
   const page = webUrl(input.pageUrl);
   const pageHost = page?.hostname ?? '';
   const pageIsListing = page !== null && (isBoard(pageHost) || isApplyService(pageHost));
+  // Final review I1: a pasted page on no list is the company's own only when its host holds the name (or it is the
+  // employer's link from the Arbeitsagentur, R48); otherwise it may be an unknown board — confirmed by its own
+  // Impressum (collect), and its links are followed like a board's.
+  const pageTrusted = page !== null && !pageIsListing && (input.pageFromEmployer === true || hasSlug(pageHost));
+  const pageUnknown = page !== null && !pageIsListing && !pageTrusted;
 
   const found: Array<{ url: string; host: string }> = [];
-  if (pageIsListing) {
+  if (pageIsListing || pageUnknown) {
     for (const l of input.links) {
       const u = webUrl(l.href);
       if (!u) continue;
@@ -267,7 +314,7 @@ export function websiteCandidates(input: { pageUrl: string; links: PageLink[]; e
 
   const ordered: WebsiteCandidate[] = [
     ...found.filter((f) => hasSlug(f.host)).map((f) => ({ url: f.url, nameCheck: false })),
-    ...(page && !pageIsListing && !isIgnored(pageHost) ? [{ url: originOf(page), nameCheck: false }] : []),
+    ...(page && !pageIsListing && !isIgnored(pageHost) ? [{ url: originOf(page), nameCheck: !pageTrusted }] : []),
     ...found.filter((f) => !hasSlug(f.host)).map((f) => ({ url: f.url, nameCheck: true })),
   ];
   const guessed = guessSlugs(input.company);

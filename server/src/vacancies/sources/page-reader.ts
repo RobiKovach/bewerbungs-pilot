@@ -11,15 +11,21 @@ export interface PageLink { text: string; href: string }
 export interface PageRead { url: string; text: string; links: PageLink[] }
 /** Several pages with one browser under one deadline (0.13.0). Always `close` it: until then the reader is held. */
 export interface ReadSession { open(url: string): Promise<PageRead>; close(): Promise<void> }
+/**
+ * Who waits for whom (final review I2): the background company research has its own lane, so a pasted link or "Find
+ * contact" (interactive) never waits behind it — at most one research browser plus one interactive browser.
+ */
+export type ReaderLane = 'background' | 'interactive';
 
 export interface PageReader {
   /** The visible text of a pasted vacancy link (not Arbeitsagentur), or BROWSER_MISSING / BAD_REQUEST pageUnreadable. */
   read(url: string, signal: AbortSignal): Promise<string>;
   /**
    * A session for several pages: `deadlineMs` is an absolute time (`Date.now() + budget`) shared by all its pages;
-   * an `open` after it throws pageUnreadable `timeout`. BROWSER_MISSING when no Edge/Chrome is installed.
+   * an `open` after it throws pageUnreadable `timeout`. BROWSER_MISSING when no Edge/Chrome is installed. `lane`:
+   * 'background' (default) for the company research, 'interactive' for work the person waits for.
    */
-  session(signal: AbortSignal, deadlineMs: number): Promise<ReadSession>;
+  session(signal: AbortSignal, deadlineMs: number, lane?: ReaderLane): Promise<ReadSession>;
 }
 
 type Check = typeof checkPublicUrl;
@@ -115,12 +121,14 @@ const cancelled = () => new AppError('LLM_CANCELLED', 'stopped', 'cancelledByUse
 /**
  * Opens pasted vacancy links and company pages in the installed Edge/Chrome (spec 0.8.3, section 6a; 0.13.0 sessions):
  * a fresh temporary profile (no cookies, no accounts, deleted afterwards), JavaScript on (career pages are drawn by
- * it), every request filtered by `allowRequest`, downloads and new windows refused. One read or session at a time.
+ * it), every request filtered by `allowRequest`, downloads and new windows refused. One read or session at a time
+ * per lane: the background research never holds up a pasted link or "Find contact" (`ReaderLane`).
  * A session keeps one browser for several pages (one tab at a time) under one deadline. The log gets only the host
  * and the result, once per page — never the page text or the full link.
  */
 export class BrowserPageReader implements PageReader {
-  private chain: Promise<unknown> = Promise.resolve();
+  /** One queue per lane: within a lane, reads and sessions never overlap (each session has its own temp profile). */
+  private readonly chains: Record<ReaderLane, Promise<unknown>> = { background: Promise.resolve(), interactive: Promise.resolve() };
   private readonly find: () => string | null;
   private readonly check: Check;
   private readonly addressOk: (ip: string) => boolean;
@@ -145,8 +153,8 @@ export class BrowserPageReader implements PageReader {
   }
 
   async read(url: string, signal: AbortSignal): Promise<string> {
-    // The read's own time starts once the reader is free: queued behind a research session it keeps its full limit.
-    const s = await this.acquire(signal, () => Date.now() + this.timeoutMs);
+    // The read's own time starts once its lane is free: queued behind "Find contact" it keeps its full limit.
+    const s = await this.acquire('interactive', signal, () => Date.now() + this.timeoutMs);
     try {
       return (await s.openWith(url, this.opts.minChars ?? 0)).text;
     } finally {
@@ -154,15 +162,15 @@ export class BrowserPageReader implements PageReader {
     }
   }
 
-  /** Waits for the reader to be free; holds it until `close` (a session and a plain read never overlap). */
-  session(signal: AbortSignal, deadlineMs: number): Promise<ReadSession> {
-    return this.acquire(signal, () => deadlineMs);
+  /** Waits for its lane to be free; holds the lane until `close`. */
+  session(signal: AbortSignal, deadlineMs: number, lane: ReaderLane = 'background'): Promise<ReadSession> {
+    return this.acquire(lane, signal, () => deadlineMs);
   }
 
-  private acquire(signal: AbortSignal, deadline: () => number): Promise<BrowserSession> {
+  private acquire(lane: ReaderLane, signal: AbortSignal, deadline: () => number): Promise<BrowserSession> {
     let release!: () => void;
     const held = new Promise<void>((resolve) => { release = resolve; });
-    const start = this.chain.then(() => {
+    const start = this.chains[lane].then(() => {
       const executablePath = this.find();
       if (!executablePath) throw new AppError('BROWSER_MISSING', 'no Edge or Chrome found');
       if (signal.aborted) throw cancelled();
@@ -171,7 +179,7 @@ export class BrowserPageReader implements PageReader {
         tmpRoot: this.opts.tmpRoot, launch: this.opts.launch, warn: this.opts.warn, log: this.opts.log,
       });
     });
-    this.chain = start.then(() => held, () => undefined);
+    this.chains[lane] = start.then(() => held, () => undefined);
     return start;
   }
 }

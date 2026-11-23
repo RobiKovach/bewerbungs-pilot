@@ -150,7 +150,11 @@ describe('research links: website candidates', () => {
   });
 
   it('a page on the company site itself is a candidate (not a board, not an apply service)', () => {
-    expect(websiteCandidates({ pageUrl: 'https://jobs.hw.ag/', links: [], emails: [], company: '' })).toEqual([{ url: 'https://jobs.hw.ag', nameCheck: false }]);
+    // Without a name to find in the host the page must be confirmed by its own Impressum (final review I1, R49).
+    expect(websiteCandidates({ pageUrl: 'https://jobs.hw.ag/', links: [], emails: [], company: '' })).toEqual([{ url: 'https://jobs.hw.ag', nameCheck: true }]);
+    expect(websiteCandidates({ pageUrl: 'https://jobs.helm-walter.de/', links: [], emails: [], company: 'Helm Walter GmbH' })[0]).toEqual({ url: 'https://jobs.helm-walter.de', nameCheck: false });
+    // The employer's own link from the Arbeitsagentur stays trusted (R48).
+    expect(websiteCandidates({ pageUrl: 'https://jobs.hw.ag/', links: [], emails: [], company: '', pageFromEmployer: true })).toEqual([{ url: 'https://jobs.hw.ag', nameCheck: false }]);
     expect(websiteCandidates({ pageUrl: 'https://acme.jobs.personio.de/job/1', links: [], emails: [], company: '' })).toEqual([]);
   });
 

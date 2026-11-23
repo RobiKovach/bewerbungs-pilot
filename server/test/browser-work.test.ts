@@ -24,6 +24,14 @@ describe('browserWork', () => {
     expect(activity.active()).toEqual([]);
   });
 
+  it('the lane of a session is passed on (final review I2)', async () => {
+    const inner = new FakePageReader(() => 'Seite');
+    const reader = browserWork(new Activity(), inner);
+    await (await reader.session(new AbortController().signal, Date.now() + 1000, 'interactive')).close();
+    await (await reader.session(new AbortController().signal, Date.now() + 1000)).close();
+    expect(inner.lanes).toEqual(['interactive', undefined]);
+  });
+
   it('no session during an update', async () => {
     const activity = new Activity();
     const end = activity.begin('update');

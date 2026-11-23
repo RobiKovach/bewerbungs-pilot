@@ -164,7 +164,9 @@ describe('0.8.3: a pasted link that is not Arbeitsagentur is read by the app its
     expect(v).toMatchObject({ source: 'manual', url: LINK, title: 'Frontend Developer (m/w/d)' });
     expect(reader.reads).toEqual([LINK]);
     expect(ctx.vacancyStore.readText(v.id)).toBe(TEXT);
-    expect(addCalls(ctx)).toHaveLength(1);
+    // One AI run for the add; the research started afterwards may ask for a name on its own (final review I1: the
+    // unknown host is checked like a board, so its ad's contact block is read for the name).
+    expect(addCalls(ctx).filter((c) => c.id !== 'contact-name').map((c) => c.id)).toEqual(['extract-manual']);
   });
 
   it('text that is too short is the person\'s note: the page is read, the AI gets both, the card keeps both', async () => {

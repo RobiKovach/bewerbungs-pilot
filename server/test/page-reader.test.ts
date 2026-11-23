@@ -316,9 +316,9 @@ describe('BrowserPageReader sessions (0.13.0)', () => {
     expect(fake.launch).not.toHaveBeenCalled();
   });
 
-  it('a plain read waits until an open session is closed', async () => {
+  it('a plain read waits until an open interactive session (Find contact) is closed', async () => {
     const { r } = make({ [A]: { text: 'Stelle '.repeat(10) }, [B]: { text: 'Impressum' } });
-    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    const s = await r.session(new AbortController().signal, Date.now() + 5000, 'interactive');
     let readDone = false;
     const read = r.read(B, new AbortController().signal).then((t) => { readDone = true; return t; });
     await s.open(A);
@@ -359,9 +359,9 @@ describe('BrowserPageReader sessions (0.13.0)', () => {
     await s.close();
   });
 
-  it('a read queued behind a session held longer than its own limit still gets its full time', async () => {
+  it('a read queued behind an interactive session held longer than its own limit still gets its full time', async () => {
     const { r } = make({ [A]: { text: 'Stelle '.repeat(10) }, [B]: { text: 'Impressum' } }, publicCheck, {}, 200);
-    const s = await r.session(new AbortController().signal, Date.now() + 5000);
+    const s = await r.session(new AbortController().signal, Date.now() + 5000, 'interactive');
     const read = r.read(B, new AbortController().signal);
     await s.open(A);
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -369,16 +369,30 @@ describe('BrowserPageReader sessions (0.13.0)', () => {
     expect(await read).toBe('Impressum');
   });
 
-  it('a browser still starting after the deadline is waited for: profile gone, next read starts after it', async () => {
+  it('a browser still starting after the deadline is waited for: profile gone, next session starts after it', async () => {
     const { r, fake } = make({ [A]: { text: 'Stelle' }, [B]: { text: 'Impressum' } }, publicCheck, { launchDelayMs: 200 });
     const s = await r.session(new AbortController().signal, Date.now() + 50);
     await expect(s.open(A)).rejects.toMatchObject({ detailsForLog: 'page not readable: timeout' });
-    const read = r.read(B, new AbortController().signal);
+    const read = r.session(new AbortController().signal, Date.now() + 5000).then(async (next) => {
+      try { return (await next.open(B)).text; } finally { await next.close(); }
+    });
     await s.close();
     expect(fake.launchesSettled).toHaveLength(1);
     expect(fake.closes()).toBe(1);
     expect(fs.existsSync(fake.profiles[0]!)).toBe(false);
     expect(await read).toBe('Impressum');
     expect(fake.launchesStarted[1]!).toBeGreaterThanOrEqual(fake.launchesSettled[0]!);
+  });
+
+  it('a background research session never holds up a pasted link or Find contact (final review I2)', async () => {
+    const { r } = make({ [A]: { text: 'Stelle '.repeat(10) }, [B]: { text: 'Impressum '.repeat(10) } });
+    const research = await r.session(new AbortController().signal, Date.now() + 5000);
+    await research.open(A);
+    // The research keeps its browser; an interactive read and an interactive session go ahead without waiting.
+    expect(await r.read(B, new AbortController().signal)).toContain('Impressum');
+    const find = await r.session(new AbortController().signal, Date.now() + 5000, 'interactive');
+    expect((await find.open(B)).text).toContain('Impressum');
+    await find.close();
+    await research.close();
   });
 });

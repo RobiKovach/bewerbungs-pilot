@@ -10,9 +10,14 @@ import { isApplyService, isBoard, siteOf, type PageKind } from './links.js';
  * here asks the AI. A filled field of the card is never changed: a different value only comes back as `differing`.
  */
 
-export interface FoundPage { url: string; kind: PageKind; text: string; links: PageLink[] }
+/**
+ * `listing`: the pasted page turned out not to be the company's own (an unknown board, final review I1) — treated like a
+ * known board's page: only the ad's contact block, never its footer, phone links, own-domain e-mails or address.
+ */
+export interface FoundPage { url: string; kind: PageKind; text: string; links: PageLink[]; listing?: boolean }
 
 const FIELDS: ContactField[] = ['email', 'salutation', 'name', 'phone', 'street', 'postcode', 'city'];
+const ADDRESS: Array<'street' | 'postcode' | 'city'> = ['street', 'postcode', 'city'];
 const L = VACANCY_LIMITS;
 /** Candidates looked at per page: a team or footer list of dozens of addresses never decides by its length. */
 const PER_PAGE = 5;
@@ -83,7 +88,11 @@ function usable(email: string, site: string): boolean {
 /** Up to PER_PAGE usable addresses of one page: `mailto:` links first, then the text. */
 function pageEmails(p: FoundPage, site: string): string[] {
   const out: string[] = [];
-  const add = (e: string) => { if (e && !out.includes(e) && usable(e, site)) out.push(e); };
+  // An unknown board's own boxes (info@<board>) are not the employer's — like a known board's (final review I1).
+  const listingSite = p.listing === true && siteOf(p.url) !== site ? siteOf(p.url) : '';
+  const add = (e: string) => {
+    if (e && !out.includes(e) && usable(e, site) && !(listingSite && ownDomain(e, listingSite))) out.push(e);
+  };
   for (const l of p.links) if (/^mailto:/i.test(l.href)) add(mailtoAddress(l.href));
   for (const m of p.text.matchAll(EMAIL)) add(normEmail(m[0]));
   return out.slice(0, PER_PAGE);
@@ -107,7 +116,7 @@ function emailRank(email: string, site: string): number {
 }
 
 /** A job board's own page (not the company site): its header, footer and hotline are not the employer's. */
-const onBoard = (p: FoundPage, site: string) => isBoard(hostOf(p.url)) && siteOf(p.url) !== site;
+const onBoard = (p: FoundPage, site: string) => (p.listing === true || isBoard(hostOf(p.url))) && siteOf(p.url) !== site;
 
 /**
  * What the text of a page says about the contact: on a board's own page only the ad's contact block (Ruling R11),
@@ -192,8 +201,18 @@ export function mergeContact(current: VacancyContact | null, found: VacancyConta
   const next: VacancyContact = { ...(current ?? emptyContact()) };
   const marked = new Set<ContactField>(auto ?? []);
   const differing: Partial<VacancyContact> = {};
+  // The address is one thing (final review M1): filled only when the card has none of it, else offered as a whole when
+  // it differs — never a found street and postcode next to the person's own city.
+  const foundAddress = ADDRESS.some((f) => found[f] !== '');
+  if (foundAddress) {
+    if (ADDRESS.every((f) => next[f] === '')) {
+      for (const f of ADDRESS) if (found[f]) { next[f] = found[f]; marked.add(f); }
+    } else if (ADDRESS.some((f) => found[f] !== '' && !same(f, next[f], found[f]))) {
+      for (const f of ADDRESS) if (found[f]) differing[f] = found[f];
+    }
+  }
   for (const f of FIELDS) {
-    if (f === 'salutation') continue;
+    if (f === 'salutation' || (ADDRESS as ContactField[]).includes(f)) continue;
     const v = found[f];
     if (!v) continue;
     if (f === 'name' && next.name === '' && next.salutation !== '' && found.salutation !== '' && next.salutation !== found.salutation) {
@@ -212,4 +231,13 @@ export function mergeContact(current: VacancyContact | null, found: VacancyConta
   const kept = FIELDS.filter((f) => marked.has(f) && next[f] !== '');
   const anything = FIELDS.some((f) => f !== 'salutation' && next[f] !== '');
   return { contact: anything ? next : null, auto: kept, differing };
+}
+
+/**
+ * The "found automatically" marks of a package's contact copy that remain after the person confirmed `confirmed` on the
+ * card (final review M2): a field the person kept unchanged (same value) is confirmed; a field they changed is not —
+ * the package still holds the found value.
+ */
+export function remainingMarks(auto: ContactField[] | undefined, copy: VacancyContact | null, confirmed: VacancyContact | null): ContactField[] {
+  return (auto ?? []).filter((f) => !(copy && confirmed && copy[f] !== '' && same(f, copy[f], confirmed[f])));
 }
