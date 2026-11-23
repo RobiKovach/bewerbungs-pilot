@@ -2,6 +2,14 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.13.1
+
+- **Choose where files are saved.** In Edge and Chrome, **Settings → Move to another PC → Save file** and every entry of
+  the package's **Download** menu now open a "Save as" window: pick any folder on the PC or a USB stick straight away. The
+  window suggests the same file names as before. If the file cannot be made, nothing is left behind; if it cannot be
+  written there (stick removed, disk full), the app says so and you can choose another place. Closing the window just
+  cancels. In browsers without this window (Firefox) files still go to your downloads folder.
+
 ## What's new in 0.13.0
 
 - **About the company.** A job offer card now has an **About the company** block: the company website, what the
