@@ -138,3 +138,43 @@ describe('C4: the company’s own domain wins across pages', () => {
     expect(c.email).toBe('jobs@egocentric-systems.de');
   });
 });
+
+describe('fix round 1: privacy boxes never win, Impressum after a redirect', () => {
+  const site = 'https://firma.de';
+  const vacancyFor = (mail: string): FoundPage =>
+    ({ url: 'https://acme.jobs.personio.de/job/1', kind: 'vacancy', text: `Bewerbung an ${mail}`, links: [] });
+  const impressum = (mail: string): FoundPage =>
+    ({ url: 'https://www.firma.de/impressum', kind: 'impressum', text: `Datenschutz: ${mail}`, links: [] });
+
+  it('an own-domain data-protection box loses to a recruiting box on another domain', () => {
+    expect(contactFromPages([vacancyFor('jobs@agentur.de'), impressum('datenschutzbeauftragter@firma.de')], site).email).toBe('jobs@agentur.de');
+    expect(contactFromPages([vacancyFor('jobs@agentur.de'), impressum('dsb@firma.de')], site).email).toBe('jobs@agentur.de');
+    expect(contactFromPages([vacancyFor('jobs@agentur.de'), impressum('datenschutz.firma@firma.de')], site).email).toBe('jobs@agentur.de');
+  });
+
+  it('no-reply boxes are never taken, also with a suffix', () => {
+    expect(contactFromPages([impressum('noreply-jobs@firma.de')], site).email).toBe('');
+  });
+
+  it('ordinary boxes that only contain similar letters stay usable', () => {
+    expect(contactFromPages([impressum('dpo-team@firma.de')], site).email).toBe('dpo-team@firma.de');
+    expect(contactFromPages([impressum('bewerbung@firma.de')], site).email).toBe('bewerbung@firma.de');
+  });
+
+  it('a guessed www.isax.de that redirects to isax.com finds the Impressum on isax.com', async () => {
+    const BOARD = 'https://www.stepstone.de/job/12817717';
+    const { out } = await run({
+      [BOARD]: page(BOARD, 'SAP-Berater bei iSAX GmbH & Co. KG'),
+      'https://www.isax.de': page('https://www.isax.com/', 'iSAX – Ihr Partner für SAP.', [['Impressum', 'https://www.isax.com/service/impressum/']]),
+      'https://www.isax.com/service/impressum': page('https://www.isax.com/service/impressum/',
+        'Impressum\niSAX GmbH & Co. KG\nGeschäftsführer: Max Muster\nE-Mail: info@isax.com'),
+    }, { vacancyUrl: BOARD, company: 'iSAX GmbH & Co. KG' });
+    expect(out.website).toBe('https://www.isax.com');
+    expect(out.pages.map((p) => p.kind)).toEqual(['vacancy', 'home', 'impressum']);
+    expect(out.contact.email).toBe('info@isax.com');
+  });
+
+  it('slash and dot also separate descriptor words', () => {
+    expect(guessSlugs('Muster IT/Solutions GmbH')).toContain('muster');
+  });
+});

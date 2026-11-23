@@ -153,15 +153,15 @@ const DESCRIPTORS = new Set([
 /** The core name with its trailing descriptor words cut ('' when nothing is cut or only descriptors are left). */
 function shortCore(company: string): string {
   const core = coreName(company);
-  const tokens = core.split(/([\s-]+)/);
+  const tokens = core.split(/([\s/.-]+)/);
   let end = tokens.length;
   for (;;) {
     let i = end - 1;
-    while (i >= 0 && /^[\s-]*$/.test(tokens[i] ?? '')) i -= 1;
+    while (i >= 0 && /^[\s/.-]*$/.test(tokens[i] ?? '')) i -= 1;
     if (i < 0 || !DESCRIPTORS.has(tokens[i] ?? '')) break;
     end = i;
   }
-  const short = tokens.slice(0, end).join('').replace(/^[\s&,.-]+|[\s&,.-]+$/g, '').trim();
+  const short = tokens.slice(0, end).join('').replace(/^[\s&,./-]+|[\s&,./-]+$/g, '').trim();
   return short === core ? '' : short;
 }
 

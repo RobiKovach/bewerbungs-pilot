@@ -136,12 +136,14 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
         // The vacancy page is on that site already: use its real address (`www.` or not) and do not open it twice.
         if (first && siteOf(c.url) === siteOf(first.url)) { website = new URL(first.url).origin; break; }
         const home = await open(c.url, 'home');
-        if (!c.nameCheck || (home && nameOnPage(input.company, home.text))) { website = c.url; break; }
+        // The site is where the home page landed: a guess may redirect (www.isax.de → www.isax.com, Ruling R46).
+        const landed = home ? new URL(home.url).origin : c.url;
+        if (!c.nameCheck || (home && nameOnPage(input.company, home.text))) { website = landed; break; }
         // A one-word name ("iSAX") on a home page without legal form: the site's own Impressum may confirm it (R43).
         const imprint = home && oneWordNameShown(input.company, home.text)
-          ? nextPages(c.url, home.links, opened).find((n) => n.kind === 'impressum') : undefined;
+          ? nextPages(landed, home.links, opened).find((n) => n.kind === 'impressum') : undefined;
         const imp = imprint ? await open(imprint.url, 'impressum') : null;
-        if (home && imp && nameOnPage(input.company, imp.text)) { website = c.url; break; }
+        if (home && imp && nameOnPage(input.company, imp.text)) { website = landed; break; }
         // A rejected guess is neither a source nor a contact page.
         for (const p of [imp, home]) if (p) pages.splice(pages.indexOf(p), 1);
       }

@@ -43,7 +43,7 @@ describe('POST /api/profile/cv', () => {
     expect(res.statusCode).toBe(200);
     expect(provider.calls[0].files).toBeUndefined();
     expect(provider.calls[0].prompt).toMatch(/<<<UNTRUSTED_CV_[0-9a-f]{16}>>>[\s\S]*Webentwickler bei Beispiel GmbH/);
-  });
+  }, 30_000); // the first DOCX loads mammoth lazily: >5 s once under full-suite load
 
   describe('PDF CVs for a provider that never gets files (ChatGPT)', () => {
     const fx = (n: string) => fs.readFileSync(new URL(`./fixtures/${n}`, import.meta.url));

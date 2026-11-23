@@ -27,7 +27,11 @@ const ADDRESS_ORDER: Record<PageKind, number> = { impressum: 0, contact: 1, vaca
 
 const EMAIL = /(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const EMAIL_ONLY = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-const NEVER_LOCAL = /^(?:privacy|datenschutz|no-?reply|do-?not-?reply|donotreply|webmaster)$/i;
+/**
+ * Privacy, data-protection and no-reply boxes are never the employer's contact, also as part of a longer name
+ * (datenschutzbeauftragter@, datenschutz.firma@, noreply-jobs@); dsb@, dpo@ and webmaster@ only as the whole name.
+ */
+const NEVER_LOCAL = /datenschutz|privacy|data-?protection|no-?reply|do-?not-?reply|^(?:dsb|dpo|webmaster)$/i;
 const RECRUITING_LOCAL = /bewerbung|jobs?|karriere|career|^hr$|^hr[._-]|personal/i;
 const GENERAL_LOCAL = /^(?:info|kontakt|contact|office|mail|hallo|hello)$/i;
 
