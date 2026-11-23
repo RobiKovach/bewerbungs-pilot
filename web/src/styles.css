@@ -178,6 +178,24 @@ label.btn { cursor: pointer; }
 .vacancy__points .missing { color: #9a3b2e; }
 .vacancy__points span { color: var(--text); }
 .vacancy__scoreline { margin: 0.5rem 0 0; }
+/* "About the company" (0.13.0) */
+.company { margin: 0.6rem 0 0; }
+.company > p { margin: 0.4rem 0; }
+.company__details { border-top: 1px solid var(--border); padding-top: 0.5rem; }
+.company__details > summary { cursor: pointer; font-weight: 600; }
+.company__section { margin: 0.6rem 0 0; }
+.company__section h4 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+.company__section p { margin: 0.2rem 0; overflow-wrap: anywhere; }
+.company__points { list-style: none; padding: 0; margin: 0.2rem 0; }
+.company__points li { margin: 0.25rem 0; overflow-wrap: anywhere; }
+.company__point--hidden > span:first-child { color: var(--muted); text-decoration: line-through; }
+.company__source { font-size: 0.85rem; white-space: nowrap; }
+.company__hide { padding: 0 0.5rem; line-height: 1.4; }
+.company__website { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-end; }
+.company__website .field { flex: 1 1 14rem; min-width: 0; margin: 0; }
+.company__website .field input { width: 100%; box-sizing: border-box; }
+.company__website > p { flex-basis: 100%; }
+.company__footer { margin-top: 0.6rem; }
 .vacancy-text { white-space: pre-wrap; font: inherit; background: var(--bg, #f7f8fa); border-radius: 10px; padding: 0.9rem; max-height: 28rem; overflow: auto; }
 .weak-block summary { cursor: pointer; margin: 1rem 0 0.5rem; color: var(--muted); }
 .toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--surface); padding: 0.6rem 1rem; border-radius: 10px; display: flex; gap: 0.6rem; align-items: center; }

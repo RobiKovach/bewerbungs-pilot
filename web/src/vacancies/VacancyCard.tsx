@@ -6,6 +6,7 @@ import { WrittenBy } from '../components/WrittenBy';
 import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useCancellable } from '../profile/useCancellable';
 import type { SubmittedInfo, Vacancy } from '../types';
+import { CompanyBlock } from './CompanyBlock';
 import { useVacancies } from './VacanciesContext';
 
 const isHttp = (url: string) => /^https?:\/\//i.test(url);
@@ -73,6 +74,8 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, 
           {v.contact ? (
             <p className="muted">
               {t('vacancies.card.contact', { who: [v.contact.salutation, v.contact.name].filter(Boolean).join(' ') || '—', email: v.contact.email || '—' })}
+              {/* Filled in by the company research (0.13.0); the mark goes once the person saves the contact. */}
+              {v.contactAuto?.length ? <> <span className="badge warn-badge">{t('vacancies.card.autoContact')}</span></> : null}
             </p>
           ) : null}
         </div>
@@ -102,6 +105,8 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, 
       </p>
       {scoring.state.kind === 'running' ? <ClaudeWorking textKey="vacancies.card.scoring" onCancel={scoring.cancel} /> : null}
       {scoring.state.kind === 'failed' ? <ErrorBanner error={scoring.state.error} /> : null}
+
+      {v.status !== 'hidden' ? <CompanyBlock vacancy={v} onChange={put} /> : null}
 
       <div className="btn-row">
         {v.status === 'new' && !submitted ? (

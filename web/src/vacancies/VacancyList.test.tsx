@@ -36,6 +36,17 @@ describe('VacancyList', () => {
     expect(within(card('Englisch')).queryByText(/another language/)).toBeNull();
   });
 
+  it('0.13.0: auto-found contact fields are marked "found automatically"; a hidden card has no company block', async () => {
+    const contact = { email: 'jobs@muster.example', salutation: '' as const, name: '', phone: '', street: '', postcode: '', city: '' };
+    setup([
+      vac({ title: 'Auto', contact, contactAuto: ['email'] }),
+      vac({ title: 'Bestaetigt', contact }),
+    ]);
+    expect(within(await findCard('Auto')).getByText('found automatically — please check')).toBeInTheDocument();
+    expect(within(card('Auto')).getByRole('button', { name: 'Research the company' })).toBeInTheDocument();
+    expect(within(card('Bestaetigt')).queryByText(/found automatically/)).toBeNull();
+  });
+
   it('shows score, why/missing, facts; weak matches folded away', async () => {
     setup([
       vac({ title: 'Stark', score: { value: 86, why: ['React passt'], missing: ['Deutsch C1'], scoredAt: '2026-09-28T10:00:00.000Z', provider: 'claude', language: 'en' }, locations: ['Dresden'], remote: 'partial', publishedAt: '2026-09-22' }),

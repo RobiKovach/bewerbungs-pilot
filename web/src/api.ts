@@ -189,6 +189,12 @@ export const api = {
   // Employer contact (0.9.1 B): find/parse only propose; nothing is saved until saveVacancyContact / saveApplicationContact.
   findContact: (id: string, from: ContactSource, signal?: AbortSignal) => request<ContactFindView>('POST', `/api/vacancies/${encodeURIComponent(id)}/contact/find`, { from }, signal),
   parseContact: (id: string, text: string, signal?: AbortSignal) => request<ContactProposal>('POST', `/api/vacancies/${encodeURIComponent(id)}/contact/parse`, { text }, signal),
+  // Company research (0.13.0): starting answers at once (queued); the card asks again while it is queued/running.
+  startResearch: (id: string) => request<VacancyView>('POST', `/api/vacancies/${encodeURIComponent(id)}/research`, {}),
+  stopResearch: (id: string) => request<VacancyView>('DELETE', `/api/vacancies/${encodeURIComponent(id)}/research`),
+  hideFact: (id: string, factId: string, hidden: boolean) =>
+    request<VacancyView>('PATCH', `/api/vacancies/${encodeURIComponent(id)}/research/facts/${encodeURIComponent(factId)}`, { hidden }),
+  setResearchWebsite: (id: string, url: string) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/research/website`, { url }),
   saveVacancyContact: (id: string, contact: VacancyContact | null) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/contact`, contact),
   startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
