@@ -111,3 +111,37 @@ describe('SendDialog', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled();
   });
 });
+
+describe('SendDialog — address found automatically (0.13.0)', () => {
+  const auto = { email: 'jobs@muster.example', domain: 'muster.example' };
+  const WARNING = 'The address was found automatically on muster.example — check that it belongs to the company.';
+  const open = (autoRecipient: typeof auto | null) => {
+    mockFetch({ 'GET /api/applications/app1/send-draft': () => ({ body: draft() }) });
+    render(<SendDialog id="app1" onSent={vi.fn()} onClose={vi.fn()} autoRecipient={autoRecipient} />);
+    return userEvent.setup();
+  };
+
+  it('send dialog shows the auto-address warning with the domain and Send stays enabled', async () => {
+    open(auto);
+    expect(await screen.findByText(WARNING)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
+  });
+
+  it('warning hidden when recipient differs from the auto e-mail or is confirmed', async () => {
+    const user = open(auto);
+    const to = await screen.findByLabelText(/^To/);
+    await user.clear(to);
+    await user.type(to, 'bewerbung@other.example');
+    expect(screen.queryByText(WARNING)).toBeNull();
+    // Same address in other letters still counts as the found one.
+    await user.clear(to);
+    await user.type(to, 'JOBS@Muster.example');
+    expect(screen.getByText(WARNING)).toBeInTheDocument();
+  });
+
+  it('a confirmed contact (no auto recipient) shows no warning', async () => {
+    open(null);
+    await screen.findByLabelText('Subject');
+    expect(screen.queryByText(/found automatically/)).toBeNull();
+  });
+});

@@ -138,3 +138,14 @@ describe('MailDraftDialog', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
   });
 });
+
+describe('MailDraftDialog — address found automatically (0.13.0)', () => {
+  it('a reminder to the found address shows the same warning; Send stays on', async () => {
+    render(
+      <MailDraftDialog id="app1" title="Reminder" load={() => Promise.resolve(draft())} send={() => Promise.resolve(appView())} onDone={vi.fn()} onClose={vi.fn()}
+        autoRecipient={{ email: 'jobs@muster.example', domain: 'muster.example' }} />,
+    );
+    expect(await screen.findByText('The address was found automatically on muster.example — check that it belongs to the company.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
+  });
+});

@@ -685,3 +685,42 @@ describe('ApplicationEditor — employer contact refused', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Find contact' })).not.toBeInTheDocument());
   });
 });
+
+describe('ApplicationEditor — company facts (0.13.0)', () => {
+  const pkgVacancy = appView().application.vacancy;
+
+  it('editor shows snapshot facts read-only and the new-facts notice', async () => {
+    const view = appView({ factsChanged: true }, { vacancy: { ...pkgVacancy, facts: ['Muster works with TYPO3 and React'] } });
+    const { user } = setup({}, view);
+    await screen.findByRole('heading', { name: 'Muster GmbH — Webentwickler (m/w/d)' });
+    expect(screen.getByText('The company facts on the vacancy card have changed since this letter was written.')).toBeInTheDocument();
+    await user.click(screen.getByText('About the company'));
+    const block = screen.getByText('Company facts this letter was written with').closest('details') as HTMLElement;
+    expect(within(block).getByText('Muster works with TYPO3 and React')).toBeInTheDocument();
+    // Read-only: nothing to hide or edit here — that is done on the vacancy card.
+    expect(within(block).queryByRole('button')).toBeNull();
+    expect(within(block).queryByRole('textbox')).toBeNull();
+    // "Create again" from the note asks the usual question (it takes the current facts).
+    const note = screen.getByText(/have changed since this letter/).closest('.notice') as HTMLElement;
+    await user.click(within(note).getByRole('button', { name: 'Create again' }));
+    expect(screen.getByRole('alertdialog', { name: 'Create again' })).toBeInTheDocument();
+  });
+
+  it('no facts and nothing changed → no company block', async () => {
+    setup({}, appView());
+    await screen.findByRole('heading', { name: 'Muster GmbH — Webentwickler (m/w/d)' });
+    expect(screen.queryByText('About the company')).toBeNull();
+    expect(screen.queryByText(/have changed since this letter/)).toBeNull();
+  });
+
+  it('the send window warns about the found address', async () => {
+    const contact = { email: 'jobs@muster.example', salutation: '' as const, name: '', phone: '', street: '', postcode: '', city: '' };
+    const view = appView({ recipientAuto: { domain: 'muster.example' } }, { status: 'approved', approvedAt: '2026-09-29T10:00:00.000Z', vacancy: { ...pkgVacancy, contact, contactAuto: ['email'] } });
+    const { user } = setup({
+      'GET /api/mail/settings': () => ({ body: { mail: { provider: 'gmail', address: 'max@example.com', senderName: 'Max Mustermann', host: 'smtp.gmail.com', port: 465, security: 'ssl' }, passwordSaved: true } }),
+      'GET /api/applications/app1/send-draft': () => ({ body: { to: 'jobs@muster.example', subject: 'Bewerbung', body: 'Text', attachments: [], totalSize: 0, mailReady: true } }),
+    }, view);
+    await user.click(await screen.findByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('The address was found automatically on muster.example — check that it belongs to the company.')).toBeInTheDocument();
+  });
+});

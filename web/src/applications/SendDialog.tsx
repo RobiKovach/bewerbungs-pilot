@@ -7,15 +7,18 @@ import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView } from '../types';
 import { ATTACHMENTS_WARN_BYTES, mb } from './AttachmentsTab';
 import { isStale, useScrollIntoView } from './dialog';
+import { AutoAddressWarning, type AutoRecipient } from './AutoAddressWarning';
 import { addressOk } from './format';
 import { PersonalDataWarning } from './PersonalDataWarning';
 import { useTextCheck } from './useTextCheck';
 
 /** The send window: the email is prefilled from the package; what the person changes is what goes out. */
-export function SendDialog({ id, onSent, onClose, onStale }: {
+export function SendDialog({ id, onSent, onClose, onStale, autoRecipient }: {
   id: string; onSent: (view: ApplicationView, to: string) => void; onClose: () => void;
   /** The package changed meanwhile (already sent, edited elsewhere): the editor loads it again. */
   onStale?: () => void;
+  /** The recipient was found by the app and not confirmed yet: a warning while "To" is that address. */
+  autoRecipient?: AutoRecipient | null;
 }) {
   const { t } = useTranslation();
   const ref = useScrollIntoView<HTMLDivElement>();
@@ -83,6 +86,7 @@ export function SendDialog({ id, onSent, onClose, onStale }: {
       {sentNotSaved
         ? <p className="notice" role="alert">{t('errors.reasons.sentNotSaved')}</p>
         : error ? <ErrorBanner error={error} /> : null}
+      {draft ? <AutoAddressWarning auto={autoRecipient} to={to} /> : null}
       {draft ? <PersonalDataWarning warnings={warnings} /> : null}
       <div className="btn-row">
         {sentNotSaved ? null : (

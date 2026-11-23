@@ -196,6 +196,10 @@ label.btn { cursor: pointer; }
 .company__website .field input { width: 100%; box-sizing: border-box; }
 .company__website > p { flex-basis: 100%; }
 .company__footer { margin-top: 0.6rem; }
+/* The facts a package was written with, and "found something different" in the contact window (0.13.0) */
+.package-facts > summary { cursor: pointer; font-weight: 600; }
+.package-facts ul, .contact-dialog__differing ul { margin: 0.3rem 0; padding-left: 1.2rem; }
+.package-facts li, .contact-dialog__differing li { margin: 0.25rem 0; overflow-wrap: anywhere; }
 .vacancy-text { white-space: pre-wrap; font: inherit; background: var(--bg, #f7f8fa); border-radius: 10px; padding: 0.9rem; max-height: 28rem; overflow: auto; }
 .weak-block summary { cursor: pointer; margin: 1rem 0 0.5rem; color: var(--muted); }
 .toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--surface); padding: 0.6rem 1rem; border-radius: 10px; display: flex; gap: 0.6rem; align-items: center; }

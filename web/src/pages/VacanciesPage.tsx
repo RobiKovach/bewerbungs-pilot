@@ -49,7 +49,7 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
     : <div className="btn-row"><button type="button" className="btn small ghost" onClick={() => setEditing({ id: v.id, checkHint: false })}>{t('vacancies.edit.open')}</button></div>);
   const contactExtra = (v: Vacancy) => (v.source !== 'arbeitsagentur' || v.status !== 'favorite' || submittedPackage(v) ? null : contactFor === v.id
     ? (
-      <ContactDialog vacancyId={v.id} canAa={v.sourceId !== null} partnerUrl={v.partnerUrl ?? ''} initial={v.contact}
+      <ContactDialog vacancyId={v.id} canAa={v.sourceId !== null} partnerUrl={v.partnerUrl ?? ''} initial={v.contact} auto={v.contactAuto}
         save={async (contact) => { put((await api.saveVacancyContact(v.id, contact)).vacancy); setContactFor(null); }}
         onClose={() => setContactFor(null)} />
     )

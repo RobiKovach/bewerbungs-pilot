@@ -4,7 +4,7 @@ import { api, ApiError } from '../api';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { SelectField, TextField } from '../profile/fields';
 import { useReportUnsaved } from '../profile/unsaved';
-import type { ContactProposal, ContactSource, Salutation, VacancyContact } from '../types';
+import type { ContactField, ContactProposal, ContactSource, Salutation, VacancyContact } from '../types';
 import { useScrollIntoView } from './dialog';
 
 const SALUTATIONS: readonly Salutation[] = ['', 'Frau', 'Herr'];
@@ -29,13 +29,15 @@ type Phase =
  * which the caller does (the package editor through its package, a vacancy card through the vacancy).
  * One search at a time: while it runs every action waits; "Cancel" aborts the request (the server closes the window).
  */
-export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onClose }: {
+export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, auto, save, onClose }: {
   vacancyId: string;
   /** An Arbeitsagentur offer: the AA page can be opened. */
   canAa: boolean;
   /** The partner's page about the offer; '' = none. */
   partnerUrl: string;
   initial: VacancyContact | null;
+  /** Fields the company research filled in by itself (0.13.0): marked "found automatically" until changed or saved. */
+  auto?: ContactField[];
   /** Stores the contact (null = no contact); the dialog shows the error if it fails. */
   save: (contact: VacancyContact | null) => Promise<void>;
   onClose: () => void;
@@ -46,6 +48,8 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onC
   const [contact, setContact] = useState<VacancyContact>(start);
   const [paste, setPaste] = useState('');
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
+  // Found values that differ from fields the card already has (0.13.0): offered, never put in by themselves.
+  const [differing, setDiffering] = useState<Partial<VacancyContact>>({});
   const [error, setError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
   const abort = useRef<AbortController | null>(null);
@@ -64,6 +68,11 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onC
     const keys = new Set<keyof VacancyContact>(r.found);
     if (keys.has('name')) keys.add('salutation');
     if (ADDRESS.some((k) => keys.has(k))) ADDRESS.forEach((k) => keys.add(k));
+    // A field with a "found something different" offer keeps the person's value until they take the offer.
+    const offered = r.differing ?? {};
+    (Object.keys(offered) as Array<keyof VacancyContact>).forEach((k) => keys.delete(k));
+    if (offered.name !== undefined) keys.delete('salutation');
+    setDiffering(offered);
     setContact((c) => ({ ...c, ...Object.fromEntries([...keys].map((k) => [k, r.proposal[k]])) }));
     setPhase({ kind: 'found' });
   };
@@ -71,6 +80,7 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onC
     const ctl = new AbortController();
     abort.current = ctl;
     setError(null);
+    setDiffering({});
     setPhase({ kind: 'searching', from });
     try {
       if (from === 'paste') {
@@ -91,6 +101,16 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onC
     }
   };
   const stop = () => abort.current?.abort();
+  const takeOffer = (k: Field) => {
+    const value = differing[k];
+    if (value === undefined) return;
+    // A found name brings its own salutation (when it has one).
+    setContact((c) => ({ ...c, [k]: value, ...(k === 'name' && differing.salutation !== undefined ? { salutation: differing.salutation } : {}) }));
+    setDiffering((d) => { const next = { ...d }; delete next[k]; if (k === 'name') delete next.salutation; return next; });
+  };
+  const offers = FIELDS.filter((k) => differing[k] !== undefined && differing[k] !== contact[k]);
+  // Unchanged values the research filled in by itself; the mark goes with "Save" (the server drops it) or an edit.
+  const autoMark = (k: Field) => (auto?.includes(k) && contact[k] !== '' && contact[k] === start[k] ? t('vacancies.card.autoContact') : undefined);
 
   const submit = async () => {
     setSaving(true);
@@ -140,10 +160,23 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, save, onC
       ) : null}
       {notice ? <p className={phase.kind === 'found' ? 'notice notice-ok' : 'notice'} role="status">{t(notice)}</p> : null}
 
+      {offers.length > 0 ? (
+        <div className="notice contact-dialog__differing" role="status">
+          <p>{t('contact.differing.title')}</p>
+          <ul>
+            {offers.map((k) => (
+              <li key={k}>
+                {`${t(`contact.fields.${k}`)}: ${k === 'name' && differing.salutation ? `${differing.salutation} ` : ''}${differing[k] ?? ''}`}{' '}
+                <button type="button" className="btn small ghost" disabled={busy} aria-label={`${t('contact.differing.take')}: ${t(`contact.fields.${k}`)}`} onClick={() => takeOffer(k)}>{t('contact.differing.take')}</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <fieldset disabled={busy} className="plain form-grid">
         <SelectField label={t('contact.fields.salutation')} value={contact.salutation} options={SALUTATIONS} optionLabel={(s) => s || '—'} onChange={(v) => set('salutation', v)} />
         {FIELDS.map((k) => (
-          <TextField key={k} type={k === 'email' ? 'email' : 'text'} label={t(`contact.fields.${k}`)} value={contact[k]} onChange={(v) => set(k, v)} maxLength={MAX[k]} />
+          <TextField key={k} type={k === 'email' ? 'email' : 'text'} label={t(`contact.fields.${k}`)} value={contact[k]} onChange={(v) => set(k, v)} maxLength={MAX[k]} hint={autoMark(k)} />
         ))}
       </fieldset>
       {error ? <ErrorBanner error={error} /> : null}

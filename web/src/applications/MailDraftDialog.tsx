@@ -6,6 +6,7 @@ import { TextField } from '../profile/fields';
 import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, MailDraft } from '../types';
 import { isStale, useScrollIntoView } from './dialog';
+import { AutoAddressWarning, type AutoRecipient } from './AutoAddressWarning';
 import { addressOk } from './format';
 import { PersonalDataWarning } from './PersonalDataWarning';
 import { useTextCheck } from './useTextCheck';
@@ -14,7 +15,7 @@ import { useTextCheck } from './useTextCheck';
  * A reminder or a reply: prefilled address, subject and message that the person can change, then "Send" (needs connected
  * mail) or "Copy" (the message text only; the optional `afterCopy` button records that it was done).
  */
-export function MailDraftDialog({ id, title, load, send, onDone, onClose, afterCopy, onStale }: {
+export function MailDraftDialog({ id, title, load, send, onDone, onClose, afterCopy, onStale, autoRecipient }: {
   /** The package: the text is checked for personal data that is not in the profile. */
   id: string;
   title: string;
@@ -26,6 +27,8 @@ export function MailDraftDialog({ id, title, load, send, onDone, onClose, afterC
   afterCopy?: { label: string; run: () => Promise<ApplicationView> };
   /** The package changed meanwhile (reminder already done, status changed): the editor loads it again. */
   onStale?: () => void;
+  /** The recipient was found by the app and not confirmed yet: a warning while "To" is that address. */
+  autoRecipient?: AutoRecipient | null;
 }) {
   const { t } = useTranslation();
   const ref = useScrollIntoView<HTMLDivElement>();
@@ -106,6 +109,7 @@ export function MailDraftDialog({ id, title, load, send, onDone, onClose, afterC
         ? <p className="notice" role="alert">{t('errors.reasons.sentNotSaved')}</p>
         : error ? <ErrorBanner error={error} /> : null}
       {reauth ? <p><a href="#/settings">{t('applications.mailDraft.reauthLink')}</a></p> : null}
+      {draft ? <AutoAddressWarning auto={autoRecipient} to={to} /> : null}
       {draft ? <PersonalDataWarning warnings={warnings} /> : null}
       <div className="btn-row">
         {sentNotSaved ? null : (

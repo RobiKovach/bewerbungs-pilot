@@ -8,6 +8,7 @@ import { ClaudeWorking } from '../profile/ClaudeWorking';
 import { useReportUnsaved } from '../profile/unsaved';
 import type { ApplicationView, DocLanguage, LetterPatch, UnsavedPackageText } from '../types';
 import { AttachmentsTab } from './AttachmentsTab';
+import { autoRecipientOf } from './AutoAddressWarning';
 import { ContactDialog } from './ContactDialog';
 import { CvTab } from './CvTab';
 import { isStale } from './dialog';
@@ -20,6 +21,7 @@ import { LetterTab } from './LetterTab';
 import { MailDraftDialog } from './MailDraftDialog';
 import { InterviewLink } from '../interview/InterviewLink';
 import { OfferReplyDialog } from './OfferReplyDialog';
+import { PackageFacts } from './PackageFacts';
 import { PersonalDataWarning } from './PersonalDataWarning';
 import { SendDialog } from './SendDialog';
 import { StatusDialog } from './StatusDialog';
@@ -106,6 +108,8 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
   // A failed reload (after a job or a refused approve) leaves a stale view: editing stays off until a reload succeeds.
   const locked = jobOnThis || error !== null || frozen;
   const failed = job.state?.applicationId === id ? jobError(job.state) : null;
+  // Found by the app, not confirmed yet: the mail windows warn while it is the recipient (0.13.0, spec section 7).
+  const autoRecipient = autoRecipientOf(view.recipientAuto, a.vacancy.contact?.email);
   // Copy or undo refused because this offer already has an unsent package: say so plainly and link to it.
   const draftExistsId = actionError instanceof ApiError && actionError.reason === 'draftExists' && actionError.params?.id
     ? String(actionError.params.id) : null;
@@ -183,6 +187,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {failed ? <ErrorBanner error={failed} /> : null}
       {job.error ? <ErrorBanner error={job.error} /> : null}
       {job.lost ? <ConnectionLost onRetry={job.recheck} /> : null}
+      <PackageFacts facts={a.vacancy.facts ?? []} changed={view.factsChanged && !frozen} busy={busy} onRecreate={() => { setLanguage(a.language); setConfirm('recreate'); }} />
 
       <div role="tablist" className="tabs">
         {TABS.map((x) => (
@@ -263,11 +268,12 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       ) : null}
       {dirty ? <p className="muted">{t('applications.letter.saveFirst')}</p> : null}
       {sending && a.status === 'approved' ? (
-        <SendDialog id={id} onStale={() => void load()} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
+        <SendDialog id={id} autoRecipient={autoRecipient} onStale={() => void load()} onClose={() => setSending(false)} onSent={(v, to) => { setView(v); setSending(false); setSentTo(to); setActionError(null); }} />
       ) : null}
       {reminding ? (
         <MailDraftDialog
           id={id}
+          autoRecipient={autoRecipient}
           onStale={() => void load()}
           title={t('applications.followUp.title')}
           load={() => api.followUpDraft(id)}
@@ -279,7 +285,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       ) : null}
       {contactOpen && !frozen ? (
         <ContactDialog vacancyId={a.vacancyId} canAa={AA_OFFER.test(a.vacancy.url)} partnerUrl={a.vacancy.partnerUrl ?? ''}
-          initial={a.vacancy.contact} save={saveContact} onClose={() => setContactOpen(false)} />
+          initial={a.vacancy.contact} auto={a.vacancy.contactAuto} save={saveContact} onClose={() => setContactOpen(false)} />
       ) : null}
       {replying === 'offerText' && a.status === 'offer' ? (
         <OfferReplyDialog view={view} onView={setView} onClose={() => setReplying(null)} onSend={() => setReplying('offerMail')} />
@@ -287,6 +293,7 @@ export function ApplicationEditor({ id, pollMs }: { id: string; pollMs?: number 
       {(replying === 'rejection' && a.status === 'rejected') || (replying === 'offerMail' && a.status === 'offer') ? (
         <MailDraftDialog
           id={id}
+          autoRecipient={autoRecipient}
           onStale={() => void load()}
           title={t(replying === 'rejection' ? 'applications.reply.rejection' : 'applications.reply.offer')}
           load={() => api.replyDraft(id)}

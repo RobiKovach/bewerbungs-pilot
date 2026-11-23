@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mockFetch, type RouteHandler } from '../test/fetchMock';
-import type { ContactProposal, VacancyContact } from '../types';
+import type { ContactField, ContactProposal, VacancyContact } from '../types';
 import { ContactDialog } from './ContactDialog';
 
 const FIND = 'POST /api/vacancies/v1/contact/find';
@@ -13,11 +13,11 @@ const proposal = (over: Partial<VacancyContact>): ContactProposal => {
   return { proposal: p, found: (Object.keys(p) as Array<keyof VacancyContact>).filter((k) => p[k] !== '') };
 };
 
-function setup(routes: Record<string, RouteHandler> = {}, opts: { pending?: string[]; canAa?: boolean; partnerUrl?: string; initial?: VacancyContact | null; save?: (c: VacancyContact | null) => Promise<void> } = {}) {
+function setup(routes: Record<string, RouteHandler> = {}, opts: { pending?: string[]; canAa?: boolean; partnerUrl?: string; initial?: VacancyContact | null; auto?: ContactField[]; save?: (c: VacancyContact | null) => Promise<void> } = {}) {
   const f = mockFetch(routes, { pending: opts.pending });
   const save = vi.fn(opts.save ?? (() => Promise.resolve()));
   const onClose = vi.fn();
-  render(<ContactDialog vacancyId="v1" canAa={opts.canAa ?? true} partnerUrl={opts.partnerUrl ?? ''} initial={opts.initial ?? null} save={save} onClose={onClose} />);
+  render(<ContactDialog vacancyId="v1" canAa={opts.canAa ?? true} partnerUrl={opts.partnerUrl ?? ''} initial={opts.initial ?? null} auto={opts.auto} save={save} onClose={onClose} />);
   return { f, save, onClose, user: userEvent.setup() };
 }
 const body = (f: ReturnType<typeof mockFetch>, key: string) => {
@@ -178,5 +178,41 @@ describe('ContactDialog', () => {
     expect(screen.getByLabelText('Street')).toHaveAttribute('maxlength', '120');
     expect(screen.getByLabelText('Postcode')).toHaveAttribute('maxlength', '10');
     expect(screen.getByLabelText('City')).toHaveAttribute('maxlength', '80');
+  });
+});
+
+describe('ContactDialog — research results (0.13.0)', () => {
+  const card: VacancyContact = { ...EMPTY, salutation: 'Frau', name: 'Erika Musterfrau', email: 'bewerbung@muster.example' };
+
+  it('contact dialog: Take fills the field from differing', async () => {
+    const found: ContactProposal = {
+      proposal: { ...EMPTY, salutation: 'Herr', name: 'Max Muster', email: 'jobs@muster.example', phone: '0351 123' },
+      found: ['salutation', 'name', 'email', 'phone'],
+      differing: { salutation: 'Herr', name: 'Max Muster', email: 'jobs@muster.example' },
+    };
+    const { user } = setup({ [FIND]: () => ({ body: found }) }, { canAa: false, partnerUrl: 'https://muster.example/jobs', initial: card });
+    await user.click(screen.getByRole('button', { name: "Read the company's page" }));
+    // Fields with a different found value keep the person's value; an empty field takes what was found.
+    expect(await screen.findByLabelText('Email')).toHaveValue('bewerbung@muster.example');
+    expect(screen.getByLabelText('Name')).toHaveValue('Erika Musterfrau');
+    expect(screen.getByLabelText('Phone')).toHaveValue('0351 123');
+    expect(screen.getByText('Email: jobs@muster.example')).toBeInTheDocument();
+    expect(screen.getByText('Name: Herr Max Muster')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Take: Email' }));
+    expect(screen.getByLabelText('Email')).toHaveValue('jobs@muster.example');
+    expect(screen.queryByText('Email: jobs@muster.example')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Take: Name' }));
+    expect(screen.getByLabelText('Name')).toHaveValue('Max Muster');
+    expect(screen.getByLabelText('Salutation')).toHaveValue('Herr');
+    expect(screen.queryByText(/Found something different/)).toBeNull();
+  });
+
+  it('fields the research filled in are marked until the person changes them', async () => {
+    const { user } = setup({}, { initial: { ...card, phone: '0351 123' }, auto: ['phone'] });
+    const phone = screen.getByLabelText('Phone');
+    expect(phone.closest('.field')).toHaveTextContent('found automatically — please check');
+    expect(screen.getByLabelText('Email').closest('.field')).not.toHaveTextContent('found automatically');
+    await user.type(phone, '4');
+    expect(phone.closest('.field')).not.toHaveTextContent('found automatically');
   });
 });
