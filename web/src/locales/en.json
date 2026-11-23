@@ -411,7 +411,7 @@
     "unapprove": "Back to draft",
     "recreate": "Create again",
     "autoAddress": "The address was found automatically on {{domain}} — check that it belongs to the company.",
-    "companyFacts": {"title":"About the company","used":"Company facts this letter was written with","hint":"They come from \"About the company\" on the vacancy card; change them there.","changed":"The company facts on the vacancy card have changed since this letter was written."},
+    "companyFacts": {"title":"About the company","used":"Company facts this letter was written with","hint":"They come from \"About the company\" on the vacancy card; hide them there if the letter should not use them.","changed":"The company facts on the vacancy card have changed since this letter was written."},
     "copyDraft": "Copy as a new draft",
     "recreateConfirm": "{{ai}} writes the letter and the CV parts again. Your changes to the letter and to the CV profile text will be lost.",
     "recreateYes": "Yes, create again",

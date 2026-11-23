@@ -235,6 +235,8 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .app-actions { margin-top: 1rem; }
 @media (prefers-color-scheme: dark) { .error-text { color: #f4a49b; } }
 .attachment-list { list-style: none; padding: 0; display: grid; gap: 0.4rem; }
+/* Long file names (company name in the cover letter file) wrap instead of widening the page at phone width. */
+.attachment-list li { min-width: 0; overflow-wrap: anywhere; }
 .downloads { margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
 .download-menu { position: relative; display: inline-block; }
 .download-menu__panel { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 17rem; max-width: min(24rem, calc(100vw - 32px));

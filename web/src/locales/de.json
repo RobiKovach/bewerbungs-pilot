@@ -411,7 +411,7 @@
     "unapprove": "Zurück zum Entwurf",
     "recreate": "Neu erstellen",
     "autoAddress": "Die Adresse wurde automatisch auf {{domain}} gefunden – prüfen Sie, ob sie zur Firma gehört.",
-    "companyFacts": {"title":"Über die Firma","used":"Fakten zur Firma, mit denen dieses Anschreiben geschrieben wurde","hint":"Sie stammen aus „Über die Firma“ auf der Stellenkarte; ändern Sie sie dort.","changed":"Die Fakten zur Firma auf der Stellenkarte haben sich geändert, seit dieses Anschreiben geschrieben wurde."},
+    "companyFacts": {"title":"Über die Firma","used":"Fakten zur Firma, mit denen dieses Anschreiben geschrieben wurde","hint":"Sie stammen aus „Über die Firma“ auf der Stellenkarte; dort können Sie sie ausblenden, wenn der Brief sie nicht verwenden soll.","changed":"Die Fakten zur Firma auf der Stellenkarte haben sich geändert, seit dieses Anschreiben geschrieben wurde."},
     "copyDraft": "Als neuen Entwurf kopieren",
     "recreateConfirm": "{{ai}} schreibt das Anschreiben und die Teile des Lebenslaufs neu. Ihre Änderungen am Anschreiben und am Profil-Text des Lebenslaufs gehen verloren.",
     "recreateYes": "Ja, neu erstellen",

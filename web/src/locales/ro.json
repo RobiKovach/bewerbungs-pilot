@@ -411,7 +411,7 @@
     "unapprove": "Înapoi la ciornă",
     "recreate": "Creați din nou",
     "autoAddress": "Adresa a fost găsită automat pe {{domain}} — verificați că aparține firmei.",
-    "companyFacts": {"title":"Despre firmă","used":"Fapte despre firmă cu care a fost scrisă această scrisoare","hint":"Provin din „Despre firmă” de pe cardul ofertei; le puteți schimba acolo.","changed":"Faptele despre firmă de pe cardul ofertei s-au schimbat de când a fost scrisă această scrisoare."},
+    "companyFacts": {"title":"Despre firmă","used":"Fapte despre firmă cu care a fost scrisă această scrisoare","hint":"Provin din „Despre firmă” de pe cardul ofertei; acolo le puteți ascunde dacă scrisoarea nu trebuie să le folosească.","changed":"Faptele despre firmă de pe cardul ofertei s-au schimbat de când a fost scrisă această scrisoare."},
     "copyDraft": "Copiați ca ciornă nouă",
     "recreateConfirm": "{{ai}} scrie din nou scrisoarea și părțile CV-ului. Modificările dvs. din scrisoare și din textul „Profil” al CV-ului se vor pierde.",
     "recreateYes": "Da, creează din nou",
