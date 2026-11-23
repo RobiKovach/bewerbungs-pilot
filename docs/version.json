@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.12.3",
-  "released": "2026-11-09",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.12.3",
-  "sha256": "78bf157e5dae084493041e10d4c7bf74eb17087c5cd42e5f02a62e08acc93af0",
+  "latest": "0.13.0",
+  "released": "2026-11-23",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.0",
+  "sha256": "15218f085dd2383c1f01d6c66a5a06ff22d0eb3d0d6ec3a4a33d27fc86fa7e92",
   "notes": {
-    "uk": "Установка й робота програми тепер вдаються й тоді, коли антивірус перевіряє HTTPS або є корпоративний проксі (помилка SELF_SIGNED_CERT_IN_CHAIN): Node.js бере сертифікати Windows.",
-    "en": "Installing and using the app now also works when an antivirus checks HTTPS or behind a company proxy (error SELF_SIGNED_CERT_IN_CHAIN): Node.js uses the certificates Windows trusts.",
-    "de": "Installation und Nutzung funktionieren jetzt auch, wenn ein Antivirenprogramm HTTPS prüft oder hinter einem Firmen-Proxy (Fehler SELF_SIGNED_CERT_IN_CHAIN): Node.js nutzt die Zertifikate von Windows.",
-    "ru": "Установка и работа программы теперь удаются и тогда, когда антивирус проверяет HTTPS или есть корпоративный прокси (ошибка SELF_SIGNED_CERT_IN_CHAIN): Node.js берёт сертификаты Windows.",
-    "pl": "Instalacja i praca aplikacji działają teraz także, gdy antywirus sprawdza HTTPS lub za firmowym proxy (błąd SELF_SIGNED_CERT_IN_CHAIN): Node.js korzysta z certyfikatów Windows.",
-    "ro": "Instalarea și folosirea aplicației merg acum și când antivirusul verifică HTTPS sau în spatele unui proxy al firmei (eroarea SELF_SIGNED_CERT_IN_CHAIN): Node.js folosește certificatele Windows."
+    "uk": "Новий блок «Про фірму» в картці вакансії: сайт, чим займається фірма, на що звернути увагу й факти для листа зі сторінок фірми. Контакт знаходиться сам і заповнює лише порожні поля. Одна кнопка «Завантажити».",
+    "en": "New \"About the company\" block on the vacancy card: website, what the company does, things to watch and facts for the letter, from the company's own pages. The contact is found automatically and fills only empty fields. One \"Download\" menu.",
+    "de": "Neuer Block „Über die Firma“ in der Stellenkarte: Website, was die Firma macht, worauf Sie achten sollten und Fakten für das Anschreiben – von den Seiten der Firma. Der Kontakt wird automatisch gefunden und füllt nur leere Felder. Ein Menü „Herunterladen“.",
+    "ru": "Новый блок «О фирме» в карточке вакансии: сайт, чем занимается фирма, на что обратить внимание и факты для письма со страниц фирмы. Контакт находится сам и заполняет только пустые поля. Одна кнопка «Скачать».",
+    "pl": "Nowy blok „O firmie” na karcie oferty: strona, czym zajmuje się firma, na co uważać i fakty do listu ze stron firmy. Kontakt znajduje się sam i wypełnia tylko puste pola. Jedno menu „Pobierz”.",
+    "ro": "Bloc nou „Despre firmă” pe cardul ofertei: site, ce face firma, la ce să fiți atenți și fapte pentru scrisoare, din paginile firmei. Contactul se găsește singur și completează doar câmpurile goale. Un singur meniu „Descărcare”."
   }
 }
