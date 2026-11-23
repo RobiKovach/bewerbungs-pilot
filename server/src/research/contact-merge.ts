@@ -132,14 +132,23 @@ const byOrder = (order: Record<PageKind, number>, pages: FoundPage[]) =>
   pages.map((p, i) => ({ p, i })).sort((a, b) => order[a.p.kind] - order[b.p.kind] || a.i - b.i).map((x) => x.p);
 
 /**
- * The contact found on `pages` (`site`: the company site key, `siteOf`). E-mail and phone come from the most
- * relevant page that has one (vacancy/apply → contact → Impressum → others; never e-mails from news pages); on that
- * page the company's own domain and a recruiting box win. The name only from vacancy/apply/contact pages (R10), on a
+ * The contact found on `pages` (`site`: the company site key, `siteOf`). The e-mail is the company's own domain from
+ * the most relevant page that has one, else any usable address from the most relevant page that has one (vacancy/apply
+ * → contact → Impressum → others; never e-mails from news pages); within a page a recruiting box wins. The phone comes
+ * from the most relevant page that has one. The name only from vacancy/apply/contact pages (R10), on a
  * board page only from the ad's contact block (R11); the address from the Impressum first, never from a board page.
  */
 export function contactFromPages(pages: FoundPage[], site: string): VacancyContact {
   const c = emptyContact();
-  for (const p of byOrder(CONTACT_ORDER, pages)) {
+  const ordered = byOrder(CONTACT_ORDER, pages);
+  // The company's own domain on any page beats another domain on a more relevant page (Task 12b, Ruling R44):
+  // a vacancy on an apply service may name a product or agency box (info@get-vibe.de) while Kontakt has the firm's.
+  for (const p of ordered) {
+    if (c.email || p.kind === 'news') continue;
+    const own = pageEmails(p, site).filter((e) => ownDomain(e, site));
+    if (own.length) c.email = [...own].sort((a, b) => emailRank(a, site) - emailRank(b, site))[0];
+  }
+  for (const p of ordered) {
     if (!c.email && p.kind !== 'news') {
       const emails = pageEmails(p, site);
       if (emails.length) c.email = [...emails].sort((a, b) => emailRank(a, site) - emailRank(b, site))[0];

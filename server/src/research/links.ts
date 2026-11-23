@@ -110,9 +110,13 @@ export function pageKind(link: PageLink): PageKind | null {
   return null;
 }
 
+/** The few HTML entities a company name can carry when copied from a page source ("Helm &amp; Walter"). */
+const ENTITIES: Record<string, string> = { '&amp;': '&', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&nbsp;': ' ' };
+
 /** The name without its legal form (and dangling "&", commas), whitespace collapsed, lower case. */
 export function coreName(company: string): string {
-  return company.toLowerCase().replace(LEGAL_FORM, ' ').replace(/\s+/g, ' ').replace(/^[\s&,.-]+|[\s&,.-]+$/g, '').trim();
+  return company.replace(/&(?:amp|quot|#39|apos|nbsp);/gi, (e) => ENTITIES[e.toLowerCase()] ?? e)
+    .toLowerCase().replace(LEGAL_FORM, ' ').replace(/\s+/g, ' ').replace(/^[\s&,.-]+|[\s&,.-]+$/g, '').trim();
 }
 
 const UMLAUTS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
@@ -120,7 +124,11 @@ const wordsOf = (s: string) => s.split(/[^a-z0-9]+/).filter((w) => w !== '');
 
 /** Slugs of the name: hyphenated, joined and — when the name has "&" — joined with "und" ("helmundwalter", R8). */
 export function companySlugs(company: string): string[] {
-  const core = coreName(company).replace(/[äöüß]/g, (c) => UMLAUTS[c] ?? c);
+  return slugsOfCore(coreName(company));
+}
+
+function slugsOfCore(rawCore: string): string[] {
+  const core = rawCore.replace(/[äöüß]/g, (c) => UMLAUTS[c] ?? c);
   const words = wordsOf(core);
   const joined = words.join('');
   if ((joined.match(/[a-z]/g) ?? []).length < 3 || GENERIC_NAMES.has(joined)) return [];
@@ -131,6 +139,49 @@ export function companySlugs(company: string): string[] {
     if (und && !slugs.includes(und)) slugs.push(und);
   }
   return slugs;
+}
+
+/**
+ * Words that describe what a company does rather than name it: a long name often has its domain without them
+ * ("Helm & Walter IT-Solutions" → helmundwalter.de). Cut only at the end of the name.
+ */
+const DESCRIPTORS = new Set([
+  'it', 'solutions', 'systems', 'software', 'consulting', 'services', 'service', 'group', 'gruppe', 'holding',
+  'technologies', 'technology', 'digital', 'deutschland', 'germany', 'international',
+]);
+
+/** The core name with its trailing descriptor words cut ('' when nothing is cut or only descriptors are left). */
+function shortCore(company: string): string {
+  const core = coreName(company);
+  const tokens = core.split(/([\s-]+)/);
+  let end = tokens.length;
+  for (;;) {
+    let i = end - 1;
+    while (i >= 0 && /^[\s-]*$/.test(tokens[i] ?? '')) i -= 1;
+    if (i < 0 || !DESCRIPTORS.has(tokens[i] ?? '')) break;
+    end = i;
+  }
+  const short = tokens.slice(0, end).join('').replace(/^[\s&,.-]+|[\s&,.-]+$/g, '').trim();
+  return short === core ? '' : short;
+}
+
+/**
+ * Domain guesses for the name, best first (Task 12b, Ruling R42): the full-name slugs interleaved with the slugs of
+ * the name without trailing descriptors (the "und" or joined form first). Only for guesses, which are always checked
+ * by name on the page — a host containing a short slug is never trusted on its own (`companySlugs` stays the full name).
+ */
+export function guessSlugs(company: string): string[] {
+  const full = companySlugs(company);
+  if (full.length === 0) return [];
+  const short = shortCore(company);
+  const shortSlugs = short ? slugsOfCore(short) : [];
+  // slugsOfCore gives hyphenated, joined[, und]: reversed, the "und" or joined form comes first.
+  const best = [...shortSlugs].reverse();
+  const out: string[] = [];
+  for (let i = 0; i < Math.max(full.length, best.length); i += 1) {
+    for (const s of [full[i], best[i]]) if (s && !out.includes(s)) out.push(s);
+  }
+  return out;
 }
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -151,7 +202,7 @@ export function nameOnPage(company: string, text: string): boolean {
   const core = coreName(company);
   if (companySlugs(company).length === 0 || core.length < 3) return false;
   const hay = text.toLowerCase().replace(DOMAIN_TOKEN, ' ').replace(/\s+/g, ' ');
-  const word = String.raw`(?<![\p{L}\p{N}])${esc(core).replace(/ /g, '\\s')}(?![\p{L}\p{N}])`;
+  const word = wordPattern(core);
   if (core.includes(' ')) return new RegExp(word, 'u').test(hay);
   if (new RegExp(word + LEGAL_AFTER, 'u').test(hay)) return true;
   const near = new RegExp(word, 'u');
@@ -160,6 +211,20 @@ export function nameOnPage(company: string, text: string): boolean {
     if (near.test(hay.slice(from, from + NOTICE_WINDOW))) return true;
   }
   return false;
+}
+
+const wordPattern = (core: string) => String.raw`(?<![\p{L}\p{N}])${esc(core).replace(/ /g, '\\s')}(?![\p{L}\p{N}])`;
+
+/**
+ * A one-word name stands on the page as a whole word (outside domains) but without the evidence `nameOnPage` needs:
+ * the caller may then confirm the site by its own Impressum (Task 12b, Ruling R43). Never for a parked-domain page
+ * that only shows the name inside an address.
+ */
+export function oneWordNameShown(company: string, text: string): boolean {
+  const core = coreName(company);
+  if (core.includes(' ') || core.length < 3 || companySlugs(company).length === 0) return false;
+  const hay = text.toLowerCase().replace(DOMAIN_TOKEN, ' ').replace(/\s+/g, ' ');
+  return new RegExp(wordPattern(core), 'u').test(hay);
 }
 
 /**
@@ -172,7 +237,7 @@ export interface WebsiteCandidate { url: string; nameCheck: boolean }
 /**
  * Where the company's own site may be, best first (spec 4.2 step 2): linked or e-mail sites whose host contains a
  * slug of the name; then the page itself when it is neither a board nor an apply service; then other links from a
- * board or an apply service to a not ignored host and domains of non-free e-mails; then guesses from the name
+ * board or an apply service to a not ignored host and domains of non-free e-mails; then guesses from the name (`guessSlugs`)
  * (`https://www.<slug>.de` for every slug, then `.com`). No repeats (compared without `www.`), at most 6, with up to
  * 4 places kept for the guesses.
  */
@@ -205,9 +270,10 @@ export function websiteCandidates(input: { pageUrl: string; links: PageLink[]; e
     ...(page && !pageIsListing && !isIgnored(pageHost) ? [{ url: originOf(page), nameCheck: false }] : []),
     ...found.filter((f) => !hasSlug(f.host)).map((f) => ({ url: f.url, nameCheck: true })),
   ];
+  const guessed = guessSlugs(input.company);
   const guesses: WebsiteCandidate[] = [
-    ...slugs.map((s) => ({ url: `https://www.${s}.de`, nameCheck: true })),
-    ...slugs.map((s) => ({ url: `https://www.${s}.com`, nameCheck: true })),
+    ...guessed.map((s) => ({ url: `https://www.${s}.de`, nameCheck: true })),
+    ...guessed.map((s) => ({ url: `https://www.${s}.com`, nameCheck: true })),
   ];
 
   const out: WebsiteCandidate[] = [];

@@ -3,7 +3,7 @@ import { AppError } from '../errors.js';
 import { isAaHost } from '../vacancies/aa-links.js';
 import type { PageLink, PageReader, ReadSession } from '../vacancies/sources/page-reader.js';
 import { contactFromPages, mailtoAddress, type FoundPage } from './contact-merge.js';
-import { nameOnPage, nextPages, siteOf, websiteCandidates, type PageKind } from './links.js';
+import { nameOnPage, nextPages, oneWordNameShown, siteOf, websiteCandidates, type PageKind } from './links.js';
 import type { fetchNews as FetchNews } from './news.js';
 
 /**
@@ -137,7 +137,13 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
         if (first && siteOf(c.url) === siteOf(first.url)) { website = new URL(first.url).origin; break; }
         const home = await open(c.url, 'home');
         if (!c.nameCheck || (home && nameOnPage(input.company, home.text))) { website = c.url; break; }
-        if (home) pages.splice(pages.indexOf(home), 1); // a rejected guess is neither a source nor a contact page
+        // A one-word name ("iSAX") on a home page without legal form: the site's own Impressum may confirm it (R43).
+        const imprint = home && oneWordNameShown(input.company, home.text)
+          ? nextPages(c.url, home.links, opened).find((n) => n.kind === 'impressum') : undefined;
+        const imp = imprint ? await open(imprint.url, 'impressum') : null;
+        if (home && imp && nameOnPage(input.company, imp.text)) { website = c.url; break; }
+        // A rejected guess is neither a source nor a contact page.
+        for (const p of [imp, home]) if (p) pages.splice(pages.indexOf(p), 1);
       }
     }
 
