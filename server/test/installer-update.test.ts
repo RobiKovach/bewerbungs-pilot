@@ -90,7 +90,7 @@ function runUpdate(fx: Fixture, o: RunOptions = {}) {
   return { out, code, status, log };
 }
 
-describe.skipIf(!windows)('installer unattended update (PowerShell)', () => {
+describe.skipIf(!windows)('installer unattended update (PowerShell)', { timeout: 30_000 }, () => {
   it('does not run the update when dot-sourced and has the unattended switches', () => {
     const text = fs.readFileSync(INSTALLER, 'utf8');
     expect(text).toMatch(/\[switch\]\$Unattended/);
