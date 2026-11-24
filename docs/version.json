@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.13.1",
+  "latest": "0.13.2",
   "released": "2026-11-24",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.1",
-  "sha256": "51b6a2f5f4398265125c592bd0a155244d8062e46a814e5c0a4d423c77fe3dee",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.2",
+  "sha256": "f9f609d4b80c4e10030cf6ec49dc8d56e985a0e850dcb5695e413249253a308e",
   "notes": {
-    "uk": "Тепер можна вибрати, куди зберегти файл: вікно «Зберегти як» для «Завантажити» й «Перенести на інший ПК» (Edge і Chrome) — у теку на ПК або одразу на флешку.",
-    "en": "You can now choose where a file is saved: a \"Save as\" window for \"Download\" and \"Move to another PC\" (Edge and Chrome) – a folder on the PC or straight to a USB stick.",
-    "de": "Sie können jetzt wählen, wo eine Datei gespeichert wird: Fenster „Speichern unter“ für „Herunterladen“ und „Auf einen anderen PC übertragen“ (Edge und Chrome) – Ordner auf dem PC oder direkt USB-Stick.",
-    "ru": "Теперь можно выбрать, куда сохранить файл: окно «Сохранить как» для «Скачать» и «Перенести на другой ПК» (Edge и Chrome) — в папку на ПК или сразу на флешку.",
-    "pl": "Teraz można wybrać, gdzie zapisać plik: okno „Zapisz jako” dla „Pobierz” i „Przenieś na inny komputer” (Edge i Chrome) – folder na komputerze albo od razu pendrive.",
-    "ro": "Acum puteți alege unde se salvează fișierul: fereastra „Salvare ca” pentru „Descărcare” și „Mutare pe alt PC” (Edge și Chrome) – un folder pe PC sau direct pe stick USB."
+    "uk": "Обережніший пошук сайту й контакту фірми, оновлені бібліотеки. Також (з 0.13.1): вікно «Зберегти як» — вибір теки або флешки.",
+    "en": "More careful search for the company site and contact, updated libraries. Also (since 0.13.1): a \"Save as\" window to choose a folder or USB stick.",
+    "de": "Sorgfältigere Suche nach Firmen-Website und Kontakt, aktualisierte Bibliotheken. Außerdem (seit 0.13.1): Fenster „Speichern unter“ für Ordner oder USB-Stick.",
+    "ru": "Более осторожный поиск сайта и контакта фирмы, обновлённые библиотеки. Также (с 0.13.1): окно «Сохранить как» — выбор папки или флешки.",
+    "pl": "Ostrożniejsze wyszukiwanie strony i kontaktu firmy, zaktualizowane biblioteki. Także (od 0.13.1): okno „Zapisz jako” – wybór folderu lub pendrive’a.",
+    "ro": "Căutare mai atentă a site-ului și contactului firmei, biblioteci actualizate. De asemenea (din 0.13.1): fereastra „Salvare ca” – alegeți un folder sau un stick USB."
   }
 }
