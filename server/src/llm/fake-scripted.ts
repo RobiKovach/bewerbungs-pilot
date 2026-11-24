@@ -227,6 +227,12 @@ export function scriptedResponse(task: LlmTask): unknown {
     case 'interview-feedback': return interviewFeedback(task);
     case 'interview-summary': return interviewSummary(task);
     case 'company-research': return companyResearch(task);
+    case 'similar-titles': return {
+      titles: [
+        { title: 'Web Developer', why: 'The profile names web development (fake AI answer).' },
+        { title: 'TYPO3-Entwickler', why: 'Close to the jobs held before (fake AI answer).' },
+      ],
+    };
     default: {
       const unknown: never = task.id;
       throw new Error(`fake AI: no scripted answer for task "${String(unknown)}"`);

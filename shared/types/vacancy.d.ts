@@ -116,6 +116,10 @@ export interface SearchState {
   finishedAt: string | null;
 }
 
+/** POST /api/vacancies/similar-titles (0.14.0): proposed job titles; nothing is saved. */
+export interface SimilarTitle { title: string; why: string }
+export interface SimilarTitlesView { titles: SimilarTitle[] }
+
 export interface VacancyListView { vacancies: Vacancy[] }
 /** Answer of every call that changes one card. */
 export interface VacancyView { vacancy: Vacancy }

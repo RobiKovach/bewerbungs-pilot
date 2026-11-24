@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import type { ContactFindView, ContactProposal, ContactSource, Language, ManualEdit, ManualInput, ManualNotice, Profile, Vacancy, VacancyContact, VacancyStatus, VacancyView } from '@bp/shared';
+import type { ContactFindView, ContactProposal, ContactSource, Language, ManualEdit, ManualInput, ManualNotice, Profile, SimilarTitlesView, Vacancy, VacancyContact, VacancyStatus, VacancyView } from '@bp/shared';
 import { AppError } from '../errors.js';
 import { abortOnClose } from '../http.js';
 import type { LlmQueue } from '../llm/queue.js';
@@ -23,6 +23,7 @@ import type { SourceDetails, VacancySource } from './sources/types.js';
 import type { ApplicationStore } from '../applications/store.js';
 import type { VacancyStore } from './store.js';
 import { extractManualTask, MANUAL_TEXT_MAX, MANUAL_TEXT_MIN, toManualFields, type ManualOutput } from './tasks/extract-manual.js';
+import { similarTitlesInput, similarTitlesTask, toSimilarTitles, type SimilarTitlesOutput } from './tasks/similar-titles.js';
 import { NOTE_LABEL, scoreTask, toScore, toScores, type ScoreOutput } from './tasks/score.js';
 
 export interface VacancyRouteDeps {
@@ -111,6 +112,14 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     d.job.stop();
     await d.job.whenIdle();
     return d.job.state();
+  });
+
+  app.post('/api/vacancies/similar-titles', async (_req, reply): Promise<SimilarTitlesView> => {
+    const profile = d.profile();
+    const known = similarTitlesInput(profile);
+    if (Object.values(known).every((list) => list.length === 0)) throw new AppError('WISHES_INCOMPLETE', 'nothing in the profile to start from');
+    const out = await d.queue.run<SimilarTitlesOutput>(similarTitlesTask(profile, d.language()), abortOnClose(reply));
+    return { titles: toSimilarTitles(out, d.profile().sections.wishes.data.jobTitles) };
   });
 
   app.get('/api/vacancies/:id/text', { schema: { params: idParams } }, async (req) => {

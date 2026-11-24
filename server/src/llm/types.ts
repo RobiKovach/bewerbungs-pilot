@@ -9,7 +9,7 @@ export type JsonSchema = Record<string, unknown>;
 export const LLM_TASK_IDS = [
   'probe', 'hello', 'extract-cv', 'follow-up', 'structure-stories', 'extract-manual', 'score',
   'create-package', 'refresh-cv', 'revise-letter', 'offer-reply', 'contact-name',
-  'interview-questions', 'interview-feedback', 'interview-summary', 'company-research',
+  'interview-questions', 'interview-feedback', 'interview-summary', 'company-research', 'similar-titles',
 ] as const;
 export type LlmTaskId = typeof LLM_TASK_IDS[number];
 
