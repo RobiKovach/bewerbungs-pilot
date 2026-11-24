@@ -51,9 +51,9 @@ export class ApplicationStore {
       if (!(err instanceof CorruptJsonError)) throw err;
       this.setAsideList('corrupt', 'not JSON');
     }
-    // Rebuild from the folders whenever the list is missing or broken.
-    const candidates = ids ?? fs.readdirSync(this.dir, { withFileTypes: true }).filter((e) => e.isDirectory() && APPLICATION_ID.test(e.name)).map((e) => e.name);
-    for (const id of candidates) {
+    // The folders are the truth: a package written just before a crash is not in the list yet, but must not disappear.
+    const onDisk = fs.readdirSync(this.dir, { withFileTypes: true }).filter((e) => e.isDirectory() && APPLICATION_ID.test(e.name)).map((e) => e.name);
+    for (const id of new Set([...(ids ?? []), ...onDisk])) {
       const p = this.readPackage(id);
       if (p) this.packages.set(id, p);
     }

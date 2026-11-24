@@ -15,6 +15,7 @@
   "unsaved": { "leave": "Niektóre zmiany nie są jeszcze zapisane. Jeśli teraz wyjdziesz, przepadną. Wyjść mimo to?" },
   "updates": { "available": "Dostępna jest wersja {{version}}", "whatsNew": "Co nowego", "download": "Pobierz", "dismiss": "Ukryj do następnej wersji", "updateNow": "Zaktualizuj teraz", "step": { "downloading": "Pobieram…", "checking": "Sprawdzam…", "installing": "Instaluję (najpierw zapisuję kopię twoich danych)…", "restarting": "Uruchamiam ponownie…" }, "done": "Gotowe — aplikacja otworzyła się w nowej karcie. Tę kartę możesz zamknąć.", "notFinished": "Aktualizacja się nie zakończyła. Stara wersja nadal działa i otworzyła się w nowej karcie z podaniem przyczyny.", "timeout": "Jeśli aplikacja otworzyła się w nowej karcie, zamknij tę. W przeciwnym razie uruchom ją ze skrótu.", "failed": "Aktualizacja się nie udała: {{reason}} Stara wersja nadal działa.", "failedUnknown": "Coś poszło nie tak.", "startFailed": "Nie udało się rozpocząć aktualizacji. Spróbuj jeszcze raz.", "justUpdated": "Zaktualizowano do wersji {{version}}.", "close": "Zamknij", "error": { "failed": "Aktualizacja się nie zakończyła. Stara wersja nadal działa. Twoje dane nie zostały zmienione.", "rollbackFailed": "Aktualizacja się nie udała, a starej wersji nie udało się przywrócić automatycznie. Twoje dane są bezpieczne. Zainstaluj BewerbungsPilot ponownie ze strony internetowej.", "interrupted": "Ostatnia aktualizacja została przerwana. Jeśli aplikacja nie działa poprawnie, zainstaluj BewerbungsPilot ponownie ze strony internetowej." }, "busyWhat": { "export": "Kopia danych jest jeszcze tworzona.", "demo": "Kopia demo jest jeszcze otwarta. Najpierw ją zamknij.", "search": "Wyszukiwanie ofert jeszcze trwa.", "package": "Pakiet aplikacyjny jest jeszcze przygotowywany.", "ai": "Asystent AI jeszcze pracuje.", "send": "E-mail jest jeszcze wysyłany.", "restore": "Kopia zapasowa jest jeszcze przywracana.", "install": "Asystent AI jest jeszcze instalowany.", "browser": "Okno przeglądarki do czytania oferty lub kontaktu jest jeszcze otwarte." } },
   "feedback": { "title": "Wyślij opinię", "button": "Opinia", "kind": "Rodzaj", "problem": "Problem", "idea": "Pomysł", "text": "Twoja wiadomość", "email": "Twój e-mail (na odpowiedź)", "emailBad": "Wpisz prawidłowy adres e-mail.", "sent": "Wysyłamy: Twój tekst, ten adres, wersję aplikacji {{version}}, Twój język i losowy numer instalacji. Nic więcej z Twoich danych.", "personalTitle": "Twoja wiadomość zawiera dane osobowe — trafi do programisty", "personalHint": "Usuń je, jeśli programista nie potrzebuje ich, by Ci pomóc.", "send": "Wyślij", "sending": "Wysyłam…", "thanks": "Dziękujemy! Wiadomość została wysłana.", "close": "Zamknij" },
+  "dataState": {"newerTitle":"Twoje dane pochodzą z nowszej wersji","newerText":"Twoje dane zapisała nowsza wersja BewerbungsPilot. Ta starsza ich nie rusza, więc nic nie przepadło. Aby kontynuować, zainstaluj najnowszą wersję.","newerDownload":"Pobierz najnowszą wersję","newerRestore":"Albo wróć do wcześniejszej kopii zapasowej","problemTitle":"Części Twoich danych nie udało się odczytać","problemText":"Dotyczy: {{what}}. Uszkodzony plik zachowano na tym komputerze, niczego nie usunięto. Jeśli czegoś brakuje, przywróć kopię zapasową.","problemLink":"Otwórz Ustawienia → Kopie zapasowe","profile":"profil","vacancies":"oferty pracy","applications":"aplikacje"},
   "importNotice": { "title": "Dane są na miejscu. Co zostało do zrobienia:", "ai": "Zainstaluj asystenta AI i zaloguj się do niego, jeśli jeszcze go nie ma na tym komputerze.", "settingsLink": "Otwórz ustawienia", "mail": "Podłącz pocztę ponownie.", "noResend": "Nie wysyłaj ponownie zgłoszeń wysłanych po utworzeniu tego pliku: tutaj wyglądają na niewysłane." },
   "usageNotice": { "text": "Raz dziennie aplikacja anonimowo zgłasza, że jest używana: tylko losowy numer i wersja. Możesz to wyłączyć w Ustawieniach.", "ok": "OK", "settings": "Otwórz Ustawienia" },
   "home": {
@@ -185,6 +186,8 @@
       "kindManual": "ręczna",
       "kindInstaller": "przed aktualizacją",
       "kindBeforeRestore": "przed przywróceniem",
+      "kindAuto": "automatyczna",
+      "autoHint": "Program sam też zapisuje kopię, gdy najnowsza ma ponad tydzień, i zachowuje trzy najnowsze z takich kopii.",
       "newer": "Utworzona przez nowszą wersję BewerbungsPilot. Najpierw zaktualizuj program, potem przywróć tę kopię.",
       "restore": "Przywróć",
       "restoring": "Przywracanie…",
@@ -465,6 +468,7 @@
     "LLM_BAD_OUTPUT": { "message": "Nie udało się zrozumieć odpowiedzi {{ai}}.", "hint": "Spróbuj ponownie. Jeśli problem się powtarza, uruchom program ponownie." },
     "LLM_FAILED": { "message": "{{ai}} nie zdołał wykonać zadania.", "hint": "Sprawdź połączenie z internetem i spróbuj ponownie." },
     "LLM_LIMIT": { "message": "Limit {{ai}} jest na razie wyczerpany.", "hint": "Spróbuj później albo wybierz innego asystenta AI w Ustawieniach." },
+    "DATA_NEWER": { "message": "Twoje dane zapisała nowsza wersja BewerbungsPilot.", "hint": "Zainstaluj najnowszą wersję." },
     "LLM_NOT_CHOSEN": { "message": "Nie wybrano jeszcze asystenta AI.", "hint": "Wybierz go w Ustawienia → Asystent AI." },
     "CV_NO_TEXT": { "message": "Ten PDF wygląda jak skan lub zdjęcie.", "hint": "{{ai}} czyta tylko pliki PDF z tekstem lub pliki Word. Zapisz CV jako PDF w Wordzie albo wgraj plik DOCX." },
     "LLM_CANCELLED": { "message": "Zadanie zostało anulowane.", "hint": "Uruchom je ponownie, kiedy zechcesz." },
@@ -628,6 +632,7 @@
     "card": {
       "scoreTitle": "Jak dobrze oferta pasuje do Twojego profilu (0–100)",
       "manual": "dodane ręcznie",
+      "offline": "usunięta z portalu",
       "initiative": "aplikacja z własnej inicjatywy",
       "sentOn": "Wysłano {{date}}",
       "submittedOn": "Złożono przez stronę {{date}}",

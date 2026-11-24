@@ -4,7 +4,7 @@ import type { Vacancy } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { migrate, MigrationError } from '../data/migrate.js';
 import { AppError } from '../errors.js';
-import { VACANCIES_SCHEMA_VERSION, VACANCY_ID, VACANCY_MIGRATIONS, VACANCY_LIMITS, validateVacancies } from './schema.js';
+import { VACANCIES_SCHEMA_VERSION, VACANCY_ID, VACANCY_MIGRATIONS, VACANCY_LIMITS, isValidVacancy, validateVacancies } from './schema.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
@@ -16,6 +16,18 @@ type Warn = (event: string, data: Record<string, unknown>) => void;
  */
 function forLog(problem: string): string {
   return problem.replace(/ \(got .*\)$/s, '');
+}
+
+/** The valid cards (first of each id) of an invalid file; null when there is none to keep. */
+function goodCards(doc: Record<string, unknown>): Vacancy[] | null {
+  if (!Array.isArray(doc.vacancies)) return null;
+  const seen = new Set<string>();
+  const good = (doc.vacancies as unknown[]).filter((v): v is Vacancy => {
+    if (!isValidVacancy(v) || seen.has((v as Vacancy).id)) return false;
+    seen.add((v as Vacancy).id);
+    return true;
+  });
+  return good.length > 0 ? good : null;
 }
 
 /**
@@ -38,8 +50,14 @@ export class VacancyStore {
       return this.reset();
     }
     if (raw === null) return this.reset();
+    let salvaged = false;
     try {
-      const doc = migrate(raw, VACANCIES_SCHEMA_VERSION, VACANCY_MIGRATIONS);
+      let doc = migrate(raw, VACANCIES_SCHEMA_VERSION, VACANCY_MIGRATIONS);
+      const good = validateVacancies(doc) ? goodCards(doc) : null;
+      if (good) {
+        doc = { ...doc, vacancies: good };
+        salvaged = true;
+      }
       const problem = validateVacancies(doc);
       if (problem) throw new MigrationError(problem);
       // A research that was queued or running when the program stopped never finishes: it becomes failed (the card
@@ -48,6 +66,11 @@ export class VacancyStore {
         v.research && (v.research.state === 'running' || v.research.state === 'queued')
           ? { ...v, research: { ...v.research, state: 'failed', error: 'UNKNOWN' } }
           : v);
+      // Only the broken cards are lost, not all of them: the whole file as it was stays next to the new one.
+      if (salvaged) {
+        this.keepCopy();
+        this.commit(this.items);
+      }
     } catch (err) {
       if (!(err instanceof MigrationError)) throw err;
       this.setAside('invalid', forLog(err.message));
@@ -164,6 +187,13 @@ export class VacancyStore {
   private reset(): Vacancy[] {
     this.items = [];
     return [];
+  }
+
+  /** The file as it is, copied under the name a broken file gets (the person is told; backups skip it). */
+  private keepCopy(): void {
+    const backup = path.join(path.dirname(this.paths.file), `vacancies.invalid-${Date.now()}.json`);
+    fs.copyFileSync(this.paths.file, backup);
+    this.warn('vacancies_partly_invalid', { backup });
   }
 
   private setAside(kind: 'corrupt' | 'invalid', reason: string): void {

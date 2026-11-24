@@ -2,6 +2,17 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.13.4
+
+- **Your data cannot seem lost any more.** If a newer version wrote it (for example after going back to an older one), the
+  app leaves it untouched and says so, instead of showing empty lists. One damaged job offer or profile section no longer
+  costs the rest: only that part is put aside, and the app tells you, with the way to your backups.
+- **Weekly automatic backup** into your backup folder when the newest backup is older than a week; the three newest
+  automatic ones are kept.
+- An application that was saved but not yet in the list (power cut) is found again.
+- Favourites are checked too: an offer the job board has removed gets a mark and stays in Favourites.
+- Better contrast of buttons and check marks in the dark theme.
+
 ## What's new in 0.13.3
 
 - The "Save as" window starts in your downloads folder (not in Documents, which Windows often syncs with OneDrive) and

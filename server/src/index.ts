@@ -11,6 +11,8 @@ import { writeJsonAtomic } from './data/atomic.js';
 import { readJson } from './data/atomic.js';
 import { dataPaths, ensureDataDirs, resolveDataRoot } from './data/paths.js';
 import { SettingsStore, SUPPORTED_LANGUAGES, type Language } from './data/settings.js';
+import { AutoBackup } from './backup/auto.js';
+import { dataIsNewer, dataProblems } from './data/health.js';
 import { DemoLauncher, demoDataRoot, isDemoStart, seedDemo } from './demo/demo.js';
 import { ClaudeCodeProvider } from './llm/claude-code.js';
 import { CodexCliProvider, codexSearchRoots } from './llm/codex-cli.js';
@@ -128,10 +130,13 @@ async function main(): Promise<void> {
   }
   process.on('exit', () => lock.release());
 
+  // Data from a newer version is neither read nor put aside: the app only says "update" (or restores an older backup).
+  let newerData = dataIsNewer(paths);
+  if (newerData) logger.warn('data_newer', {});
   const settings = new SettingsStore(paths.settings, (event, data) => logger.warn(event, data));
   settings.load();
   const profileStore = new ProfileStore(paths.profileFile, (event, data) => logger.warn(event, data));
-  profileStore.load();
+  if (!newerData) profileStore.load();
   const profileFiles = new ProfileFiles(paths.profileFiles);
   const secrets = new DpapiSecretStore(paths.mailSecret);
   let demoLanguage: Language | null = null;
@@ -163,7 +168,7 @@ async function main(): Promise<void> {
   });
   const queue = new LlmQueue(() => providers.current());
   const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));
-  vacancyStore.load();
+  if (!newerData) vacancyStore.load();
   if (demoLanguage !== null) await seedDemo({ settings, profileStore, vacancyStore, secrets, language: demoLanguage });
   const vacancySource = new ArbeitsagenturSource();
   const searchJob = new SearchJob({
@@ -171,9 +176,9 @@ async function main(): Promise<void> {
     profile: () => profileStore.get(), language: () => settings.get().language ?? 'en',
     publishedWithinDays: () => settings.get().vacancies.publishedWithinDays, stateFile: paths.searchState,
   });
-  searchJob.init();
+  if (!newerData) searchJob.init();
   const applicationStore = new ApplicationStore(paths.applications, (event, data) => logger.warn(event, data));
-  applicationStore.load();
+  if (!newerData) applicationStore.load();
   const sentUnsaved = new SentUnsavedLog(path.join(paths.applications, 'sent-unsaved.json'), (event, data) => logger.warn(event, data));
   sentUnsaved.load();
   const printer = new BrowserPrinter({ tmpRoot: paths.tmp, warn: (event, data) => logger.warn(event, data) });
@@ -187,7 +192,7 @@ async function main(): Promise<void> {
     profile: () => profileStore.get(), photo: (p) => profilePhoto(p, profileFiles),
     stateFile: path.join(paths.applications, 'job-state.json'),
   });
-  applicationJob.init();
+  if (!newerData) applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
   const news = newsSource();
   const fakeMailDir = path.join(paths.tmp, 'fake-mail');
@@ -216,7 +221,15 @@ async function main(): Promise<void> {
   const key = newLaunchKey();
   const launchCodes = new LaunchCodes(port);
   if (launchCode) launchCodes.register(launchCode);
+  const activity = new Activity();
+  // The demo, the fake modes and a newer version's data get no automatic backup.
+  const autoBackup = demo || fakeLlm || fakeMail ? null : new AutoBackup({
+    dataRoot: paths.root, version, activity, logger,
+    folder: () => resolveBackupFolder(settings.get().backups.folder),
+    ready: () => !newerData && settings.get().onboarding.completed && dataProblems(paths).length === 0,
+  });
   const app = await buildApp({
+    dataState: { newer: () => newerData },
     settings, providers, install, queue, logger, version,
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
@@ -227,7 +240,7 @@ async function main(): Promise<void> {
     googleAuth, origin: () => `http://${HOST}:${port}`,
     session: { key, cookieName: cookieName(port) },
     launchCodes,
-    activity: new Activity(),
+    activity,
     // News are off (Robert 2026-11-23): nothing is asked and the card has no news section. Test mode follows the same
     // switch and never asks Google News (Ruling R3): while news are on it gets a fixed fake list.
     research: { fetchNews: news && devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : news },
@@ -235,7 +248,11 @@ async function main(): Promise<void> {
       paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
       // After a restore every store reads its files again (synchronous: nothing can start in between).
       reload: () => {
-        settings.load(); profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();
+        settings.load();
+        // Checked before any store reads: a before-restore copy made while the data was newer carries this version's number.
+        newerData = dataIsNewer(paths);
+        if (newerData) return;
+        profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();
         searchJob.init(); applicationJob.init();
       },
     },
@@ -273,7 +290,7 @@ async function main(): Promise<void> {
   });
 
   const shutdown = createShutdown({
-    abortAll: () => { updates.stop(); usage?.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
+    abortAll: () => { updates.stop(); usage?.stop(); autoBackup?.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
     close: () => app.close(),
     releaseLock: () => lock.release(),
     serverFile: paths.server,
@@ -297,6 +314,7 @@ async function main(): Promise<void> {
   }
   updates.start();
   usage?.start();
+  autoBackup?.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
   else if (launchCode && await waitForRedeem(() => launchCodes.redeemed(launchCode), { seen: () => launchCodes.seen(launchCode) })) logger.info('opened_by_launch_tab');
   else {

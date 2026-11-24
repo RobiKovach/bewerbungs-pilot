@@ -6,6 +6,24 @@ import { migrate, MigrationError } from '../data/migrate.js';
 import { AppError } from '../errors.js';
 import { emptyProfile, PROFILE_MIGRATIONS, PROFILE_SCHEMA_VERSION, validateProfile } from './schema.js';
 
+/** The profile with every broken section replaced by an empty one; null when that does not make it valid (or no section is fine). */
+function withGoodSections(doc: Record<string, unknown>): Record<string, unknown> | null {
+  const sections = doc.sections as Record<string, unknown> | null;
+  if (!sections || typeof sections !== 'object') return null;
+  const empty = emptyProfile();
+  const good: Record<string, unknown> = { ...empty.sections };
+  let kept = 0;
+  for (const id of Object.keys(empty.sections)) {
+    if (validateProfile({ ...empty, sections: { ...empty.sections, [id]: sections[id] } }) !== null) continue;
+    good[id] = sections[id];
+    kept++;
+  }
+  if (kept === 0) return null;
+  const whole = { ...doc, sections: good };
+  // Proposals from a new CV can be made again; a broken one must not cost the sections.
+  return [whole, { ...whole, cvProposals: {} }].find((c) => validateProfile(c) === null) ?? null;
+}
+
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
 export class ProfileStore {
@@ -27,13 +45,27 @@ export class ProfileStore {
       return this.reset();
     }
     if (raw === null) return this.reset();
+    let salvaged = false;
     try {
-      const doc = migrate(raw, PROFILE_SCHEMA_VERSION, PROFILE_MIGRATIONS);
+      let doc = migrate(raw, PROFILE_SCHEMA_VERSION, PROFILE_MIGRATIONS);
+      const fixed = validateProfile(doc) ? withGoodSections(doc) : null;
+      if (fixed) {
+        doc = fixed;
+        salvaged = true;
+      }
       const problem = validateProfile(doc);
       if (problem) throw new MigrationError(problem);
       this.current = doc as unknown as Profile;
       const start = (raw as { schemaVersion: number }).schemaVersion;
       if (start < PROFILE_SCHEMA_VERSION) this.olderVersionOnDisk = start;
+      // Only the broken sections are lost, not the whole profile: the file as it was stays next to the new one.
+      if (salvaged) {
+        const backup = path.join(path.dirname(this.file), `profile.invalid-${Date.now()}.json`);
+        fs.copyFileSync(this.file, backup);
+        this.warn('profile_partly_invalid', { backup });
+        writeJsonAtomic(this.file, this.current);
+        this.olderVersionOnDisk = null;
+      }
     } catch (err) {
       if (!(err instanceof MigrationError)) throw err;
       this.setAside('invalid', err.message);

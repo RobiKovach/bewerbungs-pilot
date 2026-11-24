@@ -105,9 +105,12 @@ describe('SearchJob', () => {
     online = false;
     const s = await run(job);
     expect(s).toMatchObject({ found: 1, filteredOut: { seen: 1 }, afterFilter: 0, toScore: 0 });
-    expect(src.onlineCalls).toEqual(['R-OLD']);
+    expect(src.onlineCalls).toEqual(['R-FAV', 'R-OLD']);
     expect(store.get('old')!.status).toBe('stale');
-    expect(store.get('fav')!.status).toBe('favorite');
+    expect(store.get('fav')!).toMatchObject({ status: 'favorite', offline: true });
+    online = true;
+    await run(job);
+    expect(store.get('fav')!.offline).toBeUndefined();
     expect(store.list().find((v) => v.sourceId === 'R-1')!.status).toBe('new');
   });
 

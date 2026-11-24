@@ -5,7 +5,7 @@ export type { BackupKind, BackupMeta };
 /** Backup zip format (spec 0.9.0, section 3.1): `backup.json` at the root + the data folders under their own names. */
 export const BACKUP_FORMAT = 1;
 export const META_FILE = 'backup.json';
-export const BACKUP_KINDS = ['manual', 'installer', 'before-restore'] as const satisfies readonly BackupKind[];
+export const BACKUP_KINDS = ['manual', 'installer', 'before-restore', 'auto'] as const satisfies readonly BackupKind[];
 
 /** What a backup may hold besides `backup.json`: this file and everything under these folders. */
 export const BACKUP_FILES: readonly string[] = ['settings.json'];

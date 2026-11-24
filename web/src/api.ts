@@ -2,7 +2,7 @@ import { saveFile, type SaveResult } from './files/save';
 import { transferFileName } from './files/names';
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
-  ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
+  ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, DataState, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
   SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
@@ -138,6 +138,8 @@ export const api = {
     '/api/backups/restore-upload', file, fileName(file, 'backup.zip'), undefined, password ? { password } : {},
   ),
   openBackupFolder: () => request<{ ok: true }>('POST', '/api/backups/open-folder', {}),
+  getDataState: () => request<DataState>('GET', '/api/data-state'),
+  dismissDataProblems: () => request<unknown>('POST', '/api/data-state/dismiss'),
   getUpdates: () => request<UpdatesView>('GET', '/api/updates'),
   /** The developer's mailbox: 204 on success; FEEDBACK_FAILED (reason offline | limit | server) otherwise. */
   sendFeedback: (body: { kind: 'problem' | 'idea'; email: string; text: string }) => request<unknown>('POST', '/api/feedback', body),

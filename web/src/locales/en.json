@@ -15,6 +15,7 @@
   "unsaved": { "leave": "Some changes are not saved yet. If you leave now, they will be lost. Leave anyway?" },
   "updates": { "available": "Version {{version}} is available", "whatsNew": "What's new", "download": "Download", "dismiss": "Hide until the next version", "updateNow": "Update now", "step": { "downloading": "Downloading…", "checking": "Checking…", "installing": "Installing (a copy of your data is saved first)…", "restarting": "Restarting…" }, "done": "Done — the app opened in a new tab. You can close this one.", "notFinished": "The update did not finish. The old version keeps working and opened in a new tab with the reason.", "timeout": "If the app opened in a new tab, close this one. Otherwise start it from the shortcut.", "failed": "Update failed: {{reason}} The old version keeps working.", "failedUnknown": "Something went wrong.", "startFailed": "The update could not be started. Please try again.", "justUpdated": "Updated to version {{version}}.", "close": "Close", "error": { "failed": "The update did not finish. The old version keeps working. Your data is unchanged.", "rollbackFailed": "The update failed and the old version could not be restored automatically. Your data is safe. Please install BewerbungsPilot again from the website.", "interrupted": "The last update was interrupted. If the app does not work properly, install BewerbungsPilot again from the website." }, "busyWhat": { "export": "A copy of your data is still being created.", "demo": "The demo copy is still open. Close it first.", "search": "A job search is still running.", "package": "An application package is still being prepared.", "ai": "The AI helper is still working.", "send": "An email is still being sent.", "restore": "A backup is still being restored.", "install": "The AI helper is still being installed.", "browser": "A browser window for reading an offer or contact is still open." } },
   "feedback": { "title": "Send feedback", "button": "Feedback", "kind": "Type", "problem": "Problem", "idea": "Idea", "text": "Your message", "email": "Your email (for our reply)", "emailBad": "Please enter a valid email address.", "sent": "Sent: your text, this address, app version {{version}}, your language and a random install number. Nothing else from your data.", "personalTitle": "Your message contains personal data — it will go to the developer", "personalHint": "Remove it if the developer does not need it to help you.", "send": "Send", "sending": "Sending…", "thanks": "Thank you! Your message was sent.", "close": "Close" },
+  "dataState": {"newerTitle":"Your data is from a newer version","newerText":"A newer version of BewerbungsPilot has written your data. This older version leaves it untouched, so nothing is lost. Install the newest version to go on.","newerDownload":"Download the newest version","newerRestore":"Or go back to a backup made before","problemTitle":"Some of your data could not be read","problemText":"Affected: {{what}}. The damaged file was kept on this computer, nothing was deleted. If something is missing, restore a backup.","problemLink":"Open Settings → Backups","profile":"profile","vacancies":"job offers","applications":"applications"},
   "importNotice": { "title": "Your data is here. What is left to do:", "ai": "Install the AI helper and sign in to it, if it is not on this PC yet.", "settingsLink": "Open Settings", "mail": "Connect your email again.", "noResend": "Do not send again the applications sent after this file was made: here they look unsent." },
   "usageNotice": { "text": "Once a day the app anonymously reports that it is used: only a random number and the version. You can switch this off in Settings.", "ok": "OK", "settings": "Open Settings" },
   "home": {
@@ -185,6 +186,8 @@
       "kindManual": "manual",
       "kindInstaller": "before update",
       "kindBeforeRestore": "before restore",
+      "kindAuto": "automatic",
+      "autoHint": "The app also saves a backup by itself when the newest one is older than a week, and keeps the three newest of these.",
       "newer": "Made by a newer version of BewerbungsPilot. Update the app first, then restore this backup.",
       "restore": "Restore",
       "restoring": "Restoring…",
@@ -465,6 +468,7 @@
     "LLM_BAD_OUTPUT": { "message": "{{ai}}'s answer could not be understood.", "hint": "Please try again. If it keeps happening, restart the app." },
     "LLM_FAILED": { "message": "{{ai}} could not finish the task.", "hint": "Check your internet connection and try again." },
     "LLM_LIMIT": { "message": "The limit of {{ai}} is used up for now.", "hint": "Try again later or choose another AI helper in Settings." },
+    "DATA_NEWER": { "message": "Your data was written by a newer version of BewerbungsPilot.", "hint": "Install the newest version." },
     "LLM_NOT_CHOSEN": { "message": "No AI helper is chosen yet.", "hint": "Choose one in Settings → AI helper." },
     "CV_NO_TEXT": { "message": "This PDF looks like a scan or a photo.", "hint": "{{ai}} reads only PDFs with text or Word files. Save your CV as PDF from Word, or upload the DOCX." },
     "LLM_CANCELLED": { "message": "The task was cancelled.", "hint": "Start it again whenever you like." },
@@ -628,6 +632,7 @@
     "card": {
       "scoreTitle": "How well the offer fits your profile (0–100)",
       "manual": "added by hand",
+      "offline": "removed by the job board",
       "initiative": "initiative application",
       "sentOn": "Sent {{date}}",
       "submittedOn": "Submitted on the website {{date}}",

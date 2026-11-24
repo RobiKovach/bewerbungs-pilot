@@ -9,6 +9,7 @@ const KIND_KEY: Record<BackupKind, string> = {
   manual: 'settings.backups.kindManual',
   installer: 'settings.backups.kindInstaller',
   'before-restore': 'settings.backups.kindBeforeRestore',
+  auto: 'settings.backups.kindAuto',
 };
 
 /**
@@ -152,7 +153,7 @@ export function BackupsSection({ onRestored }: { onRestored?: () => Promise<void
 
   return (
     <>
-      <p className="muted">{t('settings.backups.intro')}</p>
+      <p className="muted">{t('settings.backups.intro')} {t('settings.backups.autoHint')}</p>
       {list ? (
         <>
           <p>{t('settings.backups.folder')} <code className="backup-dir">{list.dir}</code></p>

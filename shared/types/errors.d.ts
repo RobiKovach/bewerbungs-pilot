@@ -3,6 +3,7 @@ export type ErrorCode =
   | 'LLM_NOT_INSTALLED'
   | 'LLM_NOT_LOGGED_IN'
   | 'LLM_LIMIT'
+  | 'DATA_NEWER'
   | 'LLM_NOT_CHOSEN'
   | 'CV_NO_TEXT'
   | 'LLM_TIMEOUT'

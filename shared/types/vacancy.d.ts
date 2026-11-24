@@ -75,6 +75,8 @@ export interface Vacancy {
   url: string;
   /** Arbeitsagentur offers: the partner's page about the offer (never an Arbeitsagentur address). Absent/'' = none (0.9.1). */
   partnerUrl?: string;
+  /** A favourite the job board has removed meanwhile (0.13.4); absent = not known to be removed. */
+  offline?: boolean;
   contact: VacancyContact | null;
   /** The full text is in texts/<id>.txt. */
   hasText: boolean;

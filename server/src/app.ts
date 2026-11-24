@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
-import type { LlmCheck } from '@bp/shared';
+import type { DataState, LlmCheck } from '@bp/shared';
+import { dataProblems, dismissDataProblems } from './data/health.js';
 import { PROVIDER_IDS, PUBLISHED_WITHIN_DAYS, SUPPORTED_LANGUAGES, settingsView, type Language, type ProviderId, type SettingsPatch, type SettingsStore } from './data/settings.js';
 import { AppError, httpStatusFor } from './errors.js';
 import type { Logger } from './log.js';
@@ -102,6 +103,8 @@ export interface AppDeps {
    * (Ruling R3); tests always pass a fake, so no test reaches the network.
    */
   research: { /** null: news off. */ fetchNews: typeof FetchNews | null; /** Tests: the job, to wait until it is idle. */ onJob?: (job: ResearchJob) => void };
+  /** The data on disk is from a newer app version (0.13.4): the API refuses everything that reads or writes it. */
+  dataState?: { newer: () => boolean };
   /** «Try the demo» (spec 0.10.0): `active` = this copy is the demo; `start` opens the demo copy from the real app. */
   demo?: { active: boolean; start?: (language: Language) => Promise<{ url: string }> };
 }
@@ -147,6 +150,8 @@ export function browserWork<T extends {
 }
 
 const PUBLIC_ROUTES = new Set(['/open', '/launch/:part', '/launch/:part/ready.svg', '/api/health', '/oauth/google/callback', '/', '/*']);
+/** What works while the data is from a newer app version: looking, updating, restoring a backup, quitting — nothing that reads or writes the data. */
+const NEWER_DATA_ROUTES = /^\/api\/(health|data-state|settings|updates|backups|feedback|shutdown|launch-code|demo)(\/|$)/;
 const launchCodeParams = { type: 'object', required: ['code'], properties: { code: { type: 'string', pattern: LAUNCH_CODE.source } } } as const;
 const launchProbeParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_PROBE.source } } } as const;
 const launchTokenParams = { type: 'object', required: ['part'], properties: { part: { type: 'string', pattern: LAUNCH_CODE.source } } } as const;
@@ -219,6 +224,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         return reply.code(httpStatusFor('NO_SESSION')).send(errorBody('NO_SESSION', 'missing or wrong launch key'));
       }
     }
+    if (route?.startsWith('/api/') && !NEWER_DATA_ROUTES.test(route) && deps.dataState?.newer()) {
+      return reply.code(httpStatusFor('DATA_NEWER')).send(errorBody('DATA_NEWER', 'the data was written by a newer app version'));
+    }
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers['x-bp-client'] !== '1') {
       return reply.code(403).send(errorBody('BAD_REQUEST', 'missing X-BP-Client header'));
     }
@@ -257,6 +265,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
 
   app.get('/api/health', async () => ({ ok: true, app: 'bewerbungs-pilot', version: deps.version, demo: deps.demo?.active === true }));
+
+  app.get('/api/data-state', async (): Promise<DataState> => {
+    const newer = deps.dataState?.newer() ?? false;
+    return { newer, problems: newer ? [] : dataProblems(deps.backup.paths) };
+  });
+  app.post('/api/data-state/dismiss', async () => {
+    dismissDataProblems(deps.backup.paths);
+    return { ok: true };
+  });
 
   app.post('/api/demo', { schema: { body: languageBodySchema } }, async (req) => {
     const start = deps.demo?.start;

@@ -219,17 +219,22 @@ export class SearchJob {
 
     // 5. Removed offers
     this.set({ phase: 'staleCheck' });
+    const back = this.d.store.list().filter((v) => v.offline && v.sourceId && hits.has(v.sourceId)).map((v) => v.id);
+    this.d.store.updateMany(back, (x) => { delete x.offline; });
     const createdSet = new Set(this.created);
     const candidates = this.d.store.list()
-      .filter((v) => v.status === 'new' && v.source === 'arbeitsagentur' && v.sourceId && !hits.has(v.sourceId) && !createdSet.has(v.id))
-      .sort((a, b) => a.foundAt.localeCompare(b.foundAt))
+      .filter((v) => (v.status === 'new' || v.status === 'favorite') && v.source === 'arbeitsagentur' && v.sourceId && !hits.has(v.sourceId) && !createdSet.has(v.id))
+      // Favourites first: that is where a removed offer costs the person an application.
+      .sort((a, b) => Number(b.status === 'favorite') - Number(a.status === 'favorite') || a.foundAt.localeCompare(b.foundAt))
       .slice(0, MAX_STALE_CHECKS);
     for (const [i, v] of candidates.entries()) {
       if (i > 0 && this.pauseMs > 0) await pause(this.pauseMs, signal);
       try {
-        if (!(await this.d.source.isOnline(v.sourceId as string, signal))) {
-          this.d.store.updateMany([v.id], (x) => { if (x.status === 'new') x.status = 'stale'; });
-        }
+        const online = await this.d.source.isOnline(v.sourceId as string, signal);
+        // A favourite stays where the person put it, only marked; a new offer moves to "removed".
+        if (!online) {
+          this.d.store.updateMany([v.id], (x) => { if (x.status === 'new') x.status = 'stale'; else if (x.status === 'favorite') x.offline = true; });
+        } else if (v.offline) this.d.store.updateMany([v.id], (x) => { delete x.offline; });
       } catch (err) {
         if (isCancel(err, signal)) throw err;
         warnings.add('staleCheckFailed');

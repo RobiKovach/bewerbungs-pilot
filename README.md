@@ -6,7 +6,7 @@ email and keeps track of every answer. Nothing is made up: letters are built onl
 
 ![Job offers scored from 0 to 100 with the reasons, in the demo](docs/images/02-job-offers.png)
 
-**Status: v0.12** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
+**Status: v0.13** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
 feedback, one-click updates, a demo and interview preparation. Six languages: Українська · English · Deutsch · Русский · Polski · Română.
 
 ## Start in 5 steps
@@ -68,7 +68,7 @@ Both warnings are normal for a free app from a single developer; neither means s
 Your data stays on your PC in `%LOCALAPPDATA%\BewerbungsPilot`. Updating = run the new
 installer; your data is kept. Before an update the installer saves a backup of your data to the backup folder
 (`Documents\BewerbungsPilot\Backups`, or `%USERPROFILE%\BewerbungsPilot\Backups` when Documents is synced with OneDrive,
-or the folder you chose in Settings → Backups) and keeps the three newest of its own backups (your manual backups are
+or the folder you chose in Settings → Backups) and the app saves one by itself every week; each keeps the three newest of its own backups (your manual backups are
 never deleted). What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 The update banner has an **Update now** button (it really works from 0.12.1): the app downloads only the official release from this

@@ -1,5 +1,10 @@
-/** Who made a backup: the "Save backup" button, the installer before an update, or a restore (the data it replaced). */
-export type BackupKind = 'manual' | 'installer' | 'before-restore';
+/** Who made a backup: the "Save backup" button, the installer before an update, a restore (the data it replaced), or the weekly automatic one. */
+export type BackupKind = 'manual' | 'installer' | 'before-restore' | 'auto';
+
+/** Which data could not be read and was put aside (GET /api/data-state). */
+export type DataProblem = 'profile' | 'vacancies' | 'applications';
+/** newer = the data was written by a newer app version: nothing is read or written until the app is updated (or a backup restored). */
+export interface DataState { newer: boolean; problems: DataProblem[] }
 
 /** `backup.json` at the root of every backup zip (spec 0.9.0, section 3.1). */
 export interface BackupMeta {

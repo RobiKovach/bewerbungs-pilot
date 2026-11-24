@@ -25,6 +25,7 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'LLM_NOT_INSTALLED':
     case 'LLM_NOT_LOGGED_IN': return 503;
     case 'LLM_LIMIT': return 429;
+    case 'DATA_NEWER':
     case 'LLM_NOT_CHOSEN': return 409;
     case 'CV_NO_TEXT': return 422;
     case 'LLM_TIMEOUT': return 504;

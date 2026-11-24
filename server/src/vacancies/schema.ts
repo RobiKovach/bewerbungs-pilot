@@ -151,9 +151,16 @@ const VACANCY = obj({
   // 0.13.0: company research and the contact fields the app filled in by itself.
   research: RESEARCH,
   contactAuto: CONTACT_AUTO,
+  // 0.13.4: a favourite the job board has removed; absent = online as far as we know.
+  offline: { type: 'boolean' },
 });
 
 const FILE = obj({ schemaVersion: { const: VACANCIES_SCHEMA_VERSION }, vacancies: { type: 'array', items: VACANCY } });
+
+/** One card alone: which of them are fine when the whole file is not. */
+export function isValidVacancy(card: unknown): boolean {
+  return validateOutput(VACANCY, card).ok;
+}
 
 /** null = valid; otherwise a readable reason (for the log). */
 export function validateVacancies(doc: unknown): string | null {

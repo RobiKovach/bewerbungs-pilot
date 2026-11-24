@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
+import { DataNotice } from './DataGate';
 import { useIsDemo } from './components/DemoBanner';
 import { Layout } from './components/Layout';
 import { confirmLeave, setUnsaved } from './leaveGuard';
@@ -58,6 +59,7 @@ export function App() {
     // App-wide: any form with unsaved changes makes leaving it (page, language, Quit, closing the tab) ask first.
     <UnsavedProvider onChange={setUnsaved}>
       <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding} demo={demo} onLeaveDemo={() => void onLeaveDemo()}>
+        <DataNotice />
         <ImportNotice />
         {page}
       </Layout>

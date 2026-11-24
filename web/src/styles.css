@@ -7,7 +7,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #0f141c; --surface: #18202c; --text: #e8edf5; --muted: #9aa6b8; --border: #2a3444;
-    --accent: #6d8dff; --accent-hover: #8aa4ff; --ok: #4cc47f; --danger: #ff8a7a; --danger-bg: #3a1f1c; }
+    --accent: #6d8dff; --accent-hover: #8aa4ff; --accent-contrast: #0b1222; --ok: #4cc47f; --danger: #ff8a7a; --danger-bg: #3a1f1c; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); }
@@ -174,7 +174,7 @@ label.btn { cursor: pointer; }
 .score--mid { background: #fff4d6; color: #7a5200; }
 .score--weak, .score--none { background: #eceef1; color: #5b6270; }
 .vacancy__points { list-style: none; padding: 0; margin: 0.75rem 0 0; }
-.vacancy__points .why { color: #1d6b34; }
+.vacancy__points .why { color: var(--ok); }
 .vacancy__points .missing { color: #9a3b2e; }
 .vacancy__points span { color: var(--text); }
 .vacancy__scoreline { margin: 0.5rem 0 0; }
