@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import type { ErrorCode, FilterReason, Language, Profile, SearchState, SearchWarning, Vacancy, WishesData } from '@bp/shared';
+import type { ErrorCode, FilterReason, Language, Profile, SearchState, SearchWarning, TitleRun, Vacancy, WishesData } from '@bp/shared';
 import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
@@ -21,8 +21,10 @@ export function assertWishesComplete(w: WishesData): void {
   if (!titles || !where) throw new AppError('WISHES_INCOMPLETE', `titles=${titles} where=${where}`);
 }
 
+const cleanTitles = (w: WishesData) => [...new Set(w.jobTitles.map((t) => t.trim()).filter(Boolean))];
+
 export function planQueries(w: WishesData, publishedWithinDays: number): { queries: SearchQuery[]; truncated: boolean } {
-  const titles = [...new Set(w.jobTitles.map((t) => t.trim()).filter(Boolean))];
+  const titles = cleanTitles(w);
   const places: (string | null)[] = w.remote === 'remote' ? [null] : [...new Set(w.locations.map((l) => l.trim()).filter(Boolean))];
   const workTimes = WORK_TIMES.filter((t) => w.employmentTypes.includes(t));
   const kinds: OfferKind[] = [];
@@ -62,8 +64,22 @@ export function takeFairly<T>(passed: readonly T[], titleOf: (h: T) => string, t
 export function idleState(): SearchState {
   return {
     state: 'idle', phase: null, found: 0, filteredOut: {}, afterFilter: 0, toScore: 0, scored: 0, moreAvailable: 0,
-    warnings: [], error: null, startedAt: null, finishedAt: null,
+    warnings: [], error: null, startedAt: null, finishedAt: null, titleRuns: [],
   };
+}
+
+/**
+ * The days in a row each title brought nothing new, after one more finished search. Only titles in `searched` (queried
+ * without an error) count, at most once a day; a title no longer wished for is forgotten.
+ */
+export function nextTitleRuns(old: readonly TitleRun[], wished: readonly string[], searched: ReadonlySet<string>, withNew: ReadonlySet<string>, day: string): TitleRun[] {
+  return wished.flatMap((title) => {
+    const before = old.find((r) => r.title === title);
+    if (!searched.has(title)) return before ? [before] : [];
+    if (withNew.has(title)) return [{ title, runs: 0, day }];
+    if (before?.day === day) return [before];
+    return [{ title, runs: (before?.runs ?? 0) + 1, day }];
+  });
 }
 
 export interface SearchJobDeps {
@@ -106,6 +122,7 @@ export class SearchJob {
       this.d.logger.warn('search_state_corrupt', {});
     }
     this.current = saved && typeof saved === 'object' && typeof saved.state === 'string' ? { ...idleState(), ...saved } : idleState();
+    if (!isTitleRuns(this.current.titleRuns)) this.current.titleRuns = [];
     if (this.current.state === 'running') {
       this.current = { ...this.current, state: 'interrupted', phase: null, finishedAt: this.stamp() };
       this.persist();
@@ -124,7 +141,7 @@ export class SearchJob {
     assertWishesComplete(this.d.profile().sections.wishes.data);
     this.ctrl = new AbortController();
     this.created = [];
-    this.set({ ...idleState(), state: 'running', startedAt: this.stamp() });
+    this.set({ ...idleState(), state: 'running', startedAt: this.stamp(), titleRuns: this.current.titleRuns ?? [] });
     this.d.logger.info('search_started', {});
     this.running = this.run(this.ctrl.signal).catch((err: unknown) => this.finishWithError(err, this.ctrl?.signal));
   }
@@ -149,6 +166,7 @@ export class SearchJob {
     if (truncated) warnings.add('tooManyQueries');
     const hits = new Map<string, SourceHit>();
     const titleOf = new Map<string, string>();
+    const failedTitles = new Set<string>();
     let failures = 0;
     let lastError: unknown = null;
     for (const q of queries) {
@@ -159,6 +177,7 @@ export class SearchJob {
       } catch (err) {
         if (isCancel(err, signal)) throw err;
         failures++;
+        failedTitles.add(q.jobTitle);
         lastError = err;
         warnings.add('someQueriesFailed');
         this.d.logger.warn('search_query_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
@@ -241,7 +260,10 @@ export class SearchJob {
       }
     }
 
-    this.set({ state: 'done', phase: null, warnings: [...warnings], finishedAt: this.stamp() });
+    const searched = new Set(titles.filter((t) => !failedTitles.has(t)));
+    const withNew = new Set(passed.map((h) => titleOf.get(h.sourceId) ?? ''));
+    const titleRuns = nextTitleRuns(this.current.titleRuns ?? [], cleanTitles(wishes), searched, withNew, this.stamp().slice(0, 10));
+    this.set({ state: 'done', phase: null, warnings: [...warnings], finishedAt: this.stamp(), titleRuns });
     this.d.logger.info('search_finished', { found: hits.size, toScore, scored });
   }
 
@@ -315,6 +337,13 @@ export class SearchJob {
   private stamp(): string {
     return this.now().toISOString();
   }
+}
+
+function isTitleRuns(x: unknown): x is TitleRun[] {
+  return Array.isArray(x) && x.every((r: unknown) => {
+    const t = r as Partial<TitleRun> | null;
+    return typeof t === 'object' && t !== null && typeof t.title === 'string' && typeof t.runs === 'number' && typeof t.day === 'string';
+  });
 }
 
 function pause(ms: number, signal: AbortSignal): Promise<void> {

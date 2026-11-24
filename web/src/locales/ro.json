@@ -587,6 +587,7 @@
       "removeTitle": "Eliminați „{{title}}”",
       "titlesFull": "Puteți adăuga până la {{max}} posturi."
     },
+    "similar": { "ask": "Propune denumiri similare", "running": "{{ai}} caută denumiri similare…", "none": "Nu s-au găsit alte denumiri potrivite.", "title": "Pe care dintre acestea să le caute și programul?", "add": "Adaugă cele alese ({{count}})" },
     "progress": {
       "phase": {
         "querying": "Căutare pe bursa locurilor de muncă…",
@@ -605,6 +606,7 @@
       },
       "stop": "Opriți",
       "done": "Căutare finalizată: {{count}} oferte noi evaluate.",
+      "quiet": "De cel puțin 3 zile de căutare nimic nou: {{titles}}. Încercați „Propune denumiri similare”, o rază mai mare sau o perioadă mai lungă.",
       "doneNothingNew": "Nicio ofertă nouă: toate cele {{found}} găsite sunt deja în lista dvs. sau au fost filtrate. Adăugați posturi sau alegeți o perioadă mai lungă.",
       "doneNothingFound": "Nu s-a găsit nimic. Adăugați posturi, măriți raza sau alegeți o perioadă mai lungă.",
       "stopped": "Căutare oprită. {{scored}} din {{total}} oferte au fost evaluate; celelalte pot fi evaluate cu „Evaluați”.",

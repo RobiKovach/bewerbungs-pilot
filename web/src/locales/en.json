@@ -587,6 +587,7 @@
       "removeTitle": "Remove “{{title}}”",
       "titlesFull": "You can add up to {{max}} job titles."
     },
+    "similar": { "ask": "Suggest similar titles", "running": "{{ai}} is looking for similar titles…", "none": "No further fitting titles were found.", "title": "Which of these should be searched too?", "add": "Add chosen ({{count}})" },
     "progress": {
       "phase": {
         "querying": "Searching the job board…",
@@ -605,6 +606,7 @@
       },
       "stop": "Stop",
       "done": "Search finished: {{count}} new offers scored.",
+      "quiet": "Nothing new for at least 3 search days: {{titles}}. Try “Suggest similar titles”, a larger radius or a longer period.",
       "doneNothingNew": "No new job offers: all {{found}} found are already in your list or were filtered out. Add job titles or choose a longer period.",
       "doneNothingFound": "Nothing found. Add job titles, widen the radius or choose a longer period.",
       "stopped": "Search stopped. {{scored}} of {{total}} offers were scored; the others can be scored with \"Score\".",

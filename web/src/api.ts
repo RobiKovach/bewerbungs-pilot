@@ -3,7 +3,7 @@ import { transferFileName } from './files/names';
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, DataState, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
-  SectionId, Settings, SettingsPatch, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
+  SectionId, Settings, SettingsPatch, SimilarTitlesView, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
 /** Password is optional: left out = keep the saved one. Language = the interface language of the test email. */
@@ -196,6 +196,7 @@ export const api = {
     request<VacancyView>('PATCH', `/api/vacancies/${encodeURIComponent(id)}/research/facts/${encodeURIComponent(factId)}`, { hidden }),
   setResearchWebsite: (id: string, url: string) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/research/website`, { url }),
   saveVacancyContact: (id: string, contact: VacancyContact | null) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/contact`, contact),
+  similarTitles: (signal?: AbortSignal) => request<SimilarTitlesView>('POST', '/api/vacancies/similar-titles', {}, signal),
   startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
   stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),

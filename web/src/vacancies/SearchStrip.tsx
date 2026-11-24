@@ -4,6 +4,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { LIMITS } from '../profile/constants';
 import { useSettings } from '../settings';
 import type { PublishedWithinDays } from '../types';
+import { SimilarTitles } from './SimilarTitles';
 import { useVacancies } from './VacanciesContext';
 
 export const DAY_CHOICES: readonly PublishedWithinDays[] = [1, 3, 7, 14, 30];
@@ -58,6 +59,7 @@ function JobTitles({ disabled }: { disabled: boolean }) {
         <button type="submit" className="btn small ghost" disabled={disabled || busy || full || !draft.trim()}>{t('vacancies.strip.addTitle')}</button>
       </form>
       {full ? <p className="muted">{t('vacancies.strip.titlesFull', { max: LIMITS.lines })}</p> : null}
+      <SimilarTitles titles={titles} free={LIMITS.lines - titles.length} disabled={disabled || busy} onAdd={(more) => save([...titles, ...more])} />
       {error ? <ErrorBanner error={error} /> : null}
     </div>
   );

@@ -97,6 +97,9 @@ export type SearchPhase = 'querying' | 'details' | 'scoring' | 'staleCheck';
 export type FilterReason = 'seen' | 'notRemote' | 'student' | 'internship' | 'apprenticeship';
 export type SearchWarning = 'someQueriesFailed' | 'tooManyQueries' | 'staleCheckFailed';
 
+/** How many search days in a row a job title brought nothing new (0.14.0); `day` = the last counted day (YYYY-MM-DD). */
+export interface TitleRun { title: string; runs: number; day: string }
+
 /** GET /api/vacancies/search. Also stored as search-state.json. */
 export interface SearchState {
   state: SearchRunState;
@@ -114,6 +117,8 @@ export interface SearchState {
   error: { code: ErrorCode; detailsForLog: string } | null;
   startedAt: string | null;
   finishedAt: string | null;
+  /** Kept from search to search (0.14.0). Absent in files from before. */
+  titleRuns?: TitleRun[];
 }
 
 /** POST /api/vacancies/similar-titles (0.14.0): proposed job titles; nothing is saved. */

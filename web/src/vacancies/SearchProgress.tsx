@@ -8,6 +8,8 @@ import type { SearchStatus } from './useSearchStatus';
 // Known filter reasons — bundle vs. server version drift could put a reason here that this
 // bundle has no translation for; such reasons still count toward `filtered` (they truly were
 // filtered out) but are never handed to t() with an unknown key.
+/** From so many search days without anything new a title is named (0.14.0). */
+const QUIET_FROM = 3;
 const KNOWN_REASONS = new Set<string>(['seen', 'notRemote', 'student', 'internship', 'apprenticeship']);
 
 export function SearchProgress({ status }: { status: SearchStatus }) {
@@ -35,6 +37,7 @@ export function SearchProgress({ status }: { status: SearchStatus }) {
   const counters = filtered > 0
     ? t('vacancies.progress.countersWithReasons', { found: s.found, filtered, reasons, scored: s.scored, total: s.toScore })
     : t('vacancies.progress.counters', { found: s.found, filtered, scored: s.scored, total: s.toScore });
+  const quiet = (s.titleRuns ?? []).filter((r) => r.runs >= QUIET_FROM).map((r) => `“${r.title}”`);
   return (
     <div className="card search-progress" role="status">
       {errorBanner}
@@ -60,6 +63,7 @@ export function SearchProgress({ status }: { status: SearchStatus }) {
       {s.state === 'stopped' ? <p>{t('vacancies.progress.stopped', { scored: s.scored, total: s.toScore })}</p> : null}
       {s.state === 'interrupted' ? <p>{t('vacancies.progress.interrupted')}</p> : null}
       {s.state !== 'running' && s.moreAvailable > 0 ? <p>{t('vacancies.progress.more', { count: s.moreAvailable })}</p> : null}
+      {s.state === 'done' && quiet.length > 0 ? <p>{t('vacancies.progress.quiet', { titles: quiet.join(', ') })}</p> : null}
       {s.state !== 'running' ? s.warnings.map((w) => <p key={w} className="muted">{t(`vacancies.progress.warnings.${w}`)}</p>) : null}
     </div>
   );

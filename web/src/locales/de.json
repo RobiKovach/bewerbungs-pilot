@@ -587,6 +587,7 @@
       "removeTitle": "„{{title}}“ entfernen",
       "titlesFull": "Sie können bis zu {{max}} Berufe hinzufügen."
     },
+    "similar": { "ask": "Ähnliche Bezeichnungen vorschlagen", "running": "{{ai}} sucht ähnliche Bezeichnungen…", "none": "Keine weiteren passenden Bezeichnungen gefunden.", "title": "Welche davon sollen auch gesucht werden?", "add": "Ausgewählte hinzufügen ({{count}})" },
     "progress": {
       "phase": {
         "querying": "Suche auf der Jobbörse…",
@@ -605,6 +606,7 @@
       },
       "stop": "Stoppen",
       "done": "Suche abgeschlossen: {{count}} neue Angebote bewertet.",
+      "quiet": "Seit mindestens 3 Suchtagen nichts Neues: {{titles}}. Versuchen Sie „Ähnliche Bezeichnungen vorschlagen“, einen größeren Umkreis oder einen längeren Zeitraum.",
       "doneNothingNew": "Keine neuen Stellenangebote: Alle {{found}} gefundenen sind schon in Ihrer Liste oder wurden aussortiert. Fügen Sie Berufe hinzu oder wählen Sie einen längeren Zeitraum.",
       "doneNothingFound": "Nichts gefunden. Fügen Sie Berufe hinzu, vergrößern Sie den Umkreis oder wählen Sie einen längeren Zeitraum.",
       "stopped": "Suche gestoppt. {{scored}} von {{total}} Angeboten wurden bewertet; die übrigen können mit „Bewerten“ bewertet werden.",

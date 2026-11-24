@@ -587,6 +587,7 @@
       "removeTitle": "Usuń „{{title}}”",
       "titlesFull": "Możesz dodać do {{max}} stanowisk."
     },
+    "similar": { "ask": "Zaproponuj podobne nazwy", "running": "{{ai}} szuka podobnych nazw…", "none": "Nie znaleziono innych pasujących nazw.", "title": "Których z nich też szukać?", "add": "Dodaj wybrane ({{count}})" },
     "progress": {
       "phase": {
         "querying": "Szukanie w bazie ofert…",
@@ -605,6 +606,7 @@
       },
       "stop": "Zatrzymaj",
       "done": "Wyszukiwanie zakończone: oceniono {{count}} nowych ofert.",
+      "quiet": "Od co najmniej 3 dni wyszukiwania nic nowego: {{titles}}. Spróbuj „Zaproponuj podobne nazwy”, większego promienia albo dłuższego okresu.",
       "doneNothingNew": "Brak nowych ofert: wszystkie znalezione ({{found}}) są już na twojej liście albo zostały odfiltrowane. Dodaj stanowiska albo wybierz dłuższy okres.",
       "doneNothingFound": "Nic nie znaleziono. Dodaj stanowiska, zwiększ promień albo wybierz dłuższy okres.",
       "stopped": "Wyszukiwanie zatrzymane. Oceniono {{scored}} z {{total}} ofert; pozostałe można ocenić przyciskiem „Oceń”.",

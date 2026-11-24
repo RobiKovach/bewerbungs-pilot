@@ -6,7 +6,7 @@ import type { Profile, SearchState } from '@bp/shared';
 import { AppError } from '../src/errors.js';
 import { LlmQueue } from '../src/llm/queue.js';
 import { nullLogger } from '../src/log.js';
-import { MAX_NEW_PER_SEARCH, MAX_QUERIES, planQueries, SearchJob, takeFairly } from '../src/vacancies/search-job.js';
+import { MAX_NEW_PER_SEARCH, MAX_QUERIES, planQueries, SearchJob, takeFairly, nextTitleRuns } from '../src/vacancies/search-job.js';
 import type { SearchQuery } from '../src/vacancies/sources/types.js';
 import { VacancyStore } from '../src/vacancies/store.js';
 import { fakeSource, hit, profileWithWishes, scoringClaude, vacancy, type FakeSource } from './helpers/vacancies.js';
@@ -284,5 +284,19 @@ describe('0.8.0: scores remember the AI; the AI limit stops scoring', () => {
     expect(await run(job)).toMatchObject({ state: 'done', error: null });
     expect(store.list().filter((v) => v.scoreState === 'scored').every((v) => v.score?.provider === 'claude')).toBe(true);
     expect(store.list().map((v) => v.scoreState)).toEqual([...Array(10).fill('failed'), 'scored', 'scored']);
+  });
+});
+
+describe('titles that bring nothing new (0.14.0)', () => {
+  const runs = (...a: Parameters<typeof nextTitleRuns>) => nextTitleRuns(...a).map((r) => [r.title, r.runs]);
+  it('counts days in a row, once a day; new offers reset; a failed query does not count; an unwished title is forgotten', () => {
+    let s = nextTitleRuns([], ['A', 'B'], new Set(['A', 'B']), new Set(['B']), '2026-11-01');
+    expect(s.map((r) => [r.title, r.runs])).toEqual([['A', 1], ['B', 0]]);
+    s = nextTitleRuns(s, ['A', 'B'], new Set(['A', 'B']), new Set(), '2026-11-01');
+    expect(s.map((r) => [r.title, r.runs])).toEqual([['A', 1], ['B', 0]]);
+    s = nextTitleRuns(s, ['A', 'B'], new Set(['A', 'B']), new Set(), '2026-11-02');
+    expect(s.map((r) => [r.title, r.runs])).toEqual([['A', 2], ['B', 1]]);
+    expect(runs(s, ['A', 'B'], new Set(['B']), new Set(), '2026-11-03')).toEqual([['A', 2], ['B', 2]]);
+    expect(runs(s, ['B', 'C'], new Set(['B', 'C']), new Set(['B']), '2026-11-03')).toEqual([['B', 0], ['C', 1]]);
   });
 });
