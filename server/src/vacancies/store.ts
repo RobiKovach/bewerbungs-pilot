@@ -5,6 +5,7 @@ import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { migrate, MigrationError } from '../data/migrate.js';
 import { AppError } from '../errors.js';
 import { VACANCIES_SCHEMA_VERSION, VACANCY_ID, VACANCY_MIGRATIONS, VACANCY_LIMITS, isValidVacancy, validateVacancies } from './schema.js';
+import { removeSync } from '../data/remove.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
@@ -104,7 +105,7 @@ export class VacancyStore {
       this.commit([...this.items, card]);
     } catch (err) {
       // The text file was written but the card itself never made it into vacancies.json — do not leave it orphaned.
-      if (text !== null) fs.rmSync(this.textFile(card.id), { force: true });
+      if (text !== null) removeSync(this.textFile(card.id));
       throw err;
     }
     return structuredClone(card);
@@ -153,7 +154,7 @@ export class VacancyStore {
       v.contact = null; v.hasText = false; v.score = null; v.scoreState = 'notScored';
       delete v.contactAuto; // no contact, no 'found automatically' marks (final review M3)
     });
-    for (const id of ids) fs.rmSync(this.textFile(id), { force: true });
+    for (const id of ids) removeSync(this.textFile(id));
     return ids.length;
   }
 

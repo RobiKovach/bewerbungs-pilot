@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { removeSync } from '../data/remove.js';
 
 /**
  * "Starting BewerbungsPilot…" tab (0.12.0). The shortcut (installer/launch.vbs) opens a local page at once and starts
@@ -156,6 +157,6 @@ export function removeOldLaunchPages(dir: string, olderThanMs = 60_000, now = Da
   for (const name of names) {
     if (!LAUNCH_PAGE.test(name)) continue;
     const file = path.join(dir, name);
-    try { if (now - fs.statSync(file).mtimeMs >= olderThanMs) fs.rmSync(file, { force: true }); } catch { /* next start */ }
+    try { if (now - fs.statSync(file).mtimeMs >= olderThanMs) removeSync(file); } catch { /* next start */ }
   }
 }

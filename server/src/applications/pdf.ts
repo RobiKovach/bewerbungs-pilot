@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Browser } from 'puppeteer-core';
 import { AppError } from '../errors.js';
+import { removeSync } from '../data/remove.js';
 
 // Loaded on first use, not at start: a cold start reads every imported file from disk (0.12.0, faster start).
 export const loadPuppeteer = async () => (await import('puppeteer-core')).default;
@@ -35,7 +36,7 @@ const STALE_PROFILE_MS = 60 * 60 * 1000;
 /** Deletes a temporary browser profile; a failure (file still locked) is only a warning — never replaces the PDF or the original error. */
 export function removeProfileDir(dir: string, warn?: (event: string, data: Record<string, unknown>) => void): void {
   try {
-    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    removeSync(dir, { maxRetries: 5, retryDelay: 100 });
   } catch (err) {
     warn?.('pdf.profileCleanupFailed', { code: (err as NodeJS.ErrnoException).code ?? 'UNKNOWN' });
   }
@@ -48,7 +49,7 @@ export function sweepStaleProfiles(tmpRoot: string, now: number = Date.now(), ma
       if (!entry.isDirectory() || !entry.name.startsWith('pdf-')) continue;
       try {
         const dir = path.join(tmpRoot, entry.name);
-        if (now - fs.statSync(dir).mtimeMs > maxAgeMs) fs.rmSync(dir, { recursive: true, force: true });
+        if (now - fs.statSync(dir).mtimeMs > maxAgeMs) removeSync(dir);
       } catch { /* best effort */ }
     }
   } catch { /* no tmp folder yet */ }

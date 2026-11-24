@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { readJson } from '../data/atomic.js';
 import type { Logger } from '../log.js';
 import { isAlive, type ServerInfo } from './instance.js';
+import { removeSync } from '../data/remove.js';
 
 export interface InstanceLock { release(): void }
 
@@ -29,7 +30,7 @@ export function acquireInstanceLock(file: string, pid: number = process.pid): In
       const owner = readLockPid(file);
       if (owner !== null && isAlive(owner)) return null;
       // Stale: re-check right before removing so we don't delete a lock someone else just took over.
-      if (readLockPid(file) === owner) fs.rmSync(file, { force: true });
+      if (readLockPid(file) === owner) removeSync(file);
       continue;
     }
     fs.writeSync(fd, String(pid));
@@ -39,7 +40,7 @@ export function acquireInstanceLock(file: string, pid: number = process.pid): In
         if (released) return;
         released = true;
         try { fs.closeSync(fd); } catch { /* already closed */ }
-        if (readLockPid(file) === pid) fs.rmSync(file, { force: true });
+        if (readLockPid(file) === pid) removeSync(file);
       },
     };
   }
@@ -50,7 +51,7 @@ export function acquireInstanceLock(file: string, pid: number = process.pid): In
 export function removeServerInfoIfOwn(file: string, pid: number = process.pid): void {
   let info: ServerInfo | null;
   try { info = readJson<ServerInfo>(file); } catch { return; }
-  if (info?.pid === pid) fs.rmSync(file, { force: true });
+  if (info?.pid === pid) removeSync(file);
 }
 
 export interface ShutdownDeps {

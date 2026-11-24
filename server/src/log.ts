@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { removeSync } from './data/remove.js';
 
 type Level = 'info' | 'warn' | 'error';
 type LogFn = (event: string, data?: Record<string, unknown>) => void;
@@ -16,7 +17,7 @@ export function createFileLogger(dir: string, opts: { maxBytes?: number; maxFile
     let size: number;
     try { size = fs.statSync(file(0)).size; } catch { return; }
     if (size < maxBytes) return;
-    fs.rmSync(file(maxFiles - 1), { force: true });
+    removeSync(file(maxFiles - 1));
     for (let i = maxFiles - 2; i >= 0; i--) {
       if (fs.existsSync(file(i))) fs.renameSync(file(i), file(i + 1));
     }

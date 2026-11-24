@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { removeSync } from '../data/remove.js';
 
 export interface SecretStore {
   save(secret: string): Promise<void>;
@@ -57,7 +58,7 @@ export class DpapiSecretStore implements SecretStore {
     try {
       fs.renameSync(tmp, this.file);
     } catch (err) {
-      fs.rmSync(tmp, { force: true });
+      removeSync(tmp);
       throw err;
     }
   }
@@ -81,6 +82,6 @@ export class DpapiSecretStore implements SecretStore {
   }
 
   removeSync(): void {
-    fs.rmSync(this.file, { force: true });
+    removeSync(this.file);
   }
 }

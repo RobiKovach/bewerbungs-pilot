@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { removeSync } from '../data/remove.js';
 import { pipeline } from 'node:stream/promises';
 import type { FastifyRequest } from 'fastify';
 import type { StoredFile } from '@bp/shared';
@@ -31,7 +32,7 @@ export async function receiveUpload(req: FastifyRequest, files: ProfileFiles, ki
     if (part.file.truncated) throw new AppError('FILE_TOO_LARGE', `${kind} is larger than ${maxBytes} bytes`);
     return files.adopt(target, kind, part.filename);
   } catch (err) {
-    fs.rmSync(target, { force: true });
+    removeSync(target);
     throw mapUploadError(err);
   }
 }

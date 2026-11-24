@@ -59,7 +59,7 @@ describe('temporary profile cleanup', () => {
     }
   });
   it('a failing delete only warns with the error code (no path) and never throws', () => {
-    const rm = vi.spyOn(fs, 'rmSync').mockImplementation(() => { throw Object.assign(new Error('EBUSY: D:/secret/path'), { code: 'EBUSY' }); });
+    const rm = vi.spyOn(fs, 'lstatSync').mockImplementation(() => { throw Object.assign(new Error('EBUSY: D:/secret/path'), { code: 'EBUSY' }); });
     const warn = vi.fn();
     try {
       expect(() => removeProfileDir('D:/secret/path', warn)).not.toThrow();

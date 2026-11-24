@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { removeSync } from './remove.js';
 
 export class CorruptJsonError extends Error {
   constructor(public readonly file: string, cause: unknown) {
@@ -22,7 +23,7 @@ export function writeJsonAtomic(file: string, value: unknown): void {
     } catch (err) {
       const code = (err as NodeJS.ErrnoException).code ?? '';
       if (attempt >= 4 || !RETRYABLE.has(code)) {
-        fs.rmSync(tmp, { force: true });
+        removeSync(tmp);
         throw err;
       }
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);

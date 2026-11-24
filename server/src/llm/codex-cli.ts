@@ -8,6 +8,7 @@ import { composePrompt } from '../prompts/languages.js';
 import { AvailabilityCache, runCli, type CliCommand } from './cli-runner.js';
 import type { Availability, JsonSchema, LlmProvider, LlmTask } from './types.js';
 import { validateOutput } from './validate.js';
+import { removeSync } from '../data/remove.js';
 
 // Isolation (spec §3, proven in the spike and re-checked on Codex CLI 0.162.1): no shell/file/web/browser tools,
 // no plugins/hooks/MCP, no AGENTS.md, none of the person's config.toml or exec-policy rules, no session files.
@@ -235,7 +236,7 @@ export class CodexCliProvider implements LlmProvider {
       });
       return parseCodexOutput(out.stdout, out.stderr, out.exitCode);
     } finally {
-      fs.rmSync(schemaFile, { force: true });
+      removeSync(schemaFile);
     }
   }
 }

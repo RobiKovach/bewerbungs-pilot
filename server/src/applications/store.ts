@@ -6,6 +6,7 @@ import { AppError } from '../errors.js';
 import { migrate, MigrationError } from '../data/migrate.js';
 import { FROZEN } from './status.js';
 import { APPLICATION_ID, APPLICATIONS_SCHEMA_VERSION, forLog, LIST_MIGRATIONS, PACKAGE_MIGRATIONS, PACKAGE_SCHEMA_VERSION, validateList, validatePackage } from './schema.js';
+import { removeSync } from '../data/remove.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 export interface PhotoFile { data: Buffer; ext: '.jpg' | '.png' }
@@ -125,7 +126,7 @@ export class ApplicationStore {
 
   remove(id: string): void {
     this.require(id);
-    fs.rmSync(this.folder(id), { recursive: true, force: true });
+    removeSync(this.folder(id));
     this.packages.delete(id);
     this.writeList();
   }
@@ -154,7 +155,7 @@ export class ApplicationStore {
 
   private writePhoto(id: string, photo: PhotoFile | null): void {
     const folder = this.folder(id);
-    for (const ext of ['.jpg', '.png']) fs.rmSync(path.join(folder, `photo${ext}`), { force: true });
+    for (const ext of ['.jpg', '.png']) removeSync(path.join(folder, `photo${ext}`));
     if (photo) fs.writeFileSync(path.join(folder, `photo${photo.ext}`), photo.data);
   }
 

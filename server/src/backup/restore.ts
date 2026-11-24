@@ -7,6 +7,7 @@ import { AppError, type ErrorReason } from '../errors.js';
 import { createBackup } from './create.js';
 import { extractBackup, inspectBackup } from './extract.js';
 import { BACKUP_FILES, BACKUP_FOLDERS } from './format.js';
+import { removeSync } from '../data/remove.js';
 
 type Warn = (event: string, data: Record<string, unknown>) => void;
 
@@ -114,7 +115,7 @@ function swap(root: string, staging: string, old: string, warn: Warn): () => voi
     for (const step of [...done].reverse()) {
       const current = path.join(root, step.item);
       try {
-        if (step.movedIn) fs.rmSync(current, { recursive: true, force: true });
+        if (step.movedIn) removeSync(current);
         if (step.hadCurrent && fs.existsSync(path.join(old, step.item))) fs.renameSync(path.join(old, step.item), current);
       } catch (err) {
         // The before-restore backup still holds this data.

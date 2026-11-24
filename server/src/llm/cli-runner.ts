@@ -4,6 +4,7 @@ import path from 'node:path';
 import { AppError } from '../errors.js';
 import { nullLogger, type Logger } from '../log.js';
 import type { Availability } from './types.js';
+import { removeSync } from '../data/remove.js';
 
 export interface CliCommand { file: string; argsPrefix: string[] }
 export interface RunOutput { stdout: string; stderr: string; exitCode: number | null }
@@ -101,7 +102,7 @@ export function runCli(o: RunCliOptions): Promise<RunOutput> {
   try {
     inputs = stageInputFiles(cwd, o.files ?? []);
   } catch (err) {
-    try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
+    try { removeSync(cwd); } catch { /* best effort */ }
     return Promise.reject(new AppError('DATA_WRITE_FAILED', `could not copy an input file: ${err instanceof Error ? err.message : String(err)}`));
   }
 
@@ -121,7 +122,7 @@ export function runCli(o: RunCliOptions): Promise<RunOutput> {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
     } catch (err) {
-      try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
+      try { removeSync(cwd); } catch { /* best effort */ }
       reject(new AppError('LLM_FAILED', err instanceof Error ? err.message : String(err)));
       return;
     }
@@ -130,7 +131,7 @@ export function runCli(o: RunCliOptions): Promise<RunOutput> {
     // have the folder locked by the still-dying (or, if the kill genuinely failed, still-live)
     // process, so a first attempt can silently no-op — retried unconditionally on 'close' below.
     const cleanup = () => {
-      try { fs.rmSync(cwd, { recursive: true, force: true }); } catch { /* best effort */ }
+      try { removeSync(cwd); } catch { /* best effort */ }
     };
 
     const finish = (fn: () => void) => {

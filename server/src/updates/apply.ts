@@ -7,6 +7,7 @@ import type { Activity } from '../runtime/activity.js';
 import type { AvailableUpdate } from './checker.js';
 import type { Updater, UpdateStep } from './updater.js';
 import { isNewer } from './version-file.js';
+import { removeSync } from '../data/remove.js';
 
 /** Folders `update-*` older than this are removed at start (a just-finished installer may still run from its folder). */
 const OLD_UPDATE_FOLDER_MS = 30 * 60_000;
@@ -36,7 +37,7 @@ function evaluateStatusFile(file: string, logger: Logger, now: number): Evaluate
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
       logger.warn('update_status_unreadable', { code: (err as NodeJS.ErrnoException).code ?? 'PARSE' });
-      fs.rmSync(file, { force: true });
+      removeSync(file);
     }
     return { data: {}, pending: false };
   }
@@ -56,7 +57,7 @@ function evaluateStatusFile(file: string, logger: Logger, now: number): Evaluate
     data = { lastUpdateError: 'interrupted' };
     logger.warn('update_interrupted', { step: typeof s.step === 'string' ? s.step : null });
   }
-  fs.rmSync(file, { force: true });
+  removeSync(file);
   return { data, pending: false };
 }
 
@@ -98,7 +99,7 @@ export function cleanOldUpdateFolders(dir: string, logger: Logger, now: number =
     if (!name.startsWith('update-')) continue;
     const full = path.join(dir, name);
     try {
-      if (now - fs.statSync(full).mtimeMs > OLD_UPDATE_FOLDER_MS) fs.rmSync(full, { recursive: true, force: true });
+      if (now - fs.statSync(full).mtimeMs > OLD_UPDATE_FOLDER_MS) removeSync(full);
     } catch (err) {
       logger.warn('update_folder_cleanup_failed', { code: (err as NodeJS.ErrnoException).code ?? 'UNKNOWN' });
     }
@@ -204,7 +205,7 @@ export class UpdateApplier {
       ], { detached: true, stdio: 'ignore', windowsHide: true, cwd: work, env: installerEnv() });
       } catch (err) {
         // The installer did not start: the old app keeps running, the unpacked release is not needed.
-        if (path.basename(work).startsWith('update-')) fs.rmSync(work, { recursive: true, force: true, maxRetries: 2 });
+        if (path.basename(work).startsWith('update-')) removeSync(work, { maxRetries: 2 });
         throw new AppError('CONFLICT', `installer did not start: ${String(err)}`, 'updateStart');
       }
       // "Process started" is not "installer took over": it writes `running` first thing. Without it (blocked script,
@@ -216,7 +217,7 @@ export class UpdateApplier {
       while (!installerReportedRunning(this.d.statusFile, startedAt - 2000)) {
         if (Date.now() >= deadline) {
           try { child?.kill?.(); } catch { /* already gone */ }
-          if (path.basename(work).startsWith('update-')) fs.rmSync(work, { recursive: true, force: true, maxRetries: 2 });
+          if (path.basename(work).startsWith('update-')) removeSync(work, { maxRetries: 2 });
           throw new AppError('CONFLICT', 'installer did not report within the wait time', 'updateStart');
         }
         await new Promise((r) => setTimeout(r, this.d.startPollMs ?? 200));

@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { FileExt, StoredFile } from '@bp/shared';
 import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
+import { removeSync } from '../data/remove.js';
 
 export type UploadKind = 'cv' | 'photo' | 'document';
 
@@ -74,7 +75,7 @@ export class ProfileFiles {
     const name = cleanOriginalName(originalName);
     const ext = detectExt(readHead(uploadPath), name);
     if (!ext || !FILE_RULES[kind].exts.includes(ext)) {
-      fs.rmSync(uploadPath, { force: true });
+      removeSync(uploadPath);
       throw new AppError('FILE_TYPE_NOT_ALLOWED', `${kind}: detected ${ext ?? 'unknown type'}`, 'fileTypeDetected', { kind, detected: ext ?? 'unknown' });
     }
     const stored: StoredFile = {
@@ -85,7 +86,7 @@ export class ProfileFiles {
   }
 
   remove(file: Pick<StoredFile, 'id' | 'ext'>): void {
-    fs.rmSync(this.pathOf(file), { force: true });
+    removeSync(this.pathOf(file));
   }
 
   exists(file: Pick<StoredFile, 'id' | 'ext'>): boolean {
