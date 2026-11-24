@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.13.0",
-  "released": "2026-11-23",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.0",
-  "sha256": "15218f085dd2383c1f01d6c66a5a06ff22d0eb3d0d6ec3a4a33d27fc86fa7e92",
+  "latest": "0.13.1",
+  "released": "2026-11-24",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.1",
+  "sha256": "51b6a2f5f4398265125c592bd0a155244d8062e46a814e5c0a4d423c77fe3dee",
   "notes": {
-    "uk": "Новий блок «Про фірму» в картці вакансії: сайт, чим займається фірма, на що звернути увагу й факти для листа зі сторінок фірми. Контакт знаходиться сам і заповнює лише порожні поля. Одна кнопка «Завантажити».",
-    "en": "New \"About the company\" block on the vacancy card: website, what the company does, things to watch and facts for the letter, from the company's own pages. The contact is found automatically and fills only empty fields. One \"Download\" menu.",
-    "de": "Neuer Block „Über die Firma“ in der Stellenkarte: Website, was die Firma macht, worauf Sie achten sollten und Fakten für das Anschreiben – von den Seiten der Firma. Der Kontakt wird automatisch gefunden und füllt nur leere Felder. Ein Menü „Herunterladen“.",
-    "ru": "Новый блок «О фирме» в карточке вакансии: сайт, чем занимается фирма, на что обратить внимание и факты для письма со страниц фирмы. Контакт находится сам и заполняет только пустые поля. Одна кнопка «Скачать».",
-    "pl": "Nowy blok „O firmie” na karcie oferty: strona, czym zajmuje się firma, na co uważać i fakty do listu ze stron firmy. Kontakt znajduje się sam i wypełnia tylko puste pola. Jedno menu „Pobierz”.",
-    "ro": "Bloc nou „Despre firmă” pe cardul ofertei: site, ce face firma, la ce să fiți atenți și fapte pentru scrisoare, din paginile firmei. Contactul se găsește singur și completează doar câmpurile goale. Un singur meniu „Descărcare”."
+    "uk": "Тепер можна вибрати, куди зберегти файл: вікно «Зберегти як» для «Завантажити» й «Перенести на інший ПК» (Edge і Chrome) — у теку на ПК або одразу на флешку.",
+    "en": "You can now choose where a file is saved: a \"Save as\" window for \"Download\" and \"Move to another PC\" (Edge and Chrome) – a folder on the PC or straight to a USB stick.",
+    "de": "Sie können jetzt wählen, wo eine Datei gespeichert wird: Fenster „Speichern unter“ für „Herunterladen“ und „Auf einen anderen PC übertragen“ (Edge und Chrome) – Ordner auf dem PC oder direkt USB-Stick.",
+    "ru": "Теперь можно выбрать, куда сохранить файл: окно «Сохранить как» для «Скачать» и «Перенести на другой ПК» (Edge и Chrome) — в папку на ПК или сразу на флешку.",
+    "pl": "Teraz można wybrać, gdzie zapisać plik: okno „Zapisz jako” dla „Pobierz” i „Przenieś na inny komputer” (Edge i Chrome) – folder na komputerze albo od razu pendrive.",
+    "ro": "Acum puteți alege unde se salvează fișierul: fereastra „Salvare ca” pentru „Descărcare” și „Mutare pe alt PC” (Edge și Chrome) – un folder pe PC sau direct pe stick USB."
   }
 }
