@@ -2,6 +2,13 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.13.3
+
+- The "Save as" window starts in your downloads folder (not in Documents, which Windows often syncs with OneDrive) and
+  remembers the place you chose. The note about files without a password says so too.
+- The home page no longer claims that the job search, packages and sending are still being built.
+- **Find contact** in a package fills its empty fields at once instead of offering the value.
+
 ## What's new in 0.13.2
 
 - **Company research is more careful.** A guessed site that redirects to a job board or a social network is never taken

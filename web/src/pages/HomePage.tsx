@@ -12,6 +12,7 @@ export function HomePage() {
         <div className="btn-row">
           <a className="btn" href="#/guide">{t('home.openGuide')}</a>
           <a className="btn ghost" href="#/profile">{t('home.openProfile')}</a>
+          <a className="btn ghost" href="#/vacancies">{t('home.openVacancies')}</a>
         </div>
       </div>
     </section>

@@ -32,7 +32,7 @@ describe('saveFile with the "Save as" window', () => {
     const result = await saveFile({ suggestedName: 'Lebenslauf_Max.pdf', kind: 'pdf', make });
     expect(result).toBe('saved');
     expect(order).toEqual(['picker', 'fetch']);
-    expect(picker).toHaveBeenCalledWith(expect.objectContaining({ suggestedName: 'Lebenslauf_Max.pdf' }));
+    expect(picker).toHaveBeenCalledWith(expect.objectContaining({ suggestedName: 'Lebenslauf_Max.pdf', startIn: 'downloads', id: 'bewerbungspilot' }));
     expect(h.calls).toEqual(['createWritable', 'write', 'close']);
     expect(h.written).toHaveLength(1);
     expect(await (h.written[0] as Blob).text()).toBe('%PDF-1.7');

@@ -184,6 +184,21 @@ describe('ContactDialog', () => {
 describe('ContactDialog — research results (0.13.0)', () => {
   const card: VacancyContact = { ...EMPTY, salutation: 'Frau', name: 'Erika Musterfrau', email: 'bewerbung@muster.example' };
 
+  it('an offered value goes straight into a field that is empty here (the package keeps its own copy, 0.13.3)', async () => {
+    const found: ContactProposal = {
+      proposal: { ...EMPTY, email: 'jobs@muster.example', street: 'Weg 1', postcode: '01067', city: 'Dresden' },
+      found: ['email', 'street', 'postcode', 'city'],
+      differing: { email: 'jobs@muster.example', street: 'Weg 1', postcode: '01067', city: 'Dresden' },
+    };
+    const { user } = setup({ [FIND]: () => ({ body: found }) }, { canAa: false, partnerUrl: 'https://muster.example/jobs', initial: { ...EMPTY, city: 'Berlin' } });
+    await user.click(screen.getByRole('button', { name: "Read the company's page" }));
+    expect(await screen.findByDisplayValue('jobs@muster.example')).toBe(screen.getByLabelText('Email'));
+    expect(screen.queryByText('Email: jobs@muster.example')).toBeNull();
+    // The person's city is there: the address stays theirs and is only offered.
+    expect(screen.getByLabelText('Street')).toHaveValue('');
+    expect(screen.getByText('Street: Weg 1')).toBeInTheDocument();
+  });
+
   it('contact dialog: Take fills the field from differing', async () => {
     const found: ContactProposal = {
       proposal: { ...EMPTY, salutation: 'Herr', name: 'Max Muster', email: 'jobs@muster.example', phone: '0351 123' },

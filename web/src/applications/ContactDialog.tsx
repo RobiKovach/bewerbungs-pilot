@@ -73,7 +73,22 @@ export function ContactDialog({ vacancyId, canAa, partnerUrl, initial, auto, sav
     (Object.keys(offered) as Array<keyof VacancyContact>).forEach((k) => keys.delete(k));
     if (offered.name !== undefined) keys.delete('salutation');
     setDiffering(offered);
-    setContact((c) => ({ ...c, ...Object.fromEntries([...keys].map((k) => [k, r.proposal[k]])) }));
+    setContact((c) => {
+      const next = { ...c, ...Object.fromEntries([...keys].map((k) => [k, r.proposal[k]])) };
+      // The server compares with the card; a package keeps its own copy, where a field can still be empty. An empty field
+      // is filled (the address only as a whole) instead of being offered — an offer equal to the field is not shown.
+      const addressEmpty = ADDRESS.every((k) => c[k] === '');
+      for (const k of FIELDS) {
+        const v = offered[k];
+        if (v === undefined || (ADDRESS.includes(k) ? !addressEmpty : c[k] !== '')) continue;
+        if (k === 'name' && offered.salutation !== undefined) {
+          if (c.salutation !== '' && c.salutation !== offered.salutation) continue;
+          next.salutation = offered.salutation;
+        }
+        next[k] = v;
+      }
+      return next;
+    });
     setPhase({ kind: 'found' });
   };
   const run = async (from: ContactSource | 'paste') => {

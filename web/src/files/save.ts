@@ -15,7 +15,7 @@ export interface SaveRequest {
 /** The parts of the File System Access API used here (not in TypeScript's DOM types yet). */
 interface Writable { write(data: Blob): Promise<void>; close(): Promise<void>; abort?(): Promise<void> }
 interface SaveHandle { createWritable(): Promise<Writable>; getFile?(): Promise<{ size: number }>; remove?(): Promise<void> }
-type SavePicker = (options: { suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<SaveHandle>;
+type SavePicker = (options: { id: string; startIn: string; suggestedName: string; types: { description: string; accept: Record<string, string[]> }[] }) => Promise<SaveHandle>;
 
 const TYPES: Record<SaveRequest['kind'], { description: string; accept: Record<string, string[]> }> = {
   pdf: { description: 'PDF', accept: { 'application/pdf': ['.pdf'] } },
@@ -42,7 +42,9 @@ export async function saveFile(req: SaveRequest): Promise<SaveResult> {
   let handle: SaveHandle | null = null;
   if (typeof picker === 'function') {
     try {
-      handle = await picker.call(window, { suggestedName: req.suggestedName, types: [TYPES[req.kind]] });
+      // Without a start folder the window opens in Documents — often a OneDrive folder. With `id` the browser comes back
+      // to the place chosen last time (a USB stick).
+      handle = await picker.call(window, { id: 'bewerbungspilot', startIn: 'downloads', suggestedName: req.suggestedName, types: [TYPES[req.kind]] });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return 'cancelled';
       handle = null;
