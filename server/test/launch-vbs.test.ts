@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { removeTemp } from './helpers/cleanup.js';
 
 const LAUNCH_VBS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../installer/launch.vbs');
 const windows = process.platform === 'win32';
@@ -30,7 +31,7 @@ async function launch(opts: { optionsFile?: string; userOptions?: string }): Pro
   const t0 = Date.now();
   while (!fs.existsSync(out) && Date.now() - t0 < 20_000) await new Promise((r) => setTimeout(r, 100));
   const seen = fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : 'the server never started';
-  fs.rmSync(app, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  await removeTemp(app);
   return seen;
 }
 

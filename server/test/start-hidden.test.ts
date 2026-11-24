@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { removeTemp } from './helpers/cleanup.js';
 import { hiddenRunScript, quoteArg, startHidden } from '../src/updates/start-hidden.js';
 
 describe('starting the installer hidden (0.12.1)', () => {
@@ -64,6 +65,6 @@ describe('starting the installer hidden (0.12.1)', () => {
     const t0 = Date.now();
     while (!fs.existsSync(out) && Date.now() - t0 < 120_000) await new Promise((r) => setTimeout(r, 200));
     expect(fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : 'the script never ran').toBe('ran 7');
-    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    await removeTemp(dir);
   });
 });
