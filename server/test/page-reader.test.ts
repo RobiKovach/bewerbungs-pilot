@@ -296,7 +296,7 @@ describe('BrowserPageReader sessions (0.13.0)', () => {
       { text: 'Impressum', href: 'https://jobs.example.de/impressum' },
       { text: 'x'.repeat(80), href: 'https://www.firma.de/' },
     ]);
-    expect(read.links.some((l) => l.href.startsWith('javascript:'))).toBe(false);
+    expect(read.links.some((l) => /^(?:javascript|data|vbscript):/i.test(l.href))).toBe(false);
   });
 
   it('a page answered from an internal address throws blocked and the session stays usable', async () => {

@@ -164,7 +164,10 @@ export function contactFromPages(pages: FoundPage[], site: string): VacancyConta
   for (const p of ordered) {
     if (!c.email && p.kind !== 'news') {
       const emails = pageEmails(p, site);
-      if (emails.length) c.email = [...emails].sort((a, b) => emailRank(a, site) - emailRank(b, site))[0];
+      // On a board the ad's own contact block beats any other box of the page (a footer agency, 0.13.2).
+      const block = onBoard(p, site) ? normEmail(parsedOf(p, site)?.email ?? '') : '';
+      const rank = (e: string) => (block !== '' && e === block ? -10 : 0) + emailRank(e, site);
+      if (emails.length) c.email = [...emails].sort((a, b) => rank(a) - rank(b))[0];
     }
     if (!c.phone) c.phone = pagePhones(p, site)[0] ?? '';
     if (!c.name && NAME_KINDS.has(p.kind)) {

@@ -2,6 +2,15 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.13.2
+
+- **Company research is more careful.** A guessed site that redirects to a job board or a social network is never taken
+  for the company's own site. A pasted offer page without an Impressum link is checked through the Impressum of its home
+  page, and short names (three letters) are recognised too. On a job board the ad's own contact beats other addresses on
+  the page.
+- Saving a contact no longer shows an error when only the "found automatically" mark in the package could not be updated.
+- Library updates, including the fixes for glob and minimatch; the released program has no known vulnerable library.
+
 ## What's new in 0.13.1
 
 - **Choose where files are saved.** In Edge and Chrome, **Settings → Move to another PC → Save file** and every entry of

@@ -189,3 +189,52 @@ describe('I2: the research uses the background lane, Find contact the interactiv
     expect(lanes).toEqual(['interactive', 'background']);
   });
 });
+
+describe('0.13.2: the parked final review findings', () => {
+  const shop = page('https://www.muster-shop.example/', 'Muster Shop GmbH');
+
+  it('an unlisted page without an Impressum link is confirmed by the Impressum linked from its home page', async () => {
+    const { out } = await run({
+      'https://www.mshop.example/jobs/1': page('https://www.mshop.example/jobs/1', 'Webentwickler bei Muster Shop GmbH'),
+      'https://www.mshop.example': page('https://www.mshop.example/', 'Willkommen', [['Impressum', 'https://www.mshop.example/impressum']]),
+      'https://www.mshop.example/impressum': page('https://www.mshop.example/impressum', 'Impressum\nMuster Shop GmbH\nShopstraße 5\n01069 Dresden'),
+    }, { vacancyUrl: 'https://www.mshop.example/jobs/1', company: 'Muster Shop GmbH' });
+    expect(out.website).toBe('https://www.mshop.example');
+    expect(out.contact.street).toBe('Shopstraße 5');
+  });
+
+  it('a board whose home page only names the company as a customer is still not its site', async () => {
+    const { out } = await run({
+      'https://www.jobs-ost.example/1': page('https://www.jobs-ost.example/1', 'Webentwickler bei Muster Shop GmbH'),
+      'https://www.jobs-ost.example': page('https://www.jobs-ost.example/', 'Top-Arbeitgeber: Muster Shop GmbH'),
+    }, { vacancyUrl: 'https://www.jobs-ost.example/1', company: 'Muster Shop GmbH' });
+    expect(out.website).toBe('');
+    expect(out.pages.map((p) => p.url)).toEqual(['https://www.jobs-ost.example/1']);
+  });
+
+  it('a three-letter host that is exactly the name is confirmed by its home page', async () => {
+    const { out } = await run({
+      'https://www.abc.example/jobs/1': page('https://www.abc.example/jobs/1', 'Webentwickler gesucht'),
+      'https://www.abc.example': page('https://www.abc.example/', 'ABC GmbH – Software'),
+    }, { vacancyUrl: 'https://www.abc.example/jobs/1', company: 'ABC GmbH' });
+    expect(out.website).toBe('https://www.abc.example');
+  });
+
+  it('a guess that redirects to a social network or board is never the company site', async () => {
+    const { out } = await run({
+      'https://www.muster-shop.de': { ...shop, url: 'https://www.linkedin.com/company/muster-shop' },
+    }, { company: 'Muster Shop GmbH' });
+    expect(out.website).toBe('');
+    expect(out.pages).toEqual([]);
+  });
+
+  it('the contact block of the  beats a recruiting-like box in the footer of a board', async () => {
+    const text = [
+      'Webentwickler bei Muster Shop GmbH', 'Kontaktadresse', 'Muster Shop GmbH', 'Frau Erika Beispiel',
+      'E-Mail: erika@muster-it.example', '', 'Webdesign: jobs@agentur.example',
+    ].join('\n');
+    const { out } = await run({ 'https://www.itsax.de/stellen/9': page('https://www.itsax.de/stellen/9', text) },
+      { vacancyUrl: 'https://www.itsax.de/stellen/9', company: 'Muster Shop GmbH' });
+    expect(out.contact.email).toBe('erika@muster-it.example');
+  });
+});

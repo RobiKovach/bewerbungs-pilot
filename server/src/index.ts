@@ -189,6 +189,7 @@ async function main(): Promise<void> {
   });
   applicationJob.init();
   const googleAuth = new LibraryGoogleAuth();
+  const news = newsSource();
   const fakeMailDir = path.join(paths.tmp, 'fake-mail');
   const fileMailer = new FakeFileMailer(fakeMailDir);
   const updates = new UpdateChecker({
@@ -229,7 +230,7 @@ async function main(): Promise<void> {
     activity: new Activity(),
     // News are off (Robert 2026-11-23): nothing is asked and the card has no news section. Test mode follows the same
     // switch and never asks Google News (Ruling R3): while news are on it gets a fixed fake list.
-    research: { fetchNews: newsSource() && devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : newsSource() },
+    research: { fetchNews: news && devUpdateSourceAllowed(process.env, process.argv) ? fakeNews : news },
     backup: {
       paths, folder: (chosen) => resolveBackupFolder(chosen), openFolder,
       // After a restore every store reads its files again (synchronous: nothing can start in between).

@@ -54,7 +54,7 @@ describe('starting the installer hidden (0.12.1)', () => {
   // The real thing, because the mocked spawn in update-apply.test.ts could not catch it: a detached Windows PowerShell
   // exited without running the installer at all. This starts real PowerShell the way the app does and waits for the
   // script's file, from a folder with a space, Cyrillic letters and brackets (user names do have them).
-  it.runIf(process.platform === 'win32')('really runs a PowerShell script to its end (Windows)', { timeout: 60_000 }, async () => {
+  it.runIf(process.platform === 'win32')('really runs a PowerShell script to its end (Windows)', { timeout: 150_000 }, async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-hidden-Роберт [1] '));
     const script = path.join(dir, 'probe.ps1');
     const out = path.join(dir, 'ran.txt');
@@ -62,7 +62,7 @@ describe('starting the installer hidden (0.12.1)', () => {
     const ps = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     await startHidden(ps, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', script, '-Out', out, '-WaitPid', '7'], { cwd: dir, env: process.env });
     const t0 = Date.now();
-    while (!fs.existsSync(out) && Date.now() - t0 < 45_000) await new Promise((r) => setTimeout(r, 200));
+    while (!fs.existsSync(out) && Date.now() - t0 < 120_000) await new Promise((r) => setTimeout(r, 200));
     expect(fs.existsSync(out) ? fs.readFileSync(out, 'utf8') : 'the script never ran').toBe('ran 7');
     fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   });

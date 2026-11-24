@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { ApplicationJobState, ApplicationView, CompanyResearch, VacancyContact } from '@bp/shared';
 import { ApplicationJob } from '../src/applications/job.js';
 import { allowedFor } from '../src/applications/personal-data.js';
@@ -169,6 +169,16 @@ describe('0.13.0: auto contact in packages', () => {
     expect(after.application.vacancy.contactAuto).toEqual(['phone']);
     // The package keeps its own contact (a snapshot); only the marks follow the confirmation.
     expect(after.application.vacancy.contact?.phone).toBe('0351 1234567');
+  });
+
+  it('a package that cannot be written does not turn the saved contact into an error (0.13.2)', async () => {
+    const contact: VacancyContact = { email: 'jobs@muster-shop.example', salutation: '', name: '', phone: '', street: '', postcode: '', city: '' };
+    const { ctx, id } = await created({ contact, contactAuto: ['email'] });
+    vi.spyOn(ctx.applicationStore, 'update').mockImplementationOnce(() => { throw new Error('disk'); });
+    const res = await send(ctx, 'PUT', '/api/vacancies/fav1/contact', contact);
+    expect(res.statusCode).toBe(200);
+    expect(Object.hasOwn(ctx.vacancyStore.require('fav1'), 'contactAuto')).toBe(false);
+    expect((await getView(ctx, id)).recipientAuto).toEqual({ domain: 'muster-shop.example' });
   });
 
   it('a different e-mail confirmed on the card keeps the warning in the package', async () => {

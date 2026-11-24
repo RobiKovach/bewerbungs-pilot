@@ -148,12 +148,14 @@ export class ResearchJob {
       });
       // Hidden meanwhile: no results, but the card must not stay "researching" when it comes back. Shown and still
       // ours but not written: the write itself failed (logged) — that is no "stopped" (final review M4).
+      let result = 'ok';
       if (!written) {
         const now = this.d.store.get(id);
         const stopped = !now || now.status === 'hidden' || this.gen.get(id) !== g;
+        result = stopped ? 'dropped' : 'failed';
         this.fail(id, g, stopped ? 'LLM_CANCELLED' : 'UNKNOWN', { evenHidden: true });
       }
-      this.d.logger.info('research.done', { result: written ? 'ok' : 'dropped', host: hostOf(c.website), pages: c.pages.length });
+      this.d.logger.info('research.done', { result, host: hostOf(c.website), pages: c.pages.length });
     } catch (err) {
       const code = codeOf(err);
       if (this.gen.get(id) === g) this.fail(id, g, code, { evenHidden: true });

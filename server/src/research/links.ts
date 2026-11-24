@@ -252,6 +252,18 @@ export function hostHasSlug(host: string, slugs: string[]): boolean {
     l === s || l.startsWith(`${s}-`) || l.endsWith(`-${s}`) || l.includes(`-${s}-`)));
 }
 
+/** Is a host label exactly a slug of the name (`www.sap.com` for SAP)? Enough for a guess, which is checked on the page. */
+export function hostIsGuess(url: string, company: string): boolean {
+  const u = webUrl(url);
+  return u !== null && guessSlugs(company).some((s) => u.hostname.toLowerCase().replace(/.$/, '').split('.').slice(-2, -1)[0] === s);
+}
+
+/** Could this address be a company's own site — a plain web address, no board, applicant system or ignored host? */
+export function ownSiteHost(url: string): boolean {
+  const u = webUrl(url);
+  return u !== null && !isBoard(u.hostname) && !isApplyService(u.hostname) && !isIgnored(u.hostname);
+}
+
 /**
  * A pasted page on no list whose host does not name the company (final review I1): possibly a board the lists do not
  * know. Its own Impressum decides (collect); until then its footer, phone links and address are not the employer's.

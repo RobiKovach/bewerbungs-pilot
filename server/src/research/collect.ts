@@ -3,7 +3,7 @@ import { AppError } from '../errors.js';
 import { isAaHost } from '../vacancies/aa-links.js';
 import type { PageLink, PageReader, ReadSession } from '../vacancies/sources/page-reader.js';
 import { contactFromPages, mailtoAddress, type FoundPage } from './contact-merge.js';
-import { nameOnPage, nextPages, oneWordNameShown, siteOf, unknownPage, websiteCandidates, type PageKind } from './links.js';
+import { hostIsGuess, nameOnPage, nextPages, oneWordNameShown, ownSiteHost, siteOf, unknownPage, websiteCandidates, type PageKind } from './links.js';
 import type { fetchNews as FetchNews } from './news.js';
 
 /**
@@ -143,13 +143,22 @@ export async function collect(input: CollectInput, mode: CollectMode, deps: Coll
           if (!c.nameCheck) { website = firstSite; break; }
           // A page on no list whose host does not name the company may be an unknown board (final review I1): only its
           // own Impressum naming the company makes it the company's site. A board's Impressum is no source.
-          const imprint = nextPages(firstSite, first.links, opened).find((n) => n.kind === 'impressum');
+          let imprint = nextPages(firstSite, first.links, opened).find((n) => n.kind === 'impressum');
+          // No Impressum link on the ad itself: the home page of the same site may have one (0.13.2). A home page that
+          // only names the company counts just when the host is the name itself (www.sap.com), as for a guess.
+          const home = imprint ? null : await open(firstSite, 'home');
+          if (home && siteOf(home.url) === siteOf(firstSite)) {
+            if (hostIsGuess(first.url, input.company) && nameOnPage(input.company, home.text)) { website = firstSite; break; }
+            imprint = nextPages(firstSite, home.links, opened).find((n) => n.kind === 'impressum');
+          }
           const imp = imprint ? await open(imprint.url, 'impressum') : null;
           if (imp && nameOnPage(input.company, imp.text)) { website = firstSite; break; }
-          if (imp) pages.splice(pages.indexOf(imp), 1);
+          for (const p of [imp, home]) if (p) pages.splice(pages.indexOf(p), 1);
           continue;
         }
         const home = await open(c.url, 'home');
+        // Redirected to a board, a social network or an applicant system: that is nobody's own site (0.13.2).
+        if (home && !ownSiteHost(home.url)) { pages.splice(pages.indexOf(home), 1); continue; }
         // The site is where the home page landed: a guess may redirect (www.isax.de → www.isax.com, Ruling R46).
         const landed = home ? new URL(home.url).origin : c.url;
         if (!c.nameCheck || (home && nameOnPage(input.company, home.text))) { website = landed; break; }

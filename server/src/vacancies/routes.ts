@@ -231,7 +231,13 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     const contact = normaliseContact(req.body as VacancyContact | null);
     // Saved by the person: the "found automatically — check" marks go (spec 3.2).
     const saved = d.store.update(id, (x) => { x.contact = contact; delete x.contactAuto; });
-    confirmInPackage(id, contact);
+    // The contact is saved already: a package that cannot be written must not turn this into an error. Its marks stay,
+    // so the send window keeps warning — the safe side.
+    try {
+      confirmInPackage(id, contact);
+    } catch (err) {
+      d.logger.warn('contact.confirm_package_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
+    }
     return view(saved);
   });
 
