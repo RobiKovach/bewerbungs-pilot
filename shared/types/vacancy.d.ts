@@ -119,6 +119,8 @@ export interface SearchState {
   finishedAt: string | null;
   /** Kept from search to search (0.14.0). Absent in files from before. */
   titleRuns?: TitleRun[];
+  /** The daily search (0.14.0) whose result the person has not seen yet. */
+  automatic?: boolean;
 }
 
 /** POST /api/vacancies/similar-titles (0.14.0): proposed job titles; nothing is saved. */

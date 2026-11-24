@@ -136,14 +136,20 @@ export class SearchJob {
     return structuredClone(this.current);
   }
 
-  start(): void {
+  /** `maxNew`: the most offers taken in; `automatic`: the daily search (its result is announced until seen). */
+  start(opts: { maxNew?: number; automatic?: boolean } = {}): void {
     if (this.current.state === 'running') throw new AppError('SEARCH_ALREADY_RUNNING', 'a search is running');
     assertWishesComplete(this.d.profile().sections.wishes.data);
     this.ctrl = new AbortController();
     this.created = [];
-    this.set({ ...idleState(), state: 'running', startedAt: this.stamp(), titleRuns: this.current.titleRuns ?? [] });
+    this.set({ ...idleState(), state: 'running', startedAt: this.stamp(), titleRuns: this.current.titleRuns ?? [], automatic: opts.automatic === true });
     this.d.logger.info('search_started', {});
-    this.running = this.run(this.ctrl.signal).catch((err: unknown) => this.finishWithError(err, this.ctrl?.signal));
+    this.running = this.run(this.ctrl.signal, opts.maxNew ?? MAX_NEW_PER_SEARCH).catch((err: unknown) => this.finishWithError(err, this.ctrl?.signal));
+  }
+
+  /** The person has seen (or closed) the result of that daily search. */
+  seen(startedAt: string | null): void {
+    if (this.current.automatic && this.current.startedAt === startedAt && this.current.state !== 'running') this.set({ automatic: false });
   }
 
   stop(): void {
@@ -154,7 +160,7 @@ export class SearchJob {
     return this.running;
   }
 
-  private async run(signal: AbortSignal): Promise<void> {
+  private async run(signal: AbortSignal, maxNew: number): Promise<void> {
     this.d.store.compactHidden();
     const profile = this.d.profile();
     const wishes = profile.sections.wishes.data;
@@ -190,7 +196,7 @@ export class SearchJob {
     const filteredOut: Partial<Record<FilterReason, number>> = {};
     for (const r of rejected) filteredOut[r.reason] = (filteredOut[r.reason] ?? 0) + 1;
     const titles = [...new Set(queries.map((q) => q.jobTitle))];
-    const take = takeFairly(passed, (h) => titleOf.get(h.sourceId) ?? '', titles, MAX_NEW_PER_SEARCH);
+    const take = takeFairly(passed, (h) => titleOf.get(h.sourceId) ?? '', titles, maxNew);
     let toScore = take.length;
     this.set({ found: hits.size, filteredOut, afterFilter: passed.length, toScore, moreAvailable: passed.length - take.length, warnings: [...warnings] });
 

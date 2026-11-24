@@ -4,7 +4,7 @@ import type { RouteHandler } from './fetchMock';
 export function baseSettings(over: Partial<Settings> = {}): Settings {
   return {
     schemaVersion: 5, language: 'en', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: 'claude' },
-    vacancies: { publishedWithinDays: 14 }, mail: null, updates: { check: true, dismissedVersion: null }, backups: { folder: null }, usage: { ping: true, noticeShown: false }, ...over,
+    vacancies: { publishedWithinDays: 14, dailySearch: false }, mail: null, updates: { check: true, dismissedVersion: null }, backups: { folder: null }, usage: { ping: true, noticeShown: false }, ...over,
   };
 }
 
@@ -17,7 +17,7 @@ export function settingsRoutes(initial: Settings) {
       const p = JSON.parse(String(init?.body)) as SettingsPatch;
       state = {
         ...state, language: p.language ?? state.language, onboarding: { ...state.onboarding, ...p.onboarding },
-        vacancies: p.vacancies ?? state.vacancies, llm: p.llm ? { ...state.llm, ...p.llm } : state.llm,
+        vacancies: { ...state.vacancies, ...p.vacancies }, llm: p.llm ? { ...state.llm, ...p.llm } : state.llm,
         updates: p.updates ? { ...state.updates, ...p.updates } : state.updates,
         usage: p.usage ? { ...state.usage, ...p.usage } : state.usage,
       };

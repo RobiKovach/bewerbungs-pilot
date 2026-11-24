@@ -197,6 +197,7 @@ export const api = {
   setResearchWebsite: (id: string, url: string) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/research/website`, { url }),
   saveVacancyContact: (id: string, contact: VacancyContact | null) => request<VacancyView>('PUT', `/api/vacancies/${encodeURIComponent(id)}/contact`, contact),
   similarTitles: (signal?: AbortSignal) => request<SimilarTitlesView>('POST', '/api/vacancies/similar-titles', {}, signal),
+  searchSeen: (startedAt: string | null) => request<SearchState>('POST', '/api/vacancies/search/seen', { startedAt }),
   startSearch: () => request<SearchState>('POST', '/api/vacancies/search', {}),
   searchState: () => request<SearchState>('GET', '/api/vacancies/search'),
   stopSearch: () => request<SearchState>('POST', '/api/vacancies/search/stop', {}),

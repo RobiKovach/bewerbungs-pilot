@@ -176,8 +176,8 @@ const settingsPatchSchema = {
     vacancies: {
       type: 'object',
       additionalProperties: false,
-      required: ['publishedWithinDays'],
-      properties: { publishedWithinDays: { type: 'integer', enum: [...PUBLISHED_WITHIN_DAYS] } },
+      minProperties: 1,
+      properties: { publishedWithinDays: { type: 'integer', enum: [...PUBLISHED_WITHIN_DAYS] }, dailySearch: { type: 'boolean' } },
     },
     updates: {
       type: 'object', additionalProperties: false, required: ['check'],

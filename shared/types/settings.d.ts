@@ -18,7 +18,8 @@ export interface Settings {
   language: Language | null;
   onboarding: { currentStep: string | null; completed: boolean };
   llm: { timeoutSec: number; provider: ProviderId | null };
-  vacancies: { publishedWithinDays: PublishedWithinDays };
+  /** dailySearch (0.14.0): one automatic search a day while the app is open; off unless switched on. */
+  vacancies: { publishedWithinDays: PublishedWithinDays; dailySearch: boolean };
   mail: MailSettings | null;
   /** Daily look at our version.json (spec 0.9.0); dismissedVersion = the version whose banner was closed with ×. */
   updates: { check: boolean; dismissedVersion: string | null };
@@ -34,7 +35,7 @@ export type SettingsView = Omit<Settings, 'usage'> & { usage: Omit<Settings['usa
 export interface SettingsPatch {
   language?: Language;
   onboarding?: Partial<Settings['onboarding']>;
-  vacancies?: { publishedWithinDays: PublishedWithinDays };
+  vacancies?: Partial<Settings['vacancies']>;
   llm?: { provider: ProviderId };
   updates?: { check: boolean };
   usage?: { ping?: boolean; noticeShown?: true };

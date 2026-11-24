@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
 import { DataNotice } from './DataGate';
+import { DailySearchBanner } from './components/DailySearchBanner';
 import { useIsDemo } from './components/DemoBanner';
 import { Layout } from './components/Layout';
 import { confirmLeave, setUnsaved } from './leaveGuard';
@@ -60,6 +61,7 @@ export function App() {
     <UnsavedProvider onChange={setUnsaved}>
       <Layout route={route} onQuit={() => void onQuit()} showNav={!onboarding} demo={demo} onLeaveDemo={() => void onLeaveDemo()}>
         <DataNotice />
+        {onboarding || demo ? null : <DailySearchBanner />}
         <ImportNotice />
         {page}
       </Layout>

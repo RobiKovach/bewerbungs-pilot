@@ -47,7 +47,8 @@ import { addressRules, testPagesPort } from './vacancies/sources/test-pages.js';
 import { AaContactWindow } from './vacancies/sources/aa-contact-window.js';
 import { HttpPdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
-import { SearchJob } from './vacancies/search-job.js';
+import { DailySearch } from './vacancies/daily-search.js';
+import { assertWishesComplete, SearchJob } from './vacancies/search-job.js';
 import { cleanOldUpdateFolders, readUpdateOutcome } from './updates/apply.js';
 import { UpdateChecker } from './updates/checker.js';
 import { devUpdateSource, devUpdateSourceAllowed, Updater, zipUrlFor } from './updates/updater.js';
@@ -228,6 +229,15 @@ async function main(): Promise<void> {
     folder: () => resolveBackupFolder(settings.get().backups.folder),
     ready: () => !newerData && settings.get().onboarding.completed && dataProblems(paths).length === 0,
   });
+  const dailySearch = demo || fakeLlm || fakeMail ? null : new DailySearch({
+    job: searchJob, activity, logger, stateFile: path.join(paths.root, 'daily-search.json'),
+    ready: () => {
+      const s = settings.get();
+      if (newerData || !s.vacancies.dailySearch || !s.onboarding.completed || s.llm.provider === null) return false;
+      try { assertWishesComplete(profileStore.get().sections.wishes.data); } catch { return false; }
+      return true;
+    },
+  });
   const app = await buildApp({
     dataState: { newer: () => newerData },
     settings, providers, install, queue, logger, version,
@@ -290,7 +300,7 @@ async function main(): Promise<void> {
   });
 
   const shutdown = createShutdown({
-    abortAll: () => { updates.stop(); usage?.stop(); autoBackup?.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
+    abortAll: () => { updates.stop(); usage?.stop(); autoBackup?.stop(); dailySearch?.stop(); searchJob.stop(); applicationJob.cancel(); queue.abortAll(); },
     close: () => app.close(),
     releaseLock: () => lock.release(),
     serverFile: paths.server,
@@ -315,6 +325,7 @@ async function main(): Promise<void> {
   updates.start();
   usage?.start();
   autoBackup?.start();
+  dailySearch?.start();
   if (noOpen) console.log(`Open BewerbungsPilot: ${openUrl(HOST, port, key)}`);
   else if (launchCode && await waitForRedeem(() => launchCodes.redeemed(launchCode), { seen: () => launchCodes.seen(launchCode) })) logger.info('opened_by_launch_tab');
   else {

@@ -25,7 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: null,
   onboarding: { currentStep: null, completed: false },
   llm: { timeoutSec: 180, provider: null },
-  vacancies: { publishedWithinDays: 14 },
+  vacancies: { publishedWithinDays: 14, dailySearch: false },
   mail: null,
   updates: { check: true, dismissedVersion: null },
   backups: { folder: null },
@@ -139,7 +139,7 @@ function normalize(raw: unknown): Settings {
     language?: unknown;
     onboarding?: { currentStep?: unknown; completed?: unknown };
     llm?: { timeoutSec?: unknown; provider?: unknown };
-    vacancies?: { publishedWithinDays?: unknown };
+    vacancies?: { publishedWithinDays?: unknown; dailySearch?: unknown };
     mail?: unknown;
     updates?: { check?: unknown; dismissedVersion?: unknown };
     backups?: { folder?: unknown };
@@ -166,6 +166,7 @@ function normalize(raw: unknown): Settings {
     llm: { timeoutSec: typeof timeout === 'number' && timeout >= 30 ? timeout : d.llm.timeoutSec, provider },
     vacancies: {
       publishedWithinDays: PUBLISHED_WITHIN_DAYS.find((n) => n === r.vacancies?.publishedWithinDays) ?? d.vacancies.publishedWithinDays,
+      dailySearch: r.vacancies?.dailySearch === true,
     },
     mail: normalizeMail(r.mail),
     // v2 → v3: the check is on unless someone switched it off.

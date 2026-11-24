@@ -234,7 +234,7 @@ describe('PATCH /api/settings vacancies', () => {
     const { app } = await makeApp();
     const ok = await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { vacancies: { publishedWithinDays: 3 } } });
     expect(ok.statusCode).toBe(200);
-    expect(ok.json().vacancies).toEqual({ publishedWithinDays: 3 });
+    expect(ok.json().vacancies).toEqual({ publishedWithinDays: 3, dailySearch: false });
     const bad = await app.inject({ method: 'PATCH', url: '/api/settings', headers: H, payload: { vacancies: { publishedWithinDays: 4 } } });
     expect(bad.statusCode).toBe(400);
   });

@@ -97,6 +97,21 @@ export function SettingsPage({ onQuit }: { onQuit: () => void }) {
         <MailSettingsBlock key={restores} />
       </div>
 
+      {demo ? null : (
+        <div className="card settings-section">
+          <h2>{t('settings.dailySearchTitle')}</h2>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={settings.vacancies.dailySearch}
+              onChange={(e) => { const dailySearch = e.target.checked; void guarded(() => update({ vacancies: { dailySearch } })); }}
+            />{' '}
+            {t('settings.dailySearch')}
+          </label>
+          <p className="muted">{t('settings.dailySearchExplain')}</p>
+        </div>
+      )}
+
       {/* The demo copy has its own data folder: a transfer file from it would be of no use. */}
       {demo ? null : (
         <div className="card settings-section">

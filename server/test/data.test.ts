@@ -101,7 +101,7 @@ describe('SettingsStore', () => {
 describe('settings: vacancies.publishedWithinDays', () => {
   const fresh = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bp-settings-')), 'settings.json');
   it('defaults to 14 days', () => {
-    expect(new SettingsStore(fresh()).load().vacancies).toEqual({ publishedWithinDays: 14 });
+    expect(new SettingsStore(fresh()).load().vacancies).toEqual({ publishedWithinDays: 14, dailySearch: false });
   });
   it('keeps a valid stored value and repairs an invalid one', () => {
     const file = fresh();
@@ -228,7 +228,7 @@ describe('settings v3 — updates', () => {
     write(dir, { schemaVersion: 2, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' }, vacancies: { publishedWithinDays: 7 }, mail });
     expect(load(dir)).toEqual({
       schemaVersion: 5, language: 'uk', onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 240, provider: 'chatgpt' },
-      vacancies: { publishedWithinDays: 7 }, mail, updates: { check: true, dismissedVersion: null }, backups: { folder: null }, usage: { ping: true, installId: expect.any(String), noticeShown: false },
+      vacancies: { publishedWithinDays: 7, dailySearch: false }, mail, updates: { check: true, dismissedVersion: null }, backups: { folder: null }, usage: { ping: true, installId: expect.any(String), noticeShown: false },
     });
     // v2 with completed onboarding and no provider stays null — the v1 rule applies to neither v2 nor v3.
     write(dir, { schemaVersion: 2, onboarding: { currentStep: null, completed: true }, llm: { timeoutSec: 180, provider: null } });

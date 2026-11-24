@@ -73,6 +73,8 @@ const manualBody = {
 };
 const isHttpUrl = (s: string) => { try { return ['http:', 'https:'].includes(new URL(s).protocol); } catch { return false; } };
 
+const seenBody = { type: 'object', additionalProperties: false, required: ['startedAt'], properties: { startedAt: { type: ['string', 'null'], maxLength: 40 } } };
+
 const ALLOWED: Record<VacancyStatus, readonly VacancyStatus[]> = {
   new: ['favorite', 'hidden'],
   favorite: ['new'],
@@ -111,6 +113,11 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
   app.post('/api/vacancies/search/stop', async () => {
     d.job.stop();
     await d.job.whenIdle();
+    return d.job.state();
+  });
+
+  app.post('/api/vacancies/search/seen', { schema: { body: seenBody } }, async (req) => {
+    d.job.seen((req.body as { startedAt: string | null }).startedAt);
     return d.job.state();
   });
 
