@@ -4,7 +4,7 @@ import type { Migration } from '../data/migrate.js';
 import { PROVIDER_IDS, SUPPORTED_LANGUAGES } from '../data/settings.js';
 import { isAaHost, jobdetailUrl } from './aa-links.js';
 
-export const VACANCIES_SCHEMA_VERSION = 5;
+export const VACANCIES_SCHEMA_VERSION = 6;
 
 /** migrations[n] turns vacancies.json version n into n + 1 (applied on read; written back on the next save). */
 export const VACANCY_MIGRATIONS: Readonly<Record<number, Migration>> = {
@@ -54,6 +54,8 @@ export const VACANCY_MIGRATIONS: Readonly<Record<number, Migration>> = {
     : doc,
   // 5 (0.13.0): optional company research and contactAuto — cards from before simply have neither.
   4: (doc) => doc,
+  // 6 (0.14.0): offers from a company's own job board; nothing to change, but older apps cannot read them.
+  5: (doc) => doc,
 };
 
 /** Contact fields added in 0.9.1; old contacts get them empty (shared with the package migration). */
@@ -62,7 +64,7 @@ export function withContactFields(c: Record<string, unknown>): Record<string, un
 }
 export const VACANCY_LIMITS = {
   title: 300, company: 300, location: 100, locations: 20, point: 300, points: 3, salary: 200, url: 2000, email: 300, name: 200,
-  sourceId: 64, text: 100_000, phone: 40, street: 120, postcode: 10, city: 80,
+  sourceId: 200, text: 100_000, phone: 40, street: 120, postcode: 10, city: 80,
   // 0.13.0: company research.
   researchAbout: 600, researchPoint: 300, researchNews: 5, researchPoints: 3, researchUrl: 2000,
   researchNewsTitle: 300, researchNewsSource: 120, researchSources: 20, researchId: 64,
@@ -125,7 +127,7 @@ export const CONTACT_AUTO: JsonSchema = { type: 'array', maxItems: 7, uniqueItem
 
 const VACANCY = obj({
   id: { type: 'string', pattern: VACANCY_ID.source },
-  source: { enum: ['arbeitsagentur', 'manual'] },
+  source: { enum: ['arbeitsagentur', 'manual', 'company'] },
   sourceId: nullable(str(L.sourceId)),
   addedManually: { type: 'boolean' },
   title: str(L.title),

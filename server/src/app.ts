@@ -25,6 +25,7 @@ import type { Mailer } from './mail/mailer.js';
 import type { SentUnsavedLog } from './applications/sent-unsaved.js';
 import { registerMailRoutes } from './mail/routes.js';
 import type { SecretStore } from './mail/secret.js';
+import type { Companies } from './vacancies/companies.js';
 import { registerVacancyRoutes } from './vacancies/routes.js';
 import { ResearchJob } from './research/job.js';
 import type { fetchNews as FetchNews } from './research/news.js';
@@ -61,6 +62,7 @@ export interface AppDeps {
   profileFiles: ProfileFiles;
   vacancyStore: VacancyStore;
   vacancySource: VacancySource;
+  companies: Companies;
   /** Opens pasted vacancy links that are not Arbeitsagentur (spec, section 6a). */
   pageReader: PageReader;
   /** Downloads PDFs behind pasted links (link field and the note, spec 0.9.1 A). */
@@ -397,7 +399,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   });
   deps.research.onJob?.(research);
   await registerVacancyRoutes(app, {
-    research, applications: deps.applicationStore,
+    research, applications: deps.applicationStore, companies: deps.companies,
     store: deps.vacancyStore, source: deps.vacancySource, pageReader, pdfFetcher: deps.pdfFetcher, contactWindow: browserWork(deps.activity, deps.contactWindow), queue: deps.queue, job: deps.searchJob, logger: deps.logger, activity: deps.activity,
     profile: () => deps.profileStore.get(), language,
   });

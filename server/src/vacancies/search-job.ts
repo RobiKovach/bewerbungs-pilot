@@ -4,6 +4,7 @@ import { CorruptJsonError, readJson, writeJsonAtomic } from '../data/atomic.js';
 import { AppError } from '../errors.js';
 import type { LlmQueue } from '../llm/queue.js';
 import type { Logger } from '../log.js';
+import { fitsWishes, type Companies } from './companies.js';
 import { findDuplicate } from './dedup.js';
 import { filterHits } from './filter.js';
 import type { OfferKind, SearchQuery, SourceDetails, SourceHit, VacancySource, WorkTime } from './sources/types.js';
@@ -61,6 +62,14 @@ export function takeFairly<T>(passed: readonly T[], titleOf: (h: T) => string, t
   return out;
 }
 
+/** The group of the followed companies beside the job titles (which are trimmed, so never start with a line break). */
+const COMPANIES = '\ncompanies';
+
+function removedByBoard(v: Vacancy): void {
+  if (v.status === 'new') v.status = 'stale';
+  else if (v.status === 'favorite') v.offline = true;
+}
+
 export function idleState(): SearchState {
   return {
     state: 'idle', phase: null, found: 0, filteredOut: {}, afterFilter: 0, toScore: 0, scored: 0, moreAvailable: 0,
@@ -86,6 +95,8 @@ export interface SearchJobDeps {
   store: VacancyStore; source: VacancySource; queue: LlmQueue; logger: Logger;
   profile: () => Profile; language: () => Language; publishedWithinDays: () => number;
   stateFile: string;
+  /** The followed companies' own boards (0.14.0). */
+  companies?: Pick<Companies, 'readAll'>;
   newId?: () => string; now?: () => Date;
   /** Pause between two details requests (ms). Default 300; tests pass 0. */
   pauseMs?: number;
@@ -189,24 +200,33 @@ export class SearchJob {
         this.d.logger.warn('search_query_failed', { code: err instanceof AppError ? err.code : 'UNKNOWN' });
       }
     }
-    if (queries.length > 0 && failures === queries.length) throw lastError;
+    const feeds = await this.d.companies?.readAll(signal) ?? { offers: [], readKeys: [], failed: 0 };
+    if (feeds.failed > 0) warnings.add('someCompaniesFailed');
+    // Arbeitsagentur is down, but at least one company could be read: the search goes on with that.
+    if (queries.length > 0 && failures === queries.length && feeds.readKeys.length === 0) throw lastError;
+    const onBoard = new Set(feeds.offers.map((o) => o.sourceId));
+    const companyOffers = new Map(feeds.offers.filter((o) => fitsWishes(o, wishes)).map((o) => [o.sourceId, o]));
+    for (const [id, o] of companyOffers) { hits.set(id, o); titleOf.set(id, COMPANIES); }
 
     // 2. Filter + limit
     const { passed, rejected } = filterHits([...hits.values()], profile, this.d.store.list());
     const filteredOut: Partial<Record<FilterReason, number>> = {};
     for (const r of rejected) filteredOut[r.reason] = (filteredOut[r.reason] ?? 0) + 1;
     const titles = [...new Set(queries.map((q) => q.jobTitle))];
-    const take = takeFairly(passed, (h) => titleOf.get(h.sourceId) ?? '', titles, maxNew);
+    const take = takeFairly(passed, (h) => titleOf.get(h.sourceId) ?? '', companyOffers.size > 0 ? [...titles, COMPANIES] : titles, maxNew);
     let toScore = take.length;
     this.set({ found: hits.size, filteredOut, afterFilter: passed.length, toScore, moreAvailable: passed.length - take.length, warnings: [...warnings] });
 
     // 3. Texts → cards
     this.set({ phase: 'details' });
     for (const [i, h] of take.entries()) {
-      if (i > 0 && this.pauseMs > 0) await pause(this.pauseMs, signal);
+      // A company's board already gave the whole text.
+      const own = companyOffers.get(h.sourceId);
+      if (!own && i > 0 && this.pauseMs > 0) await pause(this.pauseMs, signal);
+      if (signal.aborted) throw new AppError('LLM_CANCELLED', 'search stopped', 'cancelledByUser');
       let full;
       try {
-        full = await this.d.source.details(h.sourceId, signal);
+        full = own ?? await this.d.source.details(h.sourceId, signal);
       } catch (err) {
         if (isCancel(err, signal)) throw err;
         warnings.add('someQueriesFailed');
@@ -219,7 +239,7 @@ export class SearchJob {
       }
       let card;
       try {
-        card = this.d.store.add(this.cardFrom(full), full.text);
+        card = this.d.store.add(this.cardFrom(full, own ? 'company' : 'arbeitsagentur'), full.text);
       } catch (err) {
         if (isCancel(err, signal)) throw err;
         toScore--;
@@ -244,8 +264,11 @@ export class SearchJob {
 
     // 5. Removed offers
     this.set({ phase: 'staleCheck' });
-    const back = this.d.store.list().filter((v) => v.offline && v.sourceId && hits.has(v.sourceId)).map((v) => v.id);
+    const back = this.d.store.list().filter((v) => v.offline && v.sourceId && (hits.has(v.sourceId) || onBoard.has(v.sourceId))).map((v) => v.id);
     this.d.store.updateMany(back, (x) => { delete x.offline; });
+    const gone = this.d.store.list()
+      .filter((v) => v.source === 'company' && v.sourceId && !onBoard.has(v.sourceId) && feeds.readKeys.some((k) => v.sourceId?.startsWith(k))).map((v) => v.id);
+    this.d.store.updateMany(gone, removedByBoard);
     const createdSet = new Set(this.created);
     const candidates = this.d.store.list()
       .filter((v) => (v.status === 'new' || v.status === 'favorite') && v.source === 'arbeitsagentur' && v.sourceId && !hits.has(v.sourceId) && !createdSet.has(v.id))
@@ -258,7 +281,7 @@ export class SearchJob {
         const online = await this.d.source.isOnline(v.sourceId as string, signal);
         // A favourite stays where the person put it, only marked; a new offer moves to "removed".
         if (!online) {
-          this.d.store.updateMany([v.id], (x) => { if (x.status === 'new') x.status = 'stale'; else if (x.status === 'favorite') x.offline = true; });
+          this.d.store.updateMany([v.id], removedByBoard);
         } else if (v.offline) this.d.store.updateMany([v.id], (x) => { delete x.offline; });
       } catch (err) {
         if (isCancel(err, signal)) throw err;
@@ -298,9 +321,9 @@ export class SearchJob {
     }
   }
 
-  private cardFrom(h: SourceDetails): Vacancy {
+  private cardFrom(h: SourceDetails, source: Vacancy['source']): Vacancy {
     return {
-      id: this.newId(), source: 'arbeitsagentur', sourceId: h.sourceId, addedManually: false, title: h.title, company: h.company,
+      id: this.newId(), source, sourceId: h.sourceId, addedManually: false, title: h.title, company: h.company,
       locations: h.locations, remote: h.remote, employment: h.employment, salaryText: h.salaryText, publishedAt: h.publishedAt,
       foundAt: this.stamp(), url: h.url, contact: null, hasText: false, status: 'new', scoreState: 'pending', score: null, hiddenAt: null,
       ...(h.partnerUrl ? { partnerUrl: h.partnerUrl } : {}),

@@ -129,7 +129,7 @@ function toHit(raw: unknown): SourceHit | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const sourceId = str(r.referenznummer);
-  if (!sourceId || sourceId.length > L.sourceId) return null;
+  if (!sourceId || sourceId.length > 64) return null;
   const url = jobdetailUrl(sourceId);
   return {
     sourceId,

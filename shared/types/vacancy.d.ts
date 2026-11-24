@@ -2,7 +2,7 @@ import type { ErrorCode } from './errors.js';
 import type { EmploymentType } from './profile.js';
 import type { Language, ProviderId } from './settings.js';
 
-export type VacancySourceId = 'arbeitsagentur' | 'manual';
+export type VacancySourceId = 'arbeitsagentur' | 'manual' | 'company';
 /** new → favorite / hidden; new → stale (the source removed it); stale → hidden. See the spec, section 2. */
 export type VacancyStatus = 'new' | 'favorite' | 'hidden' | 'stale';
 /** pending = waiting for Claude in a running search; notScored = the search stopped before it got there. */
@@ -95,7 +95,7 @@ export interface Vacancy {
 export type SearchRunState = 'idle' | 'running' | 'done' | 'stopped' | 'interrupted' | 'failed';
 export type SearchPhase = 'querying' | 'details' | 'scoring' | 'staleCheck';
 export type FilterReason = 'seen' | 'notRemote' | 'student' | 'internship' | 'apprenticeship';
-export type SearchWarning = 'someQueriesFailed' | 'tooManyQueries' | 'staleCheckFailed';
+export type SearchWarning = 'someQueriesFailed' | 'tooManyQueries' | 'staleCheckFailed' | 'someCompaniesFailed';
 
 /** How many search days in a row a job title brought nothing new (0.14.0); `day` = the last counted day (YYYY-MM-DD). */
 export interface TitleRun { title: string; runs: number; day: string }
@@ -122,6 +122,14 @@ export interface SearchState {
   /** The daily search (0.14.0) whose result the person has not seen yet. */
   automatic?: boolean;
 }
+
+/** Applicant systems whose public job boards can be read (0.14.0). */
+export type CompanyService = 'greenhouse' | 'lever' | 'ashby' | 'personio';
+/** A company the person follows (vacancies/companies.json, 0.14.0). */
+export interface Company { id: string; name: string; service: CompanyService; account: string; host: string; addedAt: string; lastReadAt: string | null; lastReadFailed: boolean }
+/** `url`: the board's page; `offers`: how many it had at the last read since the app started, null = not read yet. */
+export interface CompanyView extends Company { url: string; offers: number | null }
+export interface CompaniesView { companies: CompanyView[] }
 
 /** POST /api/vacancies/similar-titles (0.14.0): proposed job titles; nothing is saved. */
 export interface SimilarTitle { title: string; why: string }

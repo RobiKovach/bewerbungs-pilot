@@ -11,6 +11,7 @@ import { mergeContact, remainingMarks } from '../research/contact-merge.js';
 import { collectInputOf, type ResearchJob } from '../research/job.js';
 import { isAaHost } from './aa-links.js';
 import { emptyProposal, errorResult, logFind, normaliseContact, proposalFromPage, proposalFromText, proposalOf, resultOf, withNameFromPages, type ContactFindDeps } from './contact-find.js';
+import type { Companies } from './companies.js';
 import { findDuplicate } from './dedup.js';
 import { CONTACT_BODY, VACANCY_LIMITS } from './schema.js';
 import type { SearchJob } from './search-job.js';
@@ -31,6 +32,8 @@ export interface VacancyRouteDeps {
   profile: () => Profile; language: () => Language;
   /** Company research (0.13.0): started after a pasted link/text, stopped when the card is hidden. */
   research: ResearchJob;
+  /** The companies the person follows (0.14.0). */
+  companies: Companies;
   /** The packages, so a contact confirmed on the card also confirms it in the vacancy's unsent package (final review M2). */
   applications?: Pick<ApplicationStore, 'editableByVacancy' | 'get' | 'update'>;
 }
@@ -73,6 +76,10 @@ const manualBody = {
 };
 const isHttpUrl = (s: string) => { try { return ['http:', 'https:'].includes(new URL(s).protocol); } catch { return false; } };
 
+const companyBody = {
+  type: 'object', additionalProperties: false, required: ['url', 'name'],
+  properties: { url: { type: 'string', minLength: 1, maxLength: L.url }, name: { type: 'string', maxLength: 120, pattern: '\\S' } },
+};
 const seenBody = { type: 'object', additionalProperties: false, required: ['startedAt'], properties: { startedAt: { type: ['string', 'null'], maxLength: 40 } } };
 
 const ALLOWED: Record<VacancyStatus, readonly VacancyStatus[]> = {
@@ -114,6 +121,21 @@ export async function registerVacancyRoutes(app: FastifyInstance, d: VacancyRout
     d.job.stop();
     await d.job.whenIdle();
     return d.job.state();
+  });
+
+  app.get('/api/companies', async () => ({ companies: d.companies.list() }));
+
+  app.post('/api/companies', { schema: { body: companyBody } }, async (req, reply) => {
+    d.activity.refuseDuringRestore();
+    const { url, name } = req.body as { url: string; name: string };
+    await d.companies.add(url, name, abortOnClose(reply));
+    return { companies: d.companies.list() };
+  });
+
+  app.delete('/api/companies/:id', { schema: { params: idParams } }, async (req) => {
+    d.activity.refuseDuringRestore();
+    d.companies.remove((req.params as { id: string }).id);
+    return { companies: d.companies.list() };
   });
 
   app.post('/api/vacancies/search/seen', { schema: { body: seenBody } }, async (req) => {

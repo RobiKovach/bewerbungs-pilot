@@ -5,7 +5,7 @@ import path from 'node:path';
 export interface DataPaths {
   root: string; settings: string; server: string; lock: string; logs: string; tmp: string;
   profile: string; profileFile: string; profileFiles: string;
-  vacancies: string; vacanciesFile: string; vacancyTexts: string; searchState: string;
+  vacancies: string; vacanciesFile: string; vacancyTexts: string; searchState: string; companies: string;
   applications: string; mailSecret: string;
 }
 
@@ -30,6 +30,7 @@ export function dataPaths(root: string): DataPaths {
     vacanciesFile: path.join(root, 'vacancies', 'vacancies.json'),
     vacancyTexts: path.join(root, 'vacancies', 'texts'),
     searchState: path.join(root, 'vacancies', 'search-state.json'),
+    companies: path.join(root, 'vacancies', 'companies.json'),
     applications: path.join(root, 'applications'),
     mailSecret: path.join(root, 'mail-secret.bin'),
   };

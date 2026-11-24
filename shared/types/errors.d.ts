@@ -56,6 +56,7 @@ export type ErrorCode =
  * One list for server and web, so a typo in either is a compile error.
  */
 export type ErrorReason =
+  | 'companyLink' | 'companyExists' | 'companyLimit' | 'companyRead'
   | 'cvTooLittleText'
   | 'cvNoContent'
   | 'cvDocxBroken'

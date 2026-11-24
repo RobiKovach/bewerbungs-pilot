@@ -47,6 +47,7 @@ import { addressRules, testPagesPort } from './vacancies/sources/test-pages.js';
 import { AaContactWindow } from './vacancies/sources/aa-contact-window.js';
 import { HttpPdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
+import { Companies } from './vacancies/companies.js';
 import { DailySearch } from './vacancies/daily-search.js';
 import { assertWishesComplete, SearchJob } from './vacancies/search-job.js';
 import { cleanOldUpdateFolders, readUpdateOutcome } from './updates/apply.js';
@@ -172,7 +173,15 @@ async function main(): Promise<void> {
   if (!newerData) vacancyStore.load();
   if (demoLanguage !== null) await seedDemo({ settings, profileStore, vacancyStore, secrets, language: demoLanguage });
   const vacancySource = new ArbeitsagenturSource();
+  const testFeeds = testPagesPort(process.env, process.argv);
+  const feedRules = addressRules(testFeeds);
+  const companies = new Companies({
+    file: paths.companies, logger,
+    feed: testFeeds === null ? {} : { testBase: `http://127.0.0.1:${testFeeds}`, check: feedRules.check, isPublic: feedRules.addressOk },
+  });
+  if (!newerData) companies.load();
   const searchJob = new SearchJob({
+    companies,
     store: vacancyStore, source: vacancySource, queue, logger,
     profile: () => profileStore.get(), language: () => settings.get().language ?? 'en',
     publishedWithinDays: () => settings.get().vacancies.publishedWithinDays, stateFile: paths.searchState,
@@ -244,7 +253,7 @@ async function main(): Promise<void> {
     webDist: fs.existsSync(webDist) ? webDist : null,
     allowedHosts: () => [`${HOST}:${port}`, `localhost:${port}`],
     onShutdown: () => void shutdown(),
-    profileStore, profileFiles, vacancyStore, vacancySource, pageReader, pdfFetcher, contactWindow, searchJob,
+    profileStore, profileFiles, vacancyStore, vacancySource, companies, pageReader, pdfFetcher, contactWindow, searchJob,
     applicationStore, applicationJob, printer,
     mailer: fakeMail ? new MailRouter(fileMailer, fileMailer) : new MailRouter(new SmtpMailer(), new GmailApiMailer(googleAuth)), secrets, sentUnsaved,
     googleAuth, origin: () => `http://${HOST}:${port}`,
@@ -262,7 +271,7 @@ async function main(): Promise<void> {
         // Checked before any store reads: a before-restore copy made while the data was newer carries this version's number.
         newerData = dataIsNewer(paths);
         if (newerData) return;
-        profileStore.load(); vacancyStore.load(); applicationStore.load(); sentUnsaved.load();
+        profileStore.load(); vacancyStore.load(); companies.load(); applicationStore.load(); sentUnsaved.load();
         searchJob.init(); applicationJob.init();
       },
     },
