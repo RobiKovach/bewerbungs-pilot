@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.13.3",
+  "latest": "0.13.4",
   "released": "2026-11-24",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.3",
-  "sha256": "4f8b7fc15b970879037a7ce09b05489d35368b3ae4a3d05b806fe2d0225a8947",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.13.4",
+  "sha256": "c7a9999c11db28bcfe4494e058930a0988d815acacf3755aee253756d284e08b",
   "notes": {
-    "uk": "Вікно «Зберегти як» відкривається в «Завантаженнях», «Знайти контакт» одразу заповнює порожні поля, виправлено текст головної сторінки.",
-    "en": "The \"Save as\" window starts in your downloads folder, \"Find contact\" fills empty fields at once, the home page text is corrected.",
-    "de": "Das Fenster „Speichern unter“ öffnet sich in „Downloads“, „Kontakt finden“ füllt leere Felder sofort, Text der Startseite korrigiert.",
-    "ru": "Окно «Сохранить как» открывается в «Загрузках», «Найти контакт» сразу заполняет пустые поля, исправлен текст главной страницы.",
-    "pl": "Okno „Zapisz jako” otwiera się w folderze Pobrane, „Znajdź kontakt” od razu wypełnia puste pola, poprawiono tekst strony głównej.",
-    "ro": "Fereastra „Salvare ca” se deschide în Descărcări, „Găsește contactul” completează imediat câmpurile goale, textul paginii principale a fost corectat."
+    "uk": "Надійніші дані: пошкоджена частина не забирає решту, щотижнева автоматична копія, позначка «знято з сайту» на обраних вакансіях.",
+    "en": "Safer data: one damaged part no longer costs the rest, weekly automatic backup, removed offers are marked in Favourites.",
+    "de": "Sicherere Daten: ein beschädigter Teil kostet nicht mehr den Rest, wöchentliche automatische Sicherung, entfernte Stellen in Favoriten markiert.",
+    "ru": "Надёжнее данные: повреждённая часть не забирает остальное, еженедельная автоматическая копия, пометка «снято с сайта» на избранных вакансиях.",
+    "pl": "Bezpieczniejsze dane: uszkodzona część nie zabiera reszty, cotygodniowa automatyczna kopia, usunięte oferty oznaczone w ulubionych.",
+    "ro": "Date mai sigure: o parte deteriorată nu mai afectează restul, copie automată săptămânală, ofertele eliminate sunt marcate la favorite."
   }
 }
