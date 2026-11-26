@@ -175,6 +175,11 @@ label.btn { cursor: pointer; }
 .score--weak, .score--none { background: #eceef1; color: #5b6270; }
 .vacancy__points { list-style: none; padding: 0; margin: 0.75rem 0 0; }
 .similar-titles { flex-basis: 100%; }
+.companies summary { cursor: pointer; }
+.companies__list { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 10px; }
+.companies__list li { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; display: grid; gap: 4px; overflow-wrap: anywhere; }
+.companies__failed { color: var(--danger); }
+.companies__add { display: grid; gap: 10px; margin-top: 8px; }
 .similar-titles__list { border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; margin: 8px 0 0; display: grid; gap: 8px; }
 .similar-titles__list .check { display: flex; gap: 8px; align-items: baseline; }
 .vacancy__points .why { color: var(--ok); }

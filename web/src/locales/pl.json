@@ -482,7 +482,7 @@
     "TOO_MANY_FILES": { "message": "Masz już 20 dokumentów.", "hint": "Usuń dokument, którego już nie potrzebujesz, a potem dodaj nowy." },
     "CV_UNREADABLE": { "message": "Nie udało się odczytać tekstu w tym CV.", "hint": "To może być skan lub zdjęcie. Spróbuj innego pliku (na przykład wersji Word) albo kliknij „Wypełnij bez CV”." },
     "PROFILE_NOT_READY": { "message": "Twój profil nie jest jeszcze kompletny.", "hint": "Otwórz „Profil” i sprawdź każdą sekcję przyciskiem „Wszystko poprawne”." },
-    "SOURCE_UNAVAILABLE": { "message": "Giełda pracy Federalnej Agencji Pracy jest teraz niedostępna.", "hint": "Sprawdź połączenie z internetem i spróbuj ponownie za kilka minut." },
+    "SOURCE_UNAVAILABLE": { "message_companyRead": "Nie udało się przeczytać strony kariery.", "hint_companyRead": "Sprawdź link albo spróbuj ponownie za kilka minut.", "message": "Giełda pracy Federalnej Agencji Pracy jest teraz niedostępna.", "hint": "Sprawdź połączenie z internetem i spróbuj ponownie za kilka minut." },
     "SOURCE_RATE_LIMITED": { "message": "Giełda pracy otrzymała zbyt wiele zapytań.", "hint": "Poczekaj kilka minut, a potem wyszukaj ponownie." },
     "SOURCE_CHANGED": { "message": "Giełda pracy Federalnej Agencji Pracy uległa zmianie.", "hint": "BewerbungsPilot potrzebuje aktualizacji, aby móc ją znowu odczytać. Sprawdź, czy jest dostępna nowa wersja." },
     "SEARCH_ALREADY_RUNNING": { "message": "Wyszukiwanie już trwa.", "hint": "Poczekaj na jego zakończenie albo najpierw je zatrzymaj." },
@@ -494,8 +494,8 @@
     "LETTER_TOO_LONG": { "message": "List motywacyjny jest dłuższy niż jedna strona.", "hint": "Skróć list (lub poproś {{ai}} o skrócenie), aż czerwony znacznik zniknie, a następnie zatwierdź go." },
     "PACKAGE_RULES_BROKEN": { "message": "{{ai}} nie zdołał napisać listu zgodnie z zasadami.", "hint": "Spróbuj ponownie. Jeśli to się powtórzy, sprawdź swoje historie i listę „nie wspominać” w profilu." },
     "PACKAGE_EXISTS": { "message": "Dla tej oferty pracy istnieje już pakiet.", "hint": "Otwórz istniejący pakiet. Aby zacząć od nowa, użyj w nim przycisku „Utwórz ponownie”." },
-    "CONFLICT": { "message": "W międzyczasie coś się tu zmieniło.", "message_prepNotAvailable": "Teraz nie udało się tego zrobić.", "message_prepReadOnly": "Teraz nie udało się tego zrobić.", "message_prepExists": "Teraz nie udało się tego zrobić.", "message_prepBusy": "Teraz nie udało się tego zrobić.", "message_prepNotFinished": "Teraz nie udało się tego zrobić.", "message_prepUnreadable": "Teraz nie udało się tego zrobić.", "hint": "Przejrzyj to jeszcze raz i wybierz ponownie.", "hint_prepNotAvailable": "Przygotowanie będzie dostępne, gdy aplikacja zostanie wysłana lub złożona.", "hint_prepReadOnly": "Ta aplikacja jest zamknięta, więc przygotowanie można tylko obejrzeć.", "hint_prepExists": "Ta aplikacja ma już pytania. Odśwież stronę.", "hint_prepBusy": "{{ai}} nadal pracuje nad tym przygotowaniem. Poczekaj, aż skończy.", "hint_prepNotFinished": "Podsumowanie pojawi się po uwagach do wszystkich pytań.", "hint_prepUnreadable": "Nie udało się odczytać pliku przygotowania. Spróbuj ponownie za minutę." },
-    "BAD_REQUEST": { "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
+    "CONFLICT": { "message_companyLimit": "Obserwujesz już 20 firm.", "hint_companyLimit": "Najpierw usuń jedną, potem dodaj nową.", "message_companyExists": "Już obserwujesz tę stronę kariery.", "hint_companyExists": "Jest na liście powyżej.", "message": "W międzyczasie coś się tu zmieniło.", "message_prepNotAvailable": "Teraz nie udało się tego zrobić.", "message_prepReadOnly": "Teraz nie udało się tego zrobić.", "message_prepExists": "Teraz nie udało się tego zrobić.", "message_prepBusy": "Teraz nie udało się tego zrobić.", "message_prepNotFinished": "Teraz nie udało się tego zrobić.", "message_prepUnreadable": "Teraz nie udało się tego zrobić.", "hint": "Przejrzyj to jeszcze raz i wybierz ponownie.", "hint_prepNotAvailable": "Przygotowanie będzie dostępne, gdy aplikacja zostanie wysłana lub złożona.", "hint_prepReadOnly": "Ta aplikacja jest zamknięta, więc przygotowanie można tylko obejrzeć.", "hint_prepExists": "Ta aplikacja ma już pytania. Odśwież stronę.", "hint_prepBusy": "{{ai}} nadal pracuje nad tym przygotowaniem. Poczekaj, aż skończy.", "hint_prepNotFinished": "Podsumowanie pojawi się po uwagach do wszystkich pytań.", "hint_prepUnreadable": "Nie udało się odczytać pliku przygotowania. Spróbuj ponownie za minutę." },
+    "BAD_REQUEST": { "message_companyLink": "BewerbungsPilot nie umie czytać tej strony kariery.", "hint_companyLink": "Wklej link do strony kariery w Greenhouse, Lever, Ashby lub Personio.", "message": "Coś było nie tak z żądaniem.", "hint": "Odśwież stronę i spróbuj ponownie." },
     "NOT_FOUND": { "message": "Ta strona nie istnieje.", "hint": "Wróć na stronę główną." },
     "FILE_SAVE_FAILED": { "message": "Nie udało się zapisać pliku w tym miejscu.", "hint": "Może pendrive został wyjęty, dysk jest pełny albo do tego folderu nie można zapisywać. Wybierz inne miejsce i spróbuj ponownie." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nie jest uruchomiony.", "hint": "Uruchom go ponownie za pomocą skrótu na pulpicie." },
@@ -592,6 +592,7 @@
       "titlesFull": "Możesz dodać do {{max}} stanowisk."
     },
     "similar": { "ask": "Zaproponuj podobne nazwy", "running": "{{ai}} szuka podobnych nazw…", "none": "Nie znaleziono innych pasujących nazw.", "title": "Których z nich też szukać?", "add": "Dodaj wybrane ({{count}})" },
+    "companies": {"title":"Firmy, które obserwuję","intro":"Dodaj stronę kariery firmy, która korzysta z Greenhouse, Lever, Ashby lub Personio. Każde wyszukiwanie czyta też jej oferty (najwyżej co 6 godzin) i zostawia te, które pasują do Twoich stanowisk i miast. Do tej usługi trafia tylko nazwa konta firmy z linku.","link":"Link do strony kariery","name":"Nazwa firmy (do listu)","supported":"Na przykład jobs.lever.co/<firma>, boards.greenhouse.io/<firma>, jobs.ashbyhq.com/<firma> lub <firma>.jobs.personio.de.","add":"Obserwuj firmę","adding":"Czytam stronę kariery…","empty":"Nie obserwujesz jeszcze żadnej firmy.","full":"Obserwujesz {{max}} firm — to maksimum. Usuń jedną, aby dodać inną.","open":"Strona kariery","lastRead":"Ostatnio czytano {{date}}","notRead":"Jeszcze nie czytano","failed":"Ostatnie czytanie się nie udało; program spróbuje ponownie przy następnym wyszukiwaniu.","offers":"Ofert: {{count}}","remove":"Nie obserwuj","removeOne":"Nie obserwuj {{name}}","service":{"greenhouse":"Greenhouse","lever":"Lever","ashby":"Ashby","personio":"Personio"}},
     "progress": {
       "phase": {
         "querying": "Szukanie w bazie ofert…",
@@ -618,6 +619,7 @@
       "more": "Znaleziono jeszcze {{count}} nowych ofert — uruchom wyszukiwanie ponownie, aby je zobaczyć.",
       "warnings": {
         "someQueriesFailed": "Niektórych wyszukiwań nie udało się wykonać. Wyniki mogą być niepełne.",
+        "someCompaniesFailed": "Niektórych stron kariery firm nie udało się przeczytać. Może brakować ich ofert.",
         "tooManyQueries": "Masz dużo stanowisk i miast; sprawdzono tylko pierwsze 30 kombinacji.",
         "staleCheckFailed": "Nie udało się sprawdzić dla każdej starszej oferty, czy nadal istnieje."
       }
@@ -639,6 +641,8 @@
       "scoreTitle": "Jak dobrze oferta pasuje do Twojego profilu (0–100)",
       "manual": "dodane ręcznie",
       "offline": "usunięta z portalu",
+      "offlineCompany": "usunięta ze strony kariery",
+      "company": "ze strony kariery firmy",
       "initiative": "aplikacja z własnej inicjatywy",
       "sentOn": "Wysłano {{date}}",
       "submittedOn": "Złożono przez stronę {{date}}",

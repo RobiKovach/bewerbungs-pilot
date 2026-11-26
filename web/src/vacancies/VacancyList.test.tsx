@@ -146,4 +146,10 @@ describe('VacancyList', () => {
     await user.click(within(card('Alt')).getByRole('button', { name: 'Remove' }));
     expect(await screen.findByRole('tab', { name: 'Hidden 1' })).toBeInTheDocument();
   });
+  it('an offer from a followed company says so; removed there, it says the careers page removed it', async () => {
+    setup([vac({ title: 'Firma A', source: 'company', sourceId: 'lever:acme:1', url: 'https://jobs.lever.co/acme/1' }), vac({ title: 'Firma B', source: 'company', sourceId: 'lever:acme:2', offline: true })], { 'GET /api/companies': () => ({ body: { companies: [] } }) });
+    expect(within(await findCard('Firma A')).getByText("from the company's careers page")).toBeInTheDocument();
+    expect(within(card('Firma B')).getByText('removed from the careers page')).toBeInTheDocument();
+    expect(within(card('Firma B')).queryByText('removed by the job board')).toBeNull();
+  });
 });

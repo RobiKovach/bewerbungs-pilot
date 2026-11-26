@@ -5,6 +5,7 @@ import { ContactDialog } from '../applications/ContactDialog';
 import { MissingList } from '../applications/CreatePackageDialog';
 import { packageLinks, submittedByVacancy, type SubmittedPackage } from '../applications/format';
 import { PackageButton, READINESS_NOTE_ID } from '../applications/PackageButton';
+import { CompaniesBlock } from '../vacancies/CompaniesBlock';
 import { ManualAdd } from '../vacancies/ManualAdd';
 import { ManualEdit } from '../vacancies/ManualEdit';
 import { SearchProgress } from '../vacancies/SearchProgress';
@@ -47,9 +48,9 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
   const manualExtra = (v: Vacancy) => (v.source !== 'manual' ? null : editing?.id === v.id
     ? <ManualEdit vacancy={v} checkHint={editing.checkHint} onDone={() => setEditing(null)} />
     : <div className="btn-row"><button type="button" className="btn small ghost" onClick={() => setEditing({ id: v.id, checkHint: false })}>{t('vacancies.edit.open')}</button></div>);
-  const contactExtra = (v: Vacancy) => (v.source !== 'arbeitsagentur' || v.status !== 'favorite' || submittedPackage(v) ? null : contactFor === v.id
+  const contactExtra = (v: Vacancy) => (v.source === 'manual' || v.status !== 'favorite' || submittedPackage(v) ? null : contactFor === v.id
     ? (
-      <ContactDialog vacancyId={v.id} canAa={v.sourceId !== null} partnerUrl={v.partnerUrl ?? ''} initial={v.contact} auto={v.contactAuto}
+      <ContactDialog vacancyId={v.id} canAa={v.source === 'arbeitsagentur' && v.sourceId !== null} partnerUrl={v.source === 'company' ? v.url : v.partnerUrl ?? ''} initial={v.contact} auto={v.contactAuto}
         save={async (contact) => { put((await api.saveVacancyContact(v.id, contact)).vacancy); setContactFor(null); }}
         onClose={() => setContactFor(null)} />
     )
@@ -69,6 +70,7 @@ function VacanciesContent({ pollMs, toastMs }: { pollMs?: number; toastMs?: numb
         </div>
       ) : null}
       <SearchStrip canSearch={complete} searching={searching} onSearch={() => void status.start()} onAdd={() => { setAddNotices([]); setAdding(true); }} />
+      <CompaniesBlock disabled={searching} />
       <SearchProgress status={status} />
       {adding ? (
         <ManualAdd

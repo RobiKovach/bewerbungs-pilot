@@ -482,7 +482,7 @@
     "TOO_MANY_FILES": { "message": "Aveți deja 20 de documente.", "hint": "Ștergeți un document de care nu mai aveți nevoie, apoi adăugați-l pe cel nou." },
     "CV_UNREADABLE": { "message": "Nu am putut citi niciun text în acest CV.", "hint": "Ar putea fi o scanare sau o fotografie. Încercați alt fișier (de exemplu versiunea Word) sau faceți clic pe „Completați fără CV”." },
     "PROFILE_NOT_READY": { "message": "Profilul dumneavoastră nu este încă complet.", "hint": "Deschideți „Profil” și verificați fiecare secțiune cu „Totul corect”." },
-    "SOURCE_UNAVAILABLE": { "message": "Bursa locurilor de muncă a Agenției Federale a Muncii nu poate fi accesată acum.", "hint": "Verificați conexiunea la internet și încercați din nou peste câteva minute." },
+    "SOURCE_UNAVAILABLE": { "message_companyRead": "Pagina de cariere nu a putut fi citită.", "hint_companyRead": "Verificați linkul sau încercați din nou peste câteva minute.", "message": "Bursa locurilor de muncă a Agenției Federale a Muncii nu poate fi accesată acum.", "hint": "Verificați conexiunea la internet și încercați din nou peste câteva minute." },
     "SOURCE_RATE_LIMITED": { "message": "Bursa locurilor de muncă a primit prea multe cereri.", "hint": "Vă rugăm să așteptați câteva minute, apoi căutați din nou." },
     "SOURCE_CHANGED": { "message": "Bursa locurilor de muncă a Agenției Federale a Muncii s-a schimbat.", "hint": "BewerbungsPilot are nevoie de o actualizare pentru a o putea citi din nou. Vă rugăm să verificați dacă există o versiune nouă." },
     "SEARCH_ALREADY_RUNNING": { "message": "O căutare este deja în curs.", "hint": "Așteptați să se termine sau opriți-o mai întâi." },
@@ -494,8 +494,8 @@
     "LETTER_TOO_LONG": { "message": "Scrisoarea de intenție are mai mult de o pagină.", "hint": "Scurtați scrisoarea (sau rugați {{ai}} s-o scurteze) până când dispare marcajul roșu, apoi aprobați-o." },
     "PACKAGE_RULES_BROKEN": { "message": "{{ai}} nu a putut scrie scrisoarea respectând regulile.", "hint": "Încercați din nou. Dacă se repetă, verificați poveștile și lista „de nu menționat” din profil." },
     "PACKAGE_EXISTS": { "message": "Există deja un pachet pentru acest anunț.", "hint": "Deschideți pachetul existent. Pentru a începe de la zero, folosiți în el „Creați din nou”." },
-    "CONFLICT": { "message": "Între timp, aici s-a schimbat ceva.", "message_prepNotAvailable": "Acest lucru nu a putut fi făcut acum.", "message_prepReadOnly": "Acest lucru nu a putut fi făcut acum.", "message_prepExists": "Acest lucru nu a putut fi făcut acum.", "message_prepBusy": "Acest lucru nu a putut fi făcut acum.", "message_prepNotFinished": "Acest lucru nu a putut fi făcut acum.", "message_prepUnreadable": "Acest lucru nu a putut fi făcut acum.", "hint": "Vă rugăm să vă uitați încă o dată și apoi să alegeți din nou.", "hint_prepNotAvailable": "Pregătirea devine disponibilă după ce candidatura a fost trimisă sau depusă.", "hint_prepReadOnly": "Această candidatură este închisă, deci pregătirea poate fi doar vizualizată.", "hint_prepExists": "Această candidatură are deja întrebări. Reîncărcați pagina.", "hint_prepBusy": "{{ai}} încă lucrează la această pregătire. Vă rugăm să așteptați până termină.", "hint_prepNotFinished": "Rezumatul apare după observațiile la toate întrebările.", "hint_prepUnreadable": "Fișierul de pregătire nu a putut fi citit. Încercați din nou peste un minut." },
-    "BAD_REQUEST": { "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
+    "CONFLICT": { "message_companyLimit": "Urmăriți deja 20 de firme.", "hint_companyLimit": "Eliminați mai întâi una, apoi adăugați-o pe cea nouă.", "message_companyExists": "Urmăriți deja această pagină de cariere.", "hint_companyExists": "Se află în lista de mai sus.", "message": "Între timp, aici s-a schimbat ceva.", "message_prepNotAvailable": "Acest lucru nu a putut fi făcut acum.", "message_prepReadOnly": "Acest lucru nu a putut fi făcut acum.", "message_prepExists": "Acest lucru nu a putut fi făcut acum.", "message_prepBusy": "Acest lucru nu a putut fi făcut acum.", "message_prepNotFinished": "Acest lucru nu a putut fi făcut acum.", "message_prepUnreadable": "Acest lucru nu a putut fi făcut acum.", "hint": "Vă rugăm să vă uitați încă o dată și apoi să alegeți din nou.", "hint_prepNotAvailable": "Pregătirea devine disponibilă după ce candidatura a fost trimisă sau depusă.", "hint_prepReadOnly": "Această candidatură este închisă, deci pregătirea poate fi doar vizualizată.", "hint_prepExists": "Această candidatură are deja întrebări. Reîncărcați pagina.", "hint_prepBusy": "{{ai}} încă lucrează la această pregătire. Vă rugăm să așteptați până termină.", "hint_prepNotFinished": "Rezumatul apare după observațiile la toate întrebările.", "hint_prepUnreadable": "Fișierul de pregătire nu a putut fi citit. Încercați din nou peste un minut." },
+    "BAD_REQUEST": { "message_companyLink": "BewerbungsPilot nu poate citi această pagină de cariere.", "hint_companyLink": "Lipiți un link către o pagină de cariere pe Greenhouse, Lever, Ashby sau Personio.", "message": "Ceva nu a fost în regulă cu cererea.", "hint": "Reîncărcați pagina și încercați din nou." },
     "NOT_FOUND": { "message": "Această pagină nu există.", "hint": "Reveniți la pagina principală." },
     "FILE_SAVE_FAILED": { "message": "Fișierul nu a putut fi salvat acolo.", "hint": "Poate stick-ul USB a fost scos, discul este plin sau în acest folder nu se poate scrie. Alegeți alt loc și încercați din nou." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot nu rulează.", "hint": "Porniți-l din nou cu ajutorul comenzii rapide de pe desktop." },
@@ -592,6 +592,7 @@
       "titlesFull": "Puteți adăuga până la {{max}} posturi."
     },
     "similar": { "ask": "Propune denumiri similare", "running": "{{ai}} caută denumiri similare…", "none": "Nu s-au găsit alte denumiri potrivite.", "title": "Pe care dintre acestea să le caute și programul?", "add": "Adaugă cele alese ({{count}})" },
+    "companies": {"title":"Firme pe care le urmăresc","intro":"Adăugați pagina de cariere a unei firme care folosește Greenhouse, Lever, Ashby sau Personio. Fiecare căutare citește și ofertele ei (cel mult o dată la 6 ore) și le păstrează pe cele potrivite pentru posturile și orașele dvs. Către acest serviciu ajunge doar numele de cont al firmei din link.","link":"Link către pagina de cariere","name":"Numele firmei (pentru scrisoare)","supported":"De exemplu jobs.lever.co/<firma>, boards.greenhouse.io/<firma>, jobs.ashbyhq.com/<firma> sau <firma>.jobs.personio.de.","add":"Urmărește firma","adding":"Citesc pagina de cariere…","empty":"Încă nu urmăriți nicio firmă.","full":"Urmăriți {{max}} firme, maximul posibil. Eliminați una pentru a adăuga alta.","open":"Pagina de cariere","lastRead":"Citit ultima dată {{date}}","notRead":"Încă necitit","failed":"Ultima citire a eșuat; programul încearcă din nou la următoarea căutare.","offers":"Oferte: {{count}}","remove":"Nu mai urmări","removeOne":"Nu mai urmări {{name}}","service":{"greenhouse":"Greenhouse","lever":"Lever","ashby":"Ashby","personio":"Personio"}},
     "progress": {
       "phase": {
         "querying": "Căutare pe bursa locurilor de muncă…",
@@ -618,6 +619,7 @@
       "more": "Au fost găsite încă {{count}} oferte noi — porniți din nou căutarea pentru a le vedea.",
       "warnings": {
         "someQueriesFailed": "Unele căutări nu au putut fi efectuate. Rezultatele pot fi incomplete.",
+        "someCompaniesFailed": "Unele pagini de cariere ale firmelor nu au putut fi citite. Ofertele lor pot lipsi.",
         "tooManyQueries": "Aveți multe titluri de post și orașe; au fost căutate doar primele 30 de combinații.",
         "staleCheckFailed": "Nu s-a putut verifica pentru fiecare ofertă mai veche dacă mai există."
       }
@@ -639,6 +641,8 @@
       "scoreTitle": "Cât de bine se potrivește oferta cu profilul dumneavoastră (0–100)",
       "manual": "adăugat manual",
       "offline": "eliminată de pe portal",
+      "offlineCompany": "eliminată de pe pagina de cariere",
+      "company": "de pe pagina de cariere a firmei",
       "initiative": "candidatură spontană",
       "sentOn": "Trimis la {{date}}",
       "submittedOn": "Depus pe site la {{date}}",

@@ -482,7 +482,7 @@
     "TOO_MANY_FILES": { "message": "You already have 20 documents.", "hint": "Delete a document you no longer need, then add the new one." },
     "CV_UNREADABLE": { "message": "We could not read any text in this CV.", "hint": "It may be a scan or a photo. Try another file (for example the Word version) or click \"Fill in without a CV\"." },
     "PROFILE_NOT_READY": { "message": "Your profile is not complete yet.", "hint": "Open \"Profile\" and check every section with \"All correct\"." },
-    "SOURCE_UNAVAILABLE": { "message": "The job board of the Federal Employment Agency cannot be reached right now.", "hint": "Check your internet connection and try again in a few minutes." },
+    "SOURCE_UNAVAILABLE": { "message_companyRead": "The careers page could not be read.", "hint_companyRead": "Check the link or try again in a few minutes.", "message": "The job board of the Federal Employment Agency cannot be reached right now.", "hint": "Check your internet connection and try again in a few minutes." },
     "SOURCE_RATE_LIMITED": { "message": "The job board received too many requests.", "hint": "Please wait a few minutes, then search again." },
     "SOURCE_CHANGED": { "message": "The job board of the Federal Employment Agency has changed.", "hint": "BewerbungsPilot needs an update to read it again. Please look for a new version." },
     "SEARCH_ALREADY_RUNNING": { "message": "A search is already running.", "hint": "Wait until it has finished or stop it first." },
@@ -494,8 +494,8 @@
     "LETTER_TOO_LONG": { "message": "The cover letter is longer than one page.", "hint": "Shorten the letter (or ask {{ai}} to shorten it) until the red mark disappears, then approve it." },
     "PACKAGE_RULES_BROKEN": { "message": "{{ai}} could not write the letter within the rules.", "hint": "Try again. If it happens again, check your stories and the \"never mention\" list in your profile." },
     "PACKAGE_EXISTS": { "message": "There is already a package for this job offer.", "hint": "Open the existing package. To start over, use \"Create again\" inside it." },
-    "CONFLICT": { "message": "This was changed in the meantime.", "message_prepNotAvailable": "This could not be done right now.", "message_prepReadOnly": "This could not be done right now.", "message_prepExists": "This could not be done right now.", "message_prepBusy": "This could not be done right now.", "message_prepNotFinished": "This could not be done right now.", "message_prepUnreadable": "This could not be done right now.", "hint": "Please look at it once more and then choose again.", "hint_prepNotAvailable": "The preparation becomes available once the application has been sent or submitted.", "hint_prepReadOnly": "This application is closed, so the preparation can only be viewed.", "hint_prepExists": "This application already has questions. Please reload the page.", "hint_prepBusy": "{{ai}} is still working on this preparation. Please wait until it finishes.", "hint_prepNotFinished": "The summary comes after feedback on all questions.", "hint_prepUnreadable": "The preparation file could not be read. Please try again in a minute." },
-    "BAD_REQUEST": { "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
+    "CONFLICT": { "message_companyLimit": "You already follow 20 companies.", "hint_companyLimit": "Remove one first, then add the new one.", "message_companyExists": "You already follow this careers page.", "hint_companyExists": "It is in the list above.", "message": "This was changed in the meantime.", "message_prepNotAvailable": "This could not be done right now.", "message_prepReadOnly": "This could not be done right now.", "message_prepExists": "This could not be done right now.", "message_prepBusy": "This could not be done right now.", "message_prepNotFinished": "This could not be done right now.", "message_prepUnreadable": "This could not be done right now.", "hint": "Please look at it once more and then choose again.", "hint_prepNotAvailable": "The preparation becomes available once the application has been sent or submitted.", "hint_prepReadOnly": "This application is closed, so the preparation can only be viewed.", "hint_prepExists": "This application already has questions. Please reload the page.", "hint_prepBusy": "{{ai}} is still working on this preparation. Please wait until it finishes.", "hint_prepNotFinished": "The summary comes after feedback on all questions.", "hint_prepUnreadable": "The preparation file could not be read. Please try again in a minute." },
+    "BAD_REQUEST": { "message_companyLink": "BewerbungsPilot cannot read this careers page.", "hint_companyLink": "Paste a link to a careers page on Greenhouse, Lever, Ashby or Personio.", "message": "Something in the request was not right.", "hint": "Reload the page and try again." },
     "NOT_FOUND": { "message": "This page does not exist.", "hint": "Go back to the home page." },
     "FILE_SAVE_FAILED": { "message": "The file could not be saved there.", "hint": "The USB stick may have been removed, the disk may be full, or the folder may not allow writing. Choose another place and try again." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot is not running.", "hint": "Start it again with the shortcut on your desktop." },
@@ -592,6 +592,7 @@
       "titlesFull": "You can add up to {{max}} job titles."
     },
     "similar": { "ask": "Suggest similar titles", "running": "{{ai}} is looking for similar titles…", "none": "No further fitting titles were found.", "title": "Which of these should be searched too?", "add": "Add chosen ({{count}})" },
+    "companies": {"title":"Companies I follow","intro":"Add the careers page of a company that uses Greenhouse, Lever, Ashby or Personio. Every search also reads its offers (at most every 6 hours) and keeps those that fit your job titles and cities. Only the company's account name from the link goes to that service.","link":"Link to the careers page","name":"Company name (for the letter)","supported":"For example jobs.lever.co/<company>, boards.greenhouse.io/<company>, jobs.ashbyhq.com/<company> or <company>.jobs.personio.de.","add":"Follow company","adding":"Reading the careers page…","empty":"You do not follow any company yet.","full":"You follow {{max}} companies, the most possible. Remove one to add another.","open":"Careers page","lastRead":"Last read {{date}}","notRead":"Not read yet","failed":"The last read failed; it is tried again at the next search.","offers":"Offers: {{count}}","remove":"Stop following","removeOne":"Stop following {{name}}","service":{"greenhouse":"Greenhouse","lever":"Lever","ashby":"Ashby","personio":"Personio"}},
     "progress": {
       "phase": {
         "querying": "Searching the job board…",
@@ -618,6 +619,7 @@
       "more": "{{count}} more new offers were found — run the search again to see them.",
       "warnings": {
         "someQueriesFailed": "Some searches could not be done. The results may be incomplete.",
+        "someCompaniesFailed": "Some company careers pages could not be read. Their offers may be missing.",
         "tooManyQueries": "You have many job titles and cities; only the first 30 combinations were searched.",
         "staleCheckFailed": "It could not be checked for every older offer whether it still exists."
       }
@@ -639,6 +641,8 @@
       "scoreTitle": "How well the offer fits your profile (0–100)",
       "manual": "added by hand",
       "offline": "removed by the job board",
+      "offlineCompany": "removed from the careers page",
+      "company": "from the company's careers page",
       "initiative": "initiative application",
       "sentOn": "Sent {{date}}",
       "submittedOn": "Submitted on the website {{date}}",

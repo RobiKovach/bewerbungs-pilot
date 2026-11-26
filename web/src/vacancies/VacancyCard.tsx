@@ -63,7 +63,8 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, 
           <h3>{v.title}</h3>
           <p className="muted">
             {v.company}{v.addedManually ? <> <span className="badge">{t('vacancies.card.manual')}</span></> : null}
-            {v.offline ? <> <span className="badge">{t('vacancies.card.offline')}</span></> : null}
+            {v.source === 'company' ? <> <span className="badge">{t('vacancies.card.company')}</span></> : null}
+            {v.offline ? <> <span className="badge">{t(v.source === 'company' ? 'vacancies.card.offlineCompany' : 'vacancies.card.offline')}</span></> : null}
             {v.initiative ? <> <span className="badge">{t('vacancies.card.initiative')}</span></> : null}
           </p>
           {facts ? <p className="muted">{facts}</p> : null}

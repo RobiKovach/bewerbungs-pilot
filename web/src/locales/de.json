@@ -482,7 +482,7 @@
     "TOO_MANY_FILES": { "message": "Sie haben bereits 20 Dokumente.", "hint": "Löschen Sie ein Dokument, das Sie nicht mehr brauchen, und fügen Sie dann das neue hinzu." },
     "CV_UNREADABLE": { "message": "In diesem Lebenslauf konnte kein Text gelesen werden.", "hint": "Es könnte sich um einen Scan oder ein Foto handeln. Versuchen Sie eine andere Datei (zum Beispiel die Word-Version) oder klicken Sie auf „Ohne Lebenslauf ausfüllen“." },
     "PROFILE_NOT_READY": { "message": "Ihr Profil ist noch nicht vollständig.", "hint": "Öffnen Sie „Profil“ und bestätigen Sie jeden Abschnitt mit „Alles korrekt“." },
-    "SOURCE_UNAVAILABLE": { "message": "Die Jobbörse der Bundesagentur für Arbeit ist gerade nicht erreichbar.", "hint": "Prüfen Sie Ihre Internetverbindung und versuchen Sie es in ein paar Minuten erneut." },
+    "SOURCE_UNAVAILABLE": { "message_companyRead": "Die Karriereseite konnte nicht gelesen werden.", "hint_companyRead": "Prüfen Sie den Link oder versuchen Sie es in ein paar Minuten erneut.", "message": "Die Jobbörse der Bundesagentur für Arbeit ist gerade nicht erreichbar.", "hint": "Prüfen Sie Ihre Internetverbindung und versuchen Sie es in ein paar Minuten erneut." },
     "SOURCE_RATE_LIMITED": { "message": "Die Jobbörse hat zu viele Anfragen erhalten.", "hint": "Bitte warten Sie ein paar Minuten und suchen Sie dann erneut." },
     "SOURCE_CHANGED": { "message": "Die Jobbörse der Bundesagentur für Arbeit hat sich geändert.", "hint": "BewerbungsPilot benötigt ein Update, um sie wieder lesen zu können. Bitte schauen Sie nach einer neuen Version." },
     "SEARCH_ALREADY_RUNNING": { "message": "Es läuft bereits eine Suche.", "hint": "Warten Sie, bis sie fertig ist, oder stoppen Sie sie zuerst." },
@@ -494,8 +494,8 @@
     "LETTER_TOO_LONG": { "message": "Das Anschreiben ist länger als eine Seite.", "hint": "Kürzen Sie das Anschreiben (oder bitten Sie {{ai}}, es zu kürzen), bis die rote Markierung verschwindet, und genehmigen Sie es dann." },
     "PACKAGE_RULES_BROKEN": { "message": "{{ai}} konnte das Anschreiben nicht regelkonform schreiben.", "hint": "Versuchen Sie es erneut. Wenn es wieder passiert, prüfen Sie Ihre Geschichten und die Liste „Nicht erwähnen“ in Ihrem Profil." },
     "PACKAGE_EXISTS": { "message": "Für dieses Stellenangebot gibt es bereits ein Paket.", "hint": "Öffnen Sie das vorhandene Paket. Um neu zu beginnen, nutzen Sie darin „Neu erstellen“." },
-    "CONFLICT": { "message": "Das wurde inzwischen geändert.", "message_prepNotAvailable": "Das war gerade nicht möglich.", "message_prepReadOnly": "Das war gerade nicht möglich.", "message_prepExists": "Das war gerade nicht möglich.", "message_prepBusy": "Das war gerade nicht möglich.", "message_prepNotFinished": "Das war gerade nicht möglich.", "message_prepUnreadable": "Das war gerade nicht möglich.", "hint": "Bitte sehen Sie es sich noch einmal an und wählen Sie dann erneut.", "hint_prepNotAvailable": "Die Vorbereitung ist verfügbar, sobald die Bewerbung gesendet oder eingereicht wurde.", "hint_prepReadOnly": "Diese Bewerbung ist abgeschlossen, die Vorbereitung kann nur noch angesehen werden.", "hint_prepExists": "Für diese Bewerbung gibt es bereits Fragen. Bitte laden Sie die Seite neu.", "hint_prepBusy": "{{ai}} arbeitet noch an dieser Vorbereitung. Bitte warten Sie, bis es fertig ist.", "hint_prepNotFinished": "Die Zusammenfassung gibt es nach der Rückmeldung zu allen Fragen.", "hint_prepUnreadable": "Die Vorbereitungsdatei konnte nicht gelesen werden. Bitte versuchen Sie es in einer Minute erneut." },
-    "BAD_REQUEST": { "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
+    "CONFLICT": { "message_companyLimit": "Sie folgen bereits 20 Firmen.", "hint_companyLimit": "Entfernen Sie zuerst eine, dann fügen Sie die neue hinzu.", "message_companyExists": "Sie folgen dieser Karriereseite bereits.", "hint_companyExists": "Sie steht in der Liste oben.", "message": "Das wurde inzwischen geändert.", "message_prepNotAvailable": "Das war gerade nicht möglich.", "message_prepReadOnly": "Das war gerade nicht möglich.", "message_prepExists": "Das war gerade nicht möglich.", "message_prepBusy": "Das war gerade nicht möglich.", "message_prepNotFinished": "Das war gerade nicht möglich.", "message_prepUnreadable": "Das war gerade nicht möglich.", "hint": "Bitte sehen Sie es sich noch einmal an und wählen Sie dann erneut.", "hint_prepNotAvailable": "Die Vorbereitung ist verfügbar, sobald die Bewerbung gesendet oder eingereicht wurde.", "hint_prepReadOnly": "Diese Bewerbung ist abgeschlossen, die Vorbereitung kann nur noch angesehen werden.", "hint_prepExists": "Für diese Bewerbung gibt es bereits Fragen. Bitte laden Sie die Seite neu.", "hint_prepBusy": "{{ai}} arbeitet noch an dieser Vorbereitung. Bitte warten Sie, bis es fertig ist.", "hint_prepNotFinished": "Die Zusammenfassung gibt es nach der Rückmeldung zu allen Fragen.", "hint_prepUnreadable": "Die Vorbereitungsdatei konnte nicht gelesen werden. Bitte versuchen Sie es in einer Minute erneut." },
+    "BAD_REQUEST": { "message_companyLink": "BewerbungsPilot kann diese Karriereseite nicht lesen.", "hint_companyLink": "Fügen Sie einen Link zu einer Karriereseite bei Greenhouse, Lever, Ashby oder Personio ein.", "message": "Etwas an der Anfrage stimmte nicht.", "hint": "Laden Sie die Seite neu und versuchen Sie es erneut." },
     "NOT_FOUND": { "message": "Diese Seite gibt es nicht.", "hint": "Gehen Sie zurück zur Startseite." },
     "FILE_SAVE_FAILED": { "message": "Die Datei konnte dort nicht gespeichert werden.", "hint": "Vielleicht wurde der USB-Stick entfernt, der Datenträger ist voll oder in den Ordner darf nicht geschrieben werden. Wählen Sie einen anderen Ort und versuchen Sie es erneut." },
     "SERVER_UNREACHABLE": { "message": "BewerbungsPilot läuft nicht.", "hint": "Starten Sie es erneut über die Verknüpfung auf Ihrem Desktop." },
@@ -592,6 +592,7 @@
       "titlesFull": "Sie können bis zu {{max}} Berufe hinzufügen."
     },
     "similar": { "ask": "Ähnliche Bezeichnungen vorschlagen", "running": "{{ai}} sucht ähnliche Bezeichnungen…", "none": "Keine weiteren passenden Bezeichnungen gefunden.", "title": "Welche davon sollen auch gesucht werden?", "add": "Ausgewählte hinzufügen ({{count}})" },
+    "companies": {"title":"Firmen, denen ich folge","intro":"Fügen Sie die Karriereseite einer Firma hinzu, die Greenhouse, Lever, Ashby oder Personio nutzt. Jede Suche liest auch deren Angebote (höchstens alle 6 Stunden) und behält die, die zu Ihren Berufsbezeichnungen und Orten passen. An diesen Dienst geht nur der Kontoname der Firma aus dem Link.","link":"Link zur Karriereseite","name":"Name der Firma (für das Anschreiben)","supported":"Zum Beispiel jobs.lever.co/<firma>, boards.greenhouse.io/<firma>, jobs.ashbyhq.com/<firma> oder <firma>.jobs.personio.de.","add":"Firma folgen","adding":"Karriereseite wird gelesen…","empty":"Sie folgen noch keiner Firma.","full":"Sie folgen {{max}} Firmen, mehr geht nicht. Entfernen Sie eine, um eine andere hinzuzufügen.","open":"Karriereseite","lastRead":"Zuletzt gelesen {{date}}","notRead":"Noch nicht gelesen","failed":"Das letzte Lesen ist fehlgeschlagen; bei der nächsten Suche wird es erneut versucht.","offers":"Angebote: {{count}}","remove":"Nicht mehr folgen","removeOne":"{{name}} nicht mehr folgen","service":{"greenhouse":"Greenhouse","lever":"Lever","ashby":"Ashby","personio":"Personio"}},
     "progress": {
       "phase": {
         "querying": "Suche auf der Jobbörse…",
@@ -618,6 +619,7 @@
       "more": "{{count}} weitere neue Angebote wurden gefunden — starten Sie die Suche erneut, um sie zu sehen.",
       "warnings": {
         "someQueriesFailed": "Einige Suchanfragen konnten nicht durchgeführt werden. Die Ergebnisse können unvollständig sein.",
+        "someCompaniesFailed": "Einige Karriereseiten von Firmen konnten nicht gelesen werden. Deren Angebote können fehlen.",
         "tooManyQueries": "Sie haben viele Jobtitel und Städte; es wurden nur die ersten 30 Kombinationen durchsucht.",
         "staleCheckFailed": "Es konnte nicht für jedes ältere Angebot geprüft werden, ob es noch existiert."
       }
@@ -639,6 +641,8 @@
       "scoreTitle": "Wie gut das Angebot zu Ihrem Profil passt (0–100)",
       "manual": "manuell hinzugefügt",
       "offline": "von der Jobbörse entfernt",
+      "offlineCompany": "von der Karriereseite entfernt",
+      "company": "von der Karriereseite der Firma",
       "initiative": "Initiativbewerbung",
       "sentOn": "Gesendet am {{date}}",
       "submittedOn": "Über die Website eingereicht am {{date}}",
