@@ -483,6 +483,44 @@ test('a pasted link to a vacancy on the company site: the page and its Impressum
   await expect(dialog).toBeHidden();
 });
 
+test('similar titles are added only when ticked; a followed company brings its fitting offer to the search', async () => {
+  // Wishes: Dresden, any work place. Written the way the profile page saves them (only the city and remote change).
+  await page.evaluate(async () => {
+    const view = await (await fetch('/api/profile')).json() as { profile: { sections: { wishes: { data: Record<string, unknown> } } } };
+    const data = { ...view.profile.sections.wishes.data, locations: ['Dresden'], remote: 'any', jobTitles: ['Frontend-Entwickler'] };
+    const res = await fetch('/api/profile/sections/wishes', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-bp-client': '1' }, body: JSON.stringify({ data }) });
+    if (!res.ok) throw new Error(`wishes: ${res.status} ${await res.text()}`);
+  });
+  await page.getByRole('link', { name: 'Job offers' }).first().click();
+  await page.reload();
+
+  // The AI helper proposes; nothing is added until a title is ticked.
+  await page.getByRole('button', { name: 'Suggest similar titles' }).click();
+  await expect(page.getByRole('checkbox', { name: /Web Developer/ })).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('.chip').filter({ hasText: 'Web Developer' })).toHaveCount(0);
+  await page.getByRole('checkbox', { name: /Web Developer/ }).check();
+  await page.getByRole('button', { name: 'Add chosen (1)' }).click();
+  await expect(page.locator('.chip').filter({ hasText: 'Web Developer' })).toBeVisible();
+  await expect(page.locator('.chip').filter({ hasText: 'TYPO3-Entwickler' })).toHaveCount(0);
+
+  // Follow a company: its board is read once when it is added.
+  const companies = page.locator('details.companies');
+  await companies.locator('summary').click();
+  await companies.getByRole('textbox', { name: 'Link to the careers page' }).fill('https://jobs.lever.co/beispielwerk');
+  await companies.getByRole('textbox', { name: 'Company name (for the letter)' }).fill('Beispielwerk Digital GmbH');
+  await companies.getByRole('button', { name: 'Follow company' }).click();
+  await expect(companies.getByText('Beispielwerk Digital GmbH')).toBeVisible({ timeout: 30_000 });
+  await expect(companies.getByText(/Offers: 2/)).toBeVisible();
+
+  // The search: the Arbeitsagentur is not asked in test mode; only the offer that fits a wished title comes in.
+  await page.getByRole('button', { name: 'Search now' }).click();
+  const card = page.getByRole('article').filter({ hasText: 'Web Developer (m/w/d)' });
+  await expect(card).toBeVisible({ timeout: 90_000 });
+  await expect(card.getByText("from the company's careers page")).toBeVisible();
+  await expect(card.getByText('Beispielwerk Digital GmbH')).toBeVisible();
+  await expect(page.getByRole('article').filter({ hasText: 'Buchhalter' })).toHaveCount(0);
+});
+
 test('without the launch key the app shows only the shortcut page', async ({ browser }: { browser: Browser }) => {
   const stranger = await browser.newContext({ locale: 'en-US' });
   try {

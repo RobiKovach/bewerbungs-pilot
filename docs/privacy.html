@@ -12,7 +12,7 @@
   <header>
     <nav><a href="./">Home</a><a href="privacy.html">Privacy policy</a><a href="https://github.com/RobiKovach/bewerbungs-pilot">Source code</a></nav>
     <h1>Privacy policy</h1>
-    <p class="lead">BewerbungsPilot · effective 24 November 2026</p>
+    <p class="lead">BewerbungsPilot · effective 26 November 2026</p>
   </header>
 
   <h2>In short</h2>
@@ -24,8 +24,8 @@
       your documents, not your emails and not your Google account data. The one exception is a message you
       write yourself with the <strong>Feedback</strong> button and send by clicking "Send".</li>
     <li>The app sends data only to the services you use through it: the job board of the Federal Employment Agency,
-      the AI helper you chose, your email provider (Google, if you use Sign in with Google) and the public websites of
-      employers it reads for you. Each of them is described below.</li>
+      the public careers pages of companies you follow, the AI helper you chose, your email provider (Google, if you use
+      Sign in with Google) and the public websites of employers it reads for you. Each of them is described below.</li>
     <li>Once a day the app asks the BewerbungsPilot website whether a newer version exists. Nothing about you is sent;
       you can switch this off in Settings.</li>
     <li>Once a day the app also tells the developer's server that it is in use: a random number and the version, nothing
@@ -73,7 +73,18 @@
   <p>
     To search for job offers, the app sends your job titles, place, search radius and search filters to
     <code>rest.arbeitsagentur.de</code>, the public job board of the Bundesagentur für Arbeit. No name or contact data is
-    sent.
+    sent. If you switch on the <strong>daily search</strong> in Settings, the same search runs once a day by itself while
+    the app is running.
+  </p>
+
+  <h3 id="careers">Careers pages of companies you follow</h3>
+  <p>
+    If you add a company under <strong>Companies I follow</strong>, the app reads that company's public job list from the
+    applicant system the company uses — Greenhouse (<code>boards-api.greenhouse.io</code>), Lever (<code>api.lever.co</code>
+    or <code>api.eu.lever.co</code>), Ashby (<code>api.ashbyhq.com</code>) or Personio (<code>&lt;company&gt;.jobs.personio.de</code>):
+    once when you add it and then with each search, at most once every six hours. Only the company's account name from the
+    link you pasted is sent — nothing about you, not your job titles and not your place; the offers are filtered on your PC.
+    Removing a company stops this; the offers already found stay in your list.
   </p>
 
   <h3>Websites of links you paste</h3>
@@ -113,6 +124,8 @@
     <li>when writing a reply to an offer: the job title, the company, your education, experience, skills, languages and
       confirmed stories, the amounts you enter, your "never mention" list (so that the helper avoids those topics) and your
       name, because the reply is signed with it;</li>
+    <li>when suggesting similar job titles: your wished job titles, the job titles you held, your degrees and your skills
+      with their level — nothing else;</li>
     <li>when summarising "About the company": the company name and the texts of the company pages the app read — nothing
       about you;</li>
     <li>in the interview preparation: the job offer, the subject and text of your cover letter, your education, experience,

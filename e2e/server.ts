@@ -76,12 +76,29 @@ function serveFile(file: string): Promise<http.Server> {
 function servePages(dir: string): Promise<http.Server> {
   const routes: Record<string, string> = { '/jobs/webentwickler': 'job.html', '/impressum': 'impressum.html' };
   const server = http.createServer((req, res) => {
+    // A followed company's Lever board (0.14.0): one offer that fits the wishes, one that does not.
+    if ((req.url ?? '').split('?')[0] === '/feeds/lever/beispielwerk') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(leverBoard()));
+      return;
+    }
     const file = routes[(req.url ?? '').split('?')[0]];
     if (!file) { res.writeHead(404, { 'content-type': 'text/plain' }); res.end('not found'); return; }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     res.end(fs.readFileSync(path.join(dir, file)));
   });
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
+}
+
+/** Lever's answer shape (`/v0/postings/<site>?mode=json`), published now so the "published within" filter keeps it. */
+function leverBoard(): unknown[] {
+  const text = 'Wir entwickeln unsere eigene Webplattform weiter und suchen Verstärkung für das Frontend-Team. '.repeat(6);
+  const offer = (id: string, title: string, workplaceType: string) => ({
+    id, text: title, createdAt: Date.now(), workplaceType, hostedUrl: `https://jobs.lever.co/beispielwerk/${id}`,
+    categories: { location: 'Dresden', allLocations: ['Dresden'], commitment: 'Vollzeit' },
+    descriptionPlain: text, lists: [], additionalPlain: '',
+  });
+  return [offer('e2e-web-1', 'Web Developer (m/w/d)', 'remote'), offer('e2e-acc-2', 'Buchhalter (m/w/d)', 'onsite')];
 }
 
 function serveBytes(body: Buffer): Promise<http.Server> {

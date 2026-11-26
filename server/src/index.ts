@@ -43,7 +43,7 @@ import { acquireInstanceLock, createShutdown } from './runtime/lifecycle.js';
 import { findFreePort } from './runtime/port.js';
 import { ArbeitsagenturSource } from './vacancies/sources/arbeitsagentur.js';
 import { BrowserPageReader } from './vacancies/sources/page-reader.js';
-import { addressRules, testPagesPort } from './vacancies/sources/test-pages.js';
+import { addressRules, emptyTestSource, testPagesPort } from './vacancies/sources/test-pages.js';
 import { AaContactWindow } from './vacancies/sources/aa-contact-window.js';
 import { HttpPdfFetcher } from './vacancies/sources/pdf-fetch.js';
 import { MANUAL_TEXT_MIN } from './vacancies/tasks/extract-manual.js';
@@ -172,8 +172,8 @@ async function main(): Promise<void> {
   const vacancyStore = new VacancyStore({ file: paths.vacanciesFile, textsDir: paths.vacancyTexts }, (event, data) => logger.warn(event, data));
   if (!newerData) vacancyStore.load();
   if (demoLanguage !== null) await seedDemo({ settings, profileStore, vacancyStore, secrets, language: demoLanguage });
-  const vacancySource = new ArbeitsagenturSource();
   const testFeeds = testPagesPort(process.env, process.argv);
+  const vacancySource = testFeeds === null ? new ArbeitsagenturSource() : emptyTestSource;
   const feedRules = addressRules(testFeeds);
   const companies = new Companies({
     file: paths.companies, logger,

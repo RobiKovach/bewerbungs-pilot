@@ -6,7 +6,7 @@ email and keeps track of every answer. Nothing is made up: letters are built onl
 
 ![Job offers scored from 0 to 100 with the reasons, in the demo](docs/images/02-job-offers.png)
 
-**Status: v0.13** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
+**Status: v0.14** — profile, job offers, application packages, sending, statuses, reminders, statistics, backups,
 feedback, one-click updates, a demo and interview preparation. Six languages: Українська · English · Deutsch · Русский · Polski · Română.
 
 ## Start in 5 steps
@@ -75,6 +75,18 @@ The update banner has an **Update now** button (it really works from 0.12.1): th
 project's GitHub Releases, checks its checksum (published in `version.json`), saves a backup of your data, installs the new
 version and restarts. If anything fails, the old version keeps working and you are told why. If you have 0.12.0 or
 older, install 0.12.1 by hand once (download it from the banner or the Releases page); after that updates are one click.
+
+### What's new in 0.14.0
+
+- **Similar job titles.** Under the job titles above the search, **Suggest similar titles** asks the AI helper for
+  titles close to your wishes, your past jobs, degrees and skills. Nothing is added until you tick a title and press
+  **Add chosen**. A job title that brought nothing new for three search days is named, with what to try.
+- **Companies I follow.** Paste the careers page of a company that uses Greenhouse, Lever, Ashby or Personio (for
+  example `jobs.lever.co/<company>`) and its name. Every search also reads that company's public job list (at most every
+  six hours) and keeps the offers that fit your job titles and cities; their cards say "from the company's careers page".
+  Only the company's account name from the link is sent to that service. Up to 20 companies.
+- **Daily search** (Settings → Daily search, off by default): while the app is open it searches once a day by itself and
+  shows a banner with the new offers. At most 20 new offers a day are scored, which uses your AI allowance.
 
 ### What's new in 0.13.0
 
@@ -157,7 +169,7 @@ walks you through signing in; you can switch at any time in Settings. Only one h
 
 The developer receives none of your data, except a message you write yourself with the **Feedback** button and send by
 clicking "Send" (your text, the email address you typed, the version; kept 12 months). Apart from the daily version check
-and the daily "in use" signal below, the app talks only to the services you use through it (job board, AI helper, email provider) and to the public
+and the daily "in use" signal below, the app talks only to the services you use through it (job board, careers pages of companies you follow, AI helper, email provider) and to the public
 websites of employers it reads for "About the company" — details in the [privacy policy](https://robikovach.github.io/bewerbungs-pilot/privacy.html).
 
 Once a day the app asks the BewerbungsPilot website (GitHub Pages) whether a newer version exists. GitHub sees your IP
@@ -204,9 +216,10 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Offers you applied to (package sent, or marked "submitted on the website") move to their own **Applied** tab
   with the date; open the package from there or hide the offer. Offers you added yourself are never shown as a weak
   match and come first in **New**.
+- **Companies I follow** and **Suggest similar titles**: see "What's new in 0.14.0".
 - Up to 50 new offers per search; the search runs in the background and can be stopped at any time.
 - Stored on your computer: `%LOCALAPPDATA%\BewerbungsPilot\vacancies\`. The job search only talks to
-  `rest.arbeitsagentur.de`. A pasted link (not Arbeitsagentur) is opened only when you give no text, in a separate
+  `rest.arbeitsagentur.de` and to the job lists of the companies you follow. A pasted link (not Arbeitsagentur) is opened only when you give no text, in a separate
   browser profile, and never to an internal address such as your router or this PC.
 - **About the company** on each card: see "What's new in 0.13.0". The app reads only public pages of the employer (no
   review sites, LinkedIn or Xing) and keeps a short summary plus the page addresses, not the texts. It does not ask

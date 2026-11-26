@@ -2,6 +2,19 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.14.0
+
+- **Similar job titles.** Under the job titles above the search, **Suggest similar titles** asks the AI helper for
+  titles close to your wishes, your past jobs, degrees and skills. Nothing is added until you tick a title and press
+  **Add chosen**. A job title that brought nothing new for three search days is named, with what to try.
+- **Companies I follow.** Paste the careers page of a company that uses Greenhouse, Lever, Ashby or Personio (for
+  example `jobs.lever.co/<company>`) and its name. Every search also reads that company's public job list (at most every
+  six hours) and keeps the offers that fit your job titles and cities; their cards say "from the company's careers page".
+  Only the company's account name from the link is sent to that service. Up to 20 companies.
+- **Daily search** (Settings → Daily search, off by default): while the app is open it searches once a day by itself and
+  shows a banner with the new offers. At most 20 new offers a day are scored, which uses your AI allowance.
+- Offers found only on a company's careers page can use **Find contact** and "About the company" like pasted offers.
+
 ## What's new in 0.13.4
 
 - **Your data cannot seem lost any more.** If a newer version wrote it (for example after going back to an older one), the

@@ -1,4 +1,5 @@
 import { devUpdateSourceAllowed } from '../../updates/updater.js';
+import type { VacancySource } from './types.js';
 import { checkPublicUrl, isPublicAddress, type UrlCheck } from './safe-address.js';
 
 /**
@@ -39,3 +40,11 @@ export function addressRules(port: number | null): AddressRules {
     addressOk: (ip) => LOOPBACK.has(ip),
   };
 }
+
+/** Test mode with test pages on (0.14.0): the Arbeitsagentur is never asked; a search finds only the followed companies. */
+export const emptyTestSource: VacancySource = {
+  id: 'arbeitsagentur',
+  search: async () => [],
+  details: async () => null,
+  isOnline: async () => true,
+};
