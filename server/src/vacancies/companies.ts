@@ -118,6 +118,7 @@ export class Companies {
   }
 
   private save(next: Company[]): void {
+    fs.mkdirSync(path.dirname(this.d.file), { recursive: true });
     writeJsonAtomic(this.d.file, { schemaVersion: 1, companies: next });
     this.items = next;
   }

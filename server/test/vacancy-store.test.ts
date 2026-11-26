@@ -284,7 +284,7 @@ describe('0.13.0: vacancies file v4 → v5 (company research, contactAuto)', () 
     ...over,
   });
 
-  it('v4 file migrates to v5 without changing any vacancy', () => {
+  it('v4 file migrates to the current version without changing any vacancy', () => {
     const { paths } = setup();
     const cards = [vacancy({ id: 'a' }), { ...vacancy({ id: 'b' }), contact: null, initiative: true }];
     fs.writeFileSync(paths.file, JSON.stringify({ schemaVersion: 4, vacancies: cards }));
@@ -292,7 +292,7 @@ describe('0.13.0: vacancies file v4 → v5 (company research, contactAuto)', () 
     const store = new VacancyStore(paths, (e) => events.push(e));
     store.load();
     expect(events).toEqual([]);
-    expect(VACANCIES_SCHEMA_VERSION).toBe(5);
+    expect(VACANCIES_SCHEMA_VERSION).toBe(6);
     expect(store.list()).toEqual(cards);
   });
 
