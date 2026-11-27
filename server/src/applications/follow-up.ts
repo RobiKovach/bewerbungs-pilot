@@ -11,7 +11,8 @@ export function followUpOpen(p: ApplicationPackage): boolean {
 /** Spec, section 8: 14 days after sending/submitting with nothing new in the history. */
 export function followUpDue(p: ApplicationPackage, now: Date): boolean {
   if (!followUpOpen(p)) return false;
-  const last = p.history.at(-1);
+  // A Bewerbungsnachweis mark (0.15.0) is not news from the employer: it never moves or cancels the reminder.
+  const last = p.history.filter((h) => h.kind !== 'nachweis').at(-1);
   if (!last || last.kind !== p.status) return false;
   return now.getTime() - Date.parse(last.at) >= FOLLOW_UP_DAYS * DAY_MS;
 }

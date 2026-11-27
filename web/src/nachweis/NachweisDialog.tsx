@@ -105,7 +105,8 @@ export function NachweisDialog({ onClose, onChanged }: { onClose: () => void; on
   const setup = view.setup;
   const fresh = view.candidates.filter((c) => c.exportedAt === null);
   const shown = showExported ? view.candidates : fresh;
-  const chosen = view.candidates.filter((c) => picked.has(c.packageId));
+  // Only what is on screen goes into the file: a row ticked and then hidden again stays out.
+  const chosen = shown.filter((c) => picked.has(c.packageId));
   const unconfirmed = chosen.filter((c) => c.contactUnconfirmed);
   return (
     <div className="card nachweis-dialog" role="dialog" aria-label={t('nachweis.title')}>

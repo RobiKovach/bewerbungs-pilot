@@ -89,8 +89,10 @@ function rowOf(p: ApplicationPackage, v: Vacancy | undefined): NachweisRow {
   const first = firstSubmission(p)!;
   const initiative = p.vacancy.initiative === true || v?.initiative === true;
   // The card may have been completed after sending (contact found later); the package keeps what it was sent with.
-  const contact = v ? v.contact : p.vacancy.contact;
-  const auto = v ? v.contactAuto ?? [] : p.vacancy.contactAuto ?? [];
+  // A hidden AA card loses its contact on the next search (compactHidden): then the package's copy is used.
+  const fromCard = Boolean(v?.contact);
+  const contact = fromCard ? v!.contact : p.vacancy.contact;
+  const auto = (fromCard ? v!.contactAuto : p.vacancy.contactAuto) ?? [];
   const parts = contactParts(contact, p.vacancy.company);
   const ref = refnr(p, v);
   return {

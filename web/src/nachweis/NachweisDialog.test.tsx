@@ -54,6 +54,21 @@ describe('NachweisDialog', () => {
     expect(screen.getByText('in Nachweis on 20.11.2026')).toBeInTheDocument();
   });
 
+  it('an exported row ticked and then hidden again is not saved', async () => {
+    fetchFn = mockFetch(routes());
+    saveFile.mockResolvedValue('saved');
+    render(<NachweisDialog onClose={() => {}} />);
+    const toggle = await screen.findByRole('checkbox', { name: 'Show already exported' });
+    await userEvent.click(toggle);
+    await userEvent.click(box(/Firma a2/));
+    expect(screen.getByText('Applications: 3 · Pages: 1')).toBeInTheDocument();
+    await userEvent.click(toggle);
+    expect(screen.getByText('Applications: 2 · Pages: 1')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Save as…' }));
+    await waitFor(() => expect(markBodies()).toHaveLength(1));
+    expect(markBodies()[0].applicationIds).toEqual(['a1', 'a3']);
+  });
+
   it('saved → mark called once with the ticked ids and the file name', async () => {
     fetchFn = mockFetch(routes());
     saveFile.mockResolvedValue('saved');

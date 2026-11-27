@@ -74,6 +74,17 @@ describe('rows', () => {
     expect(c(contact({ email: 'jobs@firma.de' }))).toBe('jobs@firma.de');
     expect(c(null)).toBe('');
   });
+  it('a hidden card whose contact was cleared by the search: the row keeps the contact the package was sent with', () => {
+    const p = sent('2026-11-10', { vacancyId: 'vh' });
+    p.vacancy.contact = contact({ salutation: 'Frau', name: 'Erika Beispiel', phone: '0351 123', street: 'Hauptstr. 1', postcode: '01067', city: 'Dresden' });
+    p.vacancy.contactAuto = ['phone'];
+    // VacancyStore.compactHidden(): hidden AA cards lose contact and contactAuto.
+    const v = vacancy({ id: 'vh', status: 'hidden', contact: null });
+    const row = buildRows([p], lookup([v]))[0]!;
+    expect(row.contact).toBe('Frau Erika Beispiel, Tel. 0351 123');
+    expect(row.companyLines.slice(1)).toEqual(['Hauptstr. 1', '01067 Dresden']);
+    expect(row.contactUnconfirmed).toBe(true);
+  });
   it('contactUnconfirmed true when contactAuto includes email and email is shown', () => {
     const v = vacancy({ id: 'vu', contact: contact({ email: 'jobs@firma.de' }), contactAuto: ['email'] });
     const p = sent('2026-11-10', { vacancyId: 'vu' });

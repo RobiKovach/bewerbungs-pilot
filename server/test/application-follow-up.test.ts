@@ -16,6 +16,12 @@ describe('reminder due', () => {
     expect(followUpDue(sent(), at(13, 23))).toBe(false);
     expect(followUpDue(sent(), at(14))).toBe(true);
   });
+  it('a Bewerbungsnachweis mark does not move or cancel the reminder (spec 0.15.0, 6.2)', () => {
+    const p = sent();
+    p.history.push({ kind: 'nachweis', at: at(3).toISOString(), note: 'Bewerbungsnachweis.docx' });
+    expect(followUpDue(p, at(13, 23))).toBe(false);
+    expect(followUpDue(p, at(14))).toBe(true);
+  });
   it('works the same for "submitted"', () => {
     const p = pkg({ status: 'submitted', history: [{ kind: 'submitted', at: SENT }] });
     expect(followUpDue(p, at(20))).toBe(true);
