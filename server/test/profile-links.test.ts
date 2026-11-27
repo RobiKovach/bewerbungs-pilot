@@ -10,8 +10,8 @@ import { toSectionData } from '../src/profile/tasks/extract-cv.js';
 const personal = (links: unknown) => ({ ...emptyProfile().sections.personal.data, fullName: 'Max Mustermann', links });
 
 describe('profile v4 links', () => {
-  it('schema version is 4 and an empty profile has no links', () => {
-    expect(PROFILE_SCHEMA_VERSION).toBe(4);
+  it('schema version is at least 4 and an empty profile has no links', () => {
+    expect(PROFILE_SCHEMA_VERSION).toBeGreaterThanOrEqual(4);
     expect(emptyProfile().sections.personal.data.links).toEqual([]);
   });
   it('accepts up to 3 http(s) links', () => {

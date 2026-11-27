@@ -7,3 +7,4 @@ export type * from './vacancy.js';
 export type * from './application.js';
 export type * from './interview.js';
 export type * from './backup.js';
+export type * from './nachweis.js';

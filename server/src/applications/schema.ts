@@ -7,10 +7,12 @@ import { isAaHost } from '../vacancies/aa-links.js';
 import { CONTACT, CONTACT_AUTO, VACANCY_LIMITS, withContactFields } from '../vacancies/schema.js';
 
 export const APPLICATIONS_SCHEMA_VERSION = 2;
-export const PACKAGE_SCHEMA_VERSION = 7;
+export const PACKAGE_SCHEMA_VERSION = 8;
 
 /** migrations[n] turns package version n into n + 1 (applied on read; written back on the next save). */
 export const PACKAGE_MIGRATIONS: Readonly<Record<number, Migration>> = {
+  // 8 (0.15.0): history may hold the 'nachweis' event — nothing to change in older packages.
+  7: (doc) => doc,
   // 7 (0.13.0): optional company facts and contactAuto on the vacancy copy — packages from before have neither.
   6: (doc) => doc,
   // 6 (0.9.1): the contact gets phone and address. A link to the Arbeitsagentur home page (the old partner-link bug)
@@ -81,7 +83,7 @@ const TIMESTAMP = str(40);
 const LANGUAGE = { enum: ['de', 'en'] };
 const STATUS = { enum: ['draft', 'approved', 'sent', 'submitted', 'interview', 'rejected', 'offer', 'withdrawn'] };
 const PROVIDER = { enum: [...PROVIDER_IDS] };
-const HISTORY_KIND = { enum: [...STATUS.enum, 'followUp', 'followUpDismissed', 'reply'] };
+const HISTORY_KIND = { enum: [...STATUS.enum, 'followUp', 'followUpDismissed', 'reply', 'nachweis'] };
 
 const SUMMARY = obj({
   id: ID, vacancyId: ID, company: str(V.company), title: str(V.title), language: LANGUAGE, status: STATUS,

@@ -27,20 +27,31 @@ export function isStatusKind(kind: string): kind is ApplicationStatus {
 }
 
 /** Appends an event to the history; the status stays as it is. */
-export function addEvent(p: ApplicationPackage, kind: HistoryEventKind, at: string, extra: { to?: string; messageId?: string; threadId?: string } = {}): void {
+export function addEvent(p: ApplicationPackage, kind: HistoryEventKind, at: string, extra: { note?: string; to?: string; messageId?: string; threadId?: string } = {}): void {
   p.history.push({ kind, at, ...extra });
   p.updatedAt = at;
 }
 
+/** The last entry that is not a Bewerbungsnachweis mark (0.15.0): marks are never what "Undo" takes back. */
+function lastUndoable(p: ApplicationPackage): number {
+  for (let i = p.history.length - 1; i >= 0; i--) if (p.history[i]!.kind !== 'nachweis') return i;
+  return -1;
+}
+
 /** The last change can be taken back unless it is a real sent email (that can never be undone). */
 export function canUndo(p: ApplicationPackage): boolean {
-  const last = p.history.at(-1);
+  const last = p.history[lastUndoable(p)];
   return isFrozen(p) && last !== undefined && last.kind !== 'sent' && !last.messageId;
 }
 
-/** Removes the last history entry; the status becomes the kind of the last remaining status entry ('approved' if none). */
+/**
+ * Removes the last history entry (skipping Nachweis marks); the status becomes the kind of the last remaining status
+ * entry ('approved' if none). A package that is no longer sent or submitted loses its Nachweis marks too.
+ */
 export function undoLast(p: ApplicationPackage, now: string): void {
-  p.history.pop();
+  const i = lastUndoable(p);
+  if (i >= 0) p.history.splice(i, 1);
+  if (!p.history.some((h) => h.kind === 'sent' || h.kind === 'submitted')) p.history = p.history.filter((h) => h.kind !== 'nachweis');
   const lastStatus = [...p.history].reverse().find((h) => isStatusKind(h.kind));
   p.status = lastStatus && isStatusKind(lastStatus.kind) ? lastStatus.kind : 'approved';
   p.updatedAt = now;

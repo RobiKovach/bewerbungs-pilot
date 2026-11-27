@@ -287,8 +287,8 @@ describe('0.13.0: package v6 → v7 (company facts, contactAuto)', () => {
     const base = pkg();
     const v6 = { ...base, schemaVersion: 6 };
     const doc = migrate(v6, PACKAGE_SCHEMA_VERSION, PACKAGE_MIGRATIONS) as unknown as ReturnType<typeof pkg>;
-    expect(PACKAGE_SCHEMA_VERSION).toBe(7);
-    expect(doc).toEqual({ ...base, schemaVersion: 7 });
+    expect(PACKAGE_SCHEMA_VERSION).toBeGreaterThanOrEqual(7);
+    expect(doc).toEqual({ ...base, schemaVersion: PACKAGE_SCHEMA_VERSION });
     expect(validatePackage(doc)).toBeNull();
     const withFacts = { ...doc, vacancy: { ...doc.vacancy, facts: ['Produkt weasl für Werker', 'Neues Büro in Dresden'], contactAuto: ['email'] } };
     expect(validatePackage(withFacts)).toBeNull();

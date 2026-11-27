@@ -7,7 +7,7 @@ import type { JsonSchema } from '../llm/types.js';
 import { validateOutput } from '../llm/validate.js';
 import { filledPaths } from './sections.js';
 
-export const PROFILE_SCHEMA_VERSION = 4;
+export const PROFILE_SCHEMA_VERSION = 5;
 /** migrations[n] turns version n into n + 1. */
 export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
   // 2: open CV proposals (none in old files) and Section.editedAt (see migrateEditedAt).
@@ -16,6 +16,8 @@ export const PROFILE_MIGRATIONS: Readonly<Record<number, Migration>> = {
   2: (doc) => ({ ...doc, sections: withWishesDefault(doc.sections) }),
   // 4: personal details get a list of links (none in old files).
   3: (doc) => ({ ...doc, sections: withLinksDefault(doc.sections), cvProposals: withProposalLinksDefault(doc.cvProposals) }),
+  // 5 (0.15.0): the Bewerbungsnachweis setup, not set up in old files.
+  4: (doc) => ({ ...doc, nachweis: null }),
 };
 
 /** An open "replace CV" proposal for personal details gets the same default; anything malformed is left alone. */
@@ -143,6 +145,14 @@ const STORY = obj({
   id: ID, title: str(LIMITS.name, 1), text: str(LIMITS.text, 1), kind: oneOf(STORY_KINDS), disclosure: oneOf(['ok', 'never']),
   confirmed: { type: 'boolean' },
 });
+const NACHWEIS = obj({
+  audience: oneOf(['measure', 'jobcenter', 'agentur']),
+  personName: str(LIMITS.name),
+  measure: nullable(obj({ provider: str(LIMITS.name), name: str(LIMITS.name), entry: DAY, exit: DAY, advisor: str(LIMITS.name) })),
+  office: nullable(obj({ name: str(LIMITS.name), customerNumber: str(LIMITS.short), advisor: str(LIMITS.name) })),
+  blank: { anyOf: [obj({ kind: { const: 'standard' } }), obj({ kind: { const: 'own' }, file: STORED_FILE, form: oneOf(['bbw-qgz-pp018']) })] },
+  updatedAt: TIMESTAMP,
+});
 const QUESTION = obj({ id: ID, question: str(LIMITS.question, 1), why: str(LIMITS.question) });
 
 export const PROFILE_SCHEMA: JsonSchema = obj({
@@ -157,6 +167,7 @@ export const PROFILE_SCHEMA: JsonSchema = obj({
   documents: array(DOCUMENT, LIMITS.documents),
   // At most one per CV section; each is checked like the section itself in validateProfile.
   cvProposals: { type: 'object', additionalProperties: false, properties: Object.fromEntries(CV_SECTION_IDS.map((id) => [id, {}])) },
+  nachweis: nullable(NACHWEIS),
 });
 
 export function isSectionId(value: string): value is SectionId {
@@ -190,6 +201,15 @@ export function validateProfile(profile: unknown): string | null {
     if (problem) return `cvProposals.${id}: ${problem}`;
   }
   if (new Set(p.stories.map((s) => s.id)).size !== p.stories.length) return 'duplicate story ids';
+  return nachweisProblem(p.nachweis);
+}
+
+/** The parts the JSON schema cannot say: measure data iff a measure, office data otherwise; own blank only for a measure. */
+export function nachweisProblem(n: Profile['nachweis']): string | null {
+  if (!n) return null;
+  const isMeasure = n.audience === 'measure';
+  if (isMeasure !== (n.measure !== null) || isMeasure === (n.office !== null)) return 'nachweis: measure/office do not match the audience';
+  if (!isMeasure && n.blank.kind === 'own') return 'nachweis: own form only for a measure';
   return null;
 }
 
@@ -228,5 +248,6 @@ export function emptyProfile(): Profile {
     photo: null,
     documents: [],
     cvProposals: {},
+    nachweis: null,
   };
 }

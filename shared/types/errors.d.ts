@@ -44,6 +44,10 @@ export type ErrorCode =
   | 'FEEDBACK_FAILED'
   /** The demo copy of the app (spec 0.10.0) did not start. */
   | 'DEMO_FAILED'
+  /** Bewerbungsnachweis (0.15.0): not set up yet / own blank not a known form / stored own blank missing or changed. */
+  | 'NACHWEIS_NOT_SET_UP'
+  | 'NACHWEIS_FORM_UNKNOWN'
+  | 'NACHWEIS_FORM_CHANGED'
   | 'CONFLICT'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
@@ -78,6 +82,8 @@ export type ErrorReason =
   | 'sentNotSaved'
   | 'historyFull'
   | 'draftExists'
+  | 'nachweisFormAudience'
+  | 'nachweisNotSubmitted'
   | 'followUpDone'
   | 'googleNotSignedIn'
   | 'pageUnreadable'

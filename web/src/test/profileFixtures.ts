@@ -4,7 +4,7 @@ import type { PersonalData, Profile, ProfileView } from '../types';
 export function emptyProfile(): Profile {
   const blank = <T>(data: T) => ({ data, aiFields: [] as string[], confirmedAt: null as string | null, editedAt: null as string | null });
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     wizard: { step: 1, completedAt: null },
     cv: null,
     sections: {
@@ -24,6 +24,7 @@ export function emptyProfile(): Profile {
     photo: null,
     documents: [],
     cvProposals: {},
+    nachweis: null,
   };
 }
 

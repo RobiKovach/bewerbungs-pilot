@@ -22,7 +22,7 @@ const documentBody = {
 };
 
 function allFiles(p: Profile): StoredFile[] {
-  return [...(p.cv ? [p.cv] : []), ...(p.photo ? [p.photo] : []), ...p.documents];
+  return [...(p.cv ? [p.cv] : []), ...(p.photo ? [p.photo] : []), ...p.documents, ...(p.nachweis?.blank.kind === 'own' ? [p.nachweis.blank.file] : [])];
 }
 const tooManyDocuments = (detailsForLog: string) =>
   new AppError('TOO_MANY_FILES', detailsForLog, 'tooManyDocuments', { max: MAX_DOCUMENTS });

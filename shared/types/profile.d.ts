@@ -1,3 +1,4 @@
+import type { NachweisSetup } from './nachweis.js';
 export type SectionId = 'personal' | 'education' | 'experience' | 'skills' | 'languages' | 'wishes';
 
 /** "YYYY", "YYYY-MM" or "" (unknown). In `to`, "" means "until now". */
@@ -120,7 +121,7 @@ export interface StoredFile { id: string; ext: FileExt; originalName: string; si
 export interface ProfileDocument extends StoredFile { label: string; attachAlways: boolean }
 
 export interface Profile {
-  schemaVersion: 4;
+  schemaVersion: 5;
   wizard: { step: 1 | 2 | 3 | 4; completedAt: string | null };
   cv: StoredFile | null;
   sections: Sections;
@@ -131,6 +132,8 @@ export interface Profile {
   photo: StoredFile | null;
   documents: ProfileDocument[];
   cvProposals: CvProposals;
+  /** Bewerbungsnachweis setup (0.15.0); null = not set up. */
+  nachweis: NachweisSetup | null;
 }
 
 export type ReadinessWarning = 'noStories';

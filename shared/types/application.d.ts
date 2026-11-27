@@ -8,7 +8,7 @@ export type ApplicationStatus = 'draft' | 'approved' | 'sent' | 'submitted' | 'i
 export type OutcomeStatus = 'interview' | 'rejected' | 'offer' | 'withdrawn';
 
 /** Entries that record something happened but never change the package's status. */
-export type HistoryEventKind = 'followUp' | 'followUpDismissed' | 'reply';
+export type HistoryEventKind = 'followUp' | 'followUpDismissed' | 'reply' | 'nachweis';
 export type HistoryKind = ApplicationStatus | HistoryEventKind;
 /** One step in a package's life. Entries whose kind is an ApplicationStatus are status entries. */
 /** `threadId`: Gmail's conversation id (sent with "Sign in with Google" only) — reminders and replies join it. */
@@ -85,7 +85,7 @@ export interface PackageVacancy {
 }
 
 export interface ApplicationPackage {
-  schemaVersion: 7;
+  schemaVersion: 8;
   id: string;
   vacancyId: string;
   language: DocLanguage;

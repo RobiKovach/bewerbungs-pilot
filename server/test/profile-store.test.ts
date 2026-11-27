@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { AppError } from '../src/errors.js';
 import { assertReady, readiness } from '../src/profile/readiness.js';
-import { emptyProfile, SECTION_IDS } from '../src/profile/schema.js';
+import { emptyProfile, PROFILE_SCHEMA_VERSION, SECTION_IDS } from '../src/profile/schema.js';
 import { ProfileStore } from '../src/profile/store.js';
 
 const tempDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'bp Профіль-'));
@@ -73,7 +73,7 @@ describe('ProfileStore', () => {
     expect(fs.readdirSync(dir).some((f) => f.startsWith('profile.invalid-'))).toBe(true);
     expect(events).toEqual(['profile_invalid']);
   });
-  it('loads a profile saved by version 0.2.0 (schema 1): data kept, no CV proposals, next save writes schema 4', () => {
+  it('loads a profile saved by version 0.2.0 (schema 1): data kept, no CV proposals, next save writes the current schema', () => {
     const dir = tempDir();
     const file = path.join(dir, 'profile.json');
     // As version 0.2.0 wrote it: no cvProposals, no editedAt.
@@ -84,14 +84,14 @@ describe('ProfileStore', () => {
     const events: string[] = [];
     const store = new ProfileStore(file, (e) => events.push(e));
     const loaded = store.load();
-    expect(loaded.schemaVersion).toBe(4);
+    expect(loaded.schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
     expect(loaded.cvProposals).toEqual({});
     expect(loaded.sections.personal.editedAt).toBeNull();
     expect(loaded.neverMention).toEqual(['Kunde X']);
     expect(loaded.sections.wishes.data.includeTemporaryAgencies).toBe(true);
     expect(events).toEqual([]);
     store.update(() => {});
-    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: 4, cvProposals: {} });
+    expect(JSON.parse(fs.readFileSync(file, 'utf8'))).toMatchObject({ schemaVersion: PROFILE_SCHEMA_VERSION, cvProposals: {} });
   });
 
   describe('keeps a copy of a schema-1 file before it is first written as schema 4', () => {
@@ -118,7 +118,7 @@ describe('ProfileStore', () => {
       const [backup] = backups(dir);
       expect(backups(dir)).toEqual([expect.stringMatching(/^profile\.v1-\d+\.json$/)]);
       expect(fs.readFileSync(path.join(dir, backup), 'utf8')).toBe(original);
-      expect(JSON.parse(fs.readFileSync(file, 'utf8')).schemaVersion).toBe(4);
+      expect(JSON.parse(fs.readFileSync(file, 'utf8')).schemaVersion).toBe(PROFILE_SCHEMA_VERSION);
       store.update((p) => { p.neverMention = ['Kunde Z']; });
       // The file is schema 4 now: a restart does not copy it again.
       const restarted = new ProfileStore(file);
