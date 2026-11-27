@@ -361,7 +361,7 @@
     "sentInfo": { "title": "Co zostało wysłane", "to": "Do", "subject": "Temat", "body": "Treść wiadomości", "attachments": "Załączniki" },
     "submitted": { "button": "Złożyłem(-am) aplikację sam(-a) na stronie firmy", "confirm": "Oznaczyć jako złożoną? Pakietu nie będzie już można zmieniać.", "yes": "Tak, oznacz" },
     "statusChange": { "button": "Zmień status", "title": "Zmień status", "what": "Co się stało", "date": "Data", "note": "Notatka (opcjonalnie)", "counter": "{{n}} / {{max}}", "saving": "Zapisywanie…", "save": "Zapisz", "interview": "Zaproszenie na rozmowę", "rejected": "Odmowa", "offer": "Oferta pracy", "withdrawn": "Wycofałem(-am) aplikację" },
-    "history": { "title": "Historia", "to": "do {{to}}", "undo": "Cofnij ostatnią zmianę", "undoConfirm": "Cofnąć ostatnią zmianę statusu?", "undoYes": "Tak, cofnij", "draft": "Utworzono", "approved": "Zatwierdzono", "sent": "Wysłano", "submitted": "Złożono na stronie", "interview": "Rozmowa", "rejected": "Odmowa", "offer": "Oferta", "withdrawn": "Wycofano aplikację", "followUp": "Wysłano przypomnienie", "followUpDismissed": "Bez przypomnienia", "reply": "Wysłano odpowiedź" },
+    "history": { "title": "Historia", "to": "do {{to}}", "undo": "Cofnij ostatnią zmianę", "undoConfirm": "Cofnąć ostatnią zmianę statusu?", "undoYes": "Tak, cofnij", "draft": "Utworzono", "approved": "Zatwierdzono", "sent": "Wysłano", "submitted": "Złożono na stronie", "interview": "Rozmowa", "rejected": "Odmowa", "offer": "Oferta", "withdrawn": "Wycofano aplikację", "followUp": "Wysłano przypomnienie", "followUpDismissed": "Bez przypomnienia", "reply": "Wysłano odpowiedź", "nachweis": "W Bewerbungsnachweis" },
     "filter": { "label": "Filtr według statusu", "all": "Wszystkie", "draft": "Wersje robocze", "approved": "Zatwierdzone", "sent": "Wysłane", "interview": "Rozmowy", "rejected": "Odmowy", "offer": "Oferty", "withdrawn": "Wycofane", "due": "Napisz ponownie", "none": "Brak aplikacji z tym statusem." },
     "stats": { "title": "Twoje aplikacje w liczbach", "sent": "Wysłane lub złożone", "replies": "Odpowiedzi", "interviews": "Rozmowy kwalifikacyjne", "offers": "Oferty", "chart": "Wysłane lub złożone w tygodniu", "rateOf": "z wysłanych" },
     "profileChanged": "Profil się zmienił",
@@ -651,6 +651,7 @@
       "initiative": "aplikacja z własnej inicjatywy",
       "sentOn": "Wysłano {{date}}",
       "submittedOn": "Złożono przez stronę {{date}}",
+      "inNachweis": "W Nachweis {{date}}",
       "published": "opublikowano {{date}}",
       "pending": "Jest oceniana…",
       "scoredAt": "Oceniono {{date}}",
@@ -751,6 +752,7 @@
     "field": { "personName": "Imię i nazwisko na formularzu", "provider": "Organizator (Träger)", "measureName": "Nazwa Maßnahme", "entry": "Początek Maßnahme", "exit": "Koniec Maßnahme", "measureAdvisor": "Osoba kontaktowa w Maßnahme", "office": "Urząd", "customerNumber": "Numer klienta / BG-Nummer", "officeAdvisor": "Twój doradca" },
     "summary": { "period": "Okres" },
     "blank": { "legend": "Formularz", "standard": "Standardowy formularz programu", "own": "Mój własny formularz", "ownHint": "Pusty formularz Word, który dostałeś w Maßnahme. Program zna formularz bbw QGZ-F-PP018.", "choose": "Wybierz plik Word (.docx)", "chosen": "Wybrano: {{name}}", "recognised": "Rozpoznano formularz bbw: {{name}}" },
-    "save": "Zapisz"
+    "save": "Zapisz",
+    "export": { "button": "Bewerbungsnachweis", "buttonCount": "Bewerbungsnachweis (nowe: {{count}})", "close": "Zamknij", "setupFirst": "Najpierw wpisz, dla kogo jest Bewerbungsnachweis. Robisz to tylko raz.", "nothingNew": "Nic nowego od ostatniego Bewerbungsnachweis.", "exportedOn": "w Nachweis {{date}}", "showExported": "Pokaż już wyeksportowane", "unconfirmed": "Aplikacje z kontaktem znalezionym automatycznie i jeszcze niesprawdzonym: {{count}}. Zostanie wpisany do formularza tak, jak go znaleziono:", "summary": "Aplikacje: {{count}} · Strony: {{pages}}", "saved": "Zapisano. Te aplikacje są teraz oznaczone jako w Nachweis.", "save": "Zapisz jako…", "saving": "Zapisuję…" }
   }
 }

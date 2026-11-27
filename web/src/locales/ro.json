@@ -361,7 +361,7 @@
     "sentInfo": { "title": "Ce a fost trimis", "to": "Către", "subject": "Subiect", "body": "Mesaj", "attachments": "Atașamente" },
     "submitted": { "button": "M-am înscris singur(ă) pe site-ul companiei", "confirm": "Marcați ca depusă? Pachetul nu va mai putea fi modificat.", "yes": "Da, marcați" },
     "statusChange": { "button": "Schimbați statusul", "title": "Schimbați statusul", "what": "Ce s-a întâmplat", "date": "Data", "note": "Notă (opțional)", "counter": "{{n}} / {{max}}", "saving": "Se salvează…", "save": "Salvați", "interview": "Invitație la interviu", "rejected": "Respingere", "offer": "Ofertă de muncă", "withdrawn": "M-am retras" },
-    "history": { "title": "Istoric", "to": "către {{to}}", "undo": "Anulați ultima modificare", "undoConfirm": "Anulați ultima schimbare de status?", "undoYes": "Da, anulați", "draft": "Creat", "approved": "Aprobat", "sent": "Trimis", "submitted": "Depus pe site", "interview": "Interviu", "rejected": "Respingere", "offer": "Ofertă", "withdrawn": "V-ați retras", "followUp": "Memento trimis", "followUpDismissed": "Fără memento", "reply": "Răspuns trimis" },
+    "history": { "title": "Istoric", "to": "către {{to}}", "undo": "Anulați ultima modificare", "undoConfirm": "Anulați ultima schimbare de status?", "undoYes": "Da, anulați", "draft": "Creat", "approved": "Aprobat", "sent": "Trimis", "submitted": "Depus pe site", "interview": "Interviu", "rejected": "Respingere", "offer": "Ofertă", "withdrawn": "V-ați retras", "followUp": "Memento trimis", "followUpDismissed": "Fără memento", "reply": "Răspuns trimis", "nachweis": "În Bewerbungsnachweis" },
     "filter": { "label": "Filtrare după status", "all": "Toate", "draft": "Ciorne", "approved": "Aprobate", "sent": "Trimise", "interview": "Interviuri", "rejected": "Respingeri", "offer": "Oferte", "withdrawn": "Retrase", "due": "Scrieți din nou", "none": "Nu există candidaturi cu acest status." },
     "stats": { "title": "Candidaturile dumneavoastră în cifre", "sent": "Trimise sau depuse", "replies": "Răspunsuri", "interviews": "Interviuri", "offers": "Oferte", "chart": "Trimise sau depuse pe săptămână", "rateOf": "din cele trimise" },
     "profileChanged": "Profilul s-a schimbat",
@@ -651,6 +651,7 @@
       "initiative": "candidatură spontană",
       "sentOn": "Trimis la {{date}}",
       "submittedOn": "Depus pe site la {{date}}",
+      "inNachweis": "În Nachweis {{date}}",
       "published": "publicat la {{date}}",
       "pending": "Se evaluează…",
       "scoredAt": "Evaluat la {{date}}",
@@ -751,6 +752,7 @@
     "field": { "personName": "Numele pe formular", "provider": "Organizator (Träger)", "measureName": "Numele Maßnahme", "entry": "Începutul Maßnahme", "exit": "Sfârșitul Maßnahme", "measureAdvisor": "Persoana de contact la Maßnahme", "office": "Instituția", "customerNumber": "Număr de client / BG-Nummer", "officeAdvisor": "Consilierul dumneavoastră" },
     "summary": { "period": "Perioada" },
     "blank": { "legend": "Formular", "standard": "Formularul standard al programului", "own": "Formularul meu", "ownHint": "Formularul Word gol primit de la Maßnahme. Programul cunoaște formularul bbw QGZ-F-PP018.", "choose": "Alegeți fișierul Word (.docx)", "chosen": "Ales: {{name}}", "recognised": "Formular bbw recunoscut: {{name}}" },
-    "save": "Salvați"
+    "save": "Salvați",
+    "export": { "button": "Bewerbungsnachweis", "buttonCount": "Bewerbungsnachweis (noi: {{count}})", "close": "Închideți", "setupFirst": "Completați mai întâi pentru cine este Bewerbungsnachweis. Este nevoie doar o dată.", "nothingNew": "Nimic nou de la ultimul Bewerbungsnachweis.", "exportedOn": "în Nachweis la {{date}}", "showExported": "Arătați și cele deja exportate", "unconfirmed": "Candidaturi cu contact găsit automat și încă neverificat: {{count}}. Este trecut în formular așa cum a fost găsit:", "summary": "Candidaturi: {{count}} · Pagini: {{pages}}", "saved": "Salvat. Aceste candidaturi sunt acum marcate ca fiind în Nachweis.", "save": "Salvați ca…", "saving": "Se salvează…" }
   }
 }

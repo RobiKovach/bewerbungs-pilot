@@ -15,7 +15,7 @@ const level = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'mid' : '
 const date = (iso: string) => { const [y, m, d] = iso.slice(0, 10).split('-'); return `${d}.${m}.${y}`; };
 
 /** `submitted`: the person applied to this vacancy (it sits in the "Submitted" tab): a badge and "Hide" instead of the New/Favourite buttons. */
-export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, submitted = null }: { vacancy: Vacancy; highlighted?: boolean; onHidden: (v: Vacancy) => void; extra?: ReactNode; submitted?: SubmittedInfo | null }) {
+export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, submitted = null }: { vacancy: Vacancy; highlighted?: boolean; onHidden: (v: Vacancy) => void; extra?: ReactNode; submitted?: (SubmittedInfo & { nachweisAt?: string | null }) | null }) {
   const { t, i18n } = useTranslation();
   const { put } = useVacancies();
   const [error, setError] = useState<unknown>(null);
@@ -71,7 +71,7 @@ export function VacancyCard({ vacancy: v, highlighted = false, onHidden, extra, 
           {submitted ? (
             <p><span className={`badge status-${submitted.via === 'mail' ? 'sent' : 'submitted'}`}>
               {t(submitted.via === 'mail' ? 'vacancies.card.sentOn' : 'vacancies.card.submittedOn', { date: date(submitted.at) })}
-            </span></p>
+            </span>{submitted.nachweisAt ? <> <span className="badge event">{t('vacancies.card.inNachweis', { date: date(submitted.nachweisAt) })}</span></> : null}</p>
           ) : null}
           {v.contact ? (
             <p className="muted">

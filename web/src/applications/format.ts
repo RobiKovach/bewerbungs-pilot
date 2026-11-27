@@ -24,14 +24,14 @@ export function packageLinks(list: readonly { id: string; vacancyId: string; sta
 }
 
 /** A submission plus the package it came from (the one the "Submitted" tab's "Open package" leads to). */
-export type SubmittedPackage = SubmittedInfo & { applicationId: string };
+export type SubmittedPackage = SubmittedInfo & { applicationId: string; nachweisAt?: string | null };
 
 /** Vacancy id → its earliest submission (by mail or on the company's site), for the vacancies' "Submitted" tab. */
-export function submittedByVacancy(list: readonly { id: string; vacancyId: string; submitted: SubmittedInfo | null }[]): Map<string, SubmittedPackage> {
+export function submittedByVacancy(list: readonly { id: string; vacancyId: string; submitted: SubmittedInfo | null; nachweisAt?: string | null }[]): Map<string, SubmittedPackage> {
   const out = new Map<string, SubmittedPackage>();
   for (const a of list) {
     const cur = out.get(a.vacancyId);
-    if (a.submitted && (!cur || a.submitted.at < cur.at)) out.set(a.vacancyId, { ...a.submitted, applicationId: a.id });
+    if (a.submitted && (!cur || a.submitted.at < cur.at)) out.set(a.vacancyId, { ...a.submitted, applicationId: a.id, ...(a.nachweisAt ? { nachweisAt: a.nachweisAt } : {}) });
   }
   return out;
 }
@@ -54,7 +54,7 @@ const ADDRESS = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/;
 export const addressOk = (s: string) => s.length <= 254 && ADDRESS.test(s);
 
 /** History entries that record something happened without changing the status. */
-export const EVENT_KINDS = ['followUp', 'followUpDismissed', 'reply'] as const;
+export const EVENT_KINDS = ['followUp', 'followUpDismissed', 'reply', 'nachweis'] as const;
 const EVENTS = new Set<string>(EVENT_KINDS);
 /** Kinds the history list can show: the statuses and the events. */
 export const isShownKind = (kind: string) => KNOWN.has(kind) || EVENTS.has(kind);

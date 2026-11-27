@@ -10,6 +10,7 @@ import { InterviewLink } from '../interview/InterviewLink';
 import { InterviewPage } from '../interview/InterviewPage';
 import { interviewRouteId } from '../interview/format';
 import type { ApplicationListView, ApplicationStats, ApplicationStatus } from '../types';
+import { NachweisButton } from '../nachweis/NachweisButton';
 
 type Row = ApplicationListView['applications'][number];
 const byStatus = (...statuses: ApplicationStatus[]) => (a: Row) => statuses.includes(a.status);
@@ -58,6 +59,7 @@ function ApplicationList() {
     <section>
       <h1>{t('applications.title')}</h1>
       <p className="muted">{t('applications.intro')}</p>
+      {list.length > 0 ? <NachweisButton onChanged={() => void load()} /> : null}
       {list.length === 0 ? (
         <div className="card">
           <p>{t('applications.empty')}</p>

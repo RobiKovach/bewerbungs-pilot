@@ -406,3 +406,7 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .nachweis-summary dd { margin: 0; overflow-wrap: anywhere; }
 .nachweis-summary-row { display: contents; }
 .nachweis-form .status-options { margin: 0.75rem 0; }
+.nachweis-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+.nachweis-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.75rem; }
+.nachweis-list .check { align-items: flex-start; margin: 0.4rem 0; }
+.nachweis-list .check input { margin-top: 0.2rem; }

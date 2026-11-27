@@ -127,7 +127,8 @@ export interface ApplicationSummary {
 /** How and when a package left the app: its first `sent` (by mail) or `submitted` (via the employer's site) entry. */
 export interface SubmittedInfo { via: 'mail' | 'site'; at: string }
 
-export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean; followUpDue: boolean; submitted: SubmittedInfo | null })[] }
+/** nachweisAt: when the package last went into a Bewerbungsnachweis file (0.15.0); null = never. */
+export interface ApplicationListView { applications: (ApplicationSummary & { profileChanged: boolean; followUpDue: boolean; submitted: SubmittedInfo | null; nachweisAt: string | null })[] }
 
 export interface AttachmentInfo {
   id: string;

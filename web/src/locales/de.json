@@ -361,7 +361,7 @@
     "sentInfo": { "title": "Was gesendet wurde", "to": "An", "subject": "Betreff", "body": "Nachricht", "attachments": "Anhänge" },
     "submitted": { "button": "Ich habe mich selbst auf der Firmenwebsite beworben", "confirm": "Als eingereicht markieren? Das Paket kann danach nicht mehr geändert werden.", "yes": "Ja, als eingereicht markieren" },
     "statusChange": { "button": "Status ändern", "title": "Status ändern", "what": "Was ist passiert", "date": "Datum", "note": "Notiz (optional)", "counter": "{{n}} / {{max}}", "saving": "Wird gespeichert…", "save": "Speichern", "interview": "Einladung zum Gespräch", "rejected": "Absage", "offer": "Angebot", "withdrawn": "Ich habe zurückgezogen" },
-    "history": { "title": "Verlauf", "to": "an {{to}}", "undo": "Letzte Änderung rückgängig machen", "undoConfirm": "Die letzte Statusänderung rückgängig machen?", "undoYes": "Ja, rückgängig machen", "draft": "Erstellt", "approved": "Freigegeben", "sent": "Gesendet", "submitted": "Auf der Website eingereicht", "interview": "Gespräch", "rejected": "Absage", "offer": "Angebot", "withdrawn": "Sie haben zurückgezogen", "followUp": "Erinnerung gesendet", "followUpDismissed": "Keine Erinnerung", "reply": "Antwort gesendet" },
+    "history": { "title": "Verlauf", "to": "an {{to}}", "undo": "Letzte Änderung rückgängig machen", "undoConfirm": "Die letzte Statusänderung rückgängig machen?", "undoYes": "Ja, rückgängig machen", "draft": "Erstellt", "approved": "Freigegeben", "sent": "Gesendet", "submitted": "Auf der Website eingereicht", "interview": "Gespräch", "rejected": "Absage", "offer": "Angebot", "withdrawn": "Sie haben zurückgezogen", "followUp": "Erinnerung gesendet", "followUpDismissed": "Keine Erinnerung", "reply": "Antwort gesendet", "nachweis": "Im Bewerbungsnachweis" },
     "filter": { "label": "Nach Status filtern", "all": "Alle", "draft": "Entwürfe", "approved": "Freigegeben", "sent": "Gesendet", "interview": "Gespräche", "rejected": "Absagen", "offer": "Angebote", "withdrawn": "Zurückgezogen", "due": "Nachfassen", "none": "Keine Bewerbungen mit diesem Status." },
     "stats": { "title": "Ihre Bewerbungen in Zahlen", "sent": "Gesendet oder eingereicht", "replies": "Antworten", "interviews": "Vorstellungsgespräche", "offers": "Angebote", "chart": "Gesendet oder eingereicht pro Woche", "rateOf": "der gesendeten" },
     "profileChanged": "Profil geändert",
@@ -651,6 +651,7 @@
       "initiative": "Initiativbewerbung",
       "sentOn": "Gesendet am {{date}}",
       "submittedOn": "Über die Website eingereicht am {{date}}",
+      "inNachweis": "Im Nachweis {{date}}",
       "published": "veröffentlicht am {{date}}",
       "pending": "Wird bewertet…",
       "scoredAt": "Bewertet am {{date}}",
@@ -751,6 +752,7 @@
     "field": { "personName": "Name auf dem Formular", "provider": "Träger", "measureName": "Name der Maßnahme", "entry": "Beginn der Maßnahme", "exit": "Ende der Maßnahme", "measureAdvisor": "Ansprechperson der Maßnahme", "office": "Dienststelle", "customerNumber": "Kunden-/BG-Nummer", "officeAdvisor": "Ihre Ansprechperson" },
     "summary": { "period": "Zeitraum" },
     "blank": { "legend": "Formular", "standard": "Standardbogen des Programms", "own": "Mein eigener Bogen", "ownHint": "Das leere Word-Formular, das Sie von Ihrer Maßnahme bekommen haben. Das Programm kennt den bbw-Bogen QGZ-F-PP018.", "choose": "Word-Datei wählen (.docx)", "chosen": "Gewählt: {{name}}", "recognised": "bbw-Bogen erkannt: {{name}}" },
-    "save": "Speichern"
+    "save": "Speichern",
+    "export": { "button": "Bewerbungsnachweis", "buttonCount": "Bewerbungsnachweis ({{count}} neu)", "close": "Schließen", "setupFirst": "Tragen Sie zuerst ein, für wen der Bewerbungsnachweis ist. Das ist nur einmal nötig.", "nothingNew": "Nichts Neues seit dem letzten Bewerbungsnachweis.", "exportedOn": "im Nachweis am {{date}}", "showExported": "Bereits exportierte zeigen", "unconfirmed": "Bewerbungen mit automatisch gefundenem, noch nicht geprüftem Kontakt: {{count}}. Er wird so ins Formular geschrieben, wie er gefunden wurde:", "summary": "Bewerbungen: {{count}} · Seiten: {{pages}}", "saved": "Gespeichert. Diese Bewerbungen sind jetzt als im Nachweis markiert.", "save": "Speichern unter…", "saving": "Wird gespeichert…" }
   }
 }

@@ -135,9 +135,9 @@ export function NachweisSetupForm({ initial, personName, onSaved, onCancel, onAp
         <div className="field">
           {ownOnFile && !file ? <p className="ok">{t('nachweis.blank.recognised', { name: ownOnFile.file.originalName })}</p> : null}
           <p className="muted">{t('nachweis.blank.ownHint')}</p>
-          <label htmlFor={fileId}>{t('nachweis.blank.choose')}</label>
-          <input id={fileId} type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={busy}
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <div className="btn-row"><label className="btn ghost" htmlFor={fileId}>{t('nachweis.blank.choose')}</label></div>
+          <input id={fileId} type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="visually-hidden" disabled={busy}
+            onChange={(e) => { setFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
           {file ? <p className="muted">{t('nachweis.blank.chosen', { name: file.name })}</p> : null}
         </div>
       ) : null}

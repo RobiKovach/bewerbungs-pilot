@@ -361,7 +361,7 @@
     "sentInfo": { "title": "Что было отправлено", "to": "Кому", "subject": "Тема", "body": "Текст письма", "attachments": "Вложения" },
     "submitted": { "button": "Я подал(-а) заявку сам(-а) на сайте компании", "confirm": "Отметить как поданную? После этого пакет больше нельзя будет изменить.", "yes": "Да, отметить" },
     "statusChange": { "button": "Изменить статус", "title": "Изменить статус", "what": "Что произошло", "date": "Дата", "note": "Заметка (необязательно)", "counter": "{{n}} / {{max}}", "saving": "Сохраняем…", "save": "Сохранить", "interview": "Приглашение на собеседование", "rejected": "Отказ", "offer": "Предложение о работе", "withdrawn": "Я отозвал(-а) заявку" },
-    "history": { "title": "История", "to": "кому: {{to}}", "undo": "Отменить последнее изменение", "undoConfirm": "Отменить последнее изменение статуса?", "undoYes": "Да, отменить", "draft": "Создано", "approved": "Одобрено", "sent": "Отправлено", "submitted": "Подано на сайте", "interview": "Собеседование", "rejected": "Отказ", "offer": "Предложение", "withdrawn": "Вы отозвали заявку", "followUp": "Напоминание отправлено", "followUpDismissed": "Без напоминания", "reply": "Ответ отправлен" },
+    "history": { "title": "История", "to": "кому: {{to}}", "undo": "Отменить последнее изменение", "undoConfirm": "Отменить последнее изменение статуса?", "undoYes": "Да, отменить", "draft": "Создано", "approved": "Одобрено", "sent": "Отправлено", "submitted": "Подано на сайте", "interview": "Собеседование", "rejected": "Отказ", "offer": "Предложение", "withdrawn": "Вы отозвали заявку", "followUp": "Напоминание отправлено", "followUpDismissed": "Без напоминания", "reply": "Ответ отправлен", "nachweis": "В Bewerbungsnachweis" },
     "filter": { "label": "Фильтр по статусу", "all": "Все", "draft": "Черновики", "approved": "Одобренные", "sent": "Отправленные", "interview": "Собеседования", "rejected": "Отказы", "offer": "Предложения", "withdrawn": "Отозванные", "due": "Написать ещё раз", "none": "Нет заявок с таким статусом." },
     "stats": { "title": "Ваши заявки в цифрах", "sent": "Отправлено или подано", "replies": "Ответы", "interviews": "Собеседования", "offers": "Предложения", "chart": "Отправлено или подано за неделю", "rateOf": "от отправленных" },
     "profileChanged": "Профиль изменился",
@@ -651,6 +651,7 @@
       "initiative": "инициативная заявка",
       "sentOn": "Отправлено {{date}}",
       "submittedOn": "Подано через сайт {{date}}",
+      "inNachweis": "В Nachweis {{date}}",
       "published": "опубликовано {{date}}",
       "pending": "Оценивается…",
       "scoredAt": "Оценено {{date}}",
@@ -751,6 +752,7 @@
     "field": { "personName": "Имя на бланке", "provider": "Учреждение (Träger)", "measureName": "Название Maßnahme", "entry": "Начало Maßnahme", "exit": "Конец Maßnahme", "measureAdvisor": "Контактное лицо в Maßnahme", "office": "Учреждение", "customerNumber": "Номер клиента / BG-Nummer", "officeAdvisor": "Ваш консультант" },
     "summary": { "period": "Период" },
     "blank": { "legend": "Бланк", "standard": "Стандартный бланк программы", "own": "Мой собственный бланк", "ownHint": "Пустой Word-бланк, который вы получили в Maßnahme. Программа знает бланк bbw QGZ-F-PP018.", "choose": "Выбрать файл Word (.docx)", "chosen": "Выбрано: {{name}}", "recognised": "Бланк bbw распознан: {{name}}" },
-    "save": "Сохранить"
+    "save": "Сохранить",
+    "export": { "button": "Bewerbungsnachweis", "buttonCount": "Bewerbungsnachweis (новых: {{count}})", "close": "Закрыть", "setupFirst": "Сначала укажите, для кого Bewerbungsnachweis. Это нужно только один раз.", "nothingNew": "Ничего нового с последнего Bewerbungsnachweis.", "exportedOn": "в Nachweis {{date}}", "showExported": "Показать уже выгруженные", "unconfirmed": "Заявок с автоматически найденным и ещё не проверенным контактом: {{count}}. Он будет вписан в бланк так, как найден:", "summary": "Заявок: {{count}} · Страниц: {{pages}}", "saved": "Сохранено. Эти заявки теперь отмечены как выгруженные в Nachweis.", "save": "Сохранить как…", "saving": "Сохраняю…" }
   }
 }

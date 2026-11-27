@@ -186,6 +186,17 @@ describe('editing a package', () => {
     ctx.applicationStore.update(id, (p) => { p.status = 'submitted'; p.history = [{ kind: 'approved', at: '2026-10-01T08:00:00.000Z' }, { kind: 'submitted', at: '2026-10-03T12:00:00.000Z' }]; });
     expect(await submittedOfList()).toEqual({ via: 'site', at: '2026-10-03T12:00:00.000Z' });
   });
+  it('the list says when a package last went into a Bewerbungsnachweis; null before that', async () => {
+    const ctx = await setup();
+    const id = await created(ctx);
+    const nachweisOfList = async () => ((await get(ctx, '/api/applications')).json() as ApplicationListView).applications.find((a) => a.id === id)?.nachweisAt;
+    expect(await nachweisOfList()).toBeNull();
+    ctx.applicationStore.update(id, (p) => {
+      p.status = 'sent';
+      p.history = [{ kind: 'sent', at: '2026-10-02T09:00:00.000Z' }, { kind: 'nachweis', at: '2026-10-20T09:00:00.000Z', note: 'a.docx' }, { kind: 'nachweis', at: '2026-10-27T09:00:00.000Z', note: 'b.docx' }];
+    });
+    expect(await nachweisOfList()).toBe('2026-10-27T09:00:00.000Z');
+  });
   it('profileChanged turns true when a description changes, and back to false after refresh-cv', async () => {
     const ctx = await setup();
     const id = await created(ctx);

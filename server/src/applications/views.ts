@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import type { ApplicationListView, ApplicationPackage, ApplicationView, AttachmentInfo, Profile, SubmittedInfo, Vacancy } from '@bp/shared';
 import type { ProfileFiles } from '../profile/files.js';
+import { exportedAt } from '../nachweis/rows.js';
 import { followUpDue } from './follow-up.js';
 import { attachmentFileName, fileNames } from './render/html.js';
 import { allowedFor, findPersonalData, packageTexts } from './personal-data.js';
@@ -66,7 +67,7 @@ export function toListView(store: ApplicationStore, profile: Profile, now: Date)
   return {
     applications: store.list().map((s) => {
       const p = store.get(s.id);
-      return { ...s, profileChanged: changed(p, current), followUpDue: p ? followUpDue(p, now) : false, submitted: p ? submittedOf(p) : null };
+      return { ...s, profileChanged: changed(p, current), followUpDue: p ? followUpDue(p, now) : false, submitted: p ? submittedOf(p) : null, nachweisAt: p ? exportedAt(p) : null };
     }),
   };
 }

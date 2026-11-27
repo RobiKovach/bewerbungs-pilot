@@ -87,7 +87,7 @@ describe('VacanciesPage — strip and empty states', () => {
     mockFetch({
       ...vacancyServer({ list: [sent, site, open] }).routes,
       'GET /api/applications': () => ({ body: { applications: [
-        appSummary({ id: 'a1', vacancyId: sent.id, status: 'interview', submitted: { via: 'mail', at: '2026-10-02T09:00:00.000Z' } }),
+        appSummary({ id: 'a1', vacancyId: sent.id, status: 'interview', submitted: { via: 'mail', at: '2026-10-02T09:00:00.000Z' }, nachweisAt: '2026-10-20T09:00:00.000Z' }),
         appSummary({ id: 'a2', vacancyId: site.id, status: 'submitted', submitted: { via: 'site', at: '2026-10-03T12:00:00.000Z' } }),
         appSummary({ id: 'a3', vacancyId: open.id, status: 'draft' }),
       ] } }),
@@ -102,6 +102,8 @@ describe('VacanciesPage — strip and empty states', () => {
     expect(cards.map((c) => c.querySelector('h3')?.textContent)).toEqual(['Applied on site', 'Sent by mail']);
     expect(cards[0]).toHaveTextContent('Submitted on the website 03.10.2026');
     expect(cards[1]).toHaveTextContent('Sent 02.10.2026');
+    expect(cards[1]).toHaveTextContent('In Nachweis 20.10.2026');
+    expect(cards[0]).not.toHaveTextContent('In Nachweis');
     expect(screen.queryByRole('button', { name: /Interesting/ })).toBeNull();
   });
 
