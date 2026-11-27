@@ -46,6 +46,11 @@ describe('positionTitle (the job title in the email text)', () => {
     expect(positionTitle(withTitle(title))).toBe(expected);
   });
 
+  it('the name in front may be spelled a little differently from the card (hyphen, spaces, case)', () => {
+    expect(positionTitle(withTitle('Robotron Datenbank-Software GmbH: Softwareentwickler Oracle APEX (m/w/d)', 'Robotron Datenbank Software GmbH')))
+      .toBe('Softwareentwickler Oracle APEX (m/w/d)');
+    expect(positionTitle(withTitle('Andere Firma GmbH: Softwareentwickler', 'Robotron Datenbank Software GmbH'))).toBe('Andere Firma GmbH: Softwareentwickler');
+  });
   it('an empty company name changes nothing', () => {
     expect(positionTitle(withTitle(': Webentwickler', ''))).toBe(': Webentwickler');
   });

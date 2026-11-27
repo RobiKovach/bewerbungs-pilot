@@ -43,6 +43,21 @@ describe('rows', () => {
     expect(row!.initiative).toBe(true);
     expect(row!.foundAt).toBe('');
   });
+  it('position without the company in front of the job title (the company has its own column)', () => {
+    const p = sent('2026-11-10');
+    p.vacancy = { ...p.vacancy, company: 'Helm & Walter IT-Solutions GmbH', title: 'Helm & Walter IT-Solutions GmbH: Webentwickler Fullstack (m/w/d)' };
+    expect(buildRows([p], lookup([]))[0]!.position).toBe('Webentwickler Fullstack (m/w/d)');
+  });
+  it('initiative position: the role from the subject the letter went with, not "Initiativbewerbung – …"', () => {
+    const p = sent('2026-11-10');
+    p.vacancy = { ...p.vacancy, title: 'Initiativbewerbung – IT', initiative: true };
+    p.letter.subject = 'Initiativbewerbung als Webentwickler';
+    expect(buildRows([p], lookup([]))[0]!.position).toBe('Webentwickler');
+    p.letter.subject = 'Initiativbewerbung';
+    expect(buildRows([p], lookup([]))[0]!.position).toBe('IT');
+    p.vacancy.title = 'Initiativbewerbung';
+    expect(buildRows([p], lookup([]))[0]!.position).toBe('Initiativbewerbung');
+  });
   it("AA row: position 'Frontend Developer (m/w/d) (Ref.-Nr. 10001-1234567890-S)'; found date from the card", () => {
     const v = vacancy({ id: 'va', sourceId: '10001-1234567890-S', url: AA, foundAt: at('2026-11-02') });
     const p = sent('2026-11-10', { vacancyId: 'va' });

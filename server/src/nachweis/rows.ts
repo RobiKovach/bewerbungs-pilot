@@ -1,5 +1,6 @@
 import type { ApplicationPackage, ApplicationStatus, ContactField, NachweisCandidate, Vacancy, VacancyContact } from '@bp/shared';
 import { isAaHost } from '../vacancies/aa-links.js';
+import { applicationRole, positionTitle } from '../mail/compose.js';
 import { isBoard } from '../research/links.js';
 
 /** Where an application's offer came from — decides the "where I searched" boxes and the standard form's "Quelle". */
@@ -95,11 +96,13 @@ function rowOf(p: ApplicationPackage, v: Vacancy | undefined): NachweisRow {
   const auto = (fromCard ? v!.contactAuto : p.vacancy.contactAuto) ?? [];
   const parts = contactParts(contact, p.vacancy.company);
   const ref = refnr(p, v);
+  // The company has its own column, and an initiative row is ticked as such: only the role, as the email says it.
+  const what = initiative ? applicationRole(p) || p.vacancy.title : positionTitle(p);
   return {
     packageId: p.id,
     initiative,
     foundAt: initiative || !v ? '' : germanDate(v.foundAt),
-    position: ref ? `${p.vacancy.title} (Ref.-Nr. ${ref})` : p.vacancy.title,
+    position: ref ? `${what} (Ref.-Nr. ${ref})` : what,
     companyLines: parts.companyLines,
     contact: parts.contact,
     appliedAt: germanDate(first.at),

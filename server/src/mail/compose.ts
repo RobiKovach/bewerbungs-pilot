@@ -35,15 +35,22 @@ export function testMail(language: Language): { subject: string; text: string } 
 /**
  * The position for the email text. Some employers put their name in front of the job title on the job board
  * ("move elevator GmbH: TYPO3-Frontend-Developer"): "…Bewerbung als move elevator GmbH: …" reads wrong, so a leading
- * "<company>:" / "<company> -" / "<company> |" is left out. Anything else stays exactly as the ad says.
+ * "<company>:" / "<company> -" / "<company> |" is left out. The name in front may be spelled a little differently from the
+ * card ("Robotron Datenbank-Software GmbH" vs "Robotron Datenbank Software GmbH"): only letters and digits are compared.
+ * Anything else stays exactly as the ad says.
  */
 export function positionTitle(p: ApplicationPackage): string {
   const { title, company } = p.vacancy;
-  const name = company.trim();
-  if (name === '' || !title.toLowerCase().startsWith(name.toLowerCase())) return title;
-  const rest = /^\s*[:|–—-]\s*(\S.*)$/s.exec(title.slice(name.length));
-  return rest ? rest[1]!.trim() : title;
+  const name = loose(company);
+  if (name === '') return title;
+  for (const sep of title.matchAll(/\s*[:|–—-]\s*/g)) {
+    const rest = title.slice(sep.index + sep[0].length).trim();
+    if (rest !== '' && loose(title.slice(0, sep.index)) === name) return rest;
+  }
+  return title;
 }
+
+const loose = (s: string): string => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
 const APPLICATION_BODY: Record<DocLanguage, (title: string) => string> = {
   de: (title) => `anbei sende ich Ihnen meine Bewerbung als ${title} mit Anschreiben und Lebenslauf. Ich freue mich auf Ihre Rückmeldung.`,
@@ -57,7 +64,7 @@ const SUBJECT_ROLE = /^\s*(?:initiativ(?:e)?bewerbung|unsolicited application|in
  * ("Initiativbewerbung – IT" → "Initiativbewerbung als Webentwickler"), and the email must say the same as the subject:
  * the subject really sent, then the letter's subject, then the card title.
  */
-function applicationRole(p: ApplicationPackage): string {
+export function applicationRole(p: ApplicationPackage): string {
   for (const subject of [p.sentEmail?.subject, p.letter.subject]) {
     const role = subject === undefined ? undefined : SUBJECT_ROLE.exec(subject)?.[1]?.trim();
     if (role) return role;
