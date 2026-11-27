@@ -24,7 +24,8 @@
     "check:voice": "node scripts/check-voice.mjs",
     "check:codex": "node scripts/check-codex.mjs",
     "check:version-json": "node scripts/check-version-json.mjs docs/version.json",
-    "e2e": "playwright test -c e2e/playwright.config.ts"
+    "e2e": "playwright test -c e2e/playwright.config.ts",
+    "dump:docx-controls": "node scripts/dump-docx-controls.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
