@@ -3,7 +3,7 @@ import { transferFileName } from './files/names';
 import type {
   ApplicationJobState, ApplicationListView, BackupInfo, BackupListView, BackupMeta, ApplicationStats, ApplicationView, DocLanguage, LetterPatch, NewPackageInfo, OutcomeStatus, PackageReadiness, PersonalFinding, UnsavedPackageText,
   ContactFindView, ContactProposal, ContactSource, CvResult, CvSectionId, DataState, ErrorReason, GoogleSignInStatus, InstallStatus, InterviewPrepView, Language, LlmCheck, MailDraft, MailProvider, MailSecurity, MailSettingsView, ManualAddView, ManualEdit, ManualInput, ProfileView, ProviderId, SearchState, SectionDataMap,
-  SectionId, Settings, SettingsPatch, SimilarTitlesView, CompaniesView, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
+  NachweisSetup, NachweisView, SectionId, Settings, SettingsPatch, SimilarTitlesView, CompaniesView, StoryAnswer, StoryInput, UpdateProgress, UpdatesView, VacancyContact, VacancyListView, VacancyTextView, VacancyView,
 } from './types';
 
 /** Password is optional: left out = keep the saved one. Language = the interface language of the test email. */
@@ -177,6 +177,19 @@ export const api = {
     request<ProfileView>('PUT', `/api/profile/files/${id}`, { label, attachAlways }),
   deleteFile: (id: string) => request<ProfileView>('DELETE', `/api/profile/files/${id}`),
   fileUrl: (id: string) => `/api/profile/files/${id}`,
+
+  // Bewerbungsnachweis (0.15.0): the setup lives in the profile; building marks nothing, `mark` does after saving.
+  nachweis: {
+    get: () => request<NachweisView>('GET', '/api/nachweis'),
+    saveSetup: (body: Pick<NachweisSetup, 'audience' | 'personName' | 'measure' | 'office'>) => request<ProfileView>('PUT', '/api/profile/nachweis', body),
+    uploadBlank: (file: File) => upload<ProfileView>('/api/profile/nachweis/blank', file, fileName(file, 'Bewerbungsnachweis.docx')),
+    removeBlank: () => request<ProfileView>('DELETE', '/api/profile/nachweis/blank'),
+    mark: (ids: string[], fileName: string) => request<NachweisView>('POST', '/api/nachweis/mark', { applicationIds: ids, fileName }),
+    /** For `saveFile.make`: the filled Word file. */
+    buildRequest: (ids: string[]) => () => fetch('/api/nachweis/build', {
+      method: 'POST', headers: { ...CLIENT_HEADER, 'Content-Type': 'application/json' }, body: JSON.stringify({ applicationIds: ids }),
+    }),
+  },
 
   listVacancies: () => request<VacancyListView>('GET', '/api/vacancies'),
   vacancyText: (id: string) => request<VacancyTextView>('GET', `/api/vacancies/${encodeURIComponent(id)}/text`),

@@ -11,6 +11,7 @@ import { SectionCard, SectionStatus } from './SectionCard';
 import { FilesStep } from './steps/FilesStep';
 import { StoriesStep } from './steps/StoriesStep';
 import { UnsavedProvider, useHasUnsaved } from './unsaved';
+import { NachweisSection } from '../nachweis/NachweisSection';
 
 type Panel = SectionId | 'stories' | 'files';
 
@@ -85,6 +86,8 @@ function OverviewContent() {
         </div>
         {open === 'files' ? <FilesStep onNext={() => setOpen(null)} nextLabelKey="profile.close" /> : null}
       </div>
+
+      <NachweisSection disabled={blocked} />
     </section>
   );
 }

@@ -7,7 +7,7 @@ export type SaveResult = 'saved' | 'downloaded' | 'cancelled';
 export interface SaveRequest {
   /** Shown in the "Save as" window; the person may change it. */
   suggestedName: string;
-  kind: 'pdf' | 'zip';
+  kind: 'pdf' | 'zip' | 'docx';
   /** Asks the server for the file. Called only after the place is chosen (or at once without the window). */
   make: () => Promise<Response>;
 }
@@ -20,6 +20,7 @@ type SavePicker = (options: { id: string; startIn: string; suggestedName: string
 const TYPES: Record<SaveRequest['kind'], { description: string; accept: Record<string, string[]> }> = {
   pdf: { description: 'PDF', accept: { 'application/pdf': ['.pdf'] } },
   zip: { description: 'ZIP', accept: { 'application/zip': ['.zip'] } },
+  docx: { description: 'Word', accept: { 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'] } },
 };
 
 async function made(make: () => Promise<Response>): Promise<Response> {

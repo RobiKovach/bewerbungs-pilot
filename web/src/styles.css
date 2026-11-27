@@ -399,3 +399,10 @@ fieldset.plain { border: 0; padding: 0; margin: 0; }
 .summary-list__text { flex: 1 1 12rem; min-width: 0; overflow-wrap: anywhere; }
 .summary-view details summary { cursor: pointer; font-weight: 600; }
 .summary-actions { margin-top: 1rem; }
+
+/* Bewerbungsnachweis setup (0.15.0) */
+.nachweis-summary { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; margin: 0.5rem 0 0; }
+.nachweis-summary dt { color: var(--muted); }
+.nachweis-summary dd { margin: 0; overflow-wrap: anywhere; }
+.nachweis-summary-row { display: contents; }
+.nachweis-form .status-options { margin: 0.75rem 0; }

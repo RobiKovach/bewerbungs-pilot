@@ -10,6 +10,7 @@ export type {
   InterviewPrep, InterviewPrepView, LanguageFix, PrepAnswer, PrepFeedback, PrepKind, PrepQuestion, PrepSummary,
   TextPlace, UnsavedPackageText, UpdateFailure, UpdateProgress, UpdatesView, VacancyScore, VacancyStatus, VacancyTextView, VacancyView, WishesData,
   DataProblem, DataState, SimilarTitle, SimilarTitlesView, TitleRun, CompaniesView, CompanyView, CompanyService,
+  KnownFormId, NachweisAudience, NachweisBlank, NachweisCandidate, NachweisSetup, NachweisView,
 } from '@bp/shared';
 
 export type Route = 'home' | 'profile' | 'vacancies' | 'applications' | 'guide' | 'settings';
