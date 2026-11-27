@@ -1,30 +1,34 @@
-// Fills a real blank Bewerbungsnachweis form with made-up rows, for a manual check in Word (spec 0.15.0).
+// Fills a Bewerbungsnachweis form with made-up rows, for a manual check in Word (spec 0.15.0).
 // The output goes to the temp folder (or --out); nothing is written into the repo.
-// Usage: npm run check:nachweis -- <blank.docx> [--rows 14] [--out C:\path\out.docx]
+// Usage: npm run check:nachweis -- <own blank.docx> [--rows 14] [--out C:\path\out.docx]
+//        npm run check:nachweis -- --standard [--jobcenter] [--rows 11] [--out …]   (the app's own form)
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { NachweisSetup } from '@bp/shared';
-import { readDocx, writeDocx } from '../src/nachweis/docx.js';
-import { fillBbw, recognizeBbw } from '../src/nachweis/forms/bbw.js';
-import { toHeader } from '../src/nachweis/forms/header.js';
+import { buildNachweis, recognizeForm } from '../src/nachweis/build.js';
+import { standardBlankPath } from '../src/nachweis/forms/standard.js';
 import type { NachweisRow } from '../src/nachweis/rows.js';
 
 const args = process.argv.slice(2);
-const blank = args.find((a) => !a.startsWith('--'));
 const opt = (name: string) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : undefined; };
+const standard = args.includes('--standard');
+const blank = standard ? standardBlankPath() : args.find((a, i) => !a.startsWith('--') && !['--rows', '--out'].includes(args[i - 1] ?? ''));
 if (!blank) {
-  console.error('usage: npm run check:nachweis -- <blank.docx> [--rows 14] [--out file.docx]');
+  console.error('usage: npm run check:nachweis -- <blank.docx> | --standard [--jobcenter] [--rows 14] [--out file.docx]');
   process.exit(2);
 }
 const count = Number(opt('rows') ?? 14);
 const out = opt('out') ?? path.join(os.tmpdir(), `bp-nachweis-check-${Date.now()}.docx`);
 
-const setup: NachweisSetup = {
+const measure: NachweisSetup = {
   audience: 'measure', personName: 'Max Mustermann',
   measure: { provider: 'Beispielträger', name: 'Beispielmaßnahme 2026', entry: '2026-08-17', exit: '', advisor: 'Frau Beispiel' },
   office: null, blank: { kind: 'standard' }, updatedAt: new Date().toISOString(),
 };
+const setup: NachweisSetup = args.includes('--jobcenter')
+  ? { ...measure, audience: 'jobcenter', measure: null, office: { name: 'Jobcenter Beispielstadt', customerNumber: '000A000000', advisor: 'Herr Beispiel' } }
+  : measure;
 const rows: NachweisRow[] = Array.from({ length: count }, (_, i) => {
   const d = String((i % 28) + 1).padStart(2, '0');
   return {
@@ -37,10 +41,11 @@ const rows: NachweisRow[] = Array.from({ length: count }, (_, i) => {
   };
 });
 
-const parts = await readDocx(fs.readFileSync(blank));
-if (!recognizeBbw(parts)) {
-  console.error('not recognised as the bbw form QGZ-F-PP018');
+const buf = fs.readFileSync(blank);
+const form = standard ? 'standard' : await recognizeForm(buf);
+if (!form) {
+  console.error('not recognised as a known form (bbw QGZ-F-PP018)');
   process.exit(1);
 }
-fs.writeFileSync(out, await writeDocx(fillBbw(parts, toHeader(setup, rows), rows)));
-console.log(`recognised; ${count} rows written to ${out}`);
+fs.writeFileSync(out, await buildNachweis(buf, form, setup, rows));
+console.log(`${form}; ${count} rows written to ${out}`);

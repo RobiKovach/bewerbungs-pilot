@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { packFolder } from './pack-zip.mjs';
 import { checkVersions } from './check-versions.mjs';
+import { RELEASE_FILES } from './release-files.mjs';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..');
 const { version } = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -22,7 +23,7 @@ const copy = (rel) => {
   if (!fs.existsSync(src)) throw new Error(`Release: missing file ${rel}`);
   fs.cpSync(src, path.join(out, rel), { recursive: true });
 };
-for (const rel of ['package.json', 'package-lock.json', 'LICENSE', 'README.md', 'CHANGELOG.md', 'server/package.json', 'server/dist', 'web/package.json', 'web/dist', 'installer']) {
+for (const rel of RELEASE_FILES) {
   copy(rel);
 }
 fs.rmSync(path.join(out, 'installer', 'node-path.txt'), { force: true });
