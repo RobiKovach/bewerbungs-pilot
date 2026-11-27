@@ -216,6 +216,73 @@ test('a backup brings the profile back', async () => {
   await expect(page.getByRole('textbox', { name: 'Full name' })).toHaveValue('Max Mustermann');
 });
 
+/** One file's text from a zip (a .docx is a zip). */
+async function zipEntryText(file: string, entry: string): Promise<string> {
+  const yauzl = (await import('yauzl')).default;
+  return new Promise((resolve, reject) => {
+    yauzl.open(file, { lazyEntries: true }, (err, zip) => {
+      if (err || !zip) return reject(err);
+      zip.on('entry', (e: { fileName: string }) => {
+        if (e.fileName !== entry) return zip.readEntry();
+        zip.openReadStream(e as never, (err2, stream) => {
+          if (err2 || !stream) return reject(err2);
+          const chunks: Buffer[] = [];
+          stream.on('data', (c: Buffer) => chunks.push(c));
+          stream.on('end', () => { zip.close(); resolve(Buffer.concat(chunks).toString('utf8')); });
+        });
+      });
+      zip.on('end', () => reject(new Error(`${entry} not in ${file}`)));
+      zip.readEntry();
+    });
+  });
+}
+
+test('bewerbungsnachweis: setup → export standard → marked', async () => {
+  // Set up once in the profile: for the Jobcenter, the app's standard form.
+  await page.getByRole('link', { name: 'Profile' }).first().click();
+  const section = page.locator('#profile-nachweis');
+  await expect(section.getByText('Not set up')).toBeVisible();
+  await section.getByRole('button', { name: 'Set up', exact: true }).click();
+  await section.getByRole('radio', { name: 'Jobcenter' }).check();
+  await expect(section.getByRole('textbox', { name: 'Name on the form' })).toHaveValue('Max Mustermann');
+  await section.getByRole('textbox', { name: 'Office' }).fill('Jobcenter Dresden');
+  await section.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(section.getByText('Ready')).toBeVisible();
+  await expect(section.getByText('Jobcenter Dresden')).toBeVisible();
+
+  // Export the one sent application; it is marked only after the file was handed over.
+  await page.getByRole('link', { name: 'Applications' }).first().click();
+  await page.getByRole('button', { name: 'Bewerbungsnachweis (1 new)' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Bewerbungsnachweis' });
+  await expect(dialog.getByRole('checkbox', { name: /Musterfirma Digital GmbH/ })).toBeChecked();
+  await expect(dialog.getByText('Applications: 1 · Pages: 1')).toBeVisible();
+  const downloading = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Save as…' }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toMatch(/^Bewerbungsnachweis_(\d\d\.\d\d\.\d{4})_\1\.docx$/);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'bp-e2e-nachweis-'));
+  try {
+    const file = path.join(tmp, download.suggestedFilename());
+    await download.saveAs(file);
+    const xml = await zipEntryText(file, 'word/document.xml');
+    expect(xml).toContain('Musterfirma Digital GmbH');
+    expect(xml).toContain('Jobcenter Dresden');
+    expect(xml).toContain('Max Mustermann');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+  await expect(dialog.getByRole('status')).toHaveText('Saved. These applications are now marked as in the Nachweis.');
+  await expect(page.getByRole('button', { name: 'Bewerbungsnachweis (0 new)' })).toBeVisible();
+
+  // Opened again: nothing new; the exported one is listed only on request, with its date.
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await page.getByRole('button', { name: 'Bewerbungsnachweis (0 new)' }).click();
+  await expect(dialog.getByText('Nothing new since the last Bewerbungsnachweis.')).toBeVisible();
+  await dialog.getByRole('checkbox', { name: 'Show already exported' }).check();
+  await expect(dialog.getByText(/^in Nachweis on \d\d\.\d\d\.\d{4}$/)).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+});
+
 /** The folder of the only application that has a saved preparation, found by the file the preparation leaves there. */
 function preparedApplicationFolder(): string | null {
   const walk = (dir: string): string | null => {

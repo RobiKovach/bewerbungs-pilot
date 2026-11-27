@@ -76,6 +76,17 @@ project's GitHub Releases, checks its checksum (published in `version.json`), sa
 version and restarts. If anything fails, the old version keeps working and you are told why. If you have 0.12.0 or
 older, install 0.12.1 by hand once (download it from the banner or the Releases page); after that updates are one click.
 
+### What's new in 0.15.0
+
+- **Bewerbungsnachweis.** If your Maßnahme, the Jobcenter or the Agentur für Arbeit wants a list of your applications,
+  the app now fills it in Word. Set it up once in **Profile → Bewerbungsnachweis**: who it is for, the details on the form,
+  and the app's standard form or — for a Maßnahme — your own empty bbw form (QGZ-F-PP018). On **Applications**,
+  **Bewerbungsnachweis (N new)** lists your sent and submitted applications that are not in a Nachweis yet; **Save as…**
+  writes the filled Word file where you choose, with as many pages as needed, and only then marks them "In Nachweis".
+  The setup and your own form are part of backups and of the transfer file.
+- A contact found automatically and not checked yet is written into the form as found; the window lists those
+  applications so you can check them first.
+
 ### What's new in 0.14.0
 
 - **Similar job titles.** Under the job titles above the search, **Suggest similar titles** asks the AI helper for
@@ -254,6 +265,18 @@ from 0 to 100 and says in two or three points why it fits and what is missing.
 - Applied on a company website instead? Mark the application as submitted.
 - Track the status and history of every application (sent, interview, rejected, offer, withdrawn) on the Applications page.
   A package that was sent can no longer be changed.
+
+## Bewerbungsnachweis
+
+- **Profile → Bewerbungsnachweis → Set up**: choose Maßnahme, Jobcenter or Agentur für Arbeit and fill in the header —
+  your name, then the provider, the Maßnahme and its dates, or the office and your customer / BG number. Choose the app's
+  standard form, or for a Maßnahme your own empty Word form (the app knows the bbw form QGZ-F-PP018). **Edit** changes it later.
+- **Applications → Bewerbungsnachweis (N new)**: the sent and submitted applications not exported yet are ticked;
+  **Show already exported** adds the older ones. **Save as…** saves a filled `.docx` named
+  `Bewerbungsnachweis_<first date>_<last date>.docx`: date, position with reference number, company and address, contact,
+  how you applied, where you found the offer and the result, oldest first.
+- Applications are marked "In Nachweis <date>" only after the file was saved; closing the window marks nothing.
+- No AI helper is used for it, and nothing leaves your PC.
 
 ## Development
 

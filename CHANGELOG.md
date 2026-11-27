@@ -2,6 +2,17 @@
 
 Newest first. The short version of every release is also on the [Releases page](https://github.com/RobiKovach/bewerbungs-pilot/releases).
 
+## What's new in 0.15.0
+
+- **Bewerbungsnachweis.** If your Maßnahme, the Jobcenter or the Agentur für Arbeit wants a list of your applications,
+  the app now fills it in Word. Set it up once in **Profile → Bewerbungsnachweis**: who it is for, the details on the form,
+  and the app's standard form or — for a Maßnahme — your own empty bbw form (QGZ-F-PP018). On **Applications**,
+  **Bewerbungsnachweis (N new)** lists your sent and submitted applications that are not in a Nachweis yet; **Save as…**
+  writes the filled Word file where you choose, with as many pages as needed, and only then marks them "In Nachweis".
+  The setup and your own form are part of backups and of the transfer file.
+- A contact found automatically and not checked yet is written into the form as found; the window lists those
+  applications so you can check them first.
+
 ## What's new in 0.14.0
 
 - **Similar job titles.** Under the job titles above the search, **Suggest similar titles** asks the AI helper for
