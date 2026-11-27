@@ -90,7 +90,8 @@ export async function registerBackupRoutes(app: FastifyInstance, d: BackupRouteD
     const q = d.queue.status();
     if (q.running || q.queued > 0 || d.activity.active().includes('interview') || d.researchBusy?.()) return 'restoreBusyAi';
     if (d.activity.active().includes('send')) return 'restoreBusySend';
-    if (d.activity.active().includes('export')) return 'restoreBusyExport';
+    // A Bewerbungsnachweis being built reads the profile's own blank: same wait as a copy being made.
+    if (d.activity.active().includes('export') || d.activity.active().includes('nachweis')) return 'restoreBusyExport';
     return null;
   };
 

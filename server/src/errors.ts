@@ -56,6 +56,9 @@ export function httpStatusFor(code: ErrorCode): number {
     case 'BACKUP_INVALID': return 422;
     case 'BACKUP_NEWER': return 409;
     case 'FEEDBACK_FAILED': return 502;
+    case 'NACHWEIS_FORM_UNKNOWN': return 400;
+    case 'NACHWEIS_NOT_SET_UP':
+    case 'NACHWEIS_FORM_CHANGED': return 409;
     default: return 500;
   }
 }

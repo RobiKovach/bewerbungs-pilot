@@ -6,13 +6,14 @@ import { AppError } from '../errors.js';
 import type { Logger } from '../log.js';
 import { removeSync } from '../data/remove.js';
 
-export type UploadKind = 'cv' | 'photo' | 'document';
+export type UploadKind = 'cv' | 'photo' | 'document' | 'nachweisBlank';
 
 const MB = 1024 * 1024;
 export const FILE_RULES: Record<UploadKind, { maxBytes: number; exts: readonly FileExt[] }> = {
   cv: { maxBytes: 10 * MB, exts: ['.pdf', '.docx'] },
   photo: { maxBytes: 5 * MB, exts: ['.jpg', '.png'] },
   document: { maxBytes: 10 * MB, exts: ['.pdf'] },
+  nachweisBlank: { maxBytes: 5 * MB, exts: ['.docx'] },
 };
 export const MAX_DOCUMENTS = 20;
 export const FILE_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;

@@ -145,15 +145,21 @@ const STORY = obj({
   id: ID, title: str(LIMITS.name, 1), text: str(LIMITS.text, 1), kind: oneOf(STORY_KINDS), disclosure: oneOf(['ok', 'never']),
   confirmed: { type: 'boolean' },
 });
-const NACHWEIS = obj({
+const NACHWEIS_SETUP_PROPS = {
   audience: oneOf(['measure', 'jobcenter', 'agentur']),
   personName: str(LIMITS.name),
   measure: nullable(obj({ provider: str(LIMITS.name), name: str(LIMITS.name), entry: DAY, exit: DAY, advisor: str(LIMITS.name) })),
   office: nullable(obj({ name: str(LIMITS.name), customerNumber: str(LIMITS.short), advisor: str(LIMITS.name) })),
+};
+const NACHWEIS = obj({
+  ...NACHWEIS_SETUP_PROPS,
   blank: { anyOf: [obj({ kind: { const: 'standard' } }), obj({ kind: { const: 'own' }, file: STORED_FILE, form: oneOf(['bbw-qgz-pp018']) })] },
   updatedAt: TIMESTAMP,
 });
 const QUESTION = obj({ id: ID, question: str(LIMITS.question, 1), why: str(LIMITS.question) });
+
+/** Body of PUT /api/profile/nachweis: the setup without the blank and the time (the server keeps those). */
+export const NACHWEIS_SETUP_BODY: JsonSchema = obj(NACHWEIS_SETUP_PROPS);
 
 export const PROFILE_SCHEMA: JsonSchema = obj({
   schemaVersion: { const: PROFILE_SCHEMA_VERSION },

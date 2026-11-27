@@ -14,6 +14,8 @@ import type { ProviderRegistry } from './llm/providers.js';
 import { helloTask } from './prompts/hello.js';
 import type { ProfileFiles } from './profile/files.js';
 import { registerProfileRoutes } from './profile/routes.js';
+import { registerNachweisProfileRoutes } from './profile/nachweis-routes.js';
+import { registerNachweisRoutes } from './nachweis/routes.js';
 import type { ProfileStore } from './profile/store.js';
 import type { ApplicationJob } from './applications/job.js';
 import type { PdfPrinter } from './applications/pdf.js';
@@ -389,6 +391,15 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     store: deps.profileStore, files: deps.profileFiles, queue: deps.queue, logger: deps.logger,
     language: () => deps.settings.get().language ?? 'en',
   });
+  // After the profile routes: the blank upload uses the multipart parser they register.
+  await registerNachweisProfileRoutes(app, {
+    store: deps.profileStore, files: deps.profileFiles, queue: deps.queue, logger: deps.logger,
+    language: () => deps.settings.get().language ?? 'en',
+  });
+  await registerNachweisRoutes(app, {
+    applications: deps.applicationStore, vacancies: deps.vacancyStore, profile: () => deps.profileStore.get(),
+    files: deps.profileFiles, activity: deps.activity, logger: deps.logger,
+  });
 
   // One wrapped reader for "find contact", pasted links and the research: every session counts as browser work.
   const pageReader = browserWork(deps.activity, deps.pageReader);
@@ -444,7 +455,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       const active = deps.activity.active();
       if (deps.updates.demoRunning?.()) return 'demo';
       if (active.includes('restore')) return 'restore';
-      if (active.includes('export')) return 'export';
+      if (active.includes('export') || active.includes('nachweis')) return 'export';
       if (deps.searchJob.state().state === 'running') return 'search';
       if (deps.applicationJob.state().state === 'running') return 'package';
       const q = deps.queue.status();
