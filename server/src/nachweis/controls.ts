@@ -46,8 +46,12 @@ export function escapeXml(s: string): string {
   return clean.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-/** The run properties of the first run, to keep the form's font and size. */
-const firstRunProps = (content: string) => /<w:r>(<w:rPr>.*?<\/w:rPr>)/.exec(content)?.[1] ?? /<w:r [^>]*>(<w:rPr>.*?<\/w:rPr>)/.exec(content)?.[1] ?? '';
+/** Word's grey "placeholder text" character style (German and English names): an empty field shows it, a value must not. */
+const PLACEHOLDER_STYLE = /<w:rStyle w:val="[^"]*(?:Platzhalter|Placeholder)[^"]*"\/>/gi;
+
+/** The run properties of the first run, to keep the form's font and size — without the placeholder look. */
+const firstRunProps = (content: string) =>
+  (/<w:r>(<w:rPr>.*?<\/w:rPr>)/.exec(content)?.[1] ?? /<w:r [^>]*>(<w:rPr>.*?<\/w:rPr>)/.exec(content)?.[1] ?? '').replace(PLACEHOLDER_STYLE, '');
 
 function runs(rPr: string, lines: string[]): string {
   if (lines.length === 0) return `<w:r>${rPr}<w:t xml:space="preserve"></w:t></w:r>`;

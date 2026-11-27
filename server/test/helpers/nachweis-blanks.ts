@@ -11,19 +11,21 @@ let nextId = 1000;
 const id = () => `<w:id w:val="${nextId++}"/>`;
 const R = '<w:rPr><w:rFonts w:asciiTheme="minorBidi"/><w:sz w:val="16"/></w:rPr>';
 const run = (t: string) => `<w:r>${R}<w:t xml:space="preserve">${t}</w:t></w:r>`;
+/** An empty field shows Word's grey placeholder style, as in the real form. */
+const placeholderRun = (t: string) => `<w:r><w:rPr><w:rStyle w:val="Platzhaltertext"/><w:sz w:val="16"/></w:rPr><w:t xml:space="preserve">${t}</w:t></w:r>`;
 const para = (inner = '') => `<w:p><w:pPr>${R}</w:pPr>${inner}</w:p>`;
 const cell = (inner: string, w = 1500) => `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/></w:tcPr>${inner}</w:tc>`;
 
 const checkbox = (on = false) =>
   `<w:sdt><w:sdtPr>${R}${id()}<w14:checkbox><w14:checked w14:val="${on ? 1 : 0}"/><w14:checkedState w14:val="2612" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r>${R}<w:t>${on ? '☒' : '☐'}</w:t></w:r></w:sdtContent></w:sdt>`;
 const dateRun = (value = '') =>
-  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:date w:fullDate="2022-11-18T00:00:00Z"><w:dateFormat w:val="dd.MM.yyyy"/><w:lid w:val="de-DE"/></w:date></w:sdtPr><w:sdtContent>${run(value || '    ')}</w:sdtContent></w:sdt>`;
+  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:date w:fullDate="2022-11-18T00:00:00Z"><w:dateFormat w:val="dd.MM.yyyy"/><w:lid w:val="de-DE"/></w:date></w:sdtPr><w:sdtContent>${(value ? run(value) : placeholderRun('    '))}</w:sdtContent></w:sdt>`;
 const datePara = (value = '') =>
-  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:date w:fullDate="2022-11-18T00:00:00Z"><w:dateFormat w:val="dd.MM.yyyy"/><w:lid w:val="de-DE"/></w:date></w:sdtPr><w:sdtContent>${para(run(value || '    '))}</w:sdtContent></w:sdt>`;
+  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:date w:fullDate="2022-11-18T00:00:00Z"><w:dateFormat w:val="dd.MM.yyyy"/><w:lid w:val="de-DE"/></w:date></w:sdtPr><w:sdtContent>${para((value ? run(value) : placeholderRun('    ')))}</w:sdtContent></w:sdt>`;
 const textRun = (value = '') =>
-  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:text/></w:sdtPr><w:sdtContent>${run(value || '          ')}</w:sdtContent></w:sdt>`;
+  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:text/></w:sdtPr><w:sdtContent>${(value ? run(value) : placeholderRun('          '))}</w:sdtContent></w:sdt>`;
 const textCell = (value = '', w = 2000) =>
-  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:text w:multiLine="1"/></w:sdtPr><w:sdtContent>${cell(para(run(value || '        ')), w)}</w:sdtContent></w:sdt>`;
+  `<w:sdt><w:sdtPr>${R}${id()}${value ? '' : '<w:showingPlcHdr/>'}<w:text w:multiLine="1"/></w:sdtPr><w:sdtContent>${cell(para((value ? run(value) : placeholderRun('        '))), w)}</w:sdtContent></w:sdt>`;
 
 const row = (cells: string) => `<w:tr>${cells}</w:tr>`;
 const table = (rows: string) => `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/></w:tblPr>${rows}</w:tbl>`;

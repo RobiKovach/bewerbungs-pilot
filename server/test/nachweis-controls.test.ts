@@ -99,3 +99,13 @@ describe('content controls', () => {
     expect(() => findControls(parts.xml.get('word/document.xml')!)).toThrow(AppError);
   });
 });
+
+describe('placeholder look', () => {
+  it('filling an empty field drops the grey placeholder style, so the value prints black', () => {
+    const xml = bbwDocumentXml();
+    expect(inner(xml, 14)).toContain('Platzhaltertext');
+    const out = setControls(xml, new Map<number, ControlValue>([[14, { date: '04.03.2026' }], [11, { lines: ['Stelle'] }]]));
+    expect(inner(out, 14)).not.toContain('Platzhaltertext');
+    expect(inner(out, 11)).not.toContain('Platzhaltertext');
+  });
+});
