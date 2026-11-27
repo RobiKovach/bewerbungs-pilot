@@ -1,15 +1,15 @@
 {
   "schema": 1,
-  "latest": "0.14.0",
-  "released": "2026-11-26",
-  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.14.0",
-  "sha256": "f5d642e3deaeb6c1d5c8aaef016b5c11d707e8d5c0b2caabfe1a38f26cc75e03",
+  "latest": "0.15.0",
+  "released": "2026-11-27",
+  "url": "https://github.com/RobiKovach/bewerbungs-pilot/releases/tag/v0.15.0",
+  "sha256": "3c397e5d4cc429a6fae8c80a160bb1d023a82b14d6b812640ad5875fdf03f479",
   "notes": {
-    "uk": "Більше вакансій: схожі посади від ШІ, вакансії з сайтів фірм, за якими ви стежите (Greenhouse, Lever, Ashby, Personio), і пошук раз на день за бажанням.",
-    "en": "More job offers: similar job titles from the AI helper, offers from the careers pages of companies you follow (Greenhouse, Lever, Ashby, Personio) and an optional daily search.",
-    "de": "Mehr Stellen: ähnliche Berufsbezeichnungen vom KI-Helfer, Angebote von den Karriereseiten von Firmen, denen Sie folgen (Greenhouse, Lever, Ashby, Personio), und eine tägliche Suche auf Wunsch.",
-    "ru": "Больше вакансий: похожие должности от ИИ, вакансии с сайтов фирм, за которыми вы следите (Greenhouse, Lever, Ashby, Personio), и поиск раз в день по желанию.",
-    "pl": "Więcej ofert: podobne stanowiska od asystenta AI, oferty ze stron kariery firm, które obserwujesz (Greenhouse, Lever, Ashby, Personio), i codzienne wyszukiwanie na życzenie.",
-    "ro": "Mai multe oferte: denumiri similare de la asistentul AI, oferte de pe paginile de cariere ale firmelor urmărite (Greenhouse, Lever, Ashby, Personio) și o căutare zilnică opțională."
+    "uk": "Bewerbungsnachweis у Word: подані заявки одним натисканням у стандартний бланк або ваш бланк bbw — для Maßnahme, Jobcenter і Agentur für Arbeit.",
+    "en": "Bewerbungsnachweis in Word: your submitted applications in one click, on the standard form or your own bbw form — for a Maßnahme, the Jobcenter or the Agentur für Arbeit.",
+    "de": "Bewerbungsnachweis in Word: Ihre abgeschickten Bewerbungen mit einem Klick im Standardformular oder Ihrem bbw-Formular — für Maßnahme, Jobcenter oder Agentur für Arbeit.",
+    "ru": "Bewerbungsnachweis в Word: поданные заявки одним нажатием в стандартный бланк или ваш бланк bbw — для Maßnahme, Jobcenter и Agentur für Arbeit.",
+    "pl": "Bewerbungsnachweis w Wordzie: wysłane aplikacje jednym kliknięciem w standardowym formularzu albo w twoim formularzu bbw — dla Maßnahme, Jobcenter i Agentur für Arbeit.",
+    "ro": "Bewerbungsnachweis în Word: candidaturile trimise cu un clic, în formularul standard sau în formularul dvs. bbw — pentru Maßnahme, Jobcenter sau Agentur für Arbeit."
   }
 }
